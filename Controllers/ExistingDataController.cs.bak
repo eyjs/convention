@@ -1,0 +1,325 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using LocalRAG.Data;
+using LocalRAG.Models.Existing;
+
+namespace LocalRAG.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class ExistingDataController : ControllerBase
+{
+    private readonly ExistingDbContext _context;
+    private readonly ILogger<ExistingDataController> _logger;
+
+    public ExistingDataController(ExistingDbContext context, ILogger<ExistingDataController> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    // 데이터베이스 연결 테스트
+    [HttpGet("test-connection")]
+    public async Task<ActionResult<object>> TestConnection()
+    {
+        try
+        {
+            var canConnect = await _context.Database.CanConnectAsync();
+            var connectionString = _context.Database.GetConnectionString();
+            
+            return Ok(new
+            {
+                CanConnect = canConnect,
+                ConnectionString = connectionString?.Substring(0, Math.Min(50, connectionString.Length)) + "...",
+                DatabaseName = _context.Database.GetDbConnection().Database,
+                ServerVersion = _context.Database.GetDbConnection().ServerVersion,
+                TestTime = DateTime.Now
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Database connection test failed");
+            return BadRequest(new
+            {
+                Error = ex.Message,
+                CanConnect = false,
+                TestTime = DateTime.Now
+            });
+        }
+    }
+
+    // 테이블 존재 여부 확인
+    [HttpGet("tables")]
+    public async Task<ActionResult<object>> GetTableInfo()
+    {
+        try
+        {
+            var tables = new List<object>();
+
+            // Users 테이블 확인
+            try
+            {
+                var userCount = await _context.Users.CountAsync();
+                tables.Add(new { TableName = "Users", RecordCount = userCount, Status = "Available" });
+            }
+            catch (Exception ex)
+            {
+                tables.Add(new { TableName = "Users", RecordCount = 0, Status = $"Error: {ex.Message}" });
+            }
+
+            // Products 테이블 확인
+            try
+            {
+                var productCount = await _context.Products.CountAsync();
+                tables.Add(new { TableName = "Products", RecordCount = productCount, Status = "Available" });
+            }
+            catch (Exception ex)
+            {
+                tables.Add(new { TableName = "Products", RecordCount = 0, Status = $"Error: {ex.Message}" });
+            }
+
+            // Orders 테이블 확인
+            try
+            {
+                var orderCount = await _context.Orders.CountAsync();
+                tables.Add(new { TableName = "Orders", RecordCount = orderCount, Status = "Available" });
+            }
+            catch (Exception ex)
+            {
+                tables.Add(new { TableName = "Orders", RecordCount = 0, Status = $"Error: {ex.Message}" });
+            }
+
+            // Categories 테이블 확인
+            try
+            {
+                var categoryCount = await _context.Categories.CountAsync();
+                tables.Add(new { TableName = "Categories", RecordCount = categoryCount, Status = "Available" });
+            }
+            catch (Exception ex)
+            {
+                tables.Add(new { TableName = "Categories", RecordCount = 0, Status = $"Error: {ex.Message}" });
+            }
+
+            return Ok(new
+            {
+                DatabaseName = _context.Database.GetDbConnection().Database,
+                Tables = tables,
+                CheckTime = DateTime.Now
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get table information");
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
+
+    // 사용자 목록 조회 (페이징)
+    [HttpGet("users")]
+    public async Task<ActionResult<object>> GetUsers([FromQuery] int page = 1, [FromQuery] int size = 10)
+    {
+        try
+        {
+            var skip = (page - 1) * size;
+            var users = await _context.Users
+                .OrderBy(u => u.Id)
+                .Skip(skip)
+                .Take(size)
+                .ToListAsync();
+
+            var totalCount = await _context.Users.CountAsync();
+
+            return Ok(new
+            {
+                Data = users,
+                Page = page,
+                Size = size,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling((double)totalCount / size)
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get users");
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
+
+    // 제품 목록 조회 (페이징)
+    [HttpGet("products")]
+    public async Task<ActionResult<object>> GetProducts([FromQuery] int page = 1, [FromQuery] int size = 10)
+    {
+        try
+        {
+            var skip = (page - 1) * size;
+            var products = await _context.Products
+                .OrderBy(p => p.ProductId)
+                .Skip(skip)
+                .Take(size)
+                .ToListAsync();
+
+            var totalCount = await _context.Products.CountAsync();
+
+            return Ok(new
+            {
+                Data = products,
+                Page = page,
+                Size = size,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling((double)totalCount / size)
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get products");
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
+
+    // 주문 목록 조회 (관계 포함)
+    [HttpGet("orders")]
+    public async Task<ActionResult<object>> GetOrders([FromQuery] int page = 1, [FromQuery] int size = 10)
+    {
+        try
+        {
+            var skip = (page - 1) * size;
+            var orders = await _context.Orders
+                .Include(o => o.User) // 관계 포함
+                .OrderByDescending(o => o.OrderDate)
+                .Skip(skip)
+                .Take(size)
+                .Select(o => new
+                {
+                    o.OrderId,
+                    o.UserId,
+                    UserName = o.User != null ? o.User.Name : "Unknown",
+                    UserEmail = o.User != null ? o.User.Email : "Unknown",
+                    o.TotalAmount,
+                    o.OrderDate,
+                    o.Status
+                })
+                .ToListAsync();
+
+            var totalCount = await _context.Orders.CountAsync();
+
+            return Ok(new
+            {
+                Data = orders,
+                Page = page,
+                Size = size,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling((double)totalCount / size)
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get orders");
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
+
+    // 카테고리별 제품 수 통계
+    [HttpGet("categories/stats")]
+    public async Task<ActionResult<object>> GetCategoryStats()
+    {
+        try
+        {
+            var stats = await _context.Categories
+                .Select(c => new
+                {
+                    c.CategoryId,
+                    c.CategoryName,
+                    c.Description,
+                    ProductCount = c.Products.Count()
+                })
+                .OrderBy(c => c.CategoryName)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                Data = stats,
+                TotalCategories = stats.Count,
+                TotalProducts = stats.Sum(s => s.ProductCount)
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get category stats");
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
+
+    // 특정 사용자 상세 조회
+    [HttpGet("users/{id}")]
+    public async Task<ActionResult<ExistingUser>> GetUser(int id)
+    {
+        try
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound(new { Message = $"User with ID {id} not found" });
+            }
+
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get user {UserId}", id);
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
+
+    // SQL 쿼리 직접 실행 (테스트용)
+    [HttpPost("execute-sql")]
+    public async Task<ActionResult<object>> ExecuteRawSql([FromBody] SqlQueryRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.Query))
+            {
+                return BadRequest(new { Error = "Query is required" });
+            }
+
+            // 보안을 위해 SELECT 쿼리만 허용
+            if (!request.Query.Trim().ToUpper().StartsWith("SELECT"))
+            {
+                return BadRequest(new { Error = "Only SELECT queries are allowed" });
+            }
+
+            var connection = _context.Database.GetDbConnection();
+            await connection.OpenAsync();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = request.Query;
+
+            using var reader = await command.ExecuteReaderAsync();
+            var results = new List<Dictionary<string, object>>();
+
+            while (await reader.ReadAsync())
+            {
+                var row = new Dictionary<string, object>();
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    row[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                }
+                results.Add(row);
+            }
+
+            return Ok(new
+            {
+                Query = request.Query,
+                RowCount = results.Count,
+                Data = results
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to execute SQL query");
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
+}
+
+// DTO for SQL query request
+public record SqlQueryRequest(string Query);
