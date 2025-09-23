@@ -4,6 +4,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- SPA 설정 - 프로젝트 내부 경로 -->
+    <SpaRoot>ClientApp\</SpaRoot>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,11 +23,40 @@
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="5.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
   </ItemGroup>
 
+  <!-- SPA 관련 파일들을 Visual Studio에서 보이도록 설정 -->
   <ItemGroup>
-    <Folder Include="models\" />
-    <Folder Include="logs\" />
+    <!-- ClientApp 폴더의 주요 파일들을 프로젝트에 포함 -->
+    <None Include="$(SpaRoot)package.json" />
+    <None Include="$(SpaRoot)vite.config.js" />
+    <None Include="$(SpaRoot)tailwind.config.js" />
+    <None Include="$(SpaRoot)postcss.config.js" />
+    <None Include="$(SpaRoot)src\**\*.vue" />
+    <None Include="$(SpaRoot)src\**\*.js" />
+    <None Include="$(SpaRoot)src\**\*.ts" />
+    <None Include="$(SpaRoot)src\**\*.css" />
+    <None Include="$(SpaRoot)public\**\*.*" />
+    <Compile Remove="logs\**" />
+    <!-- node_modules는 제외 -->
+    <Content Remove="$(SpaRoot)node_modules\**" />
+    <Content Remove="logs\**" />
+    <EmbeddedResource Remove="logs\**" />
+    <None Remove="$(SpaRoot)node_modules\**" />
+    <None Remove="logs\**" />
   </ItemGroup>
 
+	<Target Name="BuildVueApp" BeforeTargets="Build">
+		<Exec Command="npm install" WorkingDirectory="ClientApp" />
+
+		<Exec Command="npm run build" WorkingDirectory="ClientApp" />
+
+		<ItemGroup>
+			<VueDistFiles Include="ClientApp/dist/**" />
+		</ItemGroup>
+
+		<Copy SourceFiles="@(VueDistFiles)" DestinationFolder="wwwroot/%(RecursiveDir)" />
+	</Target>
 </Project>
