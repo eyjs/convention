@@ -1,24 +1,17 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <AppHeader />
+    
     
     <!-- Main Content -->
     <div class="pb-20">
-      <UserProfile />
-      <TabNavigation />
-      <TabContent />
+
     </div>
   </div>
 </template>
 
 <script setup>
 import { onMounted } from 'vue'
-import { useConventionStore } from '@/stores/convention'
-import AppHeader from '@/components/AppHeader.vue'
-import UserProfile from '@/components/UserProfile.vue'
-import TabNavigation from '@/components/TabNavigation.vue'
-import TabContent from '@/components/TabContent.vue'
 
 const conventionStore = useConventionStore()
 
@@ -28,10 +21,6 @@ onMounted(async () => {
 </script>
 
 <style>
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
-
 /* iOS Safari 전용 스타일 */
 @supports (-webkit-touch-callout: none) {
   .safe-area-top {
