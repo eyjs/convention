@@ -4,6 +4,7 @@ namespace LocalRAG.Services;
 
 public class RagService : IRagService
 {
+    // requirements: 벡터스토어, 임베딩서비스, llm
     private readonly IVectorStore _vectorStore;
     private readonly IEmbeddingService _embeddingService;
     private readonly ILlmProvider _llmProvider;
@@ -17,13 +18,24 @@ public class RagService : IRagService
         _embeddingService = embeddingService;
         _llmProvider = llmProvider;
     }
-
+    
+    /// <summary>
+    /// 벡터 스토어에 도큐먼트 추가 
+    /// </summary>
+    /// <param name="content">문자열 형태의 데이터</param>
+    /// <param name="metadata">해당 데이터에 대한 메타데이터 <key, object>구조 </param>
+    /// <returns></returns>
     public async Task<string> AddDocumentAsync(string content, Dictionary<string, object>? metadata = null)
     {
         var embedding = await _embeddingService.GenerateEmbeddingAsync(content);
         return await _vectorStore.AddDocumentAsync(content, embedding, metadata);
     }
-
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="question">사용자 질문 문자열</param>
+    /// <param name="topK">Top-K 샘플링에서는 모델이 예측한 단어들 중 확률이 가장 높은 상위 K개의 단어만을 고려합니다.</param>
+    /// <returns></returns>
     public async Task<RagResponse> QueryAsync(string question, int topK = 5)
     {
         // 1. 질문을 벡터로 변환

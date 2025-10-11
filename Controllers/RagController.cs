@@ -47,7 +47,7 @@ public class RagController : ControllerBase
                     s.DocumentId,
                     s.Content,
                     s.Similarity,
-                    s.Metadata
+                    s.Metadata ?? new Dictionary<string, object>()
                 )).ToList(),
                 result.LlmProvider
             );

@@ -1,4 +1,3 @@
-using LocalRAG.Models.Convention;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using LocalRAG.Models;
@@ -11,27 +10,46 @@ public class ConventionDbContext : DbContext
     {
     }
 
-    // --- DbSet Properties ---
+    public DbSet<User> Users { get; set; }
     public DbSet<Convention> Conventions { get; set; }
     public DbSet<Guest> Guests { get; set; }
     public DbSet<Schedule> Schedules { get; set; }
     public DbSet<GuestAttribute> GuestAttributes { get; set; }
-    public DbSet<Companion> Companions { get; set; }
-    public DbSet<GuestSchedule> GuestSchedules { get; set; }
+    public DbSet<AttributeDefinition> AttributeDefinitions { get; set; }
     public DbSet<Feature> Features { get; set; }
     public DbSet<Menu> Menus { get; set; }
     public DbSet<Section> Sections { get; set; }
     public DbSet<Owner> Owners { get; set; }
     public DbSet<VectorStore> VectorStores { get; set; }
-
+    
+    public DbSet<ScheduleTemplate> ScheduleTemplates { get; set; }
+    public DbSet<ScheduleItem> ScheduleItems { get; set; }
+    public DbSet<GuestScheduleTemplate> GuestScheduleTemplates { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // --- Entity Configurations ---
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("getdate()");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Role).HasDefaultValue("Guest");
+            
+            entity.HasIndex(e => e.LoginId).IsUnique().HasDatabaseName("UQ_User_LoginId");
+            entity.HasIndex(e => e.Email).HasDatabaseName("IX_User_Email");
+            entity.HasIndex(e => e.Phone).HasDatabaseName("IX_User_Phone");
+            entity.HasIndex(e => e.Role).HasDatabaseName("IX_User_Role");
+            
+            entity.HasMany(u => u.Guests)
+                  .WithOne(g => g.User)
+                  .HasForeignKey(g => g.UserId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
 
-        // Convention (행사)
         modelBuilder.Entity<Convention>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -45,22 +63,26 @@ public class ConventionDbContext : DbContext
             entity.HasIndex(e => e.ConventionType).HasDatabaseName("IX_Convention_ConventionType");
         });
 
-        // Guest (참석자)
         modelBuilder.Entity<Guest>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_Guest_ConventionId");
             entity.HasIndex(e => e.GuestName).HasDatabaseName("IX_Guest_GuestName");
+            entity.HasIndex(e => e.UserId).HasDatabaseName("IX_Guest_UserId");
+            entity.HasIndex(e => e.AccessToken).IsUnique().HasDatabaseName("UQ_Guest_AccessToken");
 
-            // 1:N Relationship (Convention -> Guests)
             entity.HasOne(g => g.Convention)
                   .WithMany(c => c.Guests)
                   .HasForeignKey(g => g.ConventionId)
                   .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(g => g.User)
+                  .WithMany(u => u.Guests)
+                  .HasForeignKey(g => g.UserId)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // Schedule (일정)
         modelBuilder.Entity<Schedule>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -69,132 +91,109 @@ public class ConventionDbContext : DbContext
             entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_Schedule_ConventionId");
         });
 
-        // GuestAttribute (참석자 부가 속성)
         modelBuilder.Entity<GuestAttribute>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             
-            // Unique Constraint: 한 참석자에게 동일한 속성 키가 중복될 수 없음
             entity.HasIndex(e => new { e.GuestId, e.AttributeKey })
                   .IsUnique()
                   .HasDatabaseName("UQ_GuestAttributes_GuestId_AttributeKey");
 
-            // 1:N Relationship (Guest -> Attributes)
             entity.HasOne(ga => ga.Guest)
-                  .WithMany(g => g.Attributes)
+                  .WithMany(g => g.GuestAttributes)
                   .HasForeignKey(ga => ga.GuestId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
-
-        // Companion (동반자)
-        modelBuilder.Entity<Companion>(entity =>
+        
+        modelBuilder.Entity<AttributeDefinition>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.HasIndex(e => e.GuestId).HasDatabaseName("IX_Companion_GuestId");
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_AttributeDefinition_ConventionId");
+            entity.HasIndex(e => new { e.ConventionId, e.AttributeKey })
+                  .IsUnique()
+                  .HasDatabaseName("UQ_AttributeDefinition_ConventionId_AttributeKey");
 
-            // 1:N Relationship (Guest -> Companions)
-            entity.HasOne(c => c.Guest)
-                  .WithMany(g => g.Companions)
-                  .HasForeignKey(c => c.GuestId)
+            entity.HasOne(ad => ad.Convention)
+                  .WithMany()
+                  .HasForeignKey(ad => ad.ConventionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        modelBuilder.Entity<ScheduleTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_ScheduleTemplate_ConventionId");
+
+            entity.HasOne(st => st.Convention)
+                  .WithMany(c => c.ScheduleTemplates)
+                  .HasForeignKey(st => st.ConventionId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // GuestSchedule (참석자-일정 연결 테이블, Many-to-Many)
-        modelBuilder.Entity<GuestSchedule>(entity =>
+        modelBuilder.Entity<ScheduleItem>(entity =>
         {
-            // Composite Primary Key
-            entity.HasKey(gs => new { gs.GuestId, gs.ScheduleId });
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.HasIndex(e => e.ScheduleTemplateId).HasDatabaseName("IX_ScheduleItem_ScheduleTemplateId");
 
-            // Relationship to Guest
-            entity.HasOne(gs => gs.Guest)
-                  .WithMany(g => g.GuestSchedules)
-                  .HasForeignKey(gs => gs.GuestId)
+            entity.HasOne(si => si.ScheduleTemplate)
+                  .WithMany(st => st.ScheduleItems)
+                  .HasForeignKey(si => si.ScheduleTemplateId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<GuestScheduleTemplate>(entity =>
+        {
+            entity.HasKey(gst => new { gst.GuestId, gst.ScheduleTemplateId });
+
+            entity.HasOne(gst => gst.Guest)
+                  .WithMany(g => g.GuestScheduleTemplates)
+                  .HasForeignKey(gst => gst.GuestId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            // Relationship to Schedule
-            entity.HasOne(gs => gs.Schedule)
-                  .WithMany(s => s.GuestSchedules)
-                  .HasForeignKey(gs => gs.ScheduleId)
+            entity.HasOne(gst => gst.ScheduleTemplate)
+                  .WithMany(st => st.GuestScheduleTemplates)
+                  .HasForeignKey(gst => gst.ScheduleTemplateId)
                   .OnDelete(DeleteBehavior.NoAction);
         });
 
-        // Feature (기능)
         modelBuilder.Entity<Feature>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.IsEnabled).HasDefaultValue("Y");
-            
-            // Unique Constraint: 한 행사에 동일한 기능 이름이 중복될 수 없음
-            entity.HasIndex(e => new { e.ConventionId, e.FeatureName })
-                  .IsUnique()
-                  .HasDatabaseName("UQ_Features_ConventionId_FeatureName");
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_Feature_ConventionId");
         });
 
-        // Menu (메뉴)
         modelBuilder.Entity<Menu>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.RegDtm).HasDefaultValueSql("getdate()");
-            entity.Property(e => e.DeleteYn).HasDefaultValue("N");
-            
-            entity.HasOne(m => m.Convention)
-                  .WithMany(c => c.Menus)
-                  .HasForeignKey(m => m.ConventionId)
-                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_Menu_ConventionId");
         });
 
-        // Section (섹션)
         modelBuilder.Entity<Section>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.RegDtm).HasDefaultValueSql("getdate()");
-            entity.Property(e => e.DeleteYn).HasDefaultValue("N");
-            
-            entity.HasOne(s => s.Menu)
-                  .WithMany(m => m.Sections)
-                  .HasForeignKey(s => s.MenuId)
-                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.MenuId).HasDatabaseName("IX_Section_MenuId");
         });
 
-        // Owner (담당자)
         modelBuilder.Entity<Owner>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            
-            entity.HasOne(o => o.Convention)
-                  .WithMany(c => c.Owners)
-                  .HasForeignKey(o => o.ConventionId)
-                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_Owner_ConventionId");
         });
 
-        // VectorStore (벡터 저장소)
         modelBuilder.Entity<VectorStore>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasDefaultValueSql("newid()");
-            entity.Property(e => e.RegDtm).HasDefaultValueSql("getdate()");
-            
-            entity.HasOne(v => v.Convention)
-                  .WithMany(c => c.VectorStores)
-                  .HasForeignKey(v => v.ConventionId)
-                  .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_VectorStore_ConventionId");
+            entity.HasIndex(e => e.SourceType).HasDatabaseName("IX_VectorStore_SourceType");
         });
-    }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            // 개발 환경에서 쿼리 로깅
-            optionsBuilder.LogTo(Console.WriteLine,
-                new[] { DbLoggerCategory.Database.Command.Name },
-                LogLevel.Information);
-        }
     }
 }

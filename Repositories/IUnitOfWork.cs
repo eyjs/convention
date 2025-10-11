@@ -1,4 +1,4 @@
-using LocalRAG.Models.Convention;
+using LocalRAG.Models;
 
 namespace LocalRAG.Repositories;
 
@@ -22,13 +22,12 @@ public interface IUnitOfWork : IDisposable
     IGuestRepository Guests { get; }
     IScheduleRepository Schedules { get; }
     IGuestAttributeRepository GuestAttributes { get; }
-    ICompanionRepository Companions { get; }
-    IGuestScheduleRepository GuestSchedules { get; }
     IFeatureRepository Features { get; }
     IMenuRepository Menus { get; }
     ISectionRepository Sections { get; }
     IOwnerRepository Owners { get; }
     IVectorStoreRepository VectorStores { get; }
+
 
     // --- Transaction Methods ---
 
@@ -126,10 +125,10 @@ public interface IGuestRepository : IRepository<Guest>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 사번(CorpHrId)으로 참석자를 조회합니다.
+    /// 주민등록번호로 참석자를 조회합니다.
     /// </summary>
-    Task<Guest?> GetGuestByCorpHrIdAsync(
-        string corpHrId,
+    Task<Guest?> GetGuestByResidentNumberAsync(
+        string residentNumber,
         int conventionId,
         CancellationToken cancellationToken = default);
 }
@@ -190,55 +189,6 @@ public interface IGuestAttributeRepository : IRepository<GuestAttribute>
         int guestId,
         string attributeKey,
         string attributeValue,
-        CancellationToken cancellationToken = default);
-}
-
-/// <summary>
-/// Companion Repository 인터페이스
-/// </summary>
-public interface ICompanionRepository : IRepository<Companion>
-{
-    /// <summary>
-    /// 특정 참석자의 모든 동반자를 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Companion>> GetCompanionsByGuestIdAsync(
-        int guestId,
-        CancellationToken cancellationToken = default);
-}
-
-/// <summary>
-/// GuestSchedule Repository 인터페이스
-/// </summary>
-public interface IGuestScheduleRepository : IRepository<GuestSchedule>
-{
-    /// <summary>
-    /// 특정 참석자의 모든 일정을 조회합니다.
-    /// </summary>
-    Task<IEnumerable<GuestSchedule>> GetSchedulesByGuestIdAsync(
-        int guestId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 특정 일정에 참여하는 모든 참석자를 조회합니다.
-    /// </summary>
-    Task<IEnumerable<GuestSchedule>> GetGuestsByScheduleIdAsync(
-        int scheduleId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 참석자를 일정에 등록합니다.
-    /// </summary>
-    Task<GuestSchedule> AssignGuestToScheduleAsync(
-        int guestId,
-        int scheduleId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 참석자를 일정에서 제거합니다.
-    /// </summary>
-    Task<bool> RemoveGuestFromScheduleAsync(
-        int guestId,
-        int scheduleId,
         CancellationToken cancellationToken = default);
 }
 

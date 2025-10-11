@@ -1,12 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- SPA 설정 - 프로젝트 내부 경로 -->
     <SpaRoot>ClientApp\</SpaRoot>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
+    <!-- 개발 중에는 프론트엔드 자동 빌드 비활성화 -->
+    <BuildVueAppOnBuild>false</BuildVueAppOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,11 +26,10 @@
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
+    <PackageReference Include="EPPlus" Version="7.0.0" />
   </ItemGroup>
 
-  <!-- SPA 관련 파일들을 Visual Studio에서 보이도록 설정 -->
   <ItemGroup>
-    <!-- ClientApp 폴더의 주요 파일들을 프로젝트에 포함 -->
     <None Include="$(SpaRoot)package.json" />
     <None Include="$(SpaRoot)vite.config.js" />
     <None Include="$(SpaRoot)tailwind.config.js" />
@@ -40,7 +40,6 @@
     <None Include="$(SpaRoot)src\**\*.css" />
     <None Include="$(SpaRoot)public\**\*.*" />
     <Compile Remove="logs\**" />
-    <!-- node_modules는 제외 -->
     <Content Remove="$(SpaRoot)node_modules\**" />
     <Content Remove="logs\**" />
     <EmbeddedResource Remove="logs\**" />
@@ -48,15 +47,35 @@
     <None Remove="logs\**" />
   </ItemGroup>
 
-	<Target Name="BuildVueApp" BeforeTargets="Build">
-		<Exec Command="npm install" WorkingDirectory="ClientApp" />
+  <!-- 개발 중에는 주석 처리 -->
+  <!--
+  <Target Name="CleanWwwroot" BeforeTargets="BuildVueApp">
+    <RemoveDir Directories="wwwroot" />
+    <MakeDir Directories="wwwroot" />
+  </Target>
 
-		<Exec Command="npm run build" WorkingDirectory="ClientApp" />
+  <Target Name="BuildVueApp" BeforeTargets="Build" Condition="'$(BuildVueAppOnBuild)' == 'true'">
+    <Exec Command="npm install" WorkingDirectory="ClientApp" />
+    <Exec Command="npm run build" WorkingDirectory="ClientApp" />
+    
+    <ItemGroup>
+      <VueDistFiles Include="ClientApp\dist\**\*.*" />
+    </ItemGroup>
+    
+    <Copy SourceFiles="@(VueDistFiles)" DestinationFiles="@(VueDistFiles->'wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+  -->
 
-		<ItemGroup>
-			<VueDistFiles Include="ClientApp/dist/**" />
-		</ItemGroup>
-
-		<Copy SourceFiles="@(VueDistFiles)" DestinationFolder="wwwroot/%(RecursiveDir)" />
-	</Target>
+  <Target Name="PublishVueApp" AfterTargets="ComputeFilesToPublish">
+    <Exec Command="npm install" WorkingDirectory="ClientApp" Condition="!Exists('ClientApp\node_modules')" />
+    <Exec Command="npm run build" WorkingDirectory="ClientApp" />
+    
+    <ItemGroup>
+      <VueDistFiles Include="ClientApp\dist\**\*.*" />
+      <ResolvedFileToPublish Include="@(VueDistFiles)">
+        <RelativePath>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 </Project>

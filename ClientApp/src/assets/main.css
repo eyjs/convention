@@ -1,3 +1,90 @@
-﻿@import 'tailwindcss/base';
+@import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+/* CSS 변수 - 기본 테마 (iFA Teal) */
+:root {
+  --color-primary-50: 240 253 249;
+  --color-primary-100: 204 251 239;
+  --color-primary-200: 153 246 224;
+  --color-primary-300: 95 233 208;
+  --color-primary-400: 45 212 191;
+  --color-primary-500: 20 184 166;
+  --color-primary-600: 13 148 136;
+  --color-primary-700: 15 118 110;
+  --color-primary-800: 17 94 89;
+  --color-primary-900: 19 78 74;
+}
+
+/* 전역 스타일 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* iOS Safari 전용 스타일 */
+@supports (-webkit-touch-callout: none) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* 커스텀 스크롤바 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-primary-500));
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--color-primary-600));
+}
+
+/* 터치 피드백 */
+.touch-feedback:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* 텍스트 선택 방지 */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 로딩 스피너 */
+.spinner {
+  border: 3px solid rgba(var(--color-primary-200), 0.3);
+  border-top: 3px solid rgb(var(--color-primary-600));
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

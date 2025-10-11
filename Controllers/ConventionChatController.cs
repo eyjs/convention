@@ -3,11 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LocalRAG.Controllers;
 
-/// <summary>
-/// Convention 챗봇 API
-/// 
-/// 사용자가 Convention 데이터에 대해 자연어로 질문하고 답변을 받을 수 있습니다.
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class ConventionChatController : ControllerBase
@@ -26,16 +21,6 @@ public class ConventionChatController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>
-    /// 일반 질문
-    /// </summary>
-    /// <remarks>
-    /// 예시 요청:
-    /// POST /api/conventionchat/ask
-    /// {
-    ///   "question": "이번 주에 예정된 행사가 있나요?"
-    /// }
-    /// </remarks>
     [HttpPost("ask")]
     public async Task<ActionResult<ChatResponse>> Ask([FromBody] AskRequest request)
     {
@@ -46,11 +31,14 @@ public class ConventionChatController : ControllerBase
                 return BadRequest(new { message = "질문을 입력해주세요." });
             }
 
-            var response = await _chatService.AskAsync(
-                request.Question, 
-                request.ConventionId);
+            var userContext = CreateUserContext(request);
+            var response = await _chatService.AskAsync(request.Question, request.ConventionId, userContext);
 
             return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -59,20 +47,8 @@ public class ConventionChatController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 특정 행사에 대한 질문
-    /// </summary>
-    /// <remarks>
-    /// 예시 요청:
-    /// POST /api/conventionchat/conventions/1/ask
-    /// {
-    ///   "question": "이번 행사의 일정을 알려주세요"
-    /// }
-    /// </remarks>
     [HttpPost("conventions/{conventionId}/ask")]
-    public async Task<ActionResult<ChatResponse>> AskAboutConvention(
-        int conventionId,
-        [FromBody] AskRequest request)
+    public async Task<ActionResult<ChatResponse>> AskAboutConvention(int conventionId, [FromBody] AskRequest request)
     {
         try
         {
@@ -81,11 +57,14 @@ public class ConventionChatController : ControllerBase
                 return BadRequest(new { message = "질문을 입력해주세요." });
             }
 
-            var response = await _chatService.AskAboutConventionAsync(
-                conventionId, 
-                request.Question);
+            var userContext = CreateUserContext(request);
+            var response = await _chatService.AskAboutConventionAsync(conventionId, request.Question, userContext);
 
             return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {
@@ -98,19 +77,22 @@ public class ConventionChatController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 추천 질문 가져오기
-    /// </summary>
-    /// <remarks>
-    /// 예시 요청:
-    /// GET /api/conventionchat/conventions/1/suggestions
-    /// </remarks>
     [HttpGet("conventions/{conventionId}/suggestions")]
-    public async Task<ActionResult<List<string>>> GetSuggestedQuestions(int conventionId)
+    public async Task<ActionResult<List<string>>> GetSuggestedQuestions(int conventionId, [FromQuery] string? role = null, [FromQuery] int? guestId = null)
     {
         try
         {
-            var suggestions = await _chatService.GetSuggestedQuestionsAsync(conventionId);
+            ChatUserContext? userContext = null;
+            if (!string.IsNullOrEmpty(role))
+            {
+                userContext = new ChatUserContext
+                {
+                    Role = Enum.Parse<UserRole>(role, true),
+                    GuestId = guestId
+                };
+            }
+
+            var suggestions = await _chatService.GetSuggestedQuestionsAsync(conventionId, userContext);
             return Ok(suggestions);
         }
         catch (Exception ex)
@@ -120,13 +102,6 @@ public class ConventionChatController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 전체 데이터 재색인
-    /// </summary>
-    /// <remarks>
-    /// 예시 요청:
-    /// POST /api/conventionchat/reindex
-    /// </remarks>
     [HttpPost("reindex")]
     public async Task<ActionResult<IndexingResult>> ReindexAll()
     {
@@ -149,13 +124,6 @@ public class ConventionChatController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 특정 행사 색인
-    /// </summary>
-    /// <remarks>
-    /// 예시 요청:
-    /// POST /api/conventionchat/conventions/1/index
-    /// </remarks>
     [HttpPost("conventions/{conventionId}/index")]
     public async Task<ActionResult> IndexConvention(int conventionId)
     {
@@ -181,21 +149,23 @@ public class ConventionChatController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 대화 히스토리를 포함한 질문 (추후 구현)
-    /// </summary>
     [HttpPost("ask/with-history")]
-    public async Task<ActionResult<ChatResponse>> AskWithHistory(
-        [FromBody] AskWithHistoryRequest request)
+    public async Task<ActionResult<ChatResponse>> AskWithHistory([FromBody] AskWithHistoryRequest request)
     {
         try
         {
+            var userContext = CreateUserContext(request);
             var response = await _chatService.AskWithHistoryAsync(
                 request.Question,
                 request.History ?? new List<ChatMessage>(),
-                request.ConventionId);
+                request.ConventionId,
+                userContext);
 
             return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -203,27 +173,35 @@ public class ConventionChatController : ControllerBase
             return StatusCode(500, new { message = "답변 생성 중 오류가 발생했습니다." });
         }
     }
+
+    private ChatUserContext? CreateUserContext(BaseAskRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Role))
+            return null;
+
+        return new ChatUserContext
+        {
+            Role = Enum.Parse<UserRole>(request.Role, true),
+            GuestId = request.GuestId,
+            MemberId = request.MemberId
+        };
+    }
 }
 
-// ============================================================
-// DTOs
-// ============================================================
-
-/// <summary>
-/// 질문 요청
-/// </summary>
-public class AskRequest
+public class BaseAskRequest
 {
     public string Question { get; set; } = string.Empty;
     public int? ConventionId { get; set; }
+    public string? Role { get; set; }
+    public int? GuestId { get; set; }
+    public string? MemberId { get; set; }
 }
 
-/// <summary>
-/// 히스토리 포함 질문 요청
-/// </summary>
-public class AskWithHistoryRequest
+public class AskRequest : BaseAskRequest
 {
-    public string Question { get; set; } = string.Empty;
-    public int? ConventionId { get; set; }
+}
+
+public class AskWithHistoryRequest : BaseAskRequest
+{
     public List<ChatMessage>? History { get; set; }
 }

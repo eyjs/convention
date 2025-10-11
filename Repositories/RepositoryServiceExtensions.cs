@@ -38,8 +38,6 @@ public static class RepositoryServiceExtensions
         services.AddScoped<IGuestRepository, GuestRepository>();
         services.AddScoped<IScheduleRepository, ScheduleRepository>();
         services.AddScoped<IGuestAttributeRepository, GuestAttributeRepository>();
-        services.AddScoped<ICompanionRepository, CompanionRepository>();
-        services.AddScoped<IGuestScheduleRepository, GuestScheduleRepository>();
         services.AddScoped<IFeatureRepository, FeatureRepository>();
         services.AddScoped<IMenuRepository, MenuRepository>();
         services.AddScoped<ISectionRepository, SectionRepository>();

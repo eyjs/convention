@@ -1,14 +1,19 @@
-﻿import { createApp } from 'vue'
+import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import router from './router'
+import { useAuthStore } from './stores/auth'
 
 import App from './App.vue'
-import './assets/main.css' // 전역 CSS 파일 임포트
+import './assets/main.css'
 
-// 1. Vue 앱 인스턴스 생성
 const app = createApp(App)
+const pinia = createPinia()
 
-// 2. Pinia 플러그인 등록
-app.use(createPinia())
+app.use(pinia)
+app.use(router)
 
-// 3. 앱을 index.html의 #app 요소에 마운트
+// Auth 초기화
+const authStore = useAuthStore()
+authStore.initAuth()
+
 app.mount('#app')

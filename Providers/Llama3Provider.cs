@@ -24,9 +24,17 @@ public class Llama3Provider : ILlmProvider
     {
         try
         {
+            var systemPrompt = @"당신은 친절하고 전문적인 AI 어시스턴트입니다. 
+모든 답변은 반드시 한국어로만 작성해야 합니다.
+답변 시 다음 규칙을 따르세요:
+1. 모든 답변은 한국어로만 작성
+2. 정확하고 명확한 정보 제공
+3. 컨텍스트에 있는 정보를 기반으로 답변
+4. 컨텍스트에 없는 내용은 추측하지 말 것";
+
             var fullPrompt = context != null 
-                ? $"Context: {context}\n\nQuestion: {prompt}\n\nAnswer based on the context provided:"
-                : prompt;
+                ? $"{systemPrompt}\n\n컨텍스트: {context}\n\n질문: {prompt}\n\n한국어로 답변:"
+                : $"{systemPrompt}\n\n질문: {prompt}\n\n한국어로 답변:";
 
             var request = new
             {
@@ -47,7 +55,9 @@ public class Llama3Provider : ILlmProvider
             var jsonResponse = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(jsonResponse);
             
-            return result.GetProperty("response").GetString() ?? "No response generated";
+            var answer = result.GetProperty("response").GetString() ?? "답변을 생성할 수 없습니다";
+            
+            return answer;
         }
         catch (Exception ex)
         {

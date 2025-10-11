@@ -1,386 +1,236 @@
-using LocalRAG.Models.Convention;
-using LocalRAG.Repositories;
-using LocalRAG.Services;
+using LocalRAG.Data;
+using LocalRAG.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Controllers;
 
-/// <summary>
-/// Convention API 컨트롤러 예시
-/// 
-/// Repository 패턴을 컨트롤러에서 사용하는 방법을 보여줍니다.
-/// 실제로는 Service Layer를 통해 사용하는 것이 권장됩니다.
-/// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/conventions")]
 public class ConventionsController : ControllerBase
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ConventionService _conventionService;
+    private readonly ConventionDbContext _context;
+    private readonly ILogger<ConventionsController> _logger;
 
-    /// <summary>
-    /// 생성자 주입
-    /// 
-    /// 두 가지 방식 모두 사용 가능:
-    /// 1. IUnitOfWork 직접 주입 (간단한 CRUD)
-    /// 2. Service 주입 (복잡한 비즈니스 로직)
-    /// </summary>
-    public ConventionsController(
-        IUnitOfWork unitOfWork,
-        ConventionService conventionService)
+    public ConventionsController(ConventionDbContext context, ILogger<ConventionsController> _logger)
     {
-        _unitOfWork = unitOfWork;
-        _conventionService = conventionService;
+        _context = context;
+        this._logger = _logger;
     }
 
-    // ============================================================
-    // GET 요청 예시
-    // ============================================================
-
-    /// <summary>
-    /// 모든 활성 행사를 조회합니다.
-    /// </summary>
-    /// <remarks>
-    /// 예시 요청:
-    /// GET /api/conventions
-    /// </remarks>
+    // GET: api/conventions
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Convention>>> GetActiveConventions()
+    public async Task<IActionResult> GetConventions([FromQuery] bool includeDeleted = false)
     {
-        try
+        var query = _context.Conventions.AsQueryable();
+
+        if (!includeDeleted)
         {
-            // Service Layer 사용
-            var conventions = await _conventionService.GetActiveConventionsAsync();
-            return Ok(conventions);
+            query = query.Where(c => c.DeleteYn == "N");
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "서버 오류", error = ex.Message });
-        }
+
+        var conventions = await query
+            .OrderByDescending(c => c.RegDtm)
+            .Select(c => new
+            {
+                c.Id,
+                c.Title,
+                c.ConventionType,
+                c.StartDate,
+                c.EndDate,
+                c.BrandColor,
+                c.DeleteYn,
+                c.CompleteYn,
+                c.RegDtm,
+                GuestCount = c.Guests.Count,
+                ScheduleCount = c.ScheduleTemplates.Count
+            })
+            .ToListAsync();
+
+        return Ok(conventions);
     }
 
-    /// <summary>
-    /// 특정 행사의 상세 정보를 조회합니다.
-    /// </summary>
-    /// <remarks>
-    /// 예시 요청:
-    /// GET /api/conventions/1
-    /// </remarks>
+    // GET: api/conventions/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<Convention>> GetConventionById(int id)
+    public async Task<IActionResult> GetConvention(int id)
     {
-        try
-        {
-            // Repository 직접 사용 (간단한 조회)
-            var convention = await _unitOfWork.Conventions.GetConventionWithDetailsAsync(id);
+        var convention = await _context.Conventions
+            .Include(c => c.Guests)
+            .Include(c => c.ScheduleTemplates)
+            .Include(c => c.Features)
+            .Include(c => c.Owners)
+            .FirstOrDefaultAsync(c => c.Id == id);
 
-            if (convention == null)
-            {
-                return NotFound(new { message = $"행사 ID {id}를 찾을 수 없습니다." });
-            }
-
-            return Ok(convention);
-        }
-        catch (Exception ex)
+        if (convention == null)
         {
-            return StatusCode(500, new { message = "서버 오류", error = ex.Message });
+            return NotFound(new { message = "행사를 찾을 수 없습니다." });
         }
+
+        return Ok(new
+        {
+            convention.Id,
+            convention.Title,
+            convention.ConventionType,
+            convention.RenderType,
+            convention.StartDate,
+            convention.EndDate,
+            convention.BrandColor,
+            convention.ThemePreset,
+            convention.DeleteYn,
+            convention.CompleteYn,
+            convention.RegDtm,
+            GuestCount = convention.Guests.Count,
+            ScheduleCount = convention.ScheduleTemplates.Count,
+            Features = convention.Features.Select(f => new { f.FeatureName, f.IsEnabled }),
+            Owners = convention.Owners.Select(o => new { o.Name, o.Telephone })
+        });
     }
 
-    /// <summary>
-    /// 페이징된 행사 목록을 조회합니다.
-    /// </summary>
-    /// <remarks>
-    /// 예시 요청:
-    /// GET /api/conventions/paged?pageNumber=1&amp;pageSize=10&amp;conventionType=DOMESTIC
-    /// </remarks>
-    [HttpGet("paged")]
-    public async Task<ActionResult> GetConventionsPaged(
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? conventionType = null)
-    {
-        try
-        {
-            var (items, totalCount, totalPages) = await _conventionService.GetConventionsPagedAsync(
-                pageNumber,
-                pageSize,
-                conventionType);
-
-            return Ok(new
-            {
-                items,
-                pagination = new
-                {
-                    currentPage = pageNumber,
-                    pageSize,
-                    totalCount,
-                    totalPages
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "서버 오류", error = ex.Message });
-        }
-    }
-
-    // ============================================================
-    // POST 요청 예시
-    // ============================================================
-
-    /// <summary>
-    /// 새로운 행사를 생성합니다.
-    /// </summary>
-    /// <remarks>
-    /// 예시 요청:
-    /// POST /api/conventions
-    /// {
-    ///   "title": "2025 해외 워크샵",
-    ///   "conventionType": "OVERSEAS",
-    ///   "renderType": "STANDARD",
-    ///   "startDate": "2025-03-15",
-    ///   "endDate": "2025-03-18"
-    /// }
-    /// </remarks>
+    // POST: api/conventions
     [HttpPost]
-    public async Task<ActionResult<Convention>> CreateConvention(
-        [FromBody] ConventionCreateDto dto)
+    public async Task<IActionResult> CreateConvention([FromBody] CreateConventionRequest request)
     {
-        try
+        var convention = new Convention
         {
-            // DTO에서 엔티티로 변환
-            var convention = new Convention
-            {
-                Title = dto.Title,
-                ConventionType = dto.ConventionType,
-                RenderType = dto.RenderType,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
-                ConventionImg = dto.ConventionImg
-            };
+            MemberId = "admin", // TODO: 실제 사용자 ID
+            Title = request.Title,
+            ConventionType = request.ConventionType,
+            RenderType = request.RenderType ?? "STANDARD",
+            StartDate = request.StartDate,
+            EndDate = request.EndDate,
+            BrandColor = request.BrandColor ?? "#6366f1",
+            ThemePreset = request.ThemePreset ?? "default",
+            RegDtm = DateTime.Now,
+            DeleteYn = "N",
+            CompleteYn = "N"
+        };
 
-            // Service를 통한 생성
-            var created = await _conventionService.CreateConventionAsync(convention);
+        _context.Conventions.Add(convention);
+        await _context.SaveChangesAsync();
 
-            // 201 Created 응답 (Location 헤더 포함)
-            return CreatedAtAction(
-                nameof(GetConventionById),
-                new { id = created.Id },
-                created);
-        }
-        catch (Exception ex)
+        // 기본 Features 추가
+        var defaultFeatures = new[]
         {
-            return StatusCode(500, new { message = "생성 실패", error = ex.Message });
-        }
+            new Feature { ConventionId = convention.Id, FeatureName = "Schedule", IsEnabled = "Y" },
+            new Feature { ConventionId = convention.Id, FeatureName = "Chat", IsEnabled = "Y" },
+            new Feature { ConventionId = convention.Id, FeatureName = "Gallery", IsEnabled = "Y" },
+            new Feature { ConventionId = convention.Id, FeatureName = "Board", IsEnabled = "Y" }
+        };
+
+        _context.Features.AddRange(defaultFeatures);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetConvention), new { id = convention.Id }, new
+        {
+            convention.Id,
+            convention.Title,
+            convention.ConventionType,
+            convention.StartDate,
+            convention.EndDate,
+            message = "행사가 생성되었습니다."
+        });
     }
 
-    /// <summary>
-    /// 행사와 담당자를 함께 생성합니다.
-    /// </summary>
-    [HttpPost("with-owners")]
-    public async Task<ActionResult<Convention>> CreateConventionWithOwners(
-        [FromBody] ConventionWithOwnersDto dto)
-    {
-        try
-        {
-            var convention = new Convention
-            {
-                Title = dto.Title,
-                ConventionType = dto.ConventionType,
-                RenderType = dto.RenderType,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate
-            };
-
-            var owners = dto.Owners.Select(o => new Owner
-            {
-                Name = o.Name,
-                Telephone = o.Telephone
-            }).ToList();
-
-            var created = await _conventionService.CreateConventionWithOwnersAsync(
-                convention,
-                owners);
-
-            return CreatedAtAction(
-                nameof(GetConventionById),
-                new { id = created.Id },
-                created);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "생성 실패", error = ex.Message });
-        }
-    }
-
-    // ============================================================
-    // PUT 요청 예시
-    // ============================================================
-
-    /// <summary>
-    /// 행사 정보를 수정합니다.
-    /// </summary>
-    /// <remarks>
-    /// 예시 요청:
-    /// PUT /api/conventions/1
-    /// {
-    ///   "title": "수정된 행사명",
-    ///   "conventionType": "DOMESTIC",
-    ///   "startDate": "2025-04-01"
-    /// }
-    /// </remarks>
+    // PUT: api/conventions/5
     [HttpPut("{id}")]
-    public async Task<ActionResult> UpdateConvention(
-        int id,
-        [FromBody] ConventionUpdateDto dto)
+    public async Task<IActionResult> UpdateConvention(int id, [FromBody] UpdateConventionRequest request)
     {
-        try
+        var convention = await _context.Conventions.FindAsync(id);
+        if (convention == null)
         {
-            var updatedData = new Convention
-            {
-                Title = dto.Title,
-                ConventionType = dto.ConventionType,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
-                ConventionImg = dto.ConventionImg
-            };
-
-            var success = await _conventionService.UpdateConventionAsync(id, updatedData);
-
-            if (!success)
-            {
-                return NotFound(new { message = $"행사 ID {id}를 찾을 수 없습니다." });
-            }
-
-            return NoContent(); // 204 No Content
+            return NotFound(new { message = "행사를 찾을 수 없습니다." });
         }
-        catch (Exception ex)
+
+        convention.Title = request.Title;
+        convention.ConventionType = request.ConventionType;
+        convention.RenderType = request.RenderType ?? convention.RenderType;
+        convention.StartDate = request.StartDate;
+        convention.EndDate = request.EndDate;
+        convention.BrandColor = request.BrandColor ?? convention.BrandColor;
+        convention.ThemePreset = request.ThemePreset ?? convention.ThemePreset;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
         {
-            return StatusCode(500, new { message = "수정 실패", error = ex.Message });
-        }
+            convention.Id,
+            convention.Title,
+            message = "행사 정보가 수정되었습니다."
+        });
     }
 
-    // ============================================================
-    // DELETE 요청 예시
-    // ============================================================
-
-    /// <summary>
-    /// 행사를 소프트 삭제합니다.
-    /// </summary>
-    /// <remarks>
-    /// 예시 요청:
-    /// DELETE /api/conventions/1
-    /// </remarks>
+    // DELETE: api/conventions/5 (Soft Delete)
     [HttpDelete("{id}")]
-    public async Task<ActionResult> DeleteConvention(int id)
+    public async Task<IActionResult> SoftDeleteConvention(int id)
     {
-        try
+        var convention = await _context.Conventions.FindAsync(id);
+        if (convention == null)
         {
-            var success = await _conventionService.SoftDeleteConventionAsync(id);
-
-            if (!success)
-            {
-                return NotFound(new { message = $"행사 ID {id}를 찾을 수 없습니다." });
-            }
-
-            return NoContent(); // 204 No Content
+            return NotFound(new { message = "행사를 찾을 수 없습니다." });
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "삭제 실패", error = ex.Message });
-        }
+
+        convention.DeleteYn = "Y";
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "행사가 삭제되었습니다." });
     }
 
-    // ============================================================
-    // 통계 및 검색 예시
-    // ============================================================
-
-    /// <summary>
-    /// 행사 통계를 조회합니다.
-    /// </summary>
-    [HttpGet("{id}/statistics")]
-    public async Task<ActionResult<ConventionStatistics>> GetStatistics(int id)
+    // POST: api/conventions/5/complete
+    [HttpPost("{id}/complete")]
+    public async Task<IActionResult> CompleteConvention(int id)
     {
-        try
+        var convention = await _context.Conventions.FindAsync(id);
+        if (convention == null)
         {
-            var stats = await _conventionService.GetConventionStatisticsAsync(id);
-            return Ok(stats);
+            return NotFound(new { message = "행사를 찾을 수 없습니다." });
         }
-        catch (KeyNotFoundException ex)
+
+        convention.CompleteYn = convention.CompleteYn == "Y" ? "N" : "Y";
+        await _context.SaveChangesAsync();
+
+        return Ok(new
         {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "서버 오류", error = ex.Message });
-        }
+            convention.Id,
+            convention.CompleteYn,
+            message = convention.CompleteYn == "Y" ? "행사가 종료되었습니다." : "행사가 재개되었습니다."
+        });
     }
 
-    /// <summary>
-    /// 참석자를 검색합니다.
-    /// </summary>
-    [HttpGet("{conventionId}/guests/search")]
-    public async Task<ActionResult<IEnumerable<Guest>>> SearchGuests(
-        int conventionId,
-        [FromQuery] string keyword)
+    // POST: api/conventions/5/restore
+    [HttpPost("{id}/restore")]
+    public async Task<IActionResult> RestoreConvention(int id)
     {
-        try
+        var convention = await _context.Conventions.FindAsync(id);
+        if (convention == null)
         {
-            var guests = await _conventionService.SearchGuestsAsync(keyword, conventionId);
-            return Ok(guests);
+            return NotFound(new { message = "행사를 찾을 수 없습니다." });
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "검색 실패", error = ex.Message });
-        }
+
+        convention.DeleteYn = "N";
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "행사가 복원되었습니다." });
     }
 }
 
-// ============================================================
-// DTO 클래스들
-// ============================================================
-
-/// <summary>
-/// 행사 생성 DTO
-/// </summary>
-public class ConventionCreateDto
+public class CreateConventionRequest
 {
     public string Title { get; set; } = string.Empty;
-    public string ConventionType { get; set; } = string.Empty;
-    public string RenderType { get; set; } = "STANDARD";
-    public string? ConventionImg { get; set; }
+    public string ConventionType { get; set; } = "DOMESTIC";
+    public string? RenderType { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
+    public string? BrandColor { get; set; }
+    public string? ThemePreset { get; set; }
 }
 
-/// <summary>
-/// 행사 수정 DTO
-/// </summary>
-public class ConventionUpdateDto
+public class UpdateConventionRequest
 {
     public string Title { get; set; } = string.Empty;
-    public string ConventionType { get; set; } = string.Empty;
-    public string? ConventionImg { get; set; }
+    public string ConventionType { get; set; } = "DOMESTIC";
+    public string? RenderType { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
-}
-
-/// <summary>
-/// 담당자 포함 행사 생성 DTO
-/// </summary>
-public class ConventionWithOwnersDto
-{
-    public string Title { get; set; } = string.Empty;
-    public string ConventionType { get; set; } = string.Empty;
-    public string RenderType { get; set; } = "STANDARD";
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
-    public List<OwnerDto> Owners { get; set; } = new();
-}
-
-public class OwnerDto
-{
-    public string Name { get; set; } = string.Empty;
-    public string Telephone { get; set; } = string.Empty;
+    public string? BrandColor { get; set; }
+    public string? ThemePreset { get; set; }
 }

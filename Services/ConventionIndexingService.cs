@@ -1,5 +1,5 @@
 using LocalRAG.Interfaces;
-using LocalRAG.Models.Convention;
+using LocalRAG.Models;
 using LocalRAG.Repositories;
 using System.Text;
 
@@ -231,9 +231,9 @@ public class ConventionIndexingService
 
         sb.AppendLine($"참석자명: {guest.GuestName}");
         
-        if (!string.IsNullOrEmpty(guest.CorpHrId))
+        if (!string.IsNullOrEmpty(guest.ResidentNumber))
         {
-            sb.AppendLine($"사번: {guest.CorpHrId}");
+            sb.AppendLine($"주민번호: {guest.ResidentNumber}");
         }
         
         if (!string.IsNullOrEmpty(guest.CorpPart))
@@ -242,23 +242,18 @@ public class ConventionIndexingService
         }
 
         // 속성 정보
-        if (guest.Attributes?.Any() == true)
+        if (guest.GuestAttributes?.Any() == true)
         {
             sb.AppendLine("\n추가 정보:");
-            foreach (var attr in guest.Attributes)
+            foreach (var attr in guest.GuestAttributes)
             {
                 sb.AppendLine($"- {attr.AttributeKey}: {attr.AttributeValue}");
             }
         }
 
-        // 동반자 정보
-        if (guest.Companions?.Any() == true)
+        if (!string.IsNullOrEmpty(guest.Affiliation))
         {
-            sb.AppendLine("\n동반자:");
-            foreach (var companion in guest.Companions)
-            {
-                sb.AppendLine($"- {companion.Name} ({companion.Relation})");
-            }
+            sb.AppendLine($"소속: {guest.Affiliation}");
         }
 
         return sb.ToString();

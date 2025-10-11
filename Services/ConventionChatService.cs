@@ -3,11 +3,6 @@ using LocalRAG.Repositories;
 
 namespace LocalRAG.Services;
 
-/// <summary>
-/// Convention 챗봇 서비스
-/// 
-/// 사용자의 질문에 대해 RAG를 사용하여 답변을 생성합니다.
-/// </summary>
 public class ConventionChatService
 {
     private readonly IRagService _ragService;
@@ -24,20 +19,16 @@ public class ConventionChatService
         _logger = logger;
     }
 
-    /// <summary>
-    /// 사용자 질문에 답변합니다.
-    /// </summary>
-    public async Task<ChatResponse> AskAsync(string question, int? conventionId = null)
+    public async Task<ChatResponse> AskAsync(string question, int? conventionId = null, ChatUserContext? userContext = null)
     {
-        _logger.LogInformation("Processing question: {Question}", question);
+        _logger.LogInformation("Processing question: {Question}, ConventionId: {ConventionId}, Role: {Role}", 
+            question, conventionId, userContext?.Role);
 
         try
         {
-            // RAG로 답변 생성
             var ragResponse = await _ragService.QueryAsync(question, topK: 5);
-
-            // Convention ID가 지정된 경우 필터링
             var sources = ragResponse.Sources;
+
             if (conventionId.HasValue)
             {
                 sources = sources
@@ -47,7 +38,11 @@ public class ConventionChatService
                     .ToList();
             }
 
-            // 응답 구성
+            if (userContext != null)
+            {
+                sources = await FilterSourcesByPermission(sources, userContext);
+            }
+
             var response = new ChatResponse
             {
                 Answer = ragResponse.Answer,
@@ -62,8 +57,7 @@ public class ConventionChatService
                 LlmProvider = ragResponse.LlmProvider
             };
 
-            _logger.LogInformation(
-                "Answer generated. Sources: {SourceCount}, Provider: {Provider}",
+            _logger.LogInformation("Answer generated. Sources: {SourceCount}, Provider: {Provider}", 
                 response.Sources.Count, response.LlmProvider);
 
             return response;
@@ -75,31 +69,80 @@ public class ConventionChatService
         }
     }
 
-    /// <summary>
-    /// 특정 Convention에 대해 질문합니다.
-    /// </summary>
-    public async Task<ChatResponse> AskAboutConventionAsync(
-        int conventionId, 
-        string question)
+    private async Task<List<VectorSearchResult>> FilterSourcesByPermission(List<VectorSearchResult> sources, ChatUserContext userContext)
     {
-        // Convention 존재 확인
+        switch (userContext.Role)
+        {
+            case UserRole.Admin:
+                return sources;
+
+            case UserRole.Guest:
+                if (!userContext.GuestId.HasValue)
+                    return new List<VectorSearchResult>();
+
+                return sources.Where(s =>
+                {
+                    if (s.Metadata == null) return false;
+
+                    var type = s.Metadata.GetValueOrDefault("type")?.ToString();
+                    
+                    if (type == "convention" || type == "schedule" || type == "menu")
+                        return true;
+
+                    if (type == "guest" && s.Metadata.ContainsKey("guest_id"))
+                    {
+                        var guestId = s.Metadata["guest_id"];
+                        return guestId != null && (int)guestId == userContext.GuestId.Value;
+                    }
+
+                    return false;
+                }).ToList();
+
+            default:
+                return new List<VectorSearchResult>();
+        }
+    }
+
+    public async Task<ChatResponse> AskAboutConventionAsync(int conventionId, string question, ChatUserContext? userContext = null)
+    {
         var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
         if (convention == null)
         {
             throw new ArgumentException($"Convention {conventionId} not found");
         }
 
-        return await AskAsync(question, conventionId);
+        if (userContext != null)
+        {
+            var hasAccess = await VerifyConventionAccess(conventionId, userContext);
+            if (!hasAccess)
+            {
+                throw new UnauthorizedAccessException("해당 행사에 접근 권한이 없습니다.");
+            }
+        }
+
+        return await AskAsync(question, conventionId, userContext);
     }
 
-    /// <summary>
-    /// 추천 질문을 생성합니다.
-    /// </summary>
-    public async Task<List<string>> GetSuggestedQuestionsAsync(int conventionId)
+    private async Task<bool> VerifyConventionAccess(int conventionId, ChatUserContext userContext)
     {
-        var convention = await _unitOfWork.Conventions
-            .GetConventionWithDetailsAsync(conventionId);
+        switch (userContext.Role)
+        {
+            case UserRole.Admin:
+                return true;
 
+            case UserRole.Guest:
+                if (!userContext.GuestId.HasValue) return false;
+                var guest = await _unitOfWork.Guests.GetByIdAsync(userContext.GuestId.Value);
+                return guest?.ConventionId == conventionId;
+
+            default:
+                return false;
+        }
+    }
+
+    public async Task<List<string>> GetSuggestedQuestionsAsync(int conventionId, ChatUserContext? userContext = null)
+    {
+        var convention = await _unitOfWork.Conventions.GetConventionWithDetailsAsync(conventionId);
         if (convention == null)
         {
             return new List<string>();
@@ -108,44 +151,44 @@ public class ConventionChatService
         var suggestions = new List<string>
         {
             $"{convention.Title} 행사는 언제 진행되나요?",
-            "이번 행사의 담당자는 누구인가요?",
+            "오늘 일정은 무엇인가요?",
             "행사 일정을 알려주세요"
         };
 
-        if (convention.Guests?.Any() == true)
+        if (userContext?.Role == UserRole.Guest)
         {
-            suggestions.Add("참석자 명단을 알려주세요");
-            suggestions.Add($"참석자는 총 몇 명인가요?");
+            suggestions.Add("내 정보를 알려주세요");
+            suggestions.Add("내 일정을 알려주세요");
         }
 
-        if (convention.Schedules?.Any() == true)
+        if (userContext?.Role == UserRole.Admin)
         {
-            suggestions.Add("오늘 일정은 무엇인가요?");
-            var firstScheduleDate = convention.Schedules
-                .Min(s => s.ScheduleDate);
-            suggestions.Add($"{firstScheduleDate:MM월 dd일} 일정을 알려주세요");
+            suggestions.Add("참석자 명단을 알려주세요");
+            suggestions.Add("참석자는 총 몇 명인가요?");
         }
 
         return suggestions;
     }
 
-    /// <summary>
-    /// 대화 히스토리를 고려한 답변 생성 (추후 구현)
-    /// </summary>
-    public async Task<ChatResponse> AskWithHistoryAsync(
-        string question,
-        List<ChatMessage> history,
-        int? conventionId = null)
+    public async Task<ChatResponse> AskWithHistoryAsync(string question, List<ChatMessage> history, int? conventionId = null, ChatUserContext? userContext = null)
     {
-        // TODO: 대화 컨텍스트를 활용한 답변 생성
-        // 현재는 기본 AskAsync 사용
-        return await AskAsync(question, conventionId);
+        return await AskAsync(question, conventionId, userContext);
     }
 }
 
-/// <summary>
-/// 챗봇 응답
-/// </summary>
+public enum UserRole
+{
+    Admin,
+    Guest
+}
+
+public class ChatUserContext
+{
+    public UserRole Role { get; set; }
+    public int? GuestId { get; set; }
+    public string? MemberId { get; set; }
+}
+
 public class ChatResponse
 {
     public string Answer { get; set; } = string.Empty;
@@ -154,24 +197,18 @@ public class ChatResponse
     public DateTime Timestamp { get; set; } = DateTime.Now;
 }
 
-/// <summary>
-/// 출처 정보
-/// </summary>
 public class SourceInfo
 {
     public string Content { get; set; } = string.Empty;
     public float Similarity { get; set; }
-    public string Type { get; set; } = string.Empty; // convention, guest, schedule, menu
+    public string Type { get; set; } = string.Empty;
     public int? ConventionId { get; set; }
     public string? ConventionTitle { get; set; }
 }
 
-/// <summary>
-/// 대화 메시지
-/// </summary>
 public class ChatMessage
 {
-    public string Role { get; set; } = string.Empty; // user, assistant
+    public string Role { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; } = DateTime.Now;
 }

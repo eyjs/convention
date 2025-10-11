@@ -1,128 +1,8 @@
 using LocalRAG.Data;
-using LocalRAG.Models.Convention;
+using LocalRAG.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Repositories;
-
-/// <summary>
-/// Companion Repository 구현체
-/// </summary>
-public class CompanionRepository : Repository<Companion>, ICompanionRepository
-{
-    public CompanionRepository(ConventionDbContext context) : base(context)
-    {
-    }
-
-    public async Task<IEnumerable<Companion>> GetCompanionsByGuestIdAsync(
-        int guestId,
-        CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .AsNoTracking()
-            .Where(c => c.GuestId == guestId)
-            .OrderBy(c => c.Name)
-            .ToListAsync(cancellationToken);
-    }
-}
-
-/// <summary>
-/// GuestSchedule Repository 구현체
-/// 
-/// Many-to-Many 관계 처리:
-/// - Guest ↔ Schedule 간의 다대다 관계를 중간 테이블로 관리
-/// - Composite Key (GuestId + ScheduleId)를 사용
-/// </summary>
-public class GuestScheduleRepository : Repository<GuestSchedule>, IGuestScheduleRepository
-{
-    public GuestScheduleRepository(ConventionDbContext context) : base(context)
-    {
-    }
-
-    public async Task<IEnumerable<GuestSchedule>> GetSchedulesByGuestIdAsync(
-        int guestId,
-        CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .AsNoTracking()
-            .Include(gs => gs.Schedule)  // 일정 정보 포함
-            .Where(gs => gs.GuestId == guestId)
-            .OrderBy(gs => gs.Schedule.ScheduleDate)
-            .ThenBy(gs => gs.Schedule.OrderNum)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<GuestSchedule>> GetGuestsByScheduleIdAsync(
-        int scheduleId,
-        CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .AsNoTracking()
-            .Include(gs => gs.Guest)  // 참석자 정보 포함
-            .Where(gs => gs.ScheduleId == scheduleId)
-            .OrderBy(gs => gs.Guest.GuestName)
-            .ToListAsync(cancellationToken);
-    }
-
-    /// <summary>
-    /// 참석자를 일정에 등록합니다.
-    /// 
-    /// 중복 체크:
-    /// - 이미 등록된 경우 기존 데이터 반환
-    /// - 새로 등록하는 경우 추가 후 반환
-    /// </summary>
-    public async Task<GuestSchedule> AssignGuestToScheduleAsync(
-        int guestId,
-        int scheduleId,
-        CancellationToken cancellationToken = default)
-    {
-        // 중복 체크
-        var existing = await _dbSet
-            .FirstOrDefaultAsync(
-                gs => gs.GuestId == guestId && gs.ScheduleId == scheduleId,
-                cancellationToken);
-
-        if (existing != null)
-        {
-            return existing;
-        }
-
-        // 새로 등록
-        var guestSchedule = new GuestSchedule
-        {
-            GuestId = guestId,
-            ScheduleId = scheduleId
-        };
-
-        await _dbSet.AddAsync(guestSchedule, cancellationToken);
-        return guestSchedule;
-    }
-
-    /// <summary>
-    /// 참석자를 일정에서 제거합니다.
-    /// 
-    /// Composite Key 삭제:
-    /// - Find로 복합키를 사용하여 조회
-    /// - 존재하면 삭제
-    /// </summary>
-    public async Task<bool> RemoveGuestFromScheduleAsync(
-        int guestId,
-        int scheduleId,
-        CancellationToken cancellationToken = default)
-    {
-        var guestSchedule = await _dbSet
-            .FirstOrDefaultAsync(
-                gs => gs.GuestId == guestId && gs.ScheduleId == scheduleId,
-                cancellationToken);
-
-        if (guestSchedule == null)
-        {
-            return false;
-        }
-
-        _dbSet.Remove(guestSchedule);
-        return true;
-    }
-}
 
 /// <summary>
 /// Feature Repository 구현체
@@ -245,9 +125,6 @@ public class OwnerRepository : Repository<Owner>, IOwnerRepository
 
 /// <summary>
 /// VectorStore Repository 구현체
-/// 
-/// 참고: VectorStore는 Guid를 PK로 사용하므로 
-/// GetByIdAsync를 오버라이드해야 할 수 있습니다.
 /// </summary>
 public class VectorStoreRepository : Repository<VectorStore>, IVectorStoreRepository
 {

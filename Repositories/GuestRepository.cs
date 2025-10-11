@@ -1,5 +1,5 @@
 using LocalRAG.Data;
-using LocalRAG.Models.Convention;
+using LocalRAG.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Repositories;
@@ -38,10 +38,9 @@ public class GuestRepository : Repository<Guest>, IGuestRepository
     {
         return await _dbSet
             .AsNoTracking()
-            .Include(g => g.Attributes)
-            .Include(g => g.Companions)
-            .Include(g => g.GuestSchedules)
-                .ThenInclude(gs => gs.Schedule)
+            .Include(g => g.GuestAttributes)
+            .Include(g => g.GuestScheduleTemplates)
+                .ThenInclude(gst => gst.ScheduleTemplate)
             .FirstOrDefaultAsync(g => g.Id == guestId, cancellationToken);
     }
 
@@ -74,15 +73,15 @@ public class GuestRepository : Repository<Guest>, IGuestRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Guest?> GetGuestByCorpHrIdAsync(
-        string corpHrId,
+    public async Task<Guest?> GetGuestByResidentNumberAsync(
+        string residentNumber,
         int conventionId,
         CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                g => g.CorpHrId == corpHrId && g.ConventionId == conventionId,
+                g => g.ResidentNumber == residentNumber && g.ConventionId == conventionId,
                 cancellationToken);
     }
 }

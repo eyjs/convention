@@ -1,5 +1,5 @@
 using LocalRAG.Data;
-using LocalRAG.Models.Convention;
+using LocalRAG.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Repositories;
@@ -72,9 +72,7 @@ public class ConventionRepository : Repository<Convention>, IConventionRepositor
         return await _dbSet
             .AsNoTracking()
             .Include(c => c.Guests)                    // 참석자 포함
-                .ThenInclude(g => g.Attributes)        // 참석자의 속성 포함
-            .Include(c => c.Guests)
-                .ThenInclude(g => g.Companions)        // 참석자의 동반자 포함
+                .ThenInclude(g => g.GuestAttributes)   // 참석자의 속성 포함
             .Include(c => c.Schedules)                 // 일정 포함
             .Include(c => c.Features)                  // 기능 포함
             .Include(c => c.Owners)                    // 담당자 포함

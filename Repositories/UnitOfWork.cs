@@ -29,8 +29,6 @@ public class UnitOfWork : IUnitOfWork
     private IGuestRepository? _guests;
     private IScheduleRepository? _schedules;
     private IGuestAttributeRepository? _guestAttributes;
-    private ICompanionRepository? _companions;
-    private IGuestScheduleRepository? _guestSchedules;
     private IFeatureRepository? _features;
     private IMenuRepository? _menus;
     private ISectionRepository? _sections;
@@ -67,12 +65,6 @@ public class UnitOfWork : IUnitOfWork
 
     public IGuestAttributeRepository GuestAttributes =>
         _guestAttributes ??= new GuestAttributeRepository(_context);
-
-    public ICompanionRepository Companions =>
-        _companions ??= new CompanionRepository(_context);
-
-    public IGuestScheduleRepository GuestSchedules =>
-        _guestSchedules ??= new GuestScheduleRepository(_context);
 
     public IFeatureRepository Features =>
         _features ??= new FeatureRepository(_context);

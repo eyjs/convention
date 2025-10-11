@@ -27,12 +27,27 @@ public class GeminiProvider : ILlmProvider
     {
         try
         {
+            var systemInstruction = @"당신은 친절하고 전문적인 AI 어시스턴트입니다. 
+모든 답변은 반드시 한국어로만 작성해야 합니다.
+답변 시 다음 규칙을 따르세요:
+1. 모든 답변은 한국어로만 작성
+2. 정확하고 명확한 정보 제공
+3. 컨텍스트에 있는 정보를 기반으로 답변
+4. 컨텍스트에 없는 내용은 추측하지 말 것";
+
             var fullPrompt = context != null 
-                ? $"Context: {context}\n\nQuestion: {prompt}\n\nAnswer based on the context provided:"
-                : prompt;
+                ? $"컨텍스트: {context}\n\n질문: {prompt}\n\n한국어로 답변:"
+                : $"질문: {prompt}\n\n한국어로 답변:";
 
             var request = new
             {
+                system_instruction = new
+                {
+                    parts = new[]
+                    {
+                        new { text = systemInstruction }
+                    }
+                },
                 contents = new[]
                 {
                     new
@@ -72,11 +87,11 @@ public class GeminiProvider : ILlmProvider
                 var parts = content_result.GetProperty("parts");
                 if (parts.GetArrayLength() > 0)
                 {
-                    return parts[0].GetProperty("text").GetString() ?? "No response generated";
+                    return parts[0].GetProperty("text").GetString() ?? "답변을 생성할 수 없습니다";
                 }
             }
 
-            return "No response generated";
+            return "답변을 생성할 수 없습니다";
         }
         catch (Exception ex)
         {

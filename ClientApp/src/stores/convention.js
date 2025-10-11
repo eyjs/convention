@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { conventionService } from '@/services/api'
+import { conventionAPI } from '@/services/api'
 import dayjs from 'dayjs'
 
 export const useConventionStore = defineStore('convention', () => {
@@ -57,7 +57,7 @@ export const useConventionStore = defineStore('convention', () => {
     error.value = null
     
     try {
-      const response = await conventionService.getConventions()
+      const response = await conventionAPI.getConventions()
       conventions.value = response.data?.conventions || []
       
       // 첫 번째 컨벤션을 현재 컨벤션으로 설정
@@ -77,9 +77,9 @@ export const useConventionStore = defineStore('convention', () => {
     error.value = null
     
     try {
-      const response = await conventionService.getConvention(conventionId)
-      currentConvention.value = response.convention
-      schedules.value = response.schedules || []
+      const response = await conventionAPI.getConvention(conventionId)
+      currentConvention.value = response.data?.convention
+      schedules.value = response.data?.schedules || []
       
       // 첫 번째 사용 가능한 날짜로 설정
       const availableDates = getAvailableDates.value
@@ -97,8 +97,8 @@ export const useConventionStore = defineStore('convention', () => {
   async function fetchNotices(conventionId) {
     loading.value = true
     try {
-      const response = await conventionService.getNotices(conventionId)
-      notices.value = response.notices || []
+      const response = await conventionAPI.getConvention(conventionId)
+      notices.value = response.data?.notices || []
     } catch (err) {
       console.error('Failed to fetch notices:', err)
       notices.value = []
@@ -110,8 +110,8 @@ export const useConventionStore = defineStore('convention', () => {
   async function fetchTourInfo(conventionId) {
     loading.value = true
     try {
-      const response = await conventionService.getTourInfo(conventionId)
-      tourInfo.value = response.tours || []
+      const response = await conventionAPI.getConvention(conventionId)
+      tourInfo.value = response.data?.tours || []
     } catch (err) {
       console.error('Failed to fetch tour info:', err)
       tourInfo.value = []
@@ -123,8 +123,8 @@ export const useConventionStore = defineStore('convention', () => {
   async function fetchPhotos(conventionId) {
     loading.value = true
     try {
-      const response = await conventionService.getPhotos(conventionId)
-      photos.value = response.photos || []
+      const response = await conventionAPI.getConvention(conventionId)
+      photos.value = response.data?.photos || []
     } catch (err) {
       console.error('Failed to fetch photos:', err)
       photos.value = []

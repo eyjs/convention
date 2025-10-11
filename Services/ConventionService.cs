@@ -1,4 +1,4 @@
-using LocalRAG.Models.Convention;
+using LocalRAG.Models;
 using LocalRAG.Repositories;
 
 namespace LocalRAG.Services;
@@ -112,15 +112,13 @@ public class ConventionService
     // ============================================================
 
     /// <summary>
-    /// 참석자와 일정을 등록하는 복잡한 작업
+    /// 참석자를 등록하는 작업
     /// 
     /// 명시적 트랜잭션 사용 시나리오:
     /// - 여러 SaveChangesAsync 호출이 필요한 경우
     /// - 중간 결과를 확인하고 조건부로 진행해야 하는 경우
     /// </summary>
-    public async Task RegisterGuestWithSchedulesAsync(
-        Guest guest,
-        List<int> scheduleIds)
+    public async Task RegisterGuestAsync(Guest guest)
     {
         await _unitOfWork.BeginTransactionAsync();
 
@@ -130,16 +128,7 @@ public class ConventionService
             await _unitOfWork.Guests.AddAsync(guest);
             await _unitOfWork.SaveChangesAsync();
 
-            // 2. 일정 등록
-            foreach (var scheduleId in scheduleIds)
-            {
-                await _unitOfWork.GuestSchedules.AssignGuestToScheduleAsync(
-                    guest.Id,
-                    scheduleId);
-            }
-            await _unitOfWork.SaveChangesAsync();
-
-            // 3. 참석자 속성 추가
+            // 2. 참석자 속성 추가
             await _unitOfWork.GuestAttributes.UpsertAttributeAsync(
                 guest.Id,
                 "registration_date",
@@ -295,10 +284,10 @@ public class ConventionService
         // 기본값 설정
         foreach (var guest in guests)
         {
-            // 비즈니스 로직 적용
-            if (string.IsNullOrEmpty(guest.PasswordHash))
+            // AccessToken 생성 (비회원용)
+            if (string.IsNullOrEmpty(guest.AccessToken))
             {
-                throw new InvalidOperationException("Password is required for all guests.");
+                guest.AccessToken = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
             }
         }
 
