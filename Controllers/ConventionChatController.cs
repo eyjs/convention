@@ -58,7 +58,6 @@ public class ConventionChatController : ControllerBase
             }
 
             var userContext = CreateUserContext(request);
-            // [수정] 누락되었던 AskAboutConventionAsync 호출을 복구합니다.
             var response = await _chatService.AskAboutConventionAsync(conventionId, request.Question, userContext);
 
             return Ok(response);
@@ -86,11 +85,7 @@ public class ConventionChatController : ControllerBase
             ChatUserContext? userContext = null;
             if (!string.IsNullOrEmpty(role) && Enum.TryParse<UserRole>(role, true, out var userRole))
             {
-                userContext = new ChatUserContext
-                {
-                    Role = userRole,
-                    GuestId = guestId
-                };
+                userContext = new ChatUserContext { Role = userRole, GuestId = guestId };
             }
 
             var suggestions = await _chatService.GetSuggestedQuestionsAsync(conventionId, userContext);
@@ -110,13 +105,7 @@ public class ConventionChatController : ControllerBase
         {
             _logger.LogInformation("Starting full reindex");
             var result = await _indexingService.ReindexAllConventionsAsync();
-
-            return Ok(new
-            {
-                success = true,
-                message = $"색인 완료. 처리된 행사: {result.SuccessCount}, 총 색인된 문서: {result.TotalDocumentsIndexed}",
-                result
-            });
+            return Ok(new { success = true, message = $"색인 완료. 처리된 행사: {result.SuccessCount}, 총 색인된 문서: {result.TotalDocumentsIndexed}", result });
         }
         catch (Exception ex)
         {
@@ -131,13 +120,7 @@ public class ConventionChatController : ControllerBase
         try
         {
             var documentCount = await _indexingService.IndexConventionAsync(conventionId);
-
-            return Ok(new
-            {
-                success = true,
-                message = $"Convention {conventionId} 색인 완료. {documentCount}개 문서가 색인되었습니다.",
-                documentCount
-            });
+            return Ok(new { success = true, message = $"Convention {conventionId} 색인 완료. {documentCount}개 문서가 색인되었습니다.", documentCount });
         }
         catch (ArgumentException ex)
         {
@@ -156,12 +139,7 @@ public class ConventionChatController : ControllerBase
         try
         {
             var userContext = CreateUserContext(request);
-            var response = await _chatService.AskWithHistoryAsync(
-                request.Question,
-                request.History ?? new List<ChatMessage>(),
-                request.ConventionId,
-                userContext);
-
+            var response = await _chatService.AskWithHistoryAsync(request.Question, request.History ?? new List<ChatMessage>(), request.ConventionId, userContext);
             return Ok(response);
         }
         catch (UnauthorizedAccessException ex)
@@ -180,14 +158,10 @@ public class ConventionChatController : ControllerBase
         if (string.IsNullOrEmpty(request.Role) || !Enum.TryParse<UserRole>(request.Role, true, out var userRole))
             return null;
 
-        return new ChatUserContext
-        {
-            Role = userRole,
-            GuestId = request.GuestId,
-            MemberId = request.MemberId
-        };
+        return new ChatUserContext { Role = userRole, GuestId = request.GuestId, MemberId = request.MemberId };
     }
 }
+
 
 public class BaseAskRequest
 {
@@ -198,9 +172,7 @@ public class BaseAskRequest
     public string? MemberId { get; set; }
 }
 
-public class AskRequest : BaseAskRequest
-{
-}
+public class AskRequest : BaseAskRequest { }
 
 public class AskWithHistoryRequest : BaseAskRequest
 {

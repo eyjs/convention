@@ -24,9 +24,8 @@ public class Llama3Provider : ILlmProvider
     {
         try
         {
-            var systemPrompt = @"You are a helpful AI assistant for Star Tour, a travel company.
-Your instructions are absolute.
-1. ALWAYS respond in Korean. No exceptions.
+            var systemPrompt = @"You are a helpful AI assistant for Star Tour. Your instructions are absolute.
+1. ALWAYS respond in Korean.
 2. Base your answers strictly on the provided 'Context'.
 3. If the context does not contain the answer, you MUST say '정보가 부족하여 답변할 수 없습니다.'";
 
@@ -36,7 +35,7 @@ Your instructions are absolute.
             }
 
             var fullPrompt = context != null
-                ? $"Context:\n---\n{context}\n---\nBased on the context above, answer the following question in Korean.\nQuestion: {prompt}"
+                ? $"Context:\n---\n{context}\n---\nBased on the context, answer the following question in Korean.\nQuestion: {prompt}"
                 : $"Answer the following question in Korean.\nQuestion: {prompt}";
 
             var request = new { model = _model, prompt = fullPrompt, system = systemPrompt, stream = false };
@@ -51,6 +50,45 @@ Your instructions are absolute.
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Failed to generate response from Llama3: {ex.Message}", ex);
+        }
+    }
+
+    public async Task<string> ClassifyIntentAsync(string question)
+    {
+        try
+        {
+            var systemPrompt = @"Your task is to classify the user's question into one of the following categories: personal_info, personal_schedule, general_query.
+Respond with ONLY the category name and nothing else.
+
+- 'personal_info': Question about the user themselves (e.g., 'who am I', 'what is my info', '난 누구야', '내 정보').
+- 'personal_schedule': Question about the user's own schedule (e.g., 'what is my schedule', 'my events today', '내 일정').
+- 'general_query': Any other question (e.g., '행사 정보', '색인된 정보').
+
+Question: ";
+
+            var request = new
+            {
+                model = _model,
+                prompt = $"{systemPrompt}\"{question}\"",
+                stream = false,
+                options = new { temperature = 0.0 }
+            };
+
+            var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/generate", request);
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<JsonElement>(jsonResponse);
+            var intent = result.GetProperty("response").GetString()?.Trim().ToLower() ?? "general_query";
+
+            if (intent.Contains("personal_info")) return "personal_info";
+            if (intent.Contains("personal_schedule")) return "personal_schedule";
+            return "general_query";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Intent classification failed: {ex.Message}");
+            return "general_query";
         }
     }
 

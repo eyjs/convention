@@ -27,9 +27,8 @@ public class GeminiProvider : ILlmProvider
     {
         try
         {
-            var systemInstruction = @"You are a helpful AI assistant for Star Tour, a travel company.
-Your instructions are absolute.
-1. You MUST respond in Korean. Absolutely no other languages.
+            var systemInstruction = @"You are a helpful AI assistant for Star Tour. Your instructions are absolute.
+1. You MUST respond in Korean.
 2. Base your answers strictly on the provided 'Context'.
 3. If the context does not contain the answer, you MUST respond with '정보가 부족하여 답변할 수 없습니다.'";
 
@@ -39,7 +38,7 @@ Your instructions are absolute.
             }
 
             var fullPrompt = context != null
-                ? $"Context:\n---\n{context}\n---\nBased on the context above, answer the following question in Korean.\nQuestion: {prompt}"
+                ? $"Context:\n---\n{context}\n---\nBased on the context, answer the following question in Korean.\nQuestion: {prompt}"
                 : $"Answer the following question in Korean.\nQuestion: {prompt}";
 
             var request = new
@@ -73,9 +72,50 @@ Your instructions are absolute.
         }
     }
 
-    public async Task<float[]> GenerateEmbeddingAsync(string text)
+    public async Task<string> ClassifyIntentAsync(string question)
     {
-        // ... (이 메서드는 변경 없습니다)
-        return Array.Empty<float>();
+        try
+        {
+            var prompt = @$"Your task is to classify the user's question into one of the following categories: personal_info, personal_schedule, general_query.
+Respond with ONLY the category name and nothing else.
+
+- 'personal_info': Question about the user themselves (e.g., 'who am I', 'what is my info', '난 누구야', '내 정보').
+- 'personal_schedule': Question about the user's own schedule (e.g., 'what is my schedule', 'my events today', '내 일정').
+- 'general_query': Any other question (e.g., '행사 정보', '색인된 정보').
+
+Question: ""{question}""";
+
+            var request = new { contents = new[] { new { parts = new[] { new { text = prompt } } } } };
+            var json = JsonSerializer.Serialize(request);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync($"{_baseUrl}/models/{_model}:generateContent?key={_apiKey}", content);
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<JsonElement>(jsonResponse);
+
+            var candidates = result.GetProperty("candidates");
+            if (candidates.GetArrayLength() > 0)
+            {
+                var parts = candidates[0].GetProperty("content").GetProperty("parts");
+                if (parts.GetArrayLength() > 0)
+                {
+                    var intent = parts[0].GetProperty("text").GetString()?.Trim().ToLower() ?? "general_query";
+                    if (intent.Contains("personal_info")) return "personal_info";
+                    if (intent.Contains("personal_schedule")) return "personal_schedule";
+                }
+            }
+            return "general_query";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Intent classification failed with Gemini: {ex.Message}");
+            return "general_query";
+        }
+    }
+
+    public Task<float[]> GenerateEmbeddingAsync(string text)
+    {
+        throw new NotImplementedException();
     }
 }

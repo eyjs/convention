@@ -89,8 +89,6 @@ public class AuthController : ControllerBase
         {
             // --- 1. 회원으로 로그인 시도 (ID: LoginId) ---
             var user = await _context.Users
-                .Include(u => u.Guests)
-                    .ThenInclude(g => g.Convention)
                 .FirstOrDefaultAsync(u => u.LoginId == request.LoginId);
 
             if (user != null && user.IsActive && _authService.VerifyPassword(request.Password, user.PasswordHash))
@@ -104,74 +102,44 @@ public class AuthController : ControllerBase
                 user.LastLoginAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
-                var conventions = user.Guests
-                    .Where(g => g.Convention != null)
-                    .Select(g => new
-                    {
-                        id = g.ConventionId,
-                        title = g.Convention!.Title,
-                        startDate = g.Convention.StartDate,
-                        endDate = g.Convention.EndDate
-                    })
-                    .Distinct()
-                    .ToList();
+                return Ok(new
+                {
+                    accessToken,
+                    refreshToken,
+                    user = new
+                    { // 표준 user 객체
+                        id = user.Id,
+                        loginId = user.LoginId,
+                        name = user.Name,
+                        role = user.Role
+                    }
+                });
+            }
+
+            // --- 2. 비회원으로 로그인 시도 (ID: 참석자 이름) ---
+            var guest = await _context.Guests
+                .FirstOrDefaultAsync(g => g.GuestName == request.LoginId && g.IsRegisteredUser == false);
+
+            if (guest != null && !string.IsNullOrEmpty(guest.PasswordHash) && _authService.VerifyPassword(request.Password, guest.PasswordHash))
+            {
+                // [비회원 로그인 성공]
+                var guestUser = new User { Id = guest.Id, Name = guest.GuestName, Role = "Guest", LoginId = $"guest_{guest.Id}" };
+                var accessToken = _authService.GenerateAccessToken(guestUser);
+                var refreshToken = _authService.GenerateRefreshToken(); // 비회원도 리프레시 토큰 제공
+
+                // 비회원은 User 테이블 대신 Guest 테이블에 리프레시 토큰 정보를 저장할 수 있으나, 여기서는 생략합니다.
+                // 필요하다면 Guest 모델에 RefreshToken, RefreshTokenExpiresAt 컬럼을 추가해야 합니다.
 
                 return Ok(new
                 {
                     accessToken,
                     refreshToken,
                     user = new
-                    {
-                        id = user.Id,
-                        loginId = user.LoginId,
-                        name = user.Name,
-                        email = user.Email,
-                        phone = user.Phone,
-                        role = user.Role,
-                        profileImageUrl = user.ProfileImageUrl
-                    },
-                    conventions
-                });
-            }
-
-            // --- 2. 비회원으로 로그인 시도 (ID: 참석자 이름) ---
-            var guest = await _context.Guests
-                .Include(g => g.Convention)
-                .FirstOrDefaultAsync(g => g.GuestName == request.LoginId && g.IsRegisteredUser == false);
-
-            if (guest != null && !string.IsNullOrEmpty(guest.PasswordHash) && _authService.VerifyPassword(request.Password, guest.PasswordHash))
-            {
-                // [비회원 로그인 성공]
-                // 비회원용 임시 User 객체를 만들어 토큰을 생성합니다.
-                var guestUser = new User
-                {
-                    Id = guest.Id, // Guest의 ID를 임시로 사용
-                    LoginId = $"guest_{guest.Id}",
-                    Name = guest.GuestName,
-                    Phone = guest.Telephone,
-                    Role = "Guest"
-                };
-
-                var accessToken = _authService.GenerateAccessToken(guestUser);
-
-                return Ok(new
-                {
-                    accessToken,
-                    isGuest = true,
-                    guest = new
-                    {
-                        id = guest.Id,
+                    { // 표준 user 객체
+                        id = guest.Id, // user.id를 guest.id로 설정
+                        guestId = guest.Id, // 프론트엔드에서 명확히 식별하도록 guestId 추가
                         name = guest.GuestName,
-                        phone = guest.Telephone,
-                        corpPart = guest.CorpPart,
-                        affiliation = guest.Affiliation
-                    },
-                    convention = new
-                    {
-                        id = guest.Convention.Id,
-                        title = guest.Convention.Title,
-                        startDate = guest.Convention.StartDate,
-                        endDate = guest.Convention.EndDate
+                        role = "Guest"
                     }
                 });
             }

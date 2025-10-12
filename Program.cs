@@ -12,7 +12,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Serilog; // Serilog 사용을 위해 추가
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,7 +32,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSPA", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://localhost:3000") // 프론트엔드 주소에 맞게 수정
+        policy.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000" })
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -58,7 +58,7 @@ builder.Services.AddDbContext<ConventionDbContext>((serviceProvider, options) =>
 builder.Services.AddRepositories();
 
 
-// --- 4. [핵심 수정] RAG 및 AI 관련 서비스 등록 (중복 제거 및 올바른 수명 주기 설정) ---
+// --- 4. [핵심 수정] RAG 및 AI 관련 서비스 등록 (올바른 수명 주기 설정) ---
 
 // VectorStore와 EmbeddingService는 데이터를 메모리에 유지하거나 모델을 로드해야 하므로 'Singleton'으로 등록합니다.
 builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>();
@@ -145,7 +145,7 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseHttpsRedirection();
-app.UseStaticFiles(); // 정적 파일 (wwwroot) 제공
+app.UseStaticFiles();
 app.UseCors("AllowSPA");
 
 app.UseAuthentication();
@@ -154,7 +154,6 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapControllers();
 
-// 프론트엔드 연동을 위한 Fallback 설정
 if (app.Environment.IsDevelopment())
 {
     app.MapFallback("/api/{**slug}", (HttpContext context) =>
@@ -165,8 +164,8 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseDefaultFiles(); // index.html을 기본 파일로 설정
-    app.MapFallbackToFile("index.html"); // 모든 경로를 index.html로 라우팅 (SPA)
+    app.UseDefaultFiles();
+    app.MapFallbackToFile("index.html");
 }
 
 app.Run();

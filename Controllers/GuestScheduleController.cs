@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LocalRAG.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/guest-schedules")]
 public class GuestScheduleController : ControllerBase
 {
     private readonly ConventionDbContext _context;
@@ -16,151 +16,90 @@ public class GuestScheduleController : ControllerBase
         _context = context;
     }
 
-    // 참석자의 오늘/다음 일정
-    [HttpGet("guests/{guestId}/today-next")]
-    public async Task<IActionResult> GetTodayAndNextSchedule(int guestId)
+    [HttpGet("{guestId}")]
+    public async Task<IActionResult> GetSchedules(int guestId)
     {
-        var now = DateTime.Now;
-        var today = now.Date;
-        var tomorrow = today.AddDays(1);
+        var guest = await _context.Guests
+            .Include(g => g.GuestScheduleTemplates)
+            .ThenInclude(gst => gst.ScheduleTemplate)
+            .ThenInclude(st => st!.ScheduleItems)
+            .FirstOrDefaultAsync(g => g.Id == guestId);
 
-        var guestSchedules = await _context.GuestScheduleTemplates
-            .Where(gst => gst.GuestId == guestId)
-            .Include(gst => gst.ScheduleTemplate)
-                .ThenInclude(st => st.ScheduleItems)
-            .ToListAsync();
+        if (guest is null) return NotFound();
 
-        var allItems = guestSchedules
-            .SelectMany(gst => gst.ScheduleTemplate.ScheduleItems.Select(si => new
-            {
-                si.Id,
-                si.ScheduleDate,
-                si.StartTime,
-                si.Title,
-                si.Location,
-                si.Content,
-                TemplateId = gst.ScheduleTemplateId,
-                CourseName = gst.ScheduleTemplate.CourseName
-            }))
+        var schedules = guest.GuestScheduleTemplates
+            .Select(gst => gst.ScheduleTemplate)
+            .Where(st => st is not null)
+            .SelectMany(st => st.ScheduleItems)
             .OrderBy(si => si.ScheduleDate)
+            .ThenBy(si => si.StartTime)
             .ToList();
 
-        // 오늘 일정
-        var todaySchedules = allItems
-            .Where(si => si.ScheduleDate.Date == today)
-            .ToList();
-
-        // 현재 진행중인 일정
-        var currentSchedule = allItems
-            .Where(si => si.ScheduleDate <= now && si.ScheduleDate.AddHours(2) > now)
-            .OrderByDescending(si => si.ScheduleDate)
-            .FirstOrDefault();
-
-        // 다음 일정 (현재 시간 이후)
-        var nextSchedule = allItems
-            .Where(si => si.ScheduleDate > now)
-            .OrderBy(si => si.ScheduleDate)
-            .FirstOrDefault();
-
-        // 내일 일정
-        var tomorrowSchedules = allItems
-            .Where(si => si.ScheduleDate.Date == tomorrow)
-            .ToList();
-
-        return Ok(new
-        {
-            current = currentSchedule,
-            next = nextSchedule,
-            today = todaySchedules,
-            tomorrow = tomorrowSchedules,
-            totalSchedules = allItems.Count
-        });
+        return Ok(schedules);
     }
 
-    // 참석자의 전체 일정 (날짜별 그룹)
-    [HttpGet("guests/{guestId}/all")]
-    public async Task<IActionResult> GetAllSchedules(int guestId)
+    [HttpPost]
+    public async Task<IActionResult> AddSchedule([FromBody] GuestScheduleDto dto)
     {
-        var guestSchedules = await _context.GuestScheduleTemplates
-            .Where(gst => gst.GuestId == guestId)
-            .Include(gst => gst.ScheduleTemplate)
-                .ThenInclude(st => st.ScheduleItems)
-            .ToListAsync();
+        var guest = await _context.Guests.FindAsync(dto.GuestId);
+        if (guest is null) return NotFound("Guest not found.");
 
-        var allItems = guestSchedules
-            .SelectMany(gst => gst.ScheduleTemplate.ScheduleItems.Select(si => new
-            {
-                si.Id,
-                si.ScheduleDate,
-                si.StartTime,
-                si.Title,
-                si.Location,
-                si.Content,
-                si.OrderNum,
-                TemplateId = gst.ScheduleTemplateId,
-                CourseName = gst.ScheduleTemplate.CourseName
-            }))
-            .OrderBy(si => si.ScheduleDate)
-            .ToList();
+        var scheduleTemplate = await _context.ScheduleTemplates.FindAsync(dto.ScheduleTemplateId);
+        if (scheduleTemplate is null) return NotFound("Schedule Template not found.");
 
-        // 날짜별로 그룹핑
-        var groupedByDate = allItems
-            .GroupBy(si => si.ScheduleDate.Date)
-            .Select(g => new
-            {
-                date = g.Key,
-                schedules = g.OrderBy(s => s.ScheduleDate).ToList()
-            })
-            .OrderBy(g => g.date)
-            .ToList();
+        var existing = await _context.GuestScheduleTemplates
+            .FirstOrDefaultAsync(gst => gst.GuestId == dto.GuestId && gst.ScheduleTemplateId == dto.ScheduleTemplateId);
 
-        return Ok(new
+        if (existing is not null)
+            return Conflict("Schedule template is already assigned to this guest.");
+
+        var guestSchedule = new GuestScheduleTemplate
         {
-            total = allItems.Count,
-            byDate = groupedByDate,
-            allSchedules = allItems
-        });
+            GuestId = dto.GuestId,
+            ScheduleTemplateId = dto.ScheduleTemplateId
+        };
+
+        _context.GuestScheduleTemplates.Add(guestSchedule);
+        await _context.SaveChangesAsync();
+
+        return Ok(guestSchedule);
     }
 
-    // 행사 전체 일정 (비로그인 사용자용)
-    [HttpGet("conventions/{conventionId}/public")]
-    public async Task<IActionResult> GetConventionSchedules(int conventionId)
+    [HttpDelete("{guestId}/{scheduleTemplateId}")]
+    public async Task<IActionResult> RemoveSchedule(int guestId, int scheduleTemplateId)
     {
-        var templates = await _context.ScheduleTemplates
-            .Where(st => st.ConventionId == conventionId)
-            .Include(st => st.ScheduleItems)
-            .OrderBy(st => st.OrderNum)
-            .ToListAsync();
+        var guestSchedule = await _context.GuestScheduleTemplates
+            .FirstOrDefaultAsync(gst => gst.GuestId == guestId && gst.ScheduleTemplateId == scheduleTemplateId);
 
-        var allItems = templates
-            .SelectMany(t => t.ScheduleItems.Select(si => new
-            {
-                si.Id,
-                si.ScheduleDate,
-                si.StartTime,
-                si.Title,
-                si.Location,
-                si.Content,
-                TemplateId = t.Id,
-                CourseName = t.CourseName
-            }))
-            .OrderBy(si => si.ScheduleDate)
-            .ToList();
+        if (guestSchedule is null) return NotFound();
 
-        var groupedByDate = allItems
-            .GroupBy(si => si.ScheduleDate.Date)
-            .Select(g => new
-            {
-                date = g.Key,
-                schedules = g.OrderBy(s => s.ScheduleDate).ToList()
-            })
-            .OrderBy(g => g.date)
-            .ToList();
+        _context.GuestScheduleTemplates.Remove(guestSchedule);
+        await _context.SaveChangesAsync();
 
-        return Ok(new
-        {
-            total = allItems.Count,
-            byDate = groupedByDate
-        });
+        return NoContent();
     }
+
+    [HttpGet("templates/{guestId}")]
+    public async Task<IActionResult> GetAssignedTemplates(int guestId)
+    {
+        var guest = await _context.Guests
+            .Include(g => g.GuestScheduleTemplates)
+            .ThenInclude(gst => gst.ScheduleTemplate)
+            .FirstOrDefaultAsync(g => g.Id == guestId);
+
+        if (guest is null) return NotFound();
+
+        var templates = guest.GuestScheduleTemplates
+            .Select(gst => gst.ScheduleTemplate)
+            .Where(st => st is not null)
+            .ToList();
+
+        return Ok(templates);
+    }
+}
+
+public class GuestScheduleDto
+{
+    public int GuestId { get; set; }
+    public int ScheduleTemplateId { get; set; }
 }
