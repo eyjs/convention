@@ -29,6 +29,18 @@ export const useChatStore = defineStore('chat', () => {
         }
     }
 
+    // 👇 --- [추가] 챗봇의 모든 상태를 초기화하는 함수 --- 👇
+    function resetChatState() {
+        messages.value = []
+        loading.value = false
+        error.value = null
+        suggestedQuestions.value = []
+        isOpen.value = false
+        currentConventionId.value = null
+        console.log("Chat store has been successfully reset.");
+    }
+    // 👆 --- 여기까지 --- 👆
+
     async function sendMessage(question) {
         if (!question.trim()) return
 
@@ -109,7 +121,6 @@ export const useChatStore = defineStore('chat', () => {
     function toggleChat() { isOpen.value = !isOpen.value; }
     function openChat() { isOpen.value = true; }
     function closeChat() { isOpen.value = false; }
-    function clearMessages() { messages.value = []; error.value = null; }
 
     function setConventionContext(conventionId) {
         currentConventionId.value = conventionId;
@@ -126,7 +137,6 @@ export const useChatStore = defineStore('chat', () => {
         }
     }
 
-    // 👇 --- [핵심 수정] 누락되었던 함수들을 return 문에 모두 추가합니다. --- 👇
     return {
         messages,
         loading,
@@ -141,8 +151,8 @@ export const useChatStore = defineStore('chat', () => {
         toggleChat,
         openChat,
         closeChat,
-        clearMessages,
         setConventionContext,
-        addWelcomeMessage
+        addWelcomeMessage,
+        resetChatState // 
     }
 })
