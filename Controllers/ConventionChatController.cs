@@ -58,6 +58,7 @@ public class ConventionChatController : ControllerBase
             }
 
             var userContext = CreateUserContext(request);
+            // [수정] 누락되었던 AskAboutConventionAsync 호출을 복구합니다.
             var response = await _chatService.AskAboutConventionAsync(conventionId, request.Question, userContext);
 
             return Ok(response);
@@ -83,11 +84,11 @@ public class ConventionChatController : ControllerBase
         try
         {
             ChatUserContext? userContext = null;
-            if (!string.IsNullOrEmpty(role))
+            if (!string.IsNullOrEmpty(role) && Enum.TryParse<UserRole>(role, true, out var userRole))
             {
                 userContext = new ChatUserContext
                 {
-                    Role = Enum.Parse<UserRole>(role, true),
+                    Role = userRole,
                     GuestId = guestId
                 };
             }
@@ -109,11 +110,11 @@ public class ConventionChatController : ControllerBase
         {
             _logger.LogInformation("Starting full reindex");
             var result = await _indexingService.ReindexAllConventionsAsync();
-            
+
             return Ok(new
             {
                 success = true,
-                message = $"색인 완료. 성공: {result.SuccessCount}, 실패: {result.FailureCount}",
+                message = $"색인 완료. 처리된 행사: {result.SuccessCount}, 총 색인된 문서: {result.TotalDocumentsIndexed}",
                 result
             });
         }
@@ -129,13 +130,13 @@ public class ConventionChatController : ControllerBase
     {
         try
         {
-            var documentId = await _indexingService.IndexConventionAsync(conventionId);
-            
+            var documentCount = await _indexingService.IndexConventionAsync(conventionId);
+
             return Ok(new
             {
                 success = true,
-                message = $"Convention {conventionId} 색인 완료",
-                documentId
+                message = $"Convention {conventionId} 색인 완료. {documentCount}개 문서가 색인되었습니다.",
+                documentCount
             });
         }
         catch (ArgumentException ex)
@@ -176,12 +177,12 @@ public class ConventionChatController : ControllerBase
 
     private ChatUserContext? CreateUserContext(BaseAskRequest request)
     {
-        if (string.IsNullOrEmpty(request.Role))
+        if (string.IsNullOrEmpty(request.Role) || !Enum.TryParse<UserRole>(request.Role, true, out var userRole))
             return null;
 
         return new ChatUserContext
         {
-            Role = Enum.Parse<UserRole>(request.Role, true),
+            Role = userRole,
             GuestId = request.GuestId,
             MemberId = request.MemberId
         };

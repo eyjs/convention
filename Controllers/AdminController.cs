@@ -193,19 +193,19 @@ public class AdminController : ControllerBase
         if (string.IsNullOrWhiteSpace(dto.Telephone))
             return BadRequest(new { field = "telephone", message = "전화번호를 입력해주세요." });
 
-        // 비밀번호 처리: 수기 > 주민번호 앞 6자리 > 기본값 "123456"
-        string passwordToHash;
+        // 비밀번호 결정 (우선순위: 수기 입력 > 주민번호 앞 6자리 > 기본값 "123456")
+        string passwordToSet;
         if (!string.IsNullOrWhiteSpace(dto.Password))
         {
-            passwordToHash = dto.Password;
+            passwordToSet = dto.Password;
         }
         else if (!string.IsNullOrWhiteSpace(dto.ResidentNumber) && dto.ResidentNumber.Length >= 6)
         {
-            passwordToHash = dto.ResidentNumber.Substring(0, 6);
+            passwordToSet = dto.ResidentNumber.Substring(0, 6);
         }
         else
         {
-            passwordToHash = "123456";
+            passwordToSet = "123456";
         }
 
         var guest = new Guest
@@ -217,33 +217,13 @@ public class AdminController : ControllerBase
             ResidentNumber = dto.ResidentNumber?.Trim(),
             Affiliation = dto.Affiliation?.Trim(),
             AccessToken = GenerateAccessToken(),
-            IsRegisteredUser = false
+            IsRegisteredUser = false, // 비회원으로 생성
+            PasswordHash = _authService.HashPassword(passwordToSet) // 비밀번호 해시하여 저장
         };
 
         _context.Guests.Add(guest);
         await _context.SaveChangesAsync();
 
-        // User 계정 자동 생성 (AccessToken을 LoginId로 사용)
-        var user = new User
-        {
-            LoginId = guest.AccessToken,
-            PasswordHash = _authService.HashPassword(passwordToHash),
-            Name = guest.GuestName,
-            Phone = guest.Telephone,
-            Role = "Guest",
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-
-        guest.UserId = user.Id;
-        guest.IsRegisteredUser = true;
-        await _context.SaveChangesAsync();
-
-        // Attributes 추가
         if (dto.Attributes != null)
         {
             foreach (var attr in dto.Attributes)
@@ -258,17 +238,11 @@ public class AdminController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-        return Ok(new 
-        { 
+        return Ok(new
+        {
             guest.Id,
             guest.GuestName,
-            guest.Telephone,
-            guest.CorpPart,
-            guest.ResidentNumber,
-            guest.Affiliation,
-            guest.AccessToken,
-            guest.IsRegisteredUser,
-            initialPassword = passwordToHash
+            message = "비회원 참석자가 성공적으로 생성되었습니다."
         });
     }
 
@@ -283,9 +257,8 @@ public class AdminController : ControllerBase
             return BadRequest(new { field = "telephone", message = "전화번호를 입력해주세요." });
 
         var guest = await _context.Guests
-            .Include(g => g.GuestAttributes)
-            .Include(g => g.User)
-            .FirstOrDefaultAsync(g => g.Id == id);
+        .Include(g => g.User) // User 정보도 함께 로드
+        .FirstOrDefaultAsync(g => g.Id == id);
         if (guest == null) return NotFound();
 
         guest.GuestName = dto.GuestName.Trim();
@@ -294,11 +267,20 @@ public class AdminController : ControllerBase
         guest.ResidentNumber = dto.ResidentNumber?.Trim();
         guest.Affiliation = dto.Affiliation?.Trim();
 
-        // 비밀번호 수정 (입력된 경우에만)
-        if (!string.IsNullOrWhiteSpace(dto.Password) && guest.User != null)
+        // 비밀번호 수정 로직 변경
+        if (!string.IsNullOrWhiteSpace(dto.Password))
         {
-            guest.User.PasswordHash = _authService.HashPassword(dto.Password);
-            guest.User.UpdatedAt = DateTime.UtcNow;
+            if (guest.IsRegisteredUser && guest.User != null)
+            {
+                // 회원인 경우: User 테이블의 비밀번호 변경
+                guest.User.PasswordHash = _authService.HashPassword(dto.Password);
+                guest.User.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                // 비회원인 경우: Guest 테이블의 비밀번호 변경
+                guest.PasswordHash = _authService.HashPassword(dto.Password);
+            }
         }
 
         // Attributes 업데이트
@@ -320,15 +302,11 @@ public class AdminController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
-        
+
         return Ok(new
         {
             guest.Id,
-            guest.GuestName,
-            guest.Telephone,
-            guest.CorpPart,
-            guest.ResidentNumber,
-            guest.Affiliation
+            guest.GuestName
         });
     }
 

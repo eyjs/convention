@@ -453,16 +453,17 @@ const selectedGuests = ref([])
 const bulkAssignTemplateIds = ref([])
 const bulkAssignReplace = ref(false)
 
-const guestForm = ref({
-  guestName: '',
-  telephone: '',
-  corpPart: '',
-  residentNumber: '',
-  affiliation: '',
-  password: '',
-  scheduleTemplateIds: [],
-  attributeList: []
-})
+    const guestForm = ref({
+        guestName: '',
+        telephone: '',
+        corpPart: '',
+        residentNumber: '',
+        affiliation: '',
+        password: '',
+        scheduleTemplateIds: [],
+        templateAttributes: {}, 
+        customAttributes: []    
+    });
 
 const filteredGuestsForCopy = computed(() => {
   if (!searchQuery.value) return guests.value

@@ -2,46 +2,38 @@ using LocalRAG.Interfaces;
 using LocalRAG.Models;
 using LocalRAG.Repositories;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using LocalRAG.Data;
 
 namespace LocalRAG.Services;
 
-/// <summary>
-/// Convention 데이터 색인화 서비스
-/// 
-/// 주요 기능:
-/// 1. Convention 데이터를 텍스트로 변환
-/// 2. 임베딩 생성 및 VectorStore에 저장
-/// 3. 전체 재색인 및 증분 업데이트
-/// </summary>
 public class ConventionIndexingService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRagService _ragService;
     private readonly ILogger<ConventionIndexingService> _logger;
+    private readonly ConventionDbContext _context;
 
-    public ConventionIndexingService(
-        IUnitOfWork unitOfWork,
-        IRagService ragService,
-        ILogger<ConventionIndexingService> logger)
+    public ConventionIndexingService(IUnitOfWork unitOfWork, IRagService ragService, ILogger<ConventionIndexingService> logger, ConventionDbContext context)
     {
         _unitOfWork = unitOfWork;
         _ragService = ragService;
         _logger = logger;
+        _context = context;
     }
 
-    /// <summary>
-    /// 전체 Convention 데이터를 재색인합니다.
-    /// </summary>
     public async Task<IndexingResult> ReindexAllConventionsAsync()
     {
         var result = new IndexingResult();
         var conventions = await _unitOfWork.Conventions.GetActiveConventionsAsync();
+        int totalDocumentsIndexed = 0;
 
         foreach (var convention in conventions)
         {
             try
             {
-                await IndexConventionAsync(convention);
+                int indexedCount = await IndexConventionAsync(convention.Id);
+                totalDocumentsIndexed += indexedCount;
                 result.SuccessCount++;
             }
             catch (Exception ex)
@@ -52,283 +44,96 @@ public class ConventionIndexingService
             }
         }
 
-        _logger.LogInformation(
-            "Reindexing completed. Success: {Success}, Failures: {Failures}",
-            result.SuccessCount, result.FailureCount);
-
+        result.TotalDocumentsIndexed = totalDocumentsIndexed;
+        _logger.LogInformation("Reindexing completed. Conventions processed: {Success}, Documents indexed: {TotalDocuments}", result.SuccessCount, result.TotalDocumentsIndexed);
         return result;
     }
 
-    /// <summary>
-    /// 특정 Convention을 색인합니다.
-    /// </summary>
-    public async Task<string> IndexConventionAsync(int conventionId)
+    public async Task<int> IndexConventionAsync(int conventionId)
     {
-        var convention = await _unitOfWork.Conventions
-            .GetConventionWithDetailsAsync(conventionId);
+        int documentCount = 0;
+        var convention = await _context.Conventions
+            .Include(c => c.Owners)
+            .Include(c => c.Guests).ThenInclude(g => g.GuestAttributes)
+            .Include(c => c.ScheduleTemplates).ThenInclude(st => st.ScheduleItems)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == conventionId);
 
-        if (convention == null)
+        if (convention is null)
         {
             throw new ArgumentException($"Convention {conventionId} not found");
         }
 
-        return await IndexConventionAsync(convention);
-    }
-
-    /// <summary>
-    /// Convention 엔티티를 색인합니다.
-    /// </summary>
-    private async Task<string> IndexConventionAsync(Convention convention)
-    {
-        // 1. Convention 기본 정보 색인
         var conventionText = BuildConventionText(convention);
-        var metadata = new Dictionary<string, object>
-        {
-            ["convention_id"] = convention.Id,
-            ["type"] = "convention",
-            ["title"] = convention.Title,
-            ["convention_type"] = convention.ConventionType
-        };
+        var conventionMetadata = new Dictionary<string, object> { { "type", "convention" }, { "convention_id", convention.Id }, { "title", convention.Title } };
+        await _ragService.AddDocumentAsync(conventionText, conventionMetadata);
+        documentCount++;
 
-        var documentId = await _ragService.AddDocumentAsync(conventionText, metadata);
-
-        // 2. 참석자 정보 색인
-        if (convention.Guests?.Any() == true)
+        if (convention.Guests is not null)
         {
+            var allTemplates = convention.ScheduleTemplates.ToDictionary(st => st.Id);
             foreach (var guest in convention.Guests)
             {
-                await IndexGuestAsync(guest, convention.Id);
+                var guestTemplates = await _context.GuestScheduleTemplates.Where(gst => gst.GuestId == guest.Id).Select(gst => gst.ScheduleTemplateId).ToListAsync();
+                var assignedItems = allTemplates.Where(kvp => guestTemplates.Contains(kvp.Key)).SelectMany(kvp => kvp.Value.ScheduleItems).OrderBy(si => si.ScheduleDate).ThenBy(si => si.StartTime).ToList();
+
+                var guestText = BuildGuestText(guest, assignedItems);
+                var guestMetadata = new Dictionary<string, object> { { "type", "guest" }, { "convention_id", convention.Id }, { "guest_id", guest.Id }, { "name", guest.GuestName } };
+                await _ragService.AddDocumentAsync(guestText, guestMetadata);
+                documentCount++;
             }
         }
-
-        // 3. 일정 정보 색인
-        if (convention.Schedules?.Any() == true)
-        {
-            foreach (var schedule in convention.Schedules)
-            {
-                await IndexScheduleAsync(schedule, convention.Id);
-            }
-        }
-
-        // 4. 메뉴 정보 색인
-        if (convention.Menus?.Any() == true)
-        {
-            foreach (var menu in convention.Menus)
-            {
-                await IndexMenuAsync(menu, convention.Id);
-            }
-        }
-
-        return documentId;
+        return documentCount;
     }
 
-    /// <summary>
-    /// Guest 정보를 색인합니다.
-    /// </summary>
-    private async Task<string> IndexGuestAsync(Guest guest, int conventionId)
-    {
-        var text = BuildGuestText(guest);
-        var metadata = new Dictionary<string, object>
-        {
-            ["convention_id"] = conventionId,
-            ["guest_id"] = guest.Id,
-            ["type"] = "guest",
-            ["name"] = guest.GuestName
-        };
-
-        return await _ragService.AddDocumentAsync(text, metadata);
-    }
-
-    /// <summary>
-    /// Schedule 정보를 색인합니다.
-    /// </summary>
-    private async Task<string> IndexScheduleAsync(Schedule schedule, int conventionId)
-    {
-        var text = BuildScheduleText(schedule);
-        var metadata = new Dictionary<string, object>
-        {
-            ["convention_id"] = conventionId,
-            ["schedule_id"] = schedule.Id,
-            ["type"] = "schedule",
-            ["date"] = schedule.ScheduleDate.ToString("yyyy-MM-dd")
-        };
-
-        return await _ragService.AddDocumentAsync(text, metadata);
-    }
-
-    /// <summary>
-    /// Menu 정보를 색인합니다.
-    /// </summary>
-    private async Task<string> IndexMenuAsync(Menu menu, int conventionId)
-    {
-        var text = BuildMenuText(menu);
-        var metadata = new Dictionary<string, object>
-        {
-            ["convention_id"] = conventionId,
-            ["menu_id"] = menu.Id,
-            ["type"] = "menu"
-        };
-
-        return await _ragService.AddDocumentAsync(text, metadata);
-    }
-
-    // ============================================================
-    // 텍스트 생성 메서드들
-    // ============================================================
-
-    /// <summary>
-    /// Convention 정보를 검색 가능한 텍스트로 변환합니다.
-    /// </summary>
     private string BuildConventionText(Convention convention)
     {
         var sb = new StringBuilder();
-
-        sb.AppendLine($"행사명: {convention.Title}");
-        sb.AppendLine($"행사 유형: {convention.ConventionType}");
-        
-        if (convention.StartDate.HasValue)
-        {
-            sb.AppendLine($"시작일: {convention.StartDate.Value:yyyy년 MM월 dd일}");
-        }
-        
-        if (convention.EndDate.HasValue)
-        {
-            sb.AppendLine($"종료일: {convention.EndDate.Value:yyyy년 MM월 dd일}");
-        }
-
-        // 담당자 정보
+        sb.AppendLine($"# 행사 정보: {convention.Title}");
+        sb.AppendLine($"- 행사 ID: {convention.Id}");
+        sb.AppendLine($"- 행사 유형: {(convention.ConventionType == "OVERSEAS" ? "해외" : "국내")} 행사");
+        if (convention.StartDate.HasValue) sb.AppendLine($"- 시작일: {convention.StartDate.Value:yyyy년 MM월 dd일}");
+        if (convention.EndDate.HasValue) sb.AppendLine($"- 종료일: {convention.EndDate.Value:yyyy년 MM월 dd일}");
         if (convention.Owners?.Any() == true)
         {
-            sb.AppendLine("\n담당자 정보:");
+            sb.AppendLine("- 담당자:");
             foreach (var owner in convention.Owners)
             {
-                sb.AppendLine($"- {owner.Name} ({owner.Telephone})");
+                sb.AppendLine($"  - {owner.Name} ({owner.Telephone})");
             }
         }
-
-        // 기능 정보
-        if (convention.Features?.Any() == true)
-        {
-            var enabledFeatures = convention.Features
-                .Where(f => f.IsEnabled == "Y")
-                .Select(f => f.FeatureName);
-            
-            if (enabledFeatures.Any())
-            {
-                sb.AppendLine($"\n활성화된 기능: {string.Join(", ", enabledFeatures)}");
-            }
-        }
-
         return sb.ToString();
     }
 
-    /// <summary>
-    /// Guest 정보를 검색 가능한 텍스트로 변환합니다.
-    /// </summary>
-    private string BuildGuestText(Guest guest)
+    private string BuildGuestText(Guest guest, List<ScheduleItem> assignedItems)
     {
         var sb = new StringBuilder();
-
-        sb.AppendLine($"참석자명: {guest.GuestName}");
-        
-        if (!string.IsNullOrEmpty(guest.ResidentNumber))
-        {
-            sb.AppendLine($"주민번호: {guest.ResidentNumber}");
-        }
-        
-        if (!string.IsNullOrEmpty(guest.CorpPart))
-        {
-            sb.AppendLine($"부서: {guest.CorpPart}");
-        }
-
-        // 속성 정보
+        sb.AppendLine($"# 참석자 정보: {guest.GuestName}");
+        sb.AppendLine($"- 참석자 ID(GuestId): {guest.Id}");
+        sb.AppendLine($"- 이름: {guest.GuestName}");
+        if (!string.IsNullOrEmpty(guest.CorpPart)) sb.AppendLine($"- 부서: {guest.CorpPart}");
+        if (!string.IsNullOrEmpty(guest.Telephone)) sb.AppendLine($"- 연락처: {guest.Telephone}");
         if (guest.GuestAttributes?.Any() == true)
         {
-            sb.AppendLine("\n추가 정보:");
+            sb.AppendLine("- 추가 속성:");
             foreach (var attr in guest.GuestAttributes)
             {
-                sb.AppendLine($"- {attr.AttributeKey}: {attr.AttributeValue}");
+                sb.AppendLine($"  - {attr.AttributeKey}: {attr.AttributeValue}");
             }
         }
 
-        if (!string.IsNullOrEmpty(guest.Affiliation))
+        if (assignedItems.Any())
         {
-            sb.AppendLine($"소속: {guest.Affiliation}");
-        }
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Schedule 정보를 검색 가능한 텍스트로 변환합니다.
-    /// </summary>
-    private string BuildScheduleText(Schedule schedule)
-    {
-        var sb = new StringBuilder();
-
-        sb.AppendLine($"일정: {schedule.Name}");
-        sb.AppendLine($"날짜: {schedule.ScheduleDate:yyyy년 MM월 dd일}");
-
-        if (schedule.StartTime.HasValue)
-        {
-            sb.AppendLine($"시작 시간: {schedule.StartTime.Value:hh\\:mm}");
-        }
-
-        if (schedule.EndTime.HasValue)
-        {
-            sb.AppendLine($"종료 시간: {schedule.EndTime.Value:hh\\:mm}");
-        }
-
-        if (!string.IsNullOrEmpty(schedule.Group))
-        {
-            sb.AppendLine($"그룹: {schedule.Group}");
-        }
-
-        if (!string.IsNullOrEmpty(schedule.Description))
-        {
-            sb.AppendLine($"설명: {schedule.Description}");
-        }
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Menu 정보를 검색 가능한 텍스트로 변환합니다.
-    /// </summary>
-    private string BuildMenuText(Menu menu)
-    {
-        var sb = new StringBuilder();
-
-        sb.AppendLine($"메뉴: {menu.ItemName ?? "제목 없음"}");
-
-        if (menu.Sections?.Any() == true)
-        {
-            sb.AppendLine("\n섹션:");
-            foreach (var section in menu.Sections.OrderBy(s => s.OrderNum))
+            sb.AppendLine("\n## 할당된 전체 일정");
+            foreach (var item in assignedItems)
             {
-                if (!string.IsNullOrEmpty(section.Title))
-                {
-                    sb.AppendLine($"\n## {section.Title}");
-                }
-                
-                if (!string.IsNullOrEmpty(section.Contents))
-                {
-                    sb.AppendLine(section.Contents);
-                }
+                sb.AppendLine($"- {item.ScheduleDate:yyyy-MM-dd} {item.StartTime}: {item.Title}{(string.IsNullOrEmpty(item.Location) ? "" : $" (장소: {item.Location})")}");
             }
         }
-
+        else
+        {
+            sb.AppendLine("\n## 할당된 전체 일정: 없음");
+        }
         return sb.ToString();
     }
-}
-
-/// <summary>
-/// 색인 결과
-/// </summary>
-public class IndexingResult
-{
-    public int SuccessCount { get; set; }
-    public int FailureCount { get; set; }
-    public List<string> Errors { get; set; } = new();
-    public int TotalCount => SuccessCount + FailureCount;
 }

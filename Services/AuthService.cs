@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using LocalRAG.Configuration;
 using LocalRAG.Models;
+using BCrypt.Net;
 
 namespace LocalRAG.Services;
 
@@ -90,14 +91,20 @@ public class AuthService : IAuthService
 
     public string HashPassword(string password)
     {
-        using var sha256 = SHA256.Create();
-        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToBase64String(bytes);
+        return BCrypt.Net.BCrypt.HashPassword(password);
     }
 
     public bool VerifyPassword(string password, string passwordHash)
     {
-        var hash = HashPassword(password);
-        return hash == passwordHash;
+        try
+        {
+            // BCrypt.Net.BCrypt 클래스의 정적 메서드인 Verify를 호출합니다.
+            return BCrypt.Net.BCrypt.Verify(password, passwordHash);
+        }
+        catch (Exception)
+        {
+            // 잘못된 형식의 해시가 들어오면 예외가 발생할 수 있으므로 false를 반환합니다.
+            return false;
+        }
     }
 }

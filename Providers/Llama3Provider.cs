@@ -20,44 +20,33 @@ public class Llama3Provider : ILlmProvider
         _model = _configuration["LlmSettings:Llama3:Model"] ?? "llama3";
     }
 
-    public async Task<string> GenerateResponseAsync(string prompt, string? context = null)
+    public async Task<string> GenerateResponseAsync(string prompt, string? context = null, string? userContext = null)
     {
         try
         {
-            var systemPrompt = @"당신은 친절하고 전문적인 AI 어시스턴트입니다. 
-모든 답변은 반드시 한국어로만 작성해야 합니다.
-답변 시 다음 규칙을 따르세요:
-1. 모든 답변은 한국어로만 작성
-2. 정확하고 명확한 정보 제공
-3. 컨텍스트에 있는 정보를 기반으로 답변
-4. 컨텍스트에 없는 내용은 추측하지 말 것";
+            var systemPrompt = @"You are a helpful AI assistant for Star Tour, a travel company.
+Your instructions are absolute.
+1. ALWAYS respond in Korean. No exceptions.
+2. Base your answers strictly on the provided 'Context'.
+3. If the context does not contain the answer, you MUST say '정보가 부족하여 답변할 수 없습니다.'";
 
-            var fullPrompt = context != null 
-                ? $"{systemPrompt}\n\n컨텍스트: {context}\n\n질문: {prompt}\n\n한국어로 답변:"
-                : $"{systemPrompt}\n\n질문: {prompt}\n\n한국어로 답변:";
-
-            var request = new
+            if (!string.IsNullOrEmpty(userContext))
             {
-                model = _model,
-                prompt = fullPrompt,
-                stream = false,
-                options = new
-                {
-                    temperature = 0.7,
-                    top_p = 0.9,
-                    max_tokens = 2048
-                }
-            };
+                systemPrompt += $"\nIMPORTANT: {userContext}";
+            }
 
+            var fullPrompt = context != null
+                ? $"Context:\n---\n{context}\n---\nBased on the context above, answer the following question in Korean.\nQuestion: {prompt}"
+                : $"Answer the following question in Korean.\nQuestion: {prompt}";
+
+            var request = new { model = _model, prompt = fullPrompt, system = systemPrompt, stream = false };
             var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/generate", request);
             response.EnsureSuccessStatusCode();
 
             var jsonResponse = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(jsonResponse);
-            
             var answer = result.GetProperty("response").GetString() ?? "답변을 생성할 수 없습니다";
-            
-            return answer;
+            return answer.Trim();
         }
         catch (Exception ex)
         {
@@ -69,22 +58,12 @@ public class Llama3Provider : ILlmProvider
     {
         try
         {
-            var request = new
-            {
-                model = _model,
-                prompt = text
-            };
-
+            var request = new { model = _model, prompt = text };
             var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/embeddings", request);
             response.EnsureSuccessStatusCode();
-
             var jsonResponse = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(jsonResponse);
-            
-            var embeddingArray = result.GetProperty("embedding").EnumerateArray()
-                .Select(x => (float)x.GetDouble())
-                .ToArray();
-                
+            var embeddingArray = result.GetProperty("embedding").EnumerateArray().Select(x => (float)x.GetDouble()).ToArray();
             return embeddingArray;
         }
         catch (Exception ex)

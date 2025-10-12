@@ -87,66 +87,101 @@ public class AuthController : ControllerBase
     {
         try
         {
+            // --- 1. 회원으로 로그인 시도 (ID: LoginId) ---
             var user = await _context.Users
                 .Include(u => u.Guests)
                     .ThenInclude(g => g.Convention)
                 .FirstOrDefaultAsync(u => u.LoginId == request.LoginId);
 
-            if (user == null)
+            if (user != null && user.IsActive && _authService.VerifyPassword(request.Password, user.PasswordHash))
             {
-                return Unauthorized(new { message = "아이디 또는 비밀번호를 확인해주세요." });
-            }
+                // [회원 로그인 성공]
+                var accessToken = _authService.GenerateAccessToken(user);
+                var refreshToken = _authService.GenerateRefreshToken();
 
-            if (!user.IsActive)
-            {
-                return Unauthorized(new { message = "비활성화된 계정입니다." });
-            }
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
+                user.LastLoginAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
 
-            if (!_authService.VerifyPassword(request.Password, user.PasswordHash))
-            {
-                return Unauthorized(new { message = "아이디 또는 비밀번호를 확인해주세요." });
-            }
+                var conventions = user.Guests
+                    .Where(g => g.Convention != null)
+                    .Select(g => new
+                    {
+                        id = g.ConventionId,
+                        title = g.Convention!.Title,
+                        startDate = g.Convention.StartDate,
+                        endDate = g.Convention.EndDate
+                    })
+                    .Distinct()
+                    .ToList();
 
-            var accessToken = _authService.GenerateAccessToken(user);
-            var refreshToken = _authService.GenerateRefreshToken();
-
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
-            user.LastLoginAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-
-            var conventions = user.Guests
-                .Where(g => g.Convention != null)
-                .Select(g => new
+                return Ok(new
                 {
-                    id = g.ConventionId,
-                    title = g.Convention!.Title,
-                    startDate = g.Convention.StartDate,
-                    endDate = g.Convention.EndDate
-                })
-                .Distinct()
-                .ToList();
+                    accessToken,
+                    refreshToken,
+                    user = new
+                    {
+                        id = user.Id,
+                        loginId = user.LoginId,
+                        name = user.Name,
+                        email = user.Email,
+                        phone = user.Phone,
+                        role = user.Role,
+                        profileImageUrl = user.ProfileImageUrl
+                    },
+                    conventions
+                });
+            }
 
-            return Ok(new
+            // --- 2. 비회원으로 로그인 시도 (ID: 참석자 이름) ---
+            var guest = await _context.Guests
+                .Include(g => g.Convention)
+                .FirstOrDefaultAsync(g => g.GuestName == request.LoginId && g.IsRegisteredUser == false);
+
+            if (guest != null && !string.IsNullOrEmpty(guest.PasswordHash) && _authService.VerifyPassword(request.Password, guest.PasswordHash))
             {
-                accessToken,
-                refreshToken,
-                user = new
+                // [비회원 로그인 성공]
+                // 비회원용 임시 User 객체를 만들어 토큰을 생성합니다.
+                var guestUser = new User
                 {
-                    id = user.Id,
-                    loginId = user.LoginId,
-                    name = user.Name,
-                    email = user.Email,
-                    phone = user.Phone,
-                    role = user.Role,
-                    profileImageUrl = user.ProfileImageUrl
-                },
-                conventions
-            });
+                    Id = guest.Id, // Guest의 ID를 임시로 사용
+                    LoginId = $"guest_{guest.Id}",
+                    Name = guest.GuestName,
+                    Phone = guest.Telephone,
+                    Role = "Guest"
+                };
+
+                var accessToken = _authService.GenerateAccessToken(guestUser);
+
+                return Ok(new
+                {
+                    accessToken,
+                    isGuest = true,
+                    guest = new
+                    {
+                        id = guest.Id,
+                        name = guest.GuestName,
+                        phone = guest.Telephone,
+                        corpPart = guest.CorpPart,
+                        affiliation = guest.Affiliation
+                    },
+                    convention = new
+                    {
+                        id = guest.Convention.Id,
+                        title = guest.Convention.Title,
+                        startDate = guest.Convention.StartDate,
+                        endDate = guest.Convention.EndDate
+                    }
+                });
+            }
+
+            // --- 3. 로그인 최종 실패 ---
+            return Unauthorized(new { message = "아이디 또는 비밀번호를 확인해주세요." });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Login error");
+            _logger.LogError(ex, "Login error for {LoginId}", request.LoginId);
             return StatusCode(500, new { message = "로그인 중 오류가 발생했습니다." });
         }
     }

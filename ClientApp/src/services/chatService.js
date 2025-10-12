@@ -1,88 +1,50 @@
 import apiClient from './api'
 
 export const chatService = {
-  async ask(question, conventionId = null, userContext = null) {
-    try {
-      const response = await apiClient.post('/conventionchat/ask', {
-        question,
-        conventionId,
-        ...userContext
-      })
-      return response
-    } catch (error) {
-      console.error('Failed to ask question:', error)
-      throw error
-    }
-  },
+    /**
+     * 챗봇에게 질문을 보냅니다.
+     * @param {string} question - 사용자의 질문
+     * @param {number|null} conventionId - 현재 컨벤션 ID
+     * @param {object|null} userContext - 사용자 컨텍스트 (role, guestId 등)
+     * @returns {Promise}
+     */
+    ask(question, conventionId, userContext) {
+        // [핵심 수정] userContext를 펼치는 대신, 명시적으로 속성을 할당합니다.
+        // 이렇게 하면 모델 바인딩 실패 가능성을 원천적으로 차단합니다.
+        const payload = {
+            question,
+            conventionId,
+            role: userContext?.role,
+            guestId: userContext?.guestId,
+            memberId: userContext?.memberId
+        };
+        return apiClient.post('/conventionchat/ask', payload);
+    },
 
-  async askAboutConvention(conventionId, question, userContext = null) {
-    try {
-      const response = await apiClient.post(
-        `/conventionchat/conventions/${conventionId}/ask`,
-        { 
-          question,
-          ...userContext
-        }
-      )
-      return response
-    } catch (error) {
-      console.error(`Failed to ask about convention ${conventionId}:`, error)
-      throw error
-    }
-  },
+    /**
+     * 대화 기록을 포함하여 질문을 보냅니다.
+     */
+    askWithHistory(question, history, conventionId, userContext) {
+        const payload = {
+            question,
+            history,
+            conventionId,
+            role: userContext?.role,
+            guestId: userContext?.guestId,
+            memberId: userContext?.memberId
+        };
+        return apiClient.post('/conventionchat/ask/with-history', payload);
+    },
 
-  async askWithHistory(question, history = [], conventionId = null, userContext = null) {
-    try {
-      const response = await apiClient.post('/conventionchat/ask/with-history', {
-        question,
-        history,
-        conventionId,
-        ...userContext
-      })
-      return response
-    } catch (error) {
-      console.error('Failed to ask with history:', error)
-      throw error
+    /**
+     * 추천 질문 목록을 가져옵니다.
+     */
+    async getSuggestedQuestions(conventionId, userContext) {
+        const params = {
+            role: userContext?.role,
+            guestId: userContext?.guestId,
+        };
+        const response = await apiClient.get(`/conventionchat/conventions/${conventionId}/suggestions`, { params });
+        return response.data;
     }
-  },
-
-  async getSuggestedQuestions(conventionId, userContext = null) {
-    try {
-      const params = new URLSearchParams()
-      if (userContext?.role) params.append('role', userContext.role)
-      if (userContext?.guestId) params.append('guestId', userContext.guestId)
-      if (userContext?.companionId) params.append('companionId', userContext.companionId)
-      
-      const queryString = params.toString()
-      const url = `/conventionchat/conventions/${conventionId}/suggestions${queryString ? '?' + queryString : ''}`
-      
-      const response = await apiClient.get(url)
-      return response
-    } catch (error) {
-      console.error(`Failed to get suggestions for convention ${conventionId}:`, error)
-      return []
-    }
-  },
-
-  async reindexAll() {
-    try {
-      const response = await apiClient.post('/conventionchat/reindex')
-      return response
-    } catch (error) {
-      console.error('Failed to reindex all:', error)
-      throw error
-    }
-  },
-
-  async indexConvention(conventionId) {
-    try {
-      const response = await apiClient.post(
-        `/conventionchat/conventions/${conventionId}/index`
-      )
-      return response
-    } catch (error) {
-      console.error(`Failed to index convention ${conventionId}:`, error)
-      throw error
-    }
-  }
-}
+};
