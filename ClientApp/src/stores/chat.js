@@ -58,10 +58,10 @@ export const useChatStore = defineStore('chat', () => {
       const assistantMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: response.answer,
-        sources: response.sources || [],
-        llmProvider: response.llmProvider,
-        timestamp: response.timestamp || new Date().toISOString()
+        content: response.data?.answer || response.data || '답변을 생성할 수 없습니다.',
+        sources: response.data?.sources || [],
+        llmProvider: response.data?.llmProvider,
+        timestamp: response.data?.timestamp || new Date().toISOString()
       }
       messages.value.push(assistantMessage)
       
@@ -163,10 +163,10 @@ export const useChatStore = defineStore('chat', () => {
       const assistantMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: response.answer,
-        sources: response.sources || [],
-        llmProvider: response.llmProvider,
-        timestamp: response.timestamp || new Date().toISOString()
+        content: response.data?.answer || response.data || '답변을 생성할 수 없습니다.',
+        sources: response.data?.sources || [],
+        llmProvider: response.data?.llmProvider,
+        timestamp: response.data?.timestamp || new Date().toISOString()
       }
       messages.value.push(assistantMessage)
       

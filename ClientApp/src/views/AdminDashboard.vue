@@ -4,7 +4,16 @@
     <header class="bg-white shadow-sm sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
-          <div class="flex items-center">
+          <div class="flex items-center gap-2">
+            <button
+              @click="router.push('/admin')"
+              class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="행사 목록으로"
+            >
+              <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+              </svg>
+            </button>
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900">행사 관리</h1>
             <span v-if="convention" class="ml-4 text-sm text-gray-500">{{ convention.title }}</span>
           </div>
@@ -67,6 +76,11 @@
         <ScheduleManagement :convention-id="conventionId" />
       </div>
 
+      <!-- 속성 템플릿 -->
+      <div v-if="activeTab === 'attributes'">
+        <AttributeTemplateManagement :convention-id="conventionId" />
+      </div>
+
       <!-- 업로드 -->
       <div v-if="activeTab === 'upload'">
         <BulkUpload :convention-id="conventionId" />
@@ -84,6 +98,7 @@ import DashboardOverview from '@/components/admin/DashboardOverview.vue'
 import GuestManagement from '@/components/admin/GuestManagement.vue'
 import ScheduleManagement from '@/components/admin/ScheduleManagement.vue'
 import BulkUpload from '@/components/admin/BulkUpload.vue'
+import AttributeTemplateManagement from '@/components/admin/AttributeTemplateManagement.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -109,6 +124,7 @@ const tabs = [
   { id: 'dashboard', name: '대시보드', shortName: '대시보드' },
   { id: 'guests', name: '참석자 관리', shortName: '참석자' },
   { id: 'schedules', name: '일정 관리', shortName: '일정' },
+  { id: 'attributes', name: '속성 템플릿', shortName: '속성' },
   { id: 'upload', name: '엑셀 업로드', shortName: '업로드' }
 ]
 

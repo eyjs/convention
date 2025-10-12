@@ -15,6 +15,8 @@ import GroupSchedule from '../views/GroupSchedule.vue'
 import EventPlace from '../views/EventPlace.vue'
 import Board from '../views/Board.vue'
 import Chat from '../views/Chat.vue'
+import FindId from '../views/FindId.vue'
+import FindPassword from '../views/FindPassword.vue'
 
 const routes = [
   {
@@ -28,6 +30,18 @@ const routes = [
     name: 'Login',
     component: LoginView,
     meta: { title: '로그인', requiresAuth: false }
+  },
+  {
+    path: '/find-id',
+    name: 'FindId',
+    component: FindId,
+    meta: { title: '아이디 찾기', requiresAuth: false }
+  },
+  {
+    path: '/find-password',
+    name: 'FindPassword',
+    component: FindPassword,
+    meta: { title: '비밀번호 찾기', requiresAuth: false }
   },
   {
     path: '/',

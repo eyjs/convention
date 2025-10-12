@@ -83,6 +83,8 @@ builder.Services.AddScoped<ILlmProvider>(provider =>
 builder.Services.AddScoped<ConventionChatService>();
 builder.Services.AddScoped<ConventionIndexingService>();
 builder.Services.AddScoped<IScheduleUploadService, ScheduleUploadService>();
+builder.Services.AddSingleton<ISmsService, SmsService>();
+builder.Services.AddSingleton<IVerificationService, VerificationService>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
 builder.Services.AddSingleton(jwtSettings);

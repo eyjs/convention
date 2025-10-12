@@ -80,6 +80,17 @@
           >
             {{ authStore.loading ? '로그인 중...' : '로그인' }}
           </button>
+
+          <!-- 아이디/비밀번호 찾기 -->
+          <div class="flex justify-center gap-4 text-sm">
+            <router-link to="/find-id" class="text-gray-600 hover:text-primary-600 transition-colors">
+              아이디 찾기
+            </router-link>
+            <span class="text-gray-300">|</span>
+            <router-link to="/find-password" class="text-gray-600 hover:text-primary-600 transition-colors">
+              비밀번호 찾기
+            </router-link>
+          </div>
         </form>
 
         <!-- 회원가입 폼 -->

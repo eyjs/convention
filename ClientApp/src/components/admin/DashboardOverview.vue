@@ -44,6 +44,54 @@
       </div>
     </div>
 
+    <!-- 속성별 통계 -->
+    <div v-if="attributeStats.length > 0" class="mb-8">
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-4 sm:p-6 border-b flex justify-between items-center">
+          <h3 class="text-lg font-semibold">속성별 통계</h3>
+          <button
+            @click="showAllAttributes = !showAllAttributes"
+            class="text-sm text-primary-600 hover:text-primary-700"
+          >
+            {{ showAllAttributes ? '접기' : '전체 보기' }}
+          </button>
+        </div>
+        <div class="p-4 sm:p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              v-for="(attr, index) in displayedAttributes"
+              :key="attr.attributeKey"
+              class="border rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
+              <div class="flex justify-between items-start mb-3">
+                <h4 class="font-semibold text-gray-900">{{ attr.attributeKey }}</h4>
+                <span class="text-xs bg-gray-100 px-2 py-1 rounded">{{ attr.totalCount }}명</span>
+              </div>
+              
+              <div class="space-y-2">
+                <div
+                  v-for="value in attr.values.slice(0, showAllValues[index] ? undefined : 3)"
+                  :key="value.value"
+                  class="flex items-center justify-between p-2 bg-gray-50 rounded"
+                >
+                  <span class="text-sm text-gray-700 truncate">{{ value.value }}</span>
+                  <span class="text-sm font-semibold text-primary-600">{{ value.count }}명</span>
+                </div>
+                
+                <button
+                  v-if="attr.values.length > 3"
+                  @click="toggleShowAllValues(index)"
+                  class="text-xs text-primary-600 hover:text-primary-700 mt-2 w-full text-left"
+                >
+                  {{ showAllValues[index] ? '줄이기' : `+${attr.values.length - 3}개 더보기` }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="bg-white rounded-lg shadow">
         <div class="p-4 sm:p-6 border-b">
@@ -98,7 +146,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import apiClient from '@/services/api'
 
 const props = defineProps({
@@ -115,6 +163,17 @@ const stats = ref({
 
 const recentGuests = ref([])
 const scheduleStats = ref([])
+const attributeStats = ref([])
+const showAllAttributes = ref(false)
+const showAllValues = ref([])
+
+const displayedAttributes = computed(() => {
+  return showAllAttributes.value ? attributeStats.value : attributeStats.value.slice(0, 6)
+})
+
+const toggleShowAllValues = (index) => {
+  showAllValues.value[index] = !showAllValues.value[index]
+}
 
 const loadStats = async () => {
   try {
@@ -126,6 +185,8 @@ const loadStats = async () => {
     }
     recentGuests.value = response.data.recentGuests
     scheduleStats.value = response.data.scheduleStats
+    attributeStats.value = response.data.attributeStats || []
+    showAllValues.value = new Array(attributeStats.value.length).fill(false)
   } catch (error) {
     console.error('Failed to load stats:', error)
   }

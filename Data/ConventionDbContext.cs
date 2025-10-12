@@ -25,6 +25,7 @@ public class ConventionDbContext : DbContext
     public DbSet<ScheduleTemplate> ScheduleTemplates { get; set; }
     public DbSet<ScheduleItem> ScheduleItems { get; set; }
     public DbSet<GuestScheduleTemplate> GuestScheduleTemplates { get; set; }
+    public DbSet<AttributeTemplate> AttributeTemplates { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -158,6 +159,21 @@ public class ConventionDbContext : DbContext
                   .WithMany(st => st.GuestScheduleTemplates)
                   .HasForeignKey(gst => gst.ScheduleTemplateId)
                   .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<AttributeTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_AttributeTemplate_ConventionId");
+            entity.HasIndex(e => new { e.ConventionId, e.AttributeKey })
+                  .IsUnique()
+                  .HasDatabaseName("UQ_AttributeTemplate_ConventionId_AttributeKey");
+
+            entity.HasOne(at => at.Convention)
+                  .WithMany()
+                  .HasForeignKey(at => at.ConventionId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Feature>(entity =>

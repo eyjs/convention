@@ -254,14 +254,14 @@ public class ScheduleUploadService : IScheduleUploadService
             var headerText = sheet.Cells[1, col].Text?.Trim();
             if (string.IsNullOrEmpty(headerText)) continue;
 
-            // 패턴: "11/3(월) [1호차] 객실에 집결 ~ 07:30"
-            var match = Regex.Match(headerText, @"(\d+)/(\d+)\((.+?)\)\s*(.+?)\s*[~,]\s*(\d{2}):(\d{2})");
+            // 패턴: "11/03(일)_코스명_07:30"
+            var match = Regex.Match(headerText, @"(\d+)/(\d+)\((.+?)\)_(.+?)_(\d{2}):(\d{2})");
             
             if (match.Success)
             {
                 var month = int.Parse(match.Groups[1].Value);
                 var day = int.Parse(match.Groups[2].Value);
-                var fullTitle = match.Groups[4].Value.Trim(); // [1호차] 포함된 전체 제목
+                var courseName = match.Groups[4].Value.Trim(); // 코스명만 추출
                 var hour = int.Parse(match.Groups[5].Value);
                 var minute = int.Parse(match.Groups[6].Value);
                 
@@ -272,8 +272,8 @@ public class ScheduleUploadService : IScheduleUploadService
                     Day = day,
                     Hour = hour,
                     Minute = minute,
-                    Title = fullTitle, // 전체 제목 그대로 사용
-                    HeaderText = headerText
+                    Title = courseName, // 순수 코스명
+                    HeaderText = headerText // 전체 헤더 (Sheet2 매칭용)
                 });
             }
         }
