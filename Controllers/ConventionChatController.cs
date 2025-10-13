@@ -1,4 +1,5 @@
 using LocalRAG.Services;
+using LocalRAG.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LocalRAG.Controllers;
@@ -8,12 +9,12 @@ namespace LocalRAG.Controllers;
 public class ConventionChatController : ControllerBase
 {
     private readonly ConventionChatService _chatService;
-    private readonly ConventionIndexingService _indexingService;
+    private readonly AdvancedConventionIndexingService _indexingService;
     private readonly ILogger<ConventionChatController> _logger;
 
     public ConventionChatController(
         ConventionChatService chatService,
-        ConventionIndexingService indexingService,
+        AdvancedConventionIndexingService indexingService,
         ILogger<ConventionChatController> logger)
     {
         _chatService = chatService;
@@ -22,7 +23,7 @@ public class ConventionChatController : ControllerBase
     }
 
     [HttpPost("ask")]
-    public async Task<ActionResult<ChatResponse>> Ask([FromBody] AskRequest request)
+    public async Task<ActionResult<ChatResponse>> Ask([FromBody] AskWithHistoryRequest request)
     {
         try
         {
@@ -32,7 +33,7 @@ public class ConventionChatController : ControllerBase
             }
 
             var userContext = CreateUserContext(request);
-            var response = await _chatService.AskAsync(request.Question, request.ConventionId, userContext);
+            var response = await _chatService.AskAsync(request.Question, request.ConventionId, userContext, request.History);
 
             return Ok(response);
         }
@@ -48,7 +49,7 @@ public class ConventionChatController : ControllerBase
     }
 
     [HttpPost("conventions/{conventionId}/ask")]
-    public async Task<ActionResult<ChatResponse>> AskAboutConvention(int conventionId, [FromBody] AskRequest request)
+    public async Task<ActionResult<ChatResponse>> AskAboutConvention(int conventionId, [FromBody] AskWithHistoryRequest request)
     {
         try
         {
@@ -58,7 +59,7 @@ public class ConventionChatController : ControllerBase
             }
 
             var userContext = CreateUserContext(request);
-            var response = await _chatService.AskAboutConventionAsync(conventionId, request.Question, userContext);
+            var response = await _chatService.AskAboutConventionAsync(conventionId, request.Question, userContext, request.History);
 
             return Ok(response);
         }
@@ -133,25 +134,7 @@ public class ConventionChatController : ControllerBase
         }
     }
 
-    [HttpPost("ask/with-history")]
-    public async Task<ActionResult<ChatResponse>> AskWithHistory([FromBody] AskWithHistoryRequest request)
-    {
-        try
-        {
-            var userContext = CreateUserContext(request);
-            var response = await _chatService.AskWithHistoryAsync(request.Question, request.History ?? new List<ChatMessage>(), request.ConventionId, userContext);
-            return Ok(response);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing question with history");
-            return StatusCode(500, new { message = "답변 생성 중 오류가 발생했습니다." });
-        }
-    }
+
 
     private ChatUserContext? CreateUserContext(BaseAskRequest request)
     {

@@ -1,27 +1,16 @@
 import apiClient from './api'
 
 export const chatService = {
-    ask(question, conventionId, userContext) {
+    ask(question, history, conventionId, userContext) {
         const payload = {
-            question,
+            question: question,
+            history: history,
             conventionId,
             role: userContext?.role,
             guestId: userContext?.guestId,
             memberId: userContext?.memberId
         };
         return apiClient.post('/conventionchat/ask', payload);
-    },
-
-    askWithHistory(question, history, conventionId, userContext) {
-        const payload = {
-            question,
-            history,
-            conventionId,
-            role: userContext?.role,
-            guestId: userContext?.guestId,
-            memberId: userContext?.memberId
-        };
-        return apiClient.post('/conventionchat/ask/with-history', payload);
     },
 
     async getSuggestedQuestions(conventionId, userContext) {

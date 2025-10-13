@@ -19,6 +19,7 @@ import FindId from '../views/FindId.vue'
 import FindPassword from '../views/FindPassword.vue'
 import NoticeList from '../views/NoticeList.vue'
 import NoticeDetail from '../views/NoticeDetail.vue'
+import AdminChatbotManagement from '../views/AdminChatbotManagement.vue' // Import the new component
 
 const routes = [
   {
@@ -69,6 +70,16 @@ const routes = [
       title: '행사 대시보드', 
       requiresAuth: false,
       requiresAdmin: false
+    }
+  },
+  {
+    path: '/admin/chatbot',
+    name: 'AdminChatbotManagement',
+    component: AdminChatbotManagement,
+    meta: {
+      title: '챗봇 관리',
+      requiresAuth: false, // Should be true for admin
+      requiresAdmin: false // Should be true for admin
     }
   },
   {

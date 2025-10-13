@@ -134,7 +134,7 @@
 
           <div class="flex justify-end space-x-3 pt-4">
             <button @click="closeModal" class="px-4 py-2 border rounded-lg hover:bg-gray-50">취소</button>
-            <button @click="saveNotice" :disabled="!noticeForm.title || !noticeForm.content" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300">
+            <button @click="saveNotice" :disabled="!noticeForm.title || !noticeForm.content ? true : null" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300">
               {{ editingNotice ? '수정' : '등록' }}
             </button>
           </div>
@@ -198,6 +198,8 @@ const noticeForm = ref({
 const totalCount = computed(() => notices.value.length)
 const pinnedCount = computed(() => notices.value.filter(n => n.isPinned).length)
 const totalViews = computed(() => notices.value.reduce((sum, n) => sum + n.viewCount, 0))
+
+const isSaveButtonDisabled = computed(() => !noticeForm.value.title || !noticeForm.value.content)
 
 async function loadNotices() {
   try {

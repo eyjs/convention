@@ -1,4 +1,5 @@
 using LocalRAG.Models;
+using LocalRAG.Repositories;
 
 namespace LocalRAG.Repositories;
 
@@ -62,76 +63,6 @@ public interface IUnitOfWork : IDisposable
 // 각 엔티티별 Repository 인터페이스
 // ============================================================
 
-/// <summary>
-/// Convention Repository 인터페이스
-/// Convention 엔티티에 특화된 메서드를 정의합니다.
-/// </summary>
-public interface IConventionRepository : IRepository<Convention>
-{
-    /// <summary>
-    /// 특정 기간 내의 행사를 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Convention>> GetConventionsByDateRangeAsync(
-        DateTime startDate,
-        DateTime endDate,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 행사 타입별로 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Convention>> GetConventionsByTypeAsync(
-        string conventionType,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 행사와 관련된 모든 데이터를 포함하여 조회합니다.
-    /// </summary>
-    Task<Convention?> GetConventionWithDetailsAsync(
-        int conventionId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 삭제되지 않은 활성 행사만 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Convention>> GetActiveConventionsAsync(
-        CancellationToken cancellationToken = default);
-}
-
-/// <summary>
-/// Guest Repository 인터페이스
-/// </summary>
-public interface IGuestRepository : IRepository<Guest>
-{
-    /// <summary>
-    /// 특정 행사의 모든 참석자를 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Guest>> GetGuestsByConventionIdAsync(
-        int conventionId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 참석자와 연관된 모든 정보(속성, 동반자, 일정)를 포함하여 조회합니다.
-    /// </summary>
-    Task<Guest?> GetGuestWithDetailsAsync(
-        int guestId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 이름으로 참석자를 검색합니다.
-    /// </summary>
-    Task<IEnumerable<Guest>> SearchGuestsByNameAsync(
-        string guestName,
-        int? conventionId = null,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 주민등록번호로 참석자를 조회합니다.
-    /// </summary>
-    Task<Guest?> GetGuestByResidentNumberAsync(
-        string residentNumber,
-        int conventionId,
-        CancellationToken cancellationToken = default);
-}
 
 /// <summary>
 /// Schedule Repository 인터페이스

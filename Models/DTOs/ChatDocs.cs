@@ -1,41 +1,4 @@
-﻿namespace LocalRAG.Services;
-
-public enum UserRole
-{
-    Admin,
-    Guest
-}
-
-public class ChatUserContext
-{
-    public UserRole Role { get; set; }
-    public int? GuestId { get; set; }
-    public string? MemberId { get; set; }
-}
-
-public class ChatResponse
-{
-    public string Answer { get; set; } = string.Empty;
-    public List<SourceInfo> Sources { get; set; } = new();
-    public string LlmProvider { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; } = DateTime.Now;
-}
-
-public class SourceInfo
-{
-    public string Content { get; set; } = string.Empty;
-    public float Similarity { get; set; }
-    public string Type { get; set; } = string.Empty;
-    public int? ConventionId { get; set; }
-    public string? ConventionTitle { get; set; }
-}
-
-public class ChatMessage
-{
-    public string Role { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; } = DateTime.Now;
-}
+﻿namespace LocalRAG.Models;
 
 // 👇 --- 여기가 수정된 부분입니다 --- 👇
 public class IndexingResult

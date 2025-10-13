@@ -73,7 +73,8 @@ public class ConventionRepository : Repository<Convention>, IConventionRepositor
             .AsNoTracking()
             .Include(c => c.Guests)                    // 참석자 포함
                 .ThenInclude(g => g.GuestAttributes)   // 참석자의 속성 포함
-            .Include(c => c.Schedules)                 // 일정 포함
+            .Include(c => c.ScheduleTemplates)         // 전체 일정 템플릿 포함
+                .ThenInclude(st => st.ScheduleItems)   // 템플릿의 개별 항목 포함
             .Include(c => c.Features)                  // 기능 포함
             .Include(c => c.Owners)                    // 담당자 포함
             .Include(c => c.Menus)                     // 메뉴 포함

@@ -5,39 +5,81 @@ namespace LocalRAG.Storage;
 
 public class InMemoryVectorStore : IVectorStore
 {
-    private readonly ConcurrentDictionary<string, VectorDocument> _documents = new();
-    
-    private record VectorDocument(
-        string Id,
-        string Content,
-        float[] Embedding,
-        Dictionary<string, object>? Metadata,
-        DateTime CreatedAt
-    );
+    private readonly ConcurrentDictionary<string, (VectorDocument doc, DateTime createdAt)> _documents = new();
 
     public Task<string> AddDocumentAsync(string content, float[] embedding, Dictionary<string, object>? metadata = null)
     {
         var documentId = Guid.NewGuid().ToString();
-        var document = new VectorDocument(
-            documentId,
-            content,
-            embedding,
-            metadata,
-            DateTime.UtcNow
-        );
+        var document = new VectorDocument(content, embedding, metadata);
         
-        _documents[documentId] = document;
+        _documents[documentId] = (document, DateTime.UtcNow);
         return Task.FromResult(documentId);
     }
 
-    public Task<List<VectorSearchResult>> SearchAsync(float[] queryEmbedding, int topK = 5)
+    public Task AddDocumentsAsync(IEnumerable<VectorDocument> documents)
     {
-        var results = _documents.Values
-            .Select(doc => new VectorSearchResult(
-                doc.Id,
-                doc.Content,
-                CalculateCosineSimilarity(queryEmbedding, doc.Embedding),
-                doc.Metadata
+        foreach (var doc in documents)
+        {
+            var documentId = Guid.NewGuid().ToString();
+            _documents[documentId] = (doc, DateTime.UtcNow);
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task<List<VectorSearchResult>> SearchAsync(float[] queryEmbedding, int topK = 5, Dictionary<string, object>? filter = null)
+    {
+        IEnumerable<KeyValuePair<string, (VectorDocument doc, DateTime createdAt)>> filteredDocuments = _documents;
+
+        if (filter != null && filter.Any())
+        {
+            filteredDocuments = filteredDocuments.Where(kvp =>
+            {
+                var doc = kvp.Value.doc;
+                if (doc.Metadata == null) return false;
+
+                foreach (var condition in filter)
+                {
+                    if (!doc.Metadata.TryGetValue(condition.Key, out var metadataValue))
+                    {
+                        return false;
+                    }
+
+                    if (condition.Value is not null && metadataValue is not null)
+                    {
+                        // 숫자 형식 변환 및 비교
+                        bool isConditionNumeric = long.TryParse(condition.Value.ToString(), out long conditionAsLong);
+                        bool isMetadataNumeric = long.TryParse(metadataValue.ToString(), out long metadataAsLong);
+
+                        if (isConditionNumeric && isMetadataNumeric)
+                        {
+                            if (conditionAsLong != metadataAsLong)
+                            {
+                                return false;
+                            }
+                        }
+                        else // 문자열 비교
+                        {
+                            if (!string.Equals(condition.Value.ToString(), metadataValue.ToString(), StringComparison.OrdinalIgnoreCase))
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                    else if (condition.Value != metadataValue)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        }
+
+        var results = filteredDocuments
+            .Select(kvp => new VectorSearchResult(
+                kvp.Key,
+                kvp.Value.doc.Content,
+                CalculateCosineSimilarity(queryEmbedding, kvp.Value.doc.Embedding),
+                kvp.Value.doc.Metadata
             ))
             .OrderByDescending(r => r.Similarity)
             .Take(topK)
@@ -51,9 +93,35 @@ public class InMemoryVectorStore : IVectorStore
         return Task.FromResult(_documents.TryRemove(documentId, out _));
     }
 
+    public Task DeleteDocumentsByMetadataAsync(string key, object value)
+    {
+        var keysToRemove = _documents.Where(kvp =>
+            kvp.Value.doc.Metadata != null &&
+            kvp.Value.doc.Metadata.TryGetValue(key, out var metadataValue) &&
+            (value == null ? metadataValue == null : value.Equals(metadataValue)))
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var k in keysToRemove)
+        {
+            _documents.TryRemove(k, out _);
+        }
+
+        return Task.CompletedTask;
+    }
+
     public Task<int> GetDocumentCountAsync()
     {
         return Task.FromResult(_documents.Count);
+    }
+
+    public Task<int> GetDocumentCountAsync(int conventionId)
+    {
+        var count = _documents.Values.Count(d =>
+            d.doc.Metadata != null &&
+            d.doc.Metadata.TryGetValue("convention_id", out var id) &&
+            id is int && (int)id == conventionId);
+        return Task.FromResult(count);
     }
 
     private static float CalculateCosineSimilarity(float[] vectorA, float[] vectorB)

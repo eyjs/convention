@@ -156,12 +156,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { noticeAPI } from '@/services/noticeService'
+import { useConventionStore } from '@/stores/convention'
 import dayjs from 'dayjs'
 
 export default {
   name: 'NoticeList',
   setup() {
     const router = useRouter()
+    const conventionStore = useConventionStore()
     
     // 상태
     const loading = ref(false)
@@ -199,7 +201,15 @@ export default {
     const fetchNotices = async () => {
       loading.value = true
       try {
+        const conventionId = conventionStore.currentConvention?.id
+        if (!conventionId) {
+          alert('현재 행사 정보를 찾을 수 없습니다. 홈으로 돌아가 다시 시도해주세요.')
+          loading.value = false
+          return
+        }
+
         const response = await noticeAPI.getNotices({
+          conventionId: conventionId,
           page: currentPage.value,
           pageSize: pageSize.value,
           searchType: searchKeyword.value ? searchType.value : undefined,

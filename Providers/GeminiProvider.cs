@@ -1,4 +1,5 @@
 using LocalRAG.Interfaces;
+using LocalRAG.Models;
 using System.Text;
 using System.Text.Json;
 
@@ -23,7 +24,7 @@ public class GeminiProvider : ILlmProvider
         _model = _configuration["LlmSettings:Gemini:Model"] ?? "gemini-1.5-flash";
     }
 
-    public async Task<string> GenerateResponseAsync(string prompt, string? context = null, string? userContext = null)
+    public async Task<string> GenerateResponseAsync(string prompt, string? context = null, List<ChatMessage>? history = null)
     {
         try
         {
@@ -32,19 +33,24 @@ public class GeminiProvider : ILlmProvider
 2. Base your answers strictly on the provided 'Context'.
 3. If the context does not contain the answer, you MUST respond with '정보가 부족하여 답변할 수 없습니다.'";
 
-            if (!string.IsNullOrEmpty(userContext))
-            {
-                systemInstruction += $"\nIMPORTANT: {userContext}";
-            }
-
             var fullPrompt = context != null
                 ? $"Context:\n---\n{context}\n---\nBased on the context, answer the following question in Korean.\nQuestion: {prompt}"
                 : $"Answer the following question in Korean.\nQuestion: {prompt}";
 
+            var contents = new List<object>();
+            if (history != null)
+            {
+                foreach (var message in history)
+                {
+                    contents.Add(new { role = message.Role == "assistant" ? "model" : "user", parts = new[] { new { text = message.Content } } });
+                }
+            }
+            contents.Add(new { role = "user", parts = new[] { new { text = fullPrompt } } });
+
             var request = new
             {
                 system_instruction = new { parts = new[] { new { text = systemInstruction } } },
-                contents = new[] { new { parts = new[] { new { text = fullPrompt } } } }
+                contents
             };
 
             var json = JsonSerializer.Serialize(request);
@@ -72,7 +78,7 @@ public class GeminiProvider : ILlmProvider
         }
     }
 
-    public async Task<string> ClassifyIntentAsync(string question)
+    public async Task<string> ClassifyIntentAsync(string question, List<ChatMessage>? history = null)
     {
         try
         {
@@ -109,13 +115,7 @@ Question: ""{question}""";
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Intent classification failed with Gemini: {ex.Message}");
-            return "general_query";
+            throw new InvalidOperationException($"Failed to classify intent with Gemini: {ex.Message}", ex);
         }
-    }
-
-    public Task<float[]> GenerateEmbeddingAsync(string text)
-    {
-        throw new NotImplementedException();
     }
 }

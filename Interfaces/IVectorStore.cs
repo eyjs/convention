@@ -1,11 +1,20 @@
 namespace LocalRAG.Interfaces;
 
+public record VectorDocument(
+    string Content,
+    float[] Embedding,
+    Dictionary<string, object>? Metadata = null
+);
+
 public interface IVectorStore
 {
     Task<string> AddDocumentAsync(string content, float[] embedding, Dictionary<string, object>? metadata = null);
-    Task<List<VectorSearchResult>> SearchAsync(float[] queryEmbedding, int topK = 5);
+    Task AddDocumentsAsync(IEnumerable<VectorDocument> documents);
+    Task<List<VectorSearchResult>> SearchAsync(float[] queryEmbedding, int topK = 5, Dictionary<string, object>? filter = null);
     Task<bool> DeleteDocumentAsync(string documentId);
+    Task DeleteDocumentsByMetadataAsync(string key, object value);
     Task<int> GetDocumentCountAsync();
+    Task<int> GetDocumentCountAsync(int conventionId);
 }
 
 public record VectorSearchResult(

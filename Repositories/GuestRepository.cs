@@ -84,4 +84,22 @@ public class GuestRepository : Repository<Guest>, IGuestRepository
                 g => g.ResidentNumber == residentNumber && g.ConventionId == conventionId,
                 cancellationToken);
     }
+
+    public async Task<Dictionary<int, List<ScheduleItem>>> GetSchedulesForGuestsAsync(
+        IEnumerable<int> guestIds,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.GuestScheduleTemplates
+            .Where(gst => guestIds.Contains(gst.GuestId))
+            .Include(gst => gst.ScheduleTemplate.ScheduleItems)
+            .AsNoTracking()
+            .GroupBy(gst => gst.GuestId)
+            .ToDictionaryAsync(
+                g => g.Key,
+                g => g.SelectMany(gst => gst.ScheduleTemplate.ScheduleItems)
+                      .OrderBy(si => si.ScheduleDate).ThenBy(si => si.StartTime)
+                      .ToList(),
+                cancellationToken
+            );
+    }
 }

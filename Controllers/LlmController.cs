@@ -67,14 +67,13 @@ public class LlmController : ControllerBase
     {
         try
         {
-            var provider = _serviceProvider.GetRequiredService<ILlmProvider>();
-            var embedding = await provider.GenerateEmbeddingAsync(text);
+            var embeddingService = _serviceProvider.GetRequiredService<IEmbeddingService>();
+            var embedding = await embeddingService.GenerateEmbeddingAsync(text);
             
             return Ok(new
             {
                 Text = text,
                 EmbeddingDimensions = embedding.Length,
-                Provider = provider.ProviderName,
                 Embedding = embedding.Take(10).ToArray(), // 처음 10개만 표시
                 Success = true
             });

@@ -69,17 +69,13 @@
             <tr
               v-for="notice in notices"
               :key="notice.id"
-              class="hover:bg-gray-50 transition-colors"
-              :class="{ 'bg-yellow-50': notice.isPinned }"
+              :class="['hover:bg-gray-50', 'transition-colors', { 'bg-yellow-50': notice.isPinned }]"
             >
               <td class="px-6 py-4 text-sm text-gray-900">{{ notice.displayNumber }}</td>
               <td class="px-6 py-4">
                 <button
                   @click="togglePin(notice.id)"
-                  class="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-colors"
-                  :class="notice.isPinned 
-                    ? 'bg-red-100 text-red-800 hover:bg-red-200' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                  :class="['flex', 'items-center', 'gap-1', 'px-3', 'py-1', 'rounded-full', 'text-xs', 'font-semibold', 'transition-colors', notice.isPinned ? 'bg-red-100 text-red-800 hover:bg-red-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200']"
                 >
                   <span>{{ notice.isPinned ? '📌' : '📍' }}</span>
                   <span>{{ notice.isPinned ? '고정됨' : '고정' }}</span>
@@ -125,7 +121,7 @@
         <nav class="flex items-center gap-2">
           <button
             @click="goToPage(currentPage - 1)"
-            :disabled="currentPage === 1"
+            :disabled="currentPage === 1 ? true : null"
             class="px-3 py-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             이전
@@ -147,7 +143,7 @@
 
           <button
             @click="goToPage(currentPage + 1)"
-            :disabled="currentPage === totalPages"
+            :disabled="currentPage === totalPages ? true : null"
             class="px-3 py-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             다음
@@ -208,6 +204,9 @@ export default {
       
       return pages
     })
+
+    const isPrevButtonDisabled = computed(() => currentPage.value === 1)
+    const isNextButtonDisabled = computed(() => currentPage.value === totalPages.value)
 
     // 메서드
     const fetchNotices = async () => {

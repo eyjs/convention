@@ -6,12 +6,20 @@ namespace LocalRAG.Models
     public class Convention
     {
         public int Id { get; set; }
+
+
         public string MemberId { get; set; } = string.Empty;
+
         public string Title { get; set; } = string.Empty;
+
         public string ConventionType { get; set; } = string.Empty;
+        
         public string RenderType { get; set; } = "STANDARD";
+
         public DateTime? StartDate { get; set; }
+
         public DateTime? EndDate { get; set; }
+        
         public string? ConventionImg { get; set; }
         
         public string? BrandColor { get; set; }

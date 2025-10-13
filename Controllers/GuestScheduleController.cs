@@ -30,7 +30,7 @@ public class GuestScheduleController : ControllerBase
         var schedules = guest.GuestScheduleTemplates
             .Select(gst => gst.ScheduleTemplate)
             .Where(st => st is not null)
-            .SelectMany(st => st.ScheduleItems)
+            .SelectMany(st => st!.ScheduleItems)
             .OrderBy(si => si.ScheduleDate)
             .ThenBy(si => si.StartTime)
             .ToList();

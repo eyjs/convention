@@ -166,7 +166,7 @@ public class FileUploadService : IFileUploadService
     /// <summary>
     /// 파일 삭제
     /// </summary>
-    public async Task<bool> DeleteFileAsync(string filePath)
+    public Task<bool> DeleteFileAsync(string filePath)
     {
         try
         {
@@ -178,15 +178,15 @@ public class FileUploadService : IFileUploadService
             {
                 System.IO.File.Delete(fullPath);
                 _logger.LogInformation("File deleted: {Path}", fullPath);
-                return true;
+                return Task.FromResult(true);
             }
 
-            return false;
+            return Task.FromResult(false);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "파일 삭제 실패: {Path}", filePath);
-            return false;
+            return Task.FromResult(false);
         }
     }
 

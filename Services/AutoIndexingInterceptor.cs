@@ -3,6 +3,11 @@ using LocalRAG.Interfaces;
 using LocalRAG.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using LocalRAG.Services; // Added this using statement
 
 namespace LocalRAG.Services;
 
@@ -84,10 +89,9 @@ public class AutoIndexingInterceptor : SaveChangesInterceptor
     {
         // 서비스 스코프 생성 (인터셉터는 싱글톤이므로)
         using var scope = _serviceProvider.CreateScope();
-        var indexingService = scope.ServiceProvider.GetService<ConventionIndexingService>();
-        var ragService = scope.ServiceProvider.GetService<IRagService>();
+        var indexingService = scope.ServiceProvider.GetService<AdvancedConventionIndexingService>();
 
-        if (indexingService == null || ragService == null)
+        if (indexingService == null)
         {
             _logger.LogWarning("Indexing services not available");
             return;
@@ -97,141 +101,51 @@ public class AutoIndexingInterceptor : SaveChangesInterceptor
             .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
             .ToList();
 
+        var changedConventionIds = new HashSet<int>();
+
         foreach (var entry in changedEntries)
+        {
+            int? conventionId = null;
+            switch (entry.Entity)
+            {
+                case Convention convention:
+                    conventionId = convention.Id;
+                    break;
+                case Guest guest:
+                    conventionId = guest.ConventionId; // Assuming Guest has ConventionId
+                    break;
+                case ScheduleTemplate template:
+                    conventionId = template.ConventionId; // Assuming ScheduleTemplate has ConventionId
+                    break;
+                case ScheduleItem item:
+                    // Need to find the ConventionId from the ScheduleTemplate that owns this ScheduleItem
+                    // This might require loading the parent ScheduleTemplate or having ConventionId directly on ScheduleItem
+                    // For now, assuming ScheduleItem has ScheduleTemplateId
+                    if (item.ScheduleTemplateId > 0) // Check if it's a valid ID
+                    {
+                        var scheduleTemplate = await context.Set<ScheduleTemplate>().AsNoTracking().FirstOrDefaultAsync(st => st.Id == item.ScheduleTemplateId);
+                        conventionId = scheduleTemplate?.ConventionId;
+                    }
+                    break;
+            }
+
+            if (conventionId.HasValue)
+            {
+                changedConventionIds.Add(conventionId.Value);
+            }
+        }
+
+        foreach (var id in changedConventionIds)
         {
             try
             {
-                switch (entry.Entity)
-                {
-                    case Convention convention:
-                        await IndexConventionAsync(convention, indexingService, ragService);
-                        break;
-
-                    case Guest guest:
-                        await IndexGuestAsync(guest, indexingService, ragService);
-                        break;
-
-                    case ScheduleTemplate template:
-                        await IndexScheduleTemplateAsync(template, indexingService, ragService);
-                        break;
-
-                    case ScheduleItem item:
-                        await IndexScheduleItemAsync(item, indexingService, ragService);
-                        break;
-                }
+                _logger.LogInformation("Auto-indexing Convention {ConventionId} due to entity change.", id);
+                await indexingService.IndexConventionAsync(id);
             }
             catch (Exception ex)
             {
-                // 색인 실패는 로그만 남기고 계속 진행
-                _logger.LogError(ex, "Failed to index entity: {EntityType}", entry.Entity.GetType().Name);
+                _logger.LogError(ex, "Failed to auto-index convention {ConventionId}", id);
             }
-        }
-    }
-
-    private async Task IndexConventionAsync(Convention convention, ConventionIndexingService indexingService, IRagService ragService)
-    {
-        try
-        {
-            _logger.LogInformation("Auto-indexing Convention: {Id} - {Title}", convention.Id, convention.Title);
-            
-            var text = $"행사명: {convention.Title}\n" +
-                      $"유형: {convention.ConventionType}\n" +
-                      $"시작일: {convention.StartDate:yyyy-MM-dd}\n" +
-                      $"종료일: {convention.EndDate:yyyy-MM-dd}";
-
-            var metadata = new Dictionary<string, object>
-            {
-                ["convention_id"] = convention.Id,
-                ["type"] = "convention",
-                ["title"] = convention.Title,
-                ["convention_type"] = convention.ConventionType
-            };
-
-            await ragService.AddDocumentAsync(text, metadata);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to index convention {Id}", convention.Id);
-        }
-    }
-
-    private async Task IndexGuestAsync(Guest guest, ConventionIndexingService indexingService, IRagService ragService)
-    {
-        try
-        {
-            _logger.LogInformation("Auto-indexing Guest: {Id} - {Name}", guest.Id, guest.GuestName);
-            
-            var text = $"참석자명: {guest.GuestName}\n" +
-                      $"전화번호: {guest.Telephone}\n" +
-                      $"부서: {guest.CorpPart}\n" +
-                      $"주민번호: {guest.ResidentNumber}\n" +
-                      $"소속: {guest.Affiliation}";
-
-            var metadata = new Dictionary<string, object>
-            {
-                ["convention_id"] = guest.ConventionId,
-                ["guest_id"] = guest.Id,
-                ["type"] = "guest",
-                ["name"] = guest.GuestName
-            };
-
-            await ragService.AddDocumentAsync(text, metadata);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to index guest {Id}", guest.Id);
-        }
-    }
-
-    private async Task IndexScheduleTemplateAsync(ScheduleTemplate template, ConventionIndexingService indexingService, IRagService ragService)
-    {
-        try
-        {
-            _logger.LogInformation("Auto-indexing ScheduleTemplate: {Id} - {Name}", template.Id, template.CourseName);
-            
-            var text = $"일정 코스: {template.CourseName}\n" +
-                      $"설명: {template.Description}";
-
-            var metadata = new Dictionary<string, object>
-            {
-                ["convention_id"] = template.ConventionId,
-                ["template_id"] = template.Id,
-                ["type"] = "schedule_template",
-                ["course_name"] = template.CourseName
-            };
-
-            await ragService.AddDocumentAsync(text, metadata);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to index schedule template {Id}", template.Id);
-        }
-    }
-
-    private async Task IndexScheduleItemAsync(ScheduleItem item, ConventionIndexingService indexingService, IRagService ragService)
-    {
-        try
-        {
-            _logger.LogInformation("Auto-indexing ScheduleItem: {Id} - {Title}", item.Id, item.Title);
-            
-            var text = $"일정: {item.Title}\n" +
-                      $"날짜: {item.ScheduleDate:yyyy-MM-dd}\n" +
-                      $"시작시간: {item.StartTime}\n" +
-                      $"내용: {item.Content}";
-
-            var metadata = new Dictionary<string, object>
-            {
-                ["schedule_item_id"] = item.Id,
-                ["type"] = "schedule_item",
-                ["title"] = item.Title,
-                ["date"] = item.ScheduleDate.ToString("yyyy-MM-dd")
-            };
-
-            await ragService.AddDocumentAsync(text, metadata);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to index schedule item {Id}", item.Id);
         }
     }
 }

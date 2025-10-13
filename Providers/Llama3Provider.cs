@@ -1,4 +1,5 @@
 using LocalRAG.Interfaces;
+using LocalRAG.Models;
 using System.Text.Json;
 
 namespace LocalRAG.Providers;
@@ -12,15 +13,18 @@ public class Llama3Provider : ILlmProvider
 
     public string ProviderName => "Llama3";
 
-    public Llama3Provider(HttpClient httpClient, IConfiguration configuration)
+    private readonly ILogger<Llama3Provider> _logger;
+
+    public Llama3Provider(HttpClient httpClient, IConfiguration configuration, ILogger<Llama3Provider> logger)
     {
         _httpClient = httpClient;
         _configuration = configuration;
+        _logger = logger;
         _baseUrl = _configuration["LlmSettings:Llama3:BaseUrl"] ?? "http://localhost:11434";
         _model = _configuration["LlmSettings:Llama3:Model"] ?? "llama3";
     }
 
-    public async Task<string> GenerateResponseAsync(string prompt, string? context = null, string? userContext = null)
+    public async Task<string> GenerateResponseAsync(string prompt, string? context = null, List<ChatMessage>? history = null)
     {
         try
         {
@@ -29,22 +33,29 @@ public class Llama3Provider : ILlmProvider
 2. Base your answers strictly on the provided 'Context'.
 3. If the context does not contain the answer, you MUST say '정보가 부족하여 답변할 수 없습니다.'";
 
-            if (!string.IsNullOrEmpty(userContext))
-            {
-                systemPrompt += $"\nIMPORTANT: {userContext}";
-            }
-
             var fullPrompt = context != null
                 ? $"Context:\n---\n{context}\n---\nBased on the context, answer the following question in Korean.\nQuestion: {prompt}"
                 : $"Answer the following question in Korean.\nQuestion: {prompt}";
 
-            var request = new { model = _model, prompt = fullPrompt, system = systemPrompt, stream = false };
-            var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/generate", request);
+            var messages = new List<object>();
+            messages.Add(new { role = "system", content = systemPrompt });
+
+            if (history != null)
+            {
+                foreach (var message in history)
+                {
+                    messages.Add(new { role = message.Role, content = message.Content });
+                }
+            }
+            messages.Add(new { role = "user", content = fullPrompt });
+
+            var request = new { model = _model, messages, stream = false };
+            var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/api/chat", request);
             response.EnsureSuccessStatusCode();
 
             var jsonResponse = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(jsonResponse);
-            var answer = result.GetProperty("response").GetString() ?? "답변을 생성할 수 없습니다";
+            var answer = result.GetProperty("message").GetProperty("content").GetString() ?? "답변을 생성할 수 없습니다";
             return answer.Trim();
         }
         catch (Exception ex)
@@ -53,7 +64,7 @@ public class Llama3Provider : ILlmProvider
         }
     }
 
-    public async Task<string> ClassifyIntentAsync(string question)
+    public async Task<string> ClassifyIntentAsync(string question, List<ChatMessage>? history = null)
     {
         try
         {
@@ -87,8 +98,7 @@ Question: ";
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Intent classification failed: {ex.Message}");
-            return "general_query";
+            throw new InvalidOperationException($"Failed to classify intent with Llama3: {ex.Message}", ex);
         }
     }
 

@@ -4,6 +4,7 @@ using LocalRAG.Interfaces;
 using LocalRAG.Middleware;
 using LocalRAG.Providers;
 using LocalRAG.Services;
+using LocalRAG.Services.Builders;
 using LocalRAG.Storage;
 using LocalRAG.Configuration;
 using LocalRAG.Repositories;
@@ -19,6 +20,8 @@ var builder = WebApplication.CreateBuilder(args);
 // --- 1. 로깅 설정 ---
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
+    .WriteTo.Console()
+    .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 builder.Host.UseSerilog();
 
@@ -72,7 +75,13 @@ else
 }
 
 // LLM Provider들은 상태를 유지할 필요 없으므로 'Scoped'로 등록합니다.
-builder.Services.AddScoped<Llama3Provider>();
+builder.Services.AddScoped<Llama3Provider>(provider =>
+{
+    var httpClient = provider.GetRequiredService<HttpClient>();
+    var configuration = provider.GetRequiredService<IConfiguration>();
+    var logger = provider.GetRequiredService<ILogger<Llama3Provider>>();
+    return new Llama3Provider(httpClient, configuration, logger);
+});
 builder.Services.AddScoped<GeminiProvider>();
 
 // 설정에 따라 사용할 LLM Provider를 동적으로 주입합니다.
@@ -91,8 +100,14 @@ builder.Services.AddScoped<ILlmProvider>(provider =>
 
 // 핵심 서비스들을 'Scoped'로 등록합니다.
 builder.Services.AddScoped<IRagService, RagService>();
+
+
+
+// 기존 수동 서비스는 제거하거나 주석 처리
+builder.Services.AddScoped<ConventionDocumentBuilder>();
+builder.Services.AddScoped<AdvancedConventionIndexingService>();
+
 builder.Services.AddScoped<ConventionChatService>();
-builder.Services.AddScoped<ConventionIndexingService>();
 builder.Services.AddScoped<IScheduleUploadService, ScheduleUploadService>();
 builder.Services.AddScoped<INoticeService, NoticeService>();
 builder.Services.AddScoped<IGalleryService, GalleryService>();

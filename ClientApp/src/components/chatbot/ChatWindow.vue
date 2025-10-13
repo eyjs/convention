@@ -138,16 +138,7 @@ const inputPlaceholder = computed(() => {
 })
 
 async function handleSend(message) {
-  const conventionId = conventionStore.currentConvention?.id
-  
-  if (chatStore.messages.length > 1) {
-    await chatStore.sendMessageWithHistory(message)
-  } else if (conventionId) {
-    await chatStore.sendMessageAboutConvention(conventionId, message)
-  } else {
-    await chatStore.sendMessage(message)
-  }
-  
+  await chatStore.sendMessage(message)
   scrollToBottom()
 }
 

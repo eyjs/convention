@@ -1,10 +1,10 @@
 using LocalRAG.Interfaces;
+using LocalRAG.Models.DTOs;
 
 namespace LocalRAG.Services;
 
 public class RagService : IRagService
 {
-    // requirements: 벡터스토어, 임베딩서비스, llm
     private readonly IVectorStore _vectorStore;
     private readonly IEmbeddingService _embeddingService;
     private readonly ILlmProvider _llmProvider;
@@ -19,35 +19,28 @@ public class RagService : IRagService
         _llmProvider = llmProvider;
     }
     
-    /// <summary>
-    /// 벡터 스토어에 도큐먼트 추가 
-    /// </summary>
-    /// <param name="content">문자열 형태의 데이터</param>
-    /// <param name="metadata">해당 데이터에 대한 메타데이터 <key, object>구조 </param>
-    /// <returns></returns>
     public async Task<string> AddDocumentAsync(string content, Dictionary<string, object>? metadata = null)
     {
         var embedding = await _embeddingService.GenerateEmbeddingAsync(content);
         return await _vectorStore.AddDocumentAsync(content, embedding, metadata);
     }
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="question">사용자 질문 문자열</param>
-    /// <param name="topK">Top-K 샘플링에서는 모델이 예측한 단어들 중 확률이 가장 높은 상위 K개의 단어만을 고려합니다.</param>
-    /// <returns></returns>
-    public async Task<RagResponse> QueryAsync(string question, int topK = 5)
+
+    public async Task AddDocumentsAsync(IEnumerable<DocumentChunk> chunks)
     {
-        // 1. 질문을 벡터로 변환
+        var vectorDocuments = new List<VectorDocument>();
+        foreach (var chunk in chunks)
+        {
+            var embedding = await _embeddingService.GenerateEmbeddingAsync(chunk.Content);
+            vectorDocuments.Add(new VectorDocument(chunk.Content, embedding, chunk.Metadata));
+        }
+        await _vectorStore.AddDocumentsAsync(vectorDocuments);
+    }
+
+    public async Task<RagResponse> QueryAsync(string question, int topK = 5, Dictionary<string, object>? filter = null)
+    {
         var queryEmbedding = await _embeddingService.GenerateEmbeddingAsync(question);
-        
-        // 2. 유사한 문서 검색
-        var searchResults = await _vectorStore.SearchAsync(queryEmbedding, topK);
-        
-        // 3. 컨텍스트 구성
+        var searchResults = await _vectorStore.SearchAsync(queryEmbedding, topK, filter);
         var context = string.Join("\n\n", searchResults.Select((r, i) => $"[{i + 1}] {r.Content}"));
-        
-        // 4. LLM으로 답변 생성
         var answer = await _llmProvider.GenerateResponseAsync(question, context);
         
         return new RagResponse(answer, searchResults, _llmProvider.ProviderName);
@@ -56,6 +49,11 @@ public class RagService : IRagService
     public async Task<bool> DeleteDocumentAsync(string documentId)
     {
         return await _vectorStore.DeleteDocumentAsync(documentId);
+    }
+
+    public async Task DeleteDocumentsByMetadataAsync(string key, object value)
+    {
+        await _vectorStore.DeleteDocumentsByMetadataAsync(key, value);
     }
 
     public async Task<RagStats> GetStatsAsync()
