@@ -151,34 +151,3 @@ paket-files/
 ###############################################################################
 # 예: 특정 테스트 데이터
 # SampleData/large-test-file.json
-/Controllers/AdminController.cs
-/Controllers/AuthController.cs
-/Controllers/ConventionChatController.cs
-/Controllers/ConventionsExampleController.cs
-/Controllers/GuestScheduleController.cs
-/Models/Convention/AttributeDefinition.cs
-/Models/Convention/AttributeTemplate.cs
-/Models/Convention/Companion.cs
-/Models/Convention/Convention.cs
-/Models/Convention/Feature.cs
-/Models/Convention/Guest.cs
-/Models/Convention/GuestAttribute.cs
-/Models/Convention/GuestSchedule.cs
-/Models/Convention/GuestScheduleTemplate.cs
-/Models/Convention/Menu.cs
-/Models/Convention/Owner.cs
-/Models/Convention/Schedule.cs
-/Models/Convention/ScheduleItem.cs
-/Models/Convention/ScheduleTemplate.cs
-/Models/Convention/Section.cs
-/Models/Convention/User.cs
-/Models/Convention/VectorStore.cs
-/Models/DTOs/LlmDTOs.cs
-/Models/DTOs/RagDTOs.cs
-/Services/AuthService.cs
-/Services/ConventionChatService.cs
-/Services/ConventionIndexingService.cs
-/Services/ScheduleUploadService.cs
-/Properties/PublishProfiles
-/Models
-/BACKEND_CHECKLIST.md

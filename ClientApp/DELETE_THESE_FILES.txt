@@ -1,0 +1,12 @@
+다음 파일들을 삭제하세요:
+
+1. ClientApp/src/services/mockApi.js
+2. ClientApp/src/services/apiWrapper.js
+
+삭제 명령어 (PowerShell):
+Remove-Item "ClientApp\src\services\mockApi.js"
+Remove-Item "ClientApp\src\services\apiWrapper.js"
+
+또는 Git Bash:
+rm ClientApp/src/services/mockApi.js
+rm ClientApp/src/services/apiWrapper.js

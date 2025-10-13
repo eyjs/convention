@@ -21,7 +21,6 @@ public class AdminController : ControllerBase
         _authService = authService;
     }
 
-    // 대시보드 통계
     [HttpGet("conventions/{conventionId}/stats")]
     public async Task<IActionResult> GetStats(int conventionId)
     {
@@ -33,13 +32,7 @@ public class AdminController : ControllerBase
             .Where(g => g.ConventionId == conventionId)
             .OrderByDescending(g => g.Id)
             .Take(5)
-            .Select(g => new
-            {
-                g.Id,
-                g.GuestName,
-                g.CorpPart,
-                g.Telephone
-            })
+            .Select(g => new { g.Id, g.GuestName, g.CorpPart, g.Telephone })
             .ToListAsync();
 
         var scheduleStats = await _context.ScheduleTemplates
@@ -53,7 +46,6 @@ public class AdminController : ControllerBase
             })
             .ToListAsync();
 
-        // 속성별 통계
         var attributeStats = await _context.Guests
             .Where(g => g.ConventionId == conventionId)
             .SelectMany(g => g.GuestAttributes)
@@ -62,11 +54,7 @@ public class AdminController : ControllerBase
             {
                 AttributeKey = group.Key,
                 Values = group.GroupBy(ga => ga.AttributeValue)
-                    .Select(vg => new
-                    {
-                        Value = vg.Key,
-                        Count = vg.Count()
-                    })
+                    .Select(vg => new { Value = vg.Key, Count = vg.Count() })
                     .OrderByDescending(v => v.Count)
                     .ToList(),
                 TotalCount = group.Count()
@@ -74,18 +62,9 @@ public class AdminController : ControllerBase
             .OrderByDescending(a => a.TotalCount)
             .ToListAsync();
 
-        return Ok(new
-        {
-            totalGuests,
-            totalSchedules,
-            scheduleAssignments,
-            recentGuests,
-            scheduleStats,
-            attributeStats
-        });
+        return Ok(new { totalGuests, totalSchedules, scheduleAssignments, recentGuests, scheduleStats, attributeStats });
     }
 
-    // 참석자 목록 조회
     [HttpGet("conventions/{conventionId}/guests")]
     public async Task<IActionResult> GetGuests(int conventionId)
     {
@@ -93,43 +72,25 @@ public class AdminController : ControllerBase
             .Where(g => g.ConventionId == conventionId)
             .Include(g => g.User)
             .Include(g => g.GuestAttributes)
-            .Include(g => g.GuestScheduleTemplates)
-                .ThenInclude(gst => gst.ScheduleTemplate)
+            .Include(g => g.GuestScheduleTemplates).ThenInclude(gst => gst.ScheduleTemplate)
             .OrderBy(g => g.GuestName)
             .Select(g => new
             {
-                g.Id,
-                g.GuestName,
-                g.Telephone,
-                g.CorpPart,
-                g.ResidentNumber,
-                g.Affiliation,
-                g.ConventionId,
-                g.AccessToken,
-                g.IsRegisteredUser,
-                user = g.User == null ? null : new
-                {
-                    g.User.Id,
-                    g.User.LoginId,
-                    g.User.Role
-                },
+                g.Id, g.GuestName, g.Telephone, g.CorpPart, g.ResidentNumber, g.Affiliation,
+                g.ConventionId, g.AccessToken, g.IsRegisteredUser,
+                user = g.User == null ? null : new { g.User.Id, g.User.LoginId, g.User.Role },
                 scheduleTemplates = g.GuestScheduleTemplates.Select(gst => new
                 {
                     gst.ScheduleTemplateId,
                     gst.ScheduleTemplate!.CourseName
                 }).ToList(),
-                attributes = g.GuestAttributes.Select(ga => new
-                {
-                    ga.AttributeKey,
-                    ga.AttributeValue
-                }).ToList()
+                attributes = g.GuestAttributes.Select(ga => new { ga.AttributeKey, ga.AttributeValue }).ToList()
             })
             .ToListAsync();
 
         return Ok(guests);
     }
 
-    // 참석자 상세 조회
     [HttpGet("guests/{guestId}/detail")]
     public async Task<IActionResult> GetGuestDetail(int guestId)
     {
@@ -145,20 +106,9 @@ public class AdminController : ControllerBase
 
         return Ok(new
         {
-            guest.Id,
-            guest.GuestName,
-            guest.Telephone,
-            guest.CorpPart,
-            guest.ResidentNumber,
-            guest.Affiliation,
-            guest.AccessToken,
-            guest.IsRegisteredUser,
-            user = guest.User == null ? null : new
-            {
-                guest.User.Id,
-                guest.User.LoginId,
-                guest.User.Role
-            },
+            guest.Id, guest.GuestName, guest.Telephone, guest.CorpPart,
+            guest.ResidentNumber, guest.Affiliation, guest.AccessToken, guest.IsRegisteredUser,
+            user = guest.User == null ? null : new { guest.User.Id, guest.User.LoginId, guest.User.Role },
             schedules = guest.GuestScheduleTemplates.Select(gst => new
             {
                 gst.ScheduleTemplateId,
@@ -166,24 +116,14 @@ public class AdminController : ControllerBase
                 gst.ScheduleTemplate.Description,
                 items = gst.ScheduleTemplate.ScheduleItems.Select(si => new
                 {
-                    si.Id,
-                    si.ScheduleDate,
-                    si.StartTime,
-                    si.EndTime,
-                    si.Title,
-                    si.Content,
-                    si.Location,
-                    si.OrderNum
+                    si.Id, si.ScheduleDate, si.StartTime, si.EndTime,
+                    si.Title, si.Content, si.Location, si.OrderNum
                 }).ToList()
             }).ToList(),
-            attributes = guest.GuestAttributes.ToDictionary(
-                ga => ga.AttributeKey,
-                ga => ga.AttributeValue
-            )
+            attributes = guest.GuestAttributes.ToDictionary(ga => ga.AttributeKey, ga => ga.AttributeValue)
         });
     }
 
-    // 참석자 생성 (비회원)
     [HttpPost("conventions/{conventionId}/guests")]
     public async Task<IActionResult> CreateGuest(int conventionId, [FromBody] GuestDto dto)
     {
@@ -193,20 +133,13 @@ public class AdminController : ControllerBase
         if (string.IsNullOrWhiteSpace(dto.Telephone))
             return BadRequest(new { field = "telephone", message = "전화번호를 입력해주세요." });
 
-        // 비밀번호 결정 (우선순위: 수기 입력 > 주민번호 앞 6자리 > 기본값 "123456")
         string passwordToSet;
         if (!string.IsNullOrWhiteSpace(dto.Password))
-        {
             passwordToSet = dto.Password;
-        }
         else if (!string.IsNullOrWhiteSpace(dto.ResidentNumber) && dto.ResidentNumber.Length >= 6)
-        {
             passwordToSet = dto.ResidentNumber.Substring(0, 6);
-        }
         else
-        {
             passwordToSet = "123456";
-        }
 
         var guest = new Guest
         {
@@ -217,8 +150,8 @@ public class AdminController : ControllerBase
             ResidentNumber = dto.ResidentNumber?.Trim(),
             Affiliation = dto.Affiliation?.Trim(),
             AccessToken = GenerateAccessToken(),
-            IsRegisteredUser = false, // 비회원으로 생성
-            PasswordHash = _authService.HashPassword(passwordToSet) // 비밀번호 해시하여 저장
+            IsRegisteredUser = false,
+            PasswordHash = _authService.HashPassword(passwordToSet)
         };
 
         _context.Guests.Add(guest);
@@ -238,92 +171,82 @@ public class AdminController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-        return Ok(new
-        {
-            guest.Id,
-            guest.GuestName,
-            message = "비회원 참석자가 성공적으로 생성되었습니다."
-        });
+        return Ok(new { guest.Id, guest.GuestName, message = "비회원 참석자가 성공적으로 생성되었습니다." });
     }
 
-    // 참석자 수정
     [HttpPut("guests/{id}")]
     public async Task<IActionResult> UpdateGuest(int id, [FromBody] GuestDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.GuestName))
-            return BadRequest(new { field = "guestName", message = "이름을 입력해주세요." });
-
-        if (string.IsNullOrWhiteSpace(dto.Telephone))
-            return BadRequest(new { field = "telephone", message = "전화번호를 입력해주세요." });
-
-        var guest = await _context.Guests
-        .Include(g => g.User) // User 정보도 함께 로드
-        .FirstOrDefaultAsync(g => g.Id == id);
-        if (guest == null) return NotFound();
-
-        guest.GuestName = dto.GuestName.Trim();
-        guest.Telephone = dto.Telephone.Trim();
-        guest.CorpPart = dto.CorpPart?.Trim();
-        guest.ResidentNumber = dto.ResidentNumber?.Trim();
-        guest.Affiliation = dto.Affiliation?.Trim();
-
-        // 비밀번호 수정 로직 변경
-        if (!string.IsNullOrWhiteSpace(dto.Password))
+        try
         {
-            if (guest.IsRegisteredUser && guest.User != null)
-            {
-                // 회원인 경우: User 테이블의 비밀번호 변경
-                guest.User.PasswordHash = _authService.HashPassword(dto.Password);
-                guest.User.UpdatedAt = DateTime.UtcNow;
-            }
-            else
-            {
-                // 비회원인 경우: Guest 테이블의 비밀번호 변경
-                guest.PasswordHash = _authService.HashPassword(dto.Password);
-            }
-        }
+            if (string.IsNullOrWhiteSpace(dto.GuestName))
+                return BadRequest(new { field = "guestName", message = "이름을 입력해주세요." });
 
-        // Attributes 업데이트
-        if (dto.Attributes != null)
-        {
-            // 기존 attributes 삭제
-            _context.Set<GuestAttribute>().RemoveRange(guest.GuestAttributes);
-            
-            // 새 attributes 추가
-            foreach (var attr in dto.Attributes)
+            if (string.IsNullOrWhiteSpace(dto.Telephone))
+                return BadRequest(new { field = "telephone", message = "전화번호를 입력해주세요." });
+
+            var guest = await _context.Guests
+                .Include(g => g.User)
+                .Include(g => g.GuestAttributes)
+                .FirstOrDefaultAsync(g => g.Id == id);
+                
+            if (guest == null) return NotFound();
+
+            guest.GuestName = dto.GuestName.Trim();
+            guest.Telephone = dto.Telephone.Trim();
+            guest.CorpPart = dto.CorpPart?.Trim();
+            guest.ResidentNumber = dto.ResidentNumber?.Trim();
+            guest.Affiliation = dto.Affiliation?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(dto.Password))
             {
-                _context.Set<GuestAttribute>().Add(new GuestAttribute
+                if (guest.IsRegisteredUser && guest.User != null)
                 {
-                    GuestId = guest.Id,
-                    AttributeKey = attr.Key,
-                    AttributeValue = attr.Value
-                });
+                    guest.User.PasswordHash = _authService.HashPassword(dto.Password);
+                    guest.User.UpdatedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    guest.PasswordHash = _authService.HashPassword(dto.Password);
+                }
             }
+
+            if (dto.Attributes != null)
+            {
+                var existingAttrs = guest.GuestAttributes.ToList();
+                _context.Set<GuestAttribute>().RemoveRange(existingAttrs);
+                
+                foreach (var attr in dto.Attributes)
+                {
+                    _context.Set<GuestAttribute>().Add(new GuestAttribute
+                    {
+                        GuestId = guest.Id,
+                        AttributeKey = attr.Key,
+                        AttributeValue = attr.Value
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { guest.Id, guest.GuestName });
         }
-
-        await _context.SaveChangesAsync();
-
-        return Ok(new
+        catch (Exception ex)
         {
-            guest.Id,
-            guest.GuestName
-        });
+            return StatusCode(500, new { message = ex.Message, stack = ex.StackTrace });
+        }
     }
 
-    // 참석자 일정 배정
     [HttpPost("guests/{guestId}/schedules")]
     public async Task<IActionResult> AssignSchedules(int guestId, [FromBody] AssignSchedulesDto dto)
     {
         var guest = await _context.Guests.FindAsync(guestId);
         if (guest == null) return NotFound();
 
-        // 기존 배정 삭제
         var existing = await _context.Set<GuestScheduleTemplate>()
             .Where(gst => gst.GuestId == guestId)
             .ToListAsync();
         _context.Set<GuestScheduleTemplate>().RemoveRange(existing);
 
-        // 새 배정 추가
         foreach (var templateId in dto.ScheduleTemplateIds)
         {
             _context.Set<GuestScheduleTemplate>().Add(new GuestScheduleTemplate
@@ -338,7 +261,6 @@ public class AdminController : ControllerBase
         return Ok(new { message = "일정이 배정되었습니다." });
     }
 
-    // 참석자 삭제
     [HttpDelete("guests/{id}")]
     public async Task<IActionResult> DeleteGuest(int id)
     {
@@ -350,7 +272,6 @@ public class AdminController : ControllerBase
         return Ok();
     }
 
-    // 비회원 → 회원 전환
     [HttpPost("guests/{guestId}/convert-to-user")]
     public async Task<IActionResult> ConvertToUser(int guestId, [FromBody] CreateUserDto dto)
     {
@@ -369,7 +290,6 @@ public class AdminController : ControllerBase
         if (guest.IsRegisteredUser)
             return BadRequest(new { message = "이미 회원입니다." });
 
-        // 중복 체크
         var existing = await _context.Users.FirstOrDefaultAsync(u => u.LoginId == dto.LoginId);
         if (existing != null) 
             return BadRequest(new { field = "loginId", message = "이미 사용 중인 로그인 ID입니다." });
@@ -396,7 +316,6 @@ public class AdminController : ControllerBase
         return Ok(new { message = "회원으로 전환되었습니다.", userId = user.Id });
     }
 
-    // 회원 권한 수정
     [HttpPut("guests/{guestId}/user")]
     public async Task<IActionResult> UpdateUserForGuest(int guestId, [FromBody] UpdateUserDto dto)
     {
@@ -410,7 +329,6 @@ public class AdminController : ControllerBase
         return Ok(new { message = "권한이 수정되었습니다." });
     }
 
-    // 비밀번호 재설정
     [HttpPost("users/{userId}/reset-password")]
     public async Task<IActionResult> ResetPassword(int userId, [FromBody] ResetPasswordDto dto)
     {
@@ -430,7 +348,6 @@ public class AdminController : ControllerBase
         return Ok(new { message = "비밀번호가 재설정되었습니다." });
     }
 
-    // 접근 링크 가져오기
     [HttpGet("guests/{guestId}/access-link")]
     public async Task<IActionResult> GetAccessLink(int guestId)
     {
@@ -446,7 +363,6 @@ public class AdminController : ControllerBase
         return Ok(new { link, accessToken = guest.AccessToken });
     }
 
-    // SMS 전송 (TODO: 나중에 구현)
     [HttpPost("guests/{guestId}/send-sms")]
     public async Task<IActionResult> SendSMS(int guestId)
     {
@@ -456,14 +372,9 @@ public class AdminController : ControllerBase
             
         if (guest == null) return NotFound();
 
-        // TODO: SMS 발송 구현
-        // var link = $"{baseUrl}/guest/{guest.Convention.Id}/{guest.AccessToken}";
-        // await _smsService.SendAsync(guest.Telephone, $"[{guest.Convention.Title}] 행사 참석 링크: {link}");
-
         return Ok(new { message = "SMS 전송 기능은 추후 구현 예정입니다." });
     }
 
-    // 일정 템플릿 목록
     [HttpGet("conventions/{conventionId}/schedule-templates")]
     public async Task<IActionResult> GetScheduleTemplates(int conventionId)
     {
@@ -474,25 +385,15 @@ public class AdminController : ControllerBase
             .OrderBy(st => st.OrderNum)
             .Select(st => new
             {
-                st.Id,
-                st.CourseName,
-                st.Description,
-                st.OrderNum,
-                st.CreatedAt,
+                st.Id, st.CourseName, st.Description, st.OrderNum, st.CreatedAt,
                 GuestCount = st.GuestScheduleTemplates.Count,
                 ScheduleItems = st.ScheduleItems
                     .OrderBy(si => si.ScheduleDate)
                     .ThenBy(si => si.StartTime)
                     .Select(si => new
                     {
-                        si.Id,
-                        si.ScheduleDate,
-                        si.StartTime,
-                        si.EndTime,
-                        si.Title,
-                        si.Location,
-                        si.Content,
-                        si.OrderNum
+                        si.Id, si.ScheduleDate, si.StartTime, si.EndTime,
+                        si.Title, si.Location, si.Content, si.OrderNum
                     }).ToList()
             })
             .ToListAsync();
@@ -500,7 +401,6 @@ public class AdminController : ControllerBase
         return Ok(templates);
     }
 
-    // 일정 템플릿 생성
     [HttpPost("conventions/{conventionId}/schedule-templates")]
     public async Task<IActionResult> CreateScheduleTemplate(int conventionId, [FromBody] ScheduleTemplateDto dto)
     {
@@ -518,7 +418,6 @@ public class AdminController : ControllerBase
         return Ok(template);
     }
 
-    // 일정 템플릿 수정
     [HttpPut("schedule-templates/{id}")]
     public async Task<IActionResult> UpdateScheduleTemplate(int id, [FromBody] ScheduleTemplateDto dto)
     {
@@ -533,7 +432,6 @@ public class AdminController : ControllerBase
         return Ok(template);
     }
 
-    // 일정 템플릿 삭제
     [HttpDelete("schedule-templates/{id}")]
     public async Task<IActionResult> DeleteScheduleTemplate(int id)
     {
@@ -544,26 +442,18 @@ public class AdminController : ControllerBase
             
         if (template == null) return NotFound();
 
-        // 참석자 할당 삭제
         if (template.GuestScheduleTemplates.Any())
-        {
             _context.Set<GuestScheduleTemplate>().RemoveRange(template.GuestScheduleTemplates);
-        }
 
-        // 일정 항목 삭제
         if (template.ScheduleItems.Any())
-        {
             _context.ScheduleItems.RemoveRange(template.ScheduleItems);
-        }
 
-        // 템플릿 삭제
         _context.ScheduleTemplates.Remove(template);
         await _context.SaveChangesAsync();
         
         return Ok();
     }
 
-    // 일정 항목 생성
     [HttpPost("schedule-items")]
     public async Task<IActionResult> CreateScheduleItem([FromBody] ScheduleItemDto dto)
     {
@@ -585,7 +475,6 @@ public class AdminController : ControllerBase
         return Ok(item);
     }
 
-    // 일정 항목 수정
     [HttpPut("schedule-items/{id}")]
     public async Task<IActionResult> UpdateScheduleItem(int id, [FromBody] ScheduleItemDto dto)
     {
@@ -604,7 +493,6 @@ public class AdminController : ControllerBase
         return Ok(item);
     }
 
-    // 일정 항목 삭제
     [HttpDelete("schedule-items/{id}")]
     public async Task<IActionResult> DeleteScheduleItem(int id)
     {
@@ -616,7 +504,6 @@ public class AdminController : ControllerBase
         return Ok();
     }
 
-    // 일정 항목 일괄 생성 (복사용)
     [HttpPost("schedule-items/bulk")]
     public async Task<IActionResult> CreateScheduleItemsBulk([FromBody] BulkScheduleItemsDto dto)
     {
@@ -641,7 +528,6 @@ public class AdminController : ControllerBase
         return Ok(new { message = $"{items.Count}개 일정이 추가되었습니다.", count = items.Count });
     }
 
-    // 템플릿에 할당된 참석자 목록
     [HttpGet("schedule-templates/{templateId}/guests")]
     public async Task<IActionResult> GetTemplateGuests(int templateId)
     {
@@ -650,19 +536,14 @@ public class AdminController : ControllerBase
             .Include(gst => gst.Guest)
             .Select(gst => new
             {
-                gst.Guest!.Id,
-                gst.Guest.GuestName,
-                gst.Guest.Telephone,
-                gst.Guest.CorpPart,
-                gst.Guest.Affiliation,
-                gst.AssignedAt
+                gst.Guest!.Id, gst.Guest.GuestName, gst.Guest.Telephone,
+                gst.Guest.CorpPart, gst.Guest.Affiliation, gst.AssignedAt
             })
             .ToListAsync();
 
         return Ok(guests);
     }
 
-    // 참석자에서 일정 제거
     [HttpDelete("guests/{guestId}/schedules/{templateId}")]
     public async Task<IActionResult> RemoveGuestSchedule(int guestId, int templateId)
     {
@@ -676,7 +557,6 @@ public class AdminController : ControllerBase
         return Ok();
     }
 
-    // 전체 일정 조회 (템플릿별로 그룹화)
     [HttpGet("conventions/{conventionId}/schedules")]
     public async Task<IActionResult> GetAllSchedules(int conventionId)
     {
@@ -687,20 +567,9 @@ public class AdminController : ControllerBase
             .ThenBy(si => si.StartTime)
             .Select(si => new
             {
-                si.Id,
-                si.ScheduleDate,
-                si.StartTime,
-                si.EndTime,
-                si.Title,
-                si.Location,
-                si.Content,
-                si.OrderNum,
-                Templates = new[] {
-                    new {
-                        si.ScheduleTemplate!.Id,
-                        si.ScheduleTemplate.CourseName
-                    }
-                }
+                si.Id, si.ScheduleDate, si.StartTime, si.EndTime,
+                si.Title, si.Location, si.Content, si.OrderNum,
+                Templates = new[] { new { si.ScheduleTemplate!.Id, si.ScheduleTemplate.CourseName } }
             })
             .ToListAsync();
 
@@ -710,6 +579,102 @@ public class AdminController : ControllerBase
     private string GenerateAccessToken()
     {
         return Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+    }
+
+    // ========== 게시판 관리 ==========
+    
+    [HttpGet("conventions/{conventionId}/notices")]
+    public async Task<IActionResult> GetNotices(int conventionId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var query = _context.Notices
+            .Where(n => n.ConventionId == conventionId)
+            .Include(n => n.Author)
+            .Include(n => n.Attachments)
+            .OrderByDescending(n => n.IsPinned)
+            .ThenByDescending(n => n.CreatedAt);
+
+        var totalCount = await query.CountAsync();
+        var notices = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(n => new
+            {
+                n.Id,
+                n.Title,
+                n.Content,
+                n.IsPinned,
+                n.ViewCount,
+                n.IsDeleted,
+                AuthorName = n.Author.Name,
+                n.CreatedAt,
+                n.UpdatedAt,
+                AttachmentCount = n.Attachments.Count
+            })
+            .ToListAsync();
+
+        return Ok(new { items = notices, totalCount, page, pageSize });
+    }
+
+    [HttpPost("conventions/{conventionId}/notices")]
+    public async Task<IActionResult> CreateNotice(int conventionId, [FromBody] CreateNoticeDto dto)
+    {
+        var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+        var notice = new Notice
+        {
+            ConventionId = conventionId,
+            Title = dto.Title,
+            Content = dto.Content,
+            IsPinned = dto.IsPinned,
+            AuthorId = userId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Notices.Add(notice);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { notice.Id, notice.Title, message = "공지사항이 생성되었습니다." });
+    }
+
+    [HttpPut("notices/{id}")]
+    public async Task<IActionResult> UpdateNotice(int id, [FromBody] UpdateNoticeDto dto)
+    {
+        var notice = await _context.Notices.FindAsync(id);
+        if (notice == null) return NotFound();
+
+        notice.Title = dto.Title;
+        notice.Content = dto.Content;
+        notice.IsPinned = dto.IsPinned;
+        notice.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { notice.Id, notice.Title, message = "공지사항이 수정되었습니다." });
+    }
+
+    [HttpDelete("notices/{id}")]
+    public async Task<IActionResult> DeleteNotice(int id)
+    {
+        var notice = await _context.Notices.FindAsync(id);
+        if (notice == null) return NotFound();
+
+        notice.IsDeleted = true;
+        notice.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "공지사항이 삭제되었습니다." });
+    }
+
+    [HttpPost("notices/{id}/toggle-pin")]
+    public async Task<IActionResult> TogglePin(int id)
+    {
+        var notice = await _context.Notices.FindAsync(id);
+        if (notice == null) return NotFound();
+
+        notice.IsPinned = !notice.IsPinned;
+        notice.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { notice.IsPinned, message = notice.IsPinned ? "공지사항이 고정되었습니다." : "공지사항 고정이 해제되었습니다." });
     }
 }
 
@@ -768,4 +733,18 @@ public class ScheduleItemDto
 public class BulkScheduleItemsDto
 {
     public List<ScheduleItemDto> Items { get; set; } = new();
+}
+
+public class CreateNoticeDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public bool IsPinned { get; set; }
+}
+
+public class UpdateNoticeDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public bool IsPinned { get; set; }
 }

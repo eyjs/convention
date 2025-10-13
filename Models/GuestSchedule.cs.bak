@@ -1,0 +1,11 @@
+namespace LocalRAG.Models
+{
+    public class GuestSchedule
+    {
+        public int GuestId { get; set; }
+        public int ScheduleId { get; set; }
+
+        public Guest? Guest { get; set; }
+        public Schedule? Schedule { get; set; }
+    }
+}

@@ -94,6 +94,8 @@ builder.Services.AddScoped<IRagService, RagService>();
 builder.Services.AddScoped<ConventionChatService>();
 builder.Services.AddScoped<ConventionIndexingService>();
 builder.Services.AddScoped<IScheduleUploadService, ScheduleUploadService>();
+builder.Services.AddScoped<INoticeService, NoticeService>();
+builder.Services.AddScoped<IGalleryService, GalleryService>();
 
 // --- 5. 인증 및 기타 서비스 등록 ---
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
@@ -144,9 +146,16 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 
-app.UseHttpsRedirection();
-app.UseStaticFiles();
+// CORS를 HTTPS 리다이렉션보다 먼저 설정
 app.UseCors("AllowSPA");
+
+// 개발 환경에서는 HTTPS 리다이렉션 비활성화
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,0 +1,48 @@
+namespace LocalRAG.Services;
+
+public class ChatResponse
+{
+    public string Answer { get; set; } = string.Empty;
+    public List<SearchResult> Sources { get; set; } = new();
+    public string LlmProvider { get; set; } = string.Empty;
+    public ChatUserContext? UserContext { get; set; }
+}
+
+public class SearchResult
+{
+    public string DocumentId { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public double Similarity { get; set; }
+    public Dictionary<string, object>? Metadata { get; set; }
+}
+
+public class ChatMessage
+{
+    public string Role { get; set; } = string.Empty; // "user" or "assistant"
+    public string Content { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+}
+
+public class ChatUserContext
+{
+    public UserRole Role { get; set; }
+    public int? GuestId { get; set; }
+    public int? CompanionId { get; set; }
+    public string? MemberId { get; set; }
+}
+
+public enum UserRole
+{
+    Guest,
+    Companion,
+    Admin,
+    Anonymous
+}
+
+public class IndexingResult
+{
+    public int SuccessCount { get; set; }
+    public int FailureCount { get; set; }
+    public List<string> Errors { get; set; } = new();
+    public DateTime IndexedAt { get; set; } = DateTime.UtcNow;
+}

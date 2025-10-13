@@ -1,18 +1,5 @@
 <template>
   <div>
-    <!-- Mock 모드 표시 -->
-    <div v-if="isMockMode" class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2">
-      <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-      </svg>
-      <span class="text-sm text-yellow-800">
-        <strong>개발 모드:</strong> Mock 데이터를 사용 중입니다. 
-        <button @click="toggleMockMode" class="ml-2 underline hover:text-yellow-900">
-          실제 API로 전환
-        </button>
-      </span>
-    </div>
-
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between">
@@ -160,8 +147,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import apiWrapper from '@/services/apiWrapper'
-import { mockAPI, isDevelopmentMode } from '@/services/mockApi'
+import apiClient from '@/services/api'
 
 const props = defineProps({
   conventionId: { type: Number, required: true }
@@ -180,7 +166,6 @@ const scheduleStats = ref([])
 const attributeStats = ref([])
 const showAllAttributes = ref(false)
 const showAllValues = ref([])
-const isMockMode = ref(isDevelopmentMode())
 
 const displayedAttributes = computed(() => {
   return showAllAttributes.value ? attributeStats.value : attributeStats.value.slice(0, 6)
@@ -190,18 +175,9 @@ const toggleShowAllValues = (index) => {
   showAllValues.value[index] = !showAllValues.value[index]
 }
 
-const toggleMockMode = () => {
-  const newValue = !isMockMode.value
-  localStorage.setItem('VITE_USE_MOCK', newValue.toString())
-  window.location.reload()
-}
-
 const loadStats = async () => {
   try {
-    const response = await apiWrapper.get(
-      `/admin/conventions/${props.conventionId}/stats`,
-      () => mockAPI.getConventionStats(props.conventionId)
-    )
+    const response = await apiClient.get(`/admin/conventions/${props.conventionId}/stats`)
     
     stats.value = {
       totalGuests: response.data.totalGuests,
@@ -214,20 +190,7 @@ const loadStats = async () => {
     showAllValues.value = new Array(attributeStats.value.length).fill(false)
   } catch (error) {
     console.error('Failed to load stats:', error)
-    // 실제 API 호출 실패 시 Mock 데이터로 폴백
-    if (!isMockMode.value) {
-      console.warn('⚠️ API 호출 실패, Mock 데이터로 폴백합니다.')
-      const mockData = mockAPI.getConventionStats(props.conventionId)
-      stats.value = {
-        totalGuests: mockData.totalGuests,
-        totalSchedules: mockData.totalSchedules,
-        scheduleAssignments: mockData.scheduleAssignments
-      }
-      recentGuests.value = mockData.recentGuests
-      scheduleStats.value = mockData.scheduleStats
-      attributeStats.value = mockData.attributeStats || []
-      showAllValues.value = new Array(attributeStats.value.length).fill(false)
-    }
+    alert('통계 데이터를 불러오는데 실패했습니다: ' + (error.response?.data?.message || error.message))
   }
 }
 

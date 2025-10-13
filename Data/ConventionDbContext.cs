@@ -26,6 +26,10 @@ public class ConventionDbContext : DbContext
     public DbSet<ScheduleItem> ScheduleItems { get; set; }
     public DbSet<GuestScheduleTemplate> GuestScheduleTemplates { get; set; }
     public DbSet<AttributeTemplate> AttributeTemplates { get; set; }
+    public DbSet<Notice> Notices { get; set; }
+    public DbSet<FileAttachment> FileAttachments { get; set; }
+    public DbSet<Gallery> Galleries { get; set; }
+    public DbSet<GalleryImage> GalleryImages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -210,6 +214,83 @@ public class ConventionDbContext : DbContext
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_VectorStore_ConventionId");
             entity.HasIndex(e => e.SourceType).HasDatabaseName("IX_VectorStore_SourceType");
+        });
+
+        // Notice 설정
+        modelBuilder.Entity<Notice>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Content).IsRequired();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+            entity.Property(e => e.ViewCount).HasDefaultValue(0);
+            entity.Property(e => e.IsPinned).HasDefaultValue(false);
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_Notice_ConventionId");
+            entity.HasIndex(e => e.AuthorId).HasDatabaseName("IX_Notice_AuthorId");
+            entity.HasIndex(e => e.IsPinned).HasDatabaseName("IX_Notice_IsPinned");
+            entity.HasIndex(e => e.CreatedAt).HasDatabaseName("IX_Notice_CreatedAt");
+            
+            entity.HasOne(e => e.Author)
+                  .WithMany()
+                  .HasForeignKey(e => e.AuthorId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            
+            entity.HasOne(e => e.Convention)
+                  .WithMany()
+                  .HasForeignKey(e => e.ConventionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasMany(e => e.Attachments)
+                  .WithOne(a => a.Notice)
+                  .HasForeignKey(a => a.NoticeId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // FileAttachment 설정
+        modelBuilder.Entity<FileAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UploadedAt).HasDefaultValueSql("getdate()");
+            entity.HasIndex(e => e.NoticeId).HasDatabaseName("IX_FileAttachment_NoticeId");
+            entity.HasIndex(e => e.Category).HasDatabaseName("IX_FileAttachment_Category");
+        });
+
+        // Gallery 설정
+        modelBuilder.Entity<Gallery>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_Gallery_ConventionId");
+            entity.HasIndex(e => e.CreatedAt).HasDatabaseName("IX_Gallery_CreatedAt");
+            
+            entity.HasOne(e => e.Convention)
+                  .WithMany()
+                  .HasForeignKey(e => e.ConventionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.Author)
+                  .WithMany()
+                  .HasForeignKey(e => e.AuthorId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            
+            entity.HasMany(e => e.Images)
+                  .WithOne(i => i.Gallery)
+                  .HasForeignKey(i => i.GalleryId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // GalleryImage 설정
+        modelBuilder.Entity<GalleryImage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ImageUrl).IsRequired();
+            entity.Property(e => e.UploadedAt).HasDefaultValueSql("getdate()");
+            entity.HasIndex(e => e.GalleryId).HasDatabaseName("IX_GalleryImage_GalleryId");
         });
     }
 }
