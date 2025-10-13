@@ -1,350 +1,106 @@
-# .NET Core
-bin/
-obj/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-*.userprefs
+## 이 .gitignore는 .NET 8.0 프로젝트용으로 최적화되었습니다.
+## 중요: 소스 코드는 절대 제외하지 않습니다!
 
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-bld/
+###############################################################################
+# 1. .NET 빌드 결과물 (필수)
+###############################################################################
 [Bb]in/
 [Oo]bj/
+[Dd]ebug/
+[Rr]elease/
 [Ll]og/
-
-# Visual Studio
-.vs/
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-*.vscode/
-
-# MSTest test Results
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-
-# NUnit
-*.VisualState.xml
-TestResult.xml
-
-# Build Results of an ATL Project
-[Dd]ebugPS/
-[Rr]eleasePS/
-dlldata.c
-
-# Benchmark Results
-BenchmarkDotNet.Artifacts/
+[Ll]ogs/
 
 # .NET Core
 project.lock.json
 project.fragment.lock.json
 artifacts/
 
-# StyleCop
-StyleCopReport.xml
+# MSBuild Binary and Structured Log
+*.binlog
 
-# Files built by Visual Studio
-*_i.c
-*_p.c
-*_h.h
-*.ilk
-*.meta
-*.obj
-*.iobj
-*.pch
-*.pdb
-*.ipdb
-*.pgc
-*.pgd
-*.rsp
-*.sbr
-*.tlb
-*.tli
-*.tlh
-*.tmp
-*.tmp_proj
-*_wpftmp.csproj
-*.log
-*.vspscc
-*.vssscc
-.builds
-*.pidb
-*.svclog
-*.scc
+###############################################################################
+# 2. Visual Studio / Rider (필수)
+###############################################################################
+.vs/
+.vscode/
+.idea/
 
-# Chutzpah Test files
-_Chutzpah*
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.rsuser
 
-# Visual C++ cache files
-ipch/
-*.aps
-*.ncb
-*.opendb
-*.opensdf
-*.sdf
-*.cachefile
-*.VC.db
-*.VC.VC.opendb
-
-# Visual Studio profiler
-*.psess
-*.vsp
-*.vspx
-*.sap
-
-# Visual Studio Trace Files
-*.e2e
-
-# TFS 2012 Local Workspace
-$tf/
-
-# Guidance Automation Toolkit
-*.gpState
-
-# ReSharper is a .NET coding add-in
-_ReSharper*/
-*.[Rr]e[Ss]harper
+# Visual Studio cache/options
+.cr/
+*.sln.iml
 *.DotSettings.user
 
-# JustCode is a .NET coding add-in
-.JustCode
-
-# TeamCity is a build add-in
-_TeamCity*
-
-# DotCover is a Code Coverage Tool
-*.dotCover
-
-# AxoCover is a Code Coverage Tool
-.axoCover/*
-!.axoCover/settings.json
-
-# Visual Studio code coverage results
-*.coverage
-*.coveragexml
-
-# NCrunch
-_NCrunch_*
-.*crunch*.local.xml
-nCrunchTemp_*
-
-# MightyMoose
-*.mm.*
-AutoTest.Net/
-
-# Web workbench (sass)
-.sass-cache/
-
-# Installshield output folder
-[Ee]xpress/
-
-# DocProject is a documentation generator add-in
-DocProject/buildhelp/
-DocProject/Help/*.HxT
-DocProject/Help/*.HxC
-DocProject/Help/*.hhc
-DocProject/Help/*.hhk
-DocProject/Help/*.hhp
-DocProject/Help/Html2
-DocProject/Help/html
-
-# Click-Once directory
-publish/
-
-# Publish Web Output
-*.[Pp]ublish.xml
-*.azurePubxml
-# Note: Comment the next line if you want to checkin your web deploy settings,
-# but database connection strings (with potential passwords) will be unencrypted
-*.pubxml
-*.publishproj
-
-# Microsoft Azure Web App publish settings. Comment the next line if you want to
-# checkin your Azure Web App publish settings, but sensitive information contained
-# in these files are encrypted
-*.azurePubxml
-
-# Microsoft Azure ApplicationInsights config file
-ApplicationInsights.config
-
-# Windows Store app package directories and files
-AppPackages/
-BundleArtifacts/
-Package.StoreAssociation.xml
-_pkginfo.txt
-*.appx
-
-# Visual Studio cache files
-# files ending in .cache can be ignored
-*.[Cc]ache
-# but keep track of directories ending in .cache
-!?*.[Cc]ache/
-
-# Others
-ClientBin/
-~$*
-*~
-*.dbmdl
-*.dbproj.schemaview
-*.jfm
-*.pfx
-*.publishsettings
-orleans.codegen.cs
-
-# Including strong name files can present a security risk
-# (https://github.com/github/gitignore/pull/2483#issue-259490424)
-#*.snk
-
-# Since there are multiple workflows, uncomment next line to ignore bower_components
-# (https://github.com/github/gitignore/pull/1529#issuecomment-104372622)
-#bower_components/
-
-# RIA/Silverlight projects
-Generated_Code/
-
-# Backup & report files from converting an old project file
-# to a newer Visual Studio version. Backup files are not needed,
-# because we have git ;-)
-_UpgradeReport_Files/
-Backup*/
-UpgradeLog*.XML
-UpgradeLog*.htm
-CSharpUpgradeLog*.XML
-
-# SQL Server files
+###############################################################################
+# 3. 데이터베이스 파일 (필수)
+###############################################################################
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 *.mdf
 *.ldf
 *.ndf
 
-# Business Intelligence projects
-*.rdl.data
-*.bim.layout
-*.bim_*.settings
-*.rptproj.rsuser
-*- Backup*.rdl
-
-# Microsoft Fakes
-FakesAssemblies/
-
-# GhostDoc plugin setting file
-*.GhostDoc.xml
-
-# Node.js Tools for Visual Studio
-.ntvs_analysis.dat
-node_modules/
-
-# Visual Studio 6 build log
-*.plg
-
-# Visual Studio 6 workspace options file
-*.opt
-
-# Visual Studio 6 auto-generated workspace file (contains which files were open etc.)
-*.vbw
-
-# Visual Studio LightSwitch build output
-**/*.HTMLClient/GeneratedArtifacts
-**/*.DesktopClient/GeneratedArtifacts
-**/*.DesktopClient/ModelManifest.xml
-**/*.Server/GeneratedArtifacts
-**/*.Server/ModelManifest.xml
-_Pvt_Extensions
-
-# Paket dependency manager
-.paket/paket.exe
-paket-files/
-
-# FAKE - F# Make
-.fake/
-
-# JetBrains Rider
-.idea/
-*.sln.iml
-
-# CodeRush personal settings
-.cr/personal
-
-# Python Tools for Visual Studio (PTVS)
-__pycache__/
-*.pyc
-
-# Cake - Uncomment if you are using it
-# tools/**
-# !tools/packages.config
-
-# Tabs Studio
-*.tss
-
-# Telerik's JustMock configuration file
-*.jmconfig
-
-# BizTalk build output
-*.btp.cs
-*.btm.cs
-*.odx.cs
-*.xsd.cs
-
-# OpenCover UI analysis results
-OpenCover/
-
-# Azure Stream Analytics local run output
-ASALocalRun/
-
-# MSBuild Binary and Structured Log
-*.binlog
-
-# NVidia Nsight GPU debugger configuration file
-*.nvuser
-
-# MFractors (Xamarin productivity tool) working folder
-.mfractor/
-
-# Local History for Visual Studio
-.localhistory/
-
-# BeatPulse healthcheck temp database
-healthchecksdb
-
-# Backup folder for Package Reference Convert tool in Visual Studio 2017
-MigrationBackup/
-
-# Entity Framework Migrations
-Migrations/
-
-# Environment variables and secrets
-.env
-appsettings.Development.json
-appsettings.Production.json
-secrets.json
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Log files
+###############################################################################
+# 4. 로그 파일 (필수)
+###############################################################################
 logs/
 *.log
 
-# Temporary files
-*.tmp
-*.temp
+###############################################################################
+# 5. Entity Framework 마이그레이션 (선택사항 - 주석 해제하면 제외)
+###############################################################################
+# Migrations/
 
-# API Keys and sensitive data
-*apikey*
-*secret*
-*password*
+###############################################################################
+# 6. 환경별 설정 파일 (민감한 정보 포함)
+###############################################################################
+# 주의: appsettings.json은 커밋하되, 실제 값은 비워두고 예시만 작성
+# 개발/운영 환경의 실제 설정은 제외
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Local.json
+appsettings.*.local.json
+.env
+.env.local
+secrets.json
 
-# OS generated files
+###############################################################################
+# 7. Node.js (프론트엔드)
+###############################################################################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Vue.js
+dist/
+.cache/
+
+###############################################################################
+# 8. 대용량 파일 (모델, 미디어)
+###############################################################################
+*.onnx
+*.bin
+*.gguf
+
+# wwwroot에 업로드된 사용자 파일 (선택사항)
+wwwroot/uploads/
+
+###############################################################################
+# 9. OS 생성 파일
+###############################################################################
 .DS_Store
 .DS_Store?
 ._*
@@ -352,15 +108,77 @@ logs/
 .Trashes
 ehthumbs.db
 Thumbs.db
+Desktop.ini
 
-# IDE specific files
+###############################################################################
+# 10. 임시 파일
+###############################################################################
+*.tmp
+*.temp
 *.swp
 *.swo
 *~
 
-# Ollama models (too large for git)
-models/
-*.onnx
+###############################################################################
+# 11. 테스트 결과
+###############################################################################
+TestResults/
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
 
-# Custom application settings
-appsettings.Local.json
+###############################################################################
+# 12. 패키지 관리
+###############################################################################
+*.nupkg
+*.snupkg
+.paket/
+paket-files/
+
+###############################################################################
+# 중요: 아래 패턴들은 사용하지 마세요! (소스 코드 손실 위험)
+###############################################################################
+# ❌ *apikey*     (ApiKeyService.cs 같은 정상 파일도 제외됨)
+# ❌ *secret*     (SecretManager.cs 같은 정상 파일도 제외됨)
+# ❌ *password*   (PasswordHasher.cs 같은 정상 파일도 제외됨)
+# ❌ Models/      (모든 모델 파일이 제외됨!)
+# ❌ *.cs         (모든 C# 소스가 제외됨!)
+
+###############################################################################
+# 프로젝트별 커스텀 제외 설정 (필요시 여기에 추가)
+###############################################################################
+# 예: 특정 테스트 데이터
+# SampleData/large-test-file.json
+/Controllers/AdminController.cs
+/Controllers/AuthController.cs
+/Controllers/ConventionChatController.cs
+/Controllers/ConventionsExampleController.cs
+/Controllers/GuestScheduleController.cs
+/Models/Convention/AttributeDefinition.cs
+/Models/Convention/AttributeTemplate.cs
+/Models/Convention/Companion.cs
+/Models/Convention/Convention.cs
+/Models/Convention/Feature.cs
+/Models/Convention/Guest.cs
+/Models/Convention/GuestAttribute.cs
+/Models/Convention/GuestSchedule.cs
+/Models/Convention/GuestScheduleTemplate.cs
+/Models/Convention/Menu.cs
+/Models/Convention/Owner.cs
+/Models/Convention/Schedule.cs
+/Models/Convention/ScheduleItem.cs
+/Models/Convention/ScheduleTemplate.cs
+/Models/Convention/Section.cs
+/Models/Convention/User.cs
+/Models/Convention/VectorStore.cs
+/Models/DTOs/LlmDTOs.cs
+/Models/DTOs/RagDTOs.cs
+/Services/AuthService.cs
+/Services/ConventionChatService.cs
+/Services/ConventionIndexingService.cs
+/Services/ScheduleUploadService.cs
+/Properties/PublishProfiles
+/Models
+/BACKEND_CHECKLIST.md
