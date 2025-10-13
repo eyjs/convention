@@ -79,4 +79,17 @@ export const conventionAPI = {
     getConvention: (id) => apiClient.get(`/conventions/${id}`)
 }
 
+// Upload API
+export const uploadAPI = {
+    uploadFile: (formData, onProgress) => {
+        return apiClient.post('/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            onUploadProgress: onProgress
+        })
+    },
+    deleteFile: (fileId) => apiClient.delete(`/upload/${fileId}`)
+}
+
 export default apiClient

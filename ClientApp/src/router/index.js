@@ -17,6 +17,8 @@ import Board from '../views/Board.vue'
 import Chat from '../views/Chat.vue'
 import FindId from '../views/FindId.vue'
 import FindPassword from '../views/FindPassword.vue'
+import NoticeList from '../views/NoticeList.vue'
+import NoticeDetail from '../views/NoticeDetail.vue'
 
 const routes = [
   {
@@ -128,6 +130,18 @@ const routes = [
     name: 'Chat',
     component: Chat,
     meta: { title: '채팅' }
+  },
+  {
+    path: '/notices',
+    name: 'NoticeList',
+    component: NoticeList,
+    meta: { title: '공지사항', requiresAuth: true }
+  },
+  {
+    path: '/notices/:id',
+    name: 'NoticeDetail',
+    component: NoticeDetail,
+    meta: { title: '공지사항 상세', requiresAuth: true }
   }
 ]
 

@@ -81,6 +81,11 @@
         <AttributeTemplateManagement :convention-id="conventionId" />
       </div>
 
+      <!-- 게시판 -->
+      <div v-if="activeTab === 'board'">
+        <BoardManagement :convention-id="conventionId" />
+      </div>
+
       <!-- 업로드 -->
       <div v-if="activeTab === 'upload'">
         <BulkUpload :convention-id="conventionId" />
@@ -99,6 +104,7 @@ import GuestManagement from '@/components/admin/GuestManagement.vue'
 import ScheduleManagement from '@/components/admin/ScheduleManagement.vue'
 import BulkUpload from '@/components/admin/BulkUpload.vue'
 import AttributeTemplateManagement from '@/components/admin/AttributeTemplateManagement.vue'
+import BoardManagement from '@/components/admin/BoardManagement.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -125,6 +131,7 @@ const tabs = [
   { id: 'guests', name: '참석자 관리', shortName: '참석자' },
   { id: 'schedules', name: '일정 관리', shortName: '일정' },
   { id: 'attributes', name: '속성 템플릿', shortName: '속성' },
+  { id: 'board', name: '게시판 관리', shortName: '게시판' },
   { id: 'upload', name: '엑셀 업로드', shortName: '업로드' }
 ]
 
