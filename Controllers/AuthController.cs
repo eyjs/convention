@@ -88,15 +88,20 @@ public class AuthController : ControllerBase
         try
         {
             // --- 1. 회원으로 로그인 시도 (ID: LoginId) ---
+
+            // .Include(u => u.Guests)를 추가하여 사용자와 연결된 Guests 정보를 함께 로드합니다.
             var user = await _context.Users
+                .Include(u => u.Guests)
                 .FirstOrDefaultAsync(u => u.LoginId == request.LoginId);
 
             if (user != null && user.IsActive && _authService.VerifyPassword(request.Password, user.PasswordHash))
             {
+                // 이제 user.Guests가 정상적으로 로드되었으므로 if 문 안에서 guest를 찾을 수 있습니다.
+                var guest = user.Guests.OrderByDescending(g => g.Id).FirstOrDefault();
                 // [회원 로그인 성공]
-                var accessToken = _authService.GenerateAccessToken(user);
+                var accessToken = _authService.GenerateAccessToken(user, guest?.Id);
                 var refreshToken = _authService.GenerateRefreshToken();
-
+                
                 user.RefreshToken = refreshToken;
                 user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
                 user.LastLoginAt = DateTime.UtcNow;
@@ -107,7 +112,7 @@ public class AuthController : ControllerBase
                     accessToken,
                     refreshToken,
                     user = new
-                    { // 표준 user 객체
+                    {
                         id = user.Id,
                         loginId = user.LoginId,
                         name = user.Name,
@@ -117,28 +122,27 @@ public class AuthController : ControllerBase
             }
 
             // --- 2. 비회원으로 로그인 시도 (ID: 참석자 이름) ---
-            var guest = await _context.Guests
-                .FirstOrDefaultAsync(g => g.GuestName == request.LoginId && g.IsRegisteredUser == false);
+            // 이 부분은 비회원 로그인 로직이므로 기존 코드를 유지합니다.
+            var nonMemberGuest = await _context.Guests
+                .FirstOrDefaultAsync(g => g.GuestName == request.LoginId && !g.IsRegisteredUser);
 
-            if (guest != null && !string.IsNullOrEmpty(guest.PasswordHash) && _authService.VerifyPassword(request.Password, guest.PasswordHash))
+            if (nonMemberGuest != null && !string.IsNullOrEmpty(nonMemberGuest.PasswordHash) && _authService.VerifyPassword(request.Password, nonMemberGuest.PasswordHash))
             {
-                // [비회원 로그인 성공]
-                var guestUser = new User { Id = guest.Id, Name = guest.GuestName, Role = "Guest", LoginId = $"guest_{guest.Id}" };
-                var accessToken = _authService.GenerateAccessToken(guestUser);
-                var refreshToken = _authService.GenerateRefreshToken(); // 비회원도 리프레시 토큰 제공
+                var guestUser = new User { Id = nonMemberGuest.Id, Name = nonMemberGuest.GuestName, Role = "Guest", LoginId = $"guest_{nonMemberGuest.Id}" };
 
-                // 비회원은 User 테이블 대신 Guest 테이블에 리프레시 토큰 정보를 저장할 수 있으나, 여기서는 생략합니다.
-                // 필요하다면 Guest 모델에 RefreshToken, RefreshTokenExpiresAt 컬럼을 추가해야 합니다.
+                // (핵심 수정) 비회원 로그인 시에도 GuestId를 토큰에 포함시킵니다.
+                var accessToken = _authService.GenerateAccessToken(guestUser, nonMemberGuest.Id);
+                var refreshToken = _authService.GenerateRefreshToken();
 
                 return Ok(new
                 {
                     accessToken,
                     refreshToken,
                     user = new
-                    { // 표준 user 객체
-                        id = guest.Id, // user.id를 guest.id로 설정
-                        guestId = guest.Id, // 프론트엔드에서 명확히 식별하도록 guestId 추가
-                        name = guest.GuestName,
+                    {
+                        id = nonMemberGuest.Id,
+                        guestId = nonMemberGuest.Id,
+                        name = nonMemberGuest.GuestName,
                         role = "Guest"
                     }
                 });

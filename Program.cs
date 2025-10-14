@@ -5,6 +5,7 @@ using LocalRAG.Interfaces;
 using LocalRAG.Middleware;
 using LocalRAG.Providers;
 using LocalRAG.Repositories;
+using LocalRAG.Services.Factories;
 using LocalRAG.Services;
 using LocalRAG.Services.Builders;
 using LocalRAG.Services.ChatBot;
@@ -116,12 +117,16 @@ builder.Services.AddScoped<LlmResponseService>();
 builder.Services.AddScoped<RagSearchService>();
 builder.Services.AddScoped<GuestContextualDataProvider>();
 builder.Services.AddScoped<ConventionAccessService>();
+
 // --- 5. 인증 및 기타 서비스 등록 ---
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
+
 builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddSingleton<ISmsService, SmsService>();
 builder.Services.AddSingleton<IVerificationService, VerificationService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserContextFactory, UserContextFactory>();
 
 builder.Services.AddAuthentication(options =>
 {

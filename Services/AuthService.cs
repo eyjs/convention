@@ -12,7 +12,7 @@ namespace LocalRAG.Services;
 
 public interface IAuthService
 {
-    string GenerateAccessToken(User user);
+    string GenerateAccessToken(User user, int? guestId = null);
     string GenerateRefreshToken();
     ClaimsPrincipal? ValidateToken(string token);
     string HashPassword(string password);
@@ -28,16 +28,21 @@ public class AuthService : IAuthService
         _jwtSettings = jwtSettings;
     }
 
-    public string GenerateAccessToken(User user)
+    public string GenerateAccessToken(User user, int? guestId = null)
     {
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.Name),
-            new Claim(ClaimTypes.Email, user.Email ?? ""),
             new Claim(ClaimTypes.Role, user.Role),
             new Claim("LoginId", user.LoginId)
         };
+
+        // (핵심 추가) GuestId가 있으면 토큰에 클레임으로 추가합니다.
+        if (guestId.HasValue)
+        {
+            claims.Add(new Claim("GuestId", guestId.Value.ToString()));
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -49,6 +54,8 @@ public class AuthService : IAuthService
             expires: DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationMinutes),
             signingCredentials: credentials
         );
+       
+        
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

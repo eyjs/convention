@@ -1,5 +1,6 @@
 using LocalRAG.Models;
 using LocalRAG.Repositories;
+using LocalRAG.Services.Factories; // 네임스페이스 확인 필요
 using System.Text.Json;
 
 namespace LocalRAG.Services.ChatBot;
@@ -49,6 +50,29 @@ public class ConventionChatService
 
         try
         {
+            // (핵심 개선) conventionId가 있는 경우, 권한 검증 로직을 AskAsync에 통합
+            if (conventionId.HasValue)
+            {
+                // 사용자 컨텍스트가 없으면 권한을 확인할 수 없으므로 예외 처리
+                if (userContext == null)
+                {
+                    throw new UnauthorizedAccessException("사용자 정보가 없어 행사에 접근할 수 없습니다.");
+                }
+
+                // 행사 존재 여부 확인
+                var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId.Value);
+                if (convention == null)
+                {
+                    throw new ArgumentException($"Convention {conventionId} not found");
+                }
+
+                // 접근 권한 검증
+                if (!await _accessService.VerifyAsync(conventionId.Value, userContext))
+                {
+                    throw new UnauthorizedAccessException("해당 행사에 접근 권한이 없습니다.");
+                }
+            }
+
             // Step 1: 의도 분류
             var intent = await _intentRouter.GetIntentAsync(question, history);
             _logger.LogInformation("Classified intent: {Intent}", intent);
@@ -76,31 +100,6 @@ public class ConventionChatService
             _logger.LogError(ex, "Error processing chat request");
             throw;
         }
-    }
-
-    /// <summary>
-    /// 행사 질문 처리 (권한 검증 포함)
-    /// </summary>
-    public async Task<ChatResponse> AskAboutConventionAsync(
-        int conventionId,
-        string question,
-        ChatUserContext? userContext = null,
-        List<ChatMessage>? history = null)
-    {
-        // 권한 검증
-        if (userContext != null && !await _accessService.VerifyAsync(conventionId, userContext))
-        {
-            throw new UnauthorizedAccessException("해당 행사에 접근 권한이 없습니다.");
-        }
-
-        // 행사 존재 확인
-        var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
-        if (convention == null)
-        {
-            throw new ArgumentException($"Convention {conventionId} not found");
-        }
-
-        return await AskAsync(question, conventionId, userContext, history);
     }
 
     /// <summary>
