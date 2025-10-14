@@ -15,6 +15,7 @@ public class ScheduleUploadService : IScheduleUploadService
 {
     private readonly ConventionDbContext _context;
     private readonly ILogger<ScheduleUploadService> _logger;
+    private const string DEFAULT_COURSE_NAME = "기본 일정 코스";
 
     public ScheduleUploadService(ConventionDbContext context, ILogger<ScheduleUploadService> logger)
     {
@@ -56,8 +57,8 @@ public class ScheduleUploadService : IScheduleUploadService
                 
                 try
                 {
-                    // 1. 기존 스케줄 데이터 삭제
-                    await DeleteExistingScheduleDataAsync(conventionId);
+                    // 1. 기본 일정 템플릿 가져오기 또는 생성
+                    var defaultTemplate = await GetOrCreateDefaultTemplateAsync(conventionId);
 
                     // 2. Sheet2가 있으면 일정 내용 파싱
                     Dictionary<string, string> scheduleContents = new();
@@ -67,7 +68,7 @@ public class ScheduleUploadService : IScheduleUploadService
                         scheduleContents = ParseScheduleContents(sheet2);
                     }
 
-                    // 3. 일정 헤더 파싱 (각 헤더 = 1개 ScheduleTemplate)
+                    // 3. 일정 헤더 파싱
                     var scheduleHeaders = ParseScheduleHeaders(sheet1, colCount);
                     
                     if (scheduleHeaders.Count == 0)
@@ -76,10 +77,14 @@ public class ScheduleUploadService : IScheduleUploadService
                         return;
                     }
 
-                    // 4. 각 헤더별로 ScheduleTemplate 생성
-                    var templateMap = await CreateScheduleTemplatesAsync(conventionId, scheduleHeaders, scheduleContents);
-                    
-                    // 5. Guest 생성 또는 업데이트 및 일정 배정
+                    // 4. 기존 ScheduleItem 삭제 (템플릿은 유지)
+                    await DeleteExistingScheduleItemsAsync(defaultTemplate.Id);
+
+                    // 5. 새로운 ScheduleItem 생성
+                    await CreateScheduleItemsAsync(defaultTemplate.Id, scheduleHeaders, scheduleContents);
+                    result.TotalSchedules = scheduleHeaders.Count;
+
+                    // 6. Guest 생성/업데이트 및 일정 배정
                     var newAssignments = new List<GuestScheduleTemplate>();
                     var newAttributes = new List<GuestAttribute>();
 
@@ -100,7 +105,7 @@ public class ScheduleUploadService : IScheduleUploadService
                         
                         if (guest == null)
                         {
-                            guest = new Guest
+                            guest = new Models.Guest
                             {
                                 ConventionId = conventionId,
                                 GuestName = name,
@@ -124,37 +129,39 @@ public class ScheduleUploadService : IScheduleUploadService
                             guest.Affiliation = affiliation;
                         }
 
-                        // 일정 배정
+                        // 기존 배정 확인
+                        var existingAssignment = await _context.GuestScheduleTemplates
+                            .FirstOrDefaultAsync(gst => gst.GuestId == guest.Id && gst.ScheduleTemplateId == defaultTemplate.Id);
+
+                        if (existingAssignment == null)
+                        {
+                            // 기본 템플릿 배정
+                            newAssignments.Add(new GuestScheduleTemplate
+                            {
+                                GuestId = guest.Id,
+                                ScheduleTemplateId = defaultTemplate.Id
+                            });
+                            result.ScheduleAssignments++;
+                        }
+
+                        // 일정별 노트 처리
                         foreach (var header in scheduleHeaders)
                         {
                             var cellValue = sheet1.Cells[row, header.ColumnIndex].Text?.Trim();
                             
-                            if (!string.IsNullOrEmpty(cellValue))
+                            if (!string.IsNullOrEmpty(cellValue) && cellValue.ToUpper() != "O")
                             {
-                                var template = templateMap[header.ColumnIndex];
-                                
-                                newAssignments.Add(new GuestScheduleTemplate
+                                newAttributes.Add(new GuestAttribute
                                 {
                                     GuestId = guest.Id,
-                                    ScheduleTemplateId = template.Id
+                                    AttributeKey = $"schedule_{header.ColumnIndex}_note",
+                                    AttributeValue = cellValue
                                 });
-                                result.ScheduleAssignments++;
-                                
-                                // "O"가 아닌 다른 값이면 노트로 저장
-                                if (cellValue.ToUpper() != "O")
-                                {
-                                    newAttributes.Add(new GuestAttribute
-                                    {
-                                        GuestId = guest.Id,
-                                        AttributeKey = $"schedule_{template.Id}_note",
-                                        AttributeValue = cellValue
-                                    });
-                                }
                             }
                         }
                     }
 
-                    // 6. 배치로 추가
+                    // 7. 배치로 추가
                     if (newAssignments.Any())
                     {
                         await _context.GuestScheduleTemplates.AddRangeAsync(newAssignments);
@@ -169,7 +176,6 @@ public class ScheduleUploadService : IScheduleUploadService
                     await transaction.CommitAsync();
                     
                     result.Success = true;
-                    result.TotalSchedules = scheduleHeaders.Count;
                 }
                 catch (Exception ex)
                 {
@@ -192,35 +198,91 @@ public class ScheduleUploadService : IScheduleUploadService
         return result;
     }
 
-    private async Task DeleteExistingScheduleDataAsync(int conventionId)
+    /// <summary>
+    /// 행사의 기본 일정 템플릿 가져오기 또는 생성
+    /// </summary>
+    private async Task<ScheduleTemplate> GetOrCreateDefaultTemplateAsync(int conventionId)
     {
-        var templateIds = await _context.ScheduleTemplates
-            .Where(st => st.ConventionId == conventionId)
-            .Select(st => st.Id)
-            .ToListAsync();
+        var template = await _context.ScheduleTemplates
+            .FirstOrDefaultAsync(st => st.ConventionId == conventionId && st.CourseName == DEFAULT_COURSE_NAME);
 
-        if (templateIds.Any())
+        if (template == null)
         {
-            var items = await _context.ScheduleItems
-                .Where(si => templateIds.Contains(si.ScheduleTemplateId))
-                .ToListAsync();
-            _context.ScheduleItems.RemoveRange(items);
+            template = new ScheduleTemplate
+            {
+                ConventionId = conventionId,
+                CourseName = DEFAULT_COURSE_NAME,
+                Description = "엑셀 업로드로 생성된 기본 일정 코스",
+                OrderNum = 0
+            };
 
-            var assignments = await _context.GuestScheduleTemplates
-                .Where(gst => templateIds.Contains(gst.ScheduleTemplateId))
-                .ToListAsync();
-            _context.GuestScheduleTemplates.RemoveRange(assignments);
+            _context.ScheduleTemplates.Add(template);
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation("Created default schedule template for convention {ConventionId}", conventionId);
         }
 
-        var templates = await _context.ScheduleTemplates
-            .Where(st => st.ConventionId == conventionId)
+        return template;
+    }
+
+    /// <summary>
+    /// 기존 ScheduleItem만 삭제 (템플릿은 유지)
+    /// </summary>
+    private async Task DeleteExistingScheduleItemsAsync(int templateId)
+    {
+        var items = await _context.ScheduleItems
+            .Where(si => si.ScheduleTemplateId == templateId)
             .ToListAsync();
-        _context.ScheduleTemplates.RemoveRange(templates);
+
+        if (items.Any())
+        {
+            _context.ScheduleItems.RemoveRange(items);
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation("Deleted {Count} existing schedule items for template {TemplateId}", 
+                items.Count, templateId);
+        }
+    }
+
+    /// <summary>
+    /// ScheduleItem 생성
+    /// </summary>
+    private async Task CreateScheduleItemsAsync(
+        int templateId,
+        List<ScheduleHeaderInfo> headers,
+        Dictionary<string, string> scheduleContents)
+    {
+        int orderNum = 0;
+        
+        foreach (var header in headers.OrderBy(h => h.Month).ThenBy(h => h.Day).ThenBy(h => h.Hour).ThenBy(h => h.Minute))
+        {
+            // Sheet2에서 내용 찾기
+            string? content = null;
+            if (scheduleContents.ContainsKey(header.HeaderText))
+            {
+                content = scheduleContents[header.HeaderText];
+            }
+            
+            // DateTime 생성
+            var currentYear = DateTime.Now.Year;
+            var scheduleDateTime = new DateTime(currentYear, header.Month, header.Day, header.Hour, header.Minute, 0);
+            
+            // ScheduleItem 생성
+            var scheduleItem = new ScheduleItem
+            {
+                ScheduleTemplateId = templateId,
+                ScheduleDate = scheduleDateTime,
+                StartTime = $"{header.Hour:D2}:{header.Minute:D2}",
+                Title = header.Title,
+                Content = content ?? header.Title,
+                OrderNum = orderNum++
+            };
+            
+            _context.ScheduleItems.Add(scheduleItem);
+        }
 
         await _context.SaveChangesAsync();
-        
-        _logger.LogInformation("Deleted existing schedule data for convention {ConventionId}: {TemplateCount} templates", 
-            conventionId, templates.Count);
+        _logger.LogInformation("Created {Count} schedule items for template {TemplateId}", orderNum, templateId);
     }
 
     private Dictionary<string, string> ParseScheduleContents(ExcelWorksheet sheet2)
@@ -261,7 +323,7 @@ public class ScheduleUploadService : IScheduleUploadService
             {
                 var month = int.Parse(match.Groups[1].Value);
                 var day = int.Parse(match.Groups[2].Value);
-                var courseName = match.Groups[4].Value.Trim(); // 코스명만 추출
+                var courseName = match.Groups[4].Value.Trim();
                 var hour = int.Parse(match.Groups[5].Value);
                 var minute = int.Parse(match.Groups[6].Value);
                 
@@ -272,70 +334,13 @@ public class ScheduleUploadService : IScheduleUploadService
                     Day = day,
                     Hour = hour,
                     Minute = minute,
-                    Title = courseName, // 순수 코스명
-                    HeaderText = headerText // 전체 헤더 (Sheet2 매칭용)
+                    Title = courseName,
+                    HeaderText = headerText
                 });
             }
         }
 
         return headers;
-    }
-
-    private async Task<Dictionary<int, ScheduleTemplate>> CreateScheduleTemplatesAsync(
-        int conventionId, 
-        List<ScheduleHeaderInfo> headers,
-        Dictionary<string, string> scheduleContents)
-    {
-        var templateMap = new Dictionary<int, ScheduleTemplate>();
-        int orderNum = 0;
-        
-        // 각 헤더별로 ScheduleTemplate 생성
-        foreach (var header in headers.OrderBy(h => h.Month).ThenBy(h => h.Day).ThenBy(h => h.Hour).ThenBy(h => h.Minute))
-        {
-            // CourseName: 헤더 전체 텍스트 사용
-            var courseName = header.HeaderText;
-            
-            // Sheet2에서 내용 찾기
-            string? content = null;
-            if (scheduleContents.ContainsKey(header.HeaderText))
-            {
-                content = scheduleContents[header.HeaderText];
-            }
-            
-            // DateTime 생성 (현재 년도 사용)
-            var currentYear = DateTime.Now.Year;
-            var scheduleDateTime = new DateTime(currentYear, header.Month, header.Day, header.Hour, header.Minute, 0);
-            
-            // ScheduleTemplate 생성
-            var template = new ScheduleTemplate
-            {
-                ConventionId = conventionId,
-                CourseName = courseName,
-                Description = null,
-                OrderNum = orderNum++
-            };
-            
-            _context.ScheduleTemplates.Add(template);
-            await _context.SaveChangesAsync();
-            
-            // ScheduleItem 생성 (1개만)
-            var scheduleItem = new ScheduleItem
-            {
-                ScheduleTemplateId = template.Id,
-                ScheduleDate = scheduleDateTime, // DateTime 형태로 저장
-                StartTime = $"{header.Hour:D2}:{header.Minute:D2}", // 호환성을 위해 유지
-                Title = header.Title,
-                Content = content ?? header.Title,
-                OrderNum = 0
-            };
-            
-            _context.ScheduleItems.Add(scheduleItem);
-            
-            templateMap[header.ColumnIndex] = template;
-        }
-
-        await _context.SaveChangesAsync();
-        return templateMap;
     }
 }
 

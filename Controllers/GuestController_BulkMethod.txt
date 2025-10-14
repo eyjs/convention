@@ -1,0 +1,125 @@
+    /// <summary>
+    /// 참석자 다중 속성 일괄 할당
+    /// </summary>
+    [HttpPost("bulk-assign-attributes")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> BulkAssignAttributes([FromBody] BulkAssignAttributesDto dto)
+    {
+        // DTO 검증
+        if (dto == null)
+        {
+            _logger.LogWarning("비어있는 DTO");
+            return BadRequest(new { message = "요청 데이터가 비어있습니다." });
+        }
+
+        if (dto.GuestMappings == null || !dto.GuestMappings.Any())
+        {
+            _logger.LogWarning("참석자 매핑이 비어있음");
+            return BadRequest(new { message = "참석자 데이터가 비어있습니다." });
+        }
+
+        _logger.LogInformation("일괄 속성 할당 시작: ConventionId={ConventionId}, Count={Count}명", 
+            dto.ConventionId, dto.GuestMappings.Count);
+
+        // ExecutionStrategy를 사용한 트랜잭션 처리
+        var strategy = _context.Database.CreateExecutionStrategy();
+        
+        return await strategy.ExecuteAsync(async () =>
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            
+            try
+            {
+                var result = new BulkAssignResult
+                {
+                    TotalProcessed = dto.GuestMappings.Count
+                };
+                
+                // 모든 참석자 ID 수집
+                var guestIds = dto.GuestMappings.Select(m => m.GuestId).ToList();
+                
+                // 참석자 검증
+                var existingGuests = await _context.Guests
+                    .Where(g => guestIds.Contains(g.Id) && g.ConventionId == dto.ConventionId)
+                    .Select(g => g.Id)
+                    .ToListAsync();
+                
+                var invalidGuestIds = guestIds.Except(existingGuests).ToList();
+                if (invalidGuestIds.Any())
+                {
+                    result.Errors.Add($"존재하지 않는 참석자 ID: {string.Join(", ", invalidGuestIds)}");
+                }
+                
+                // 기존 속성 삭제 (업데이트를 위해)
+                var existingAttributes = await _context.GuestAttributes
+                    .Where(ga => guestIds.Contains(ga.GuestId))
+                    .ToListAsync();
+                
+                // 새로 설정할 속성 키만 가져오기
+                var newAttributeKeys = dto.GuestMappings
+                    .SelectMany(m => m.Attributes.Keys)
+                    .Distinct()
+                    .ToList();
+                
+                // 기존 속성 중 새로 설정할 키와 겹치는 것만 삭제
+                var attributesToRemove = existingAttributes
+                    .Where(ea => newAttributeKeys.Contains(ea.AttributeKey))
+                    .ToList();
+                
+                _context.GuestAttributes.RemoveRange(attributesToRemove);
+                
+                // 새 속성 추가
+                var newAttributes = new List<GuestAttribute>();
+                
+                foreach (var mapping in dto.GuestMappings)
+                {
+                    // 유효한 참석자만 처리
+                    if (!existingGuests.Contains(mapping.GuestId))
+                    {
+                        result.FailCount++;
+                        continue;
+                    }
+                    
+                    foreach (var attr in mapping.Attributes)
+                    {
+                        // 빈 값은 건너뛰기
+                        if (string.IsNullOrWhiteSpace(attr.Value))
+                            continue;
+                        
+                        newAttributes.Add(new GuestAttribute
+                        {
+                            GuestId = mapping.GuestId,
+                            AttributeKey = attr.Key,
+                            AttributeValue = attr.Value
+                        });
+                    }
+                    
+                    result.SuccessCount++;
+                }
+                
+                await _context.GuestAttributes.AddRangeAsync(newAttributes);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                
+                result.Success = true;
+                result.Message = $"{result.SuccessCount}명의 참석자에게 속성이 성공적으로 할당되었습니다.";
+                
+                _logger.LogInformation("일괄 속성 할당 완료: 성공 {Success}명, 실패 {Fail}명", 
+                    result.SuccessCount, result.FailCount);
+                
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "일괄 속성 할당 실패");
+                
+                return StatusCode(500, new BulkAssignResult
+                {
+                    Success = false,
+                    Message = "속성 할당 중 오류가 발생했습니다.",
+                    Errors = new List<string> { ex.Message }
+                });
+            }
+        });
+    }

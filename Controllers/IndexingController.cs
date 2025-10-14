@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using LocalRAG.Services;
+using LocalRAG.Services.ChatBot;
 using Microsoft.AspNetCore.Authorization;
 using LocalRAG.Interfaces;
+using System.Collections.Generic; // List<Notice> 사용
 
 namespace LocalRAG.Controllers;
 
@@ -10,12 +12,12 @@ namespace LocalRAG.Controllers;
 [Authorize(Roles = "Admin")]
 public class IndexingController : ControllerBase
 {
-    private readonly AdvancedConventionIndexingService _conventionIndexingService;
+    private readonly IndexingService _conventionIndexingService;
     private readonly IVectorStore _vectorStore;
     private readonly ILogger<IndexingController> _logger;
 
     public IndexingController(
-        AdvancedConventionIndexingService conventionIndexingService,
+        IndexingService conventionIndexingService,
         IVectorStore vectorStore,
         ILogger<IndexingController> logger)
     {

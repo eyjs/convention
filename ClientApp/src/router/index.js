@@ -19,7 +19,7 @@ import FindId from '../views/FindId.vue'
 import FindPassword from '../views/FindPassword.vue'
 import NoticeList from '../views/NoticeList.vue'
 import NoticeDetail from '../views/NoticeDetail.vue'
-import AdminChatbotManagement from '../views/AdminChatbotManagement.vue' // Import the new component
+import AdminChatbotManagement from '../views/AdminChatbotManagement.vue'
 
 const routes = [
   {

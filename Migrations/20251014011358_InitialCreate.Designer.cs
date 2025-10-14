@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalRAG.Migrations
 {
     [DbContext(typeof(ConventionDbContext))]
-    [Migration("20251012122328_UpdateGuestResidentNumberField")]
-    partial class UpdateGuestResidentNumberField
+    [Migration("20251014011358_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -59,6 +59,42 @@ namespace LocalRAG.Migrations
                         .HasDatabaseName("UQ_AttributeDefinition_ConventionId_AttributeKey");
 
                     b.ToTable("AttributeDefinitions");
+                });
+
+            modelBuilder.Entity("LocalRAG.Models.AttributeTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AttributeKey")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AttributeValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ConventionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OrderNum")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConventionId")
+                        .HasDatabaseName("IX_AttributeTemplate_ConventionId");
+
+                    b.HasIndex("ConventionId", "AttributeKey")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_AttributeTemplate_ConventionId_AttributeKey");
+
+                    b.ToTable("AttributeTemplates");
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Convention", b =>
@@ -157,6 +193,141 @@ namespace LocalRAG.Migrations
                     b.ToTable("Features");
                 });
 
+            modelBuilder.Entity("LocalRAG.Models.FileAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("BoardPostId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("NoticeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SavedName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("getdate()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Category")
+                        .HasDatabaseName("IX_FileAttachment_Category");
+
+                    b.HasIndex("NoticeId")
+                        .HasDatabaseName("IX_FileAttachment_NoticeId");
+
+                    b.ToTable("FileAttachments");
+                });
+
+            modelBuilder.Entity("LocalRAG.Models.Gallery", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ConventionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("getdate()");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("ConventionId")
+                        .HasDatabaseName("IX_Gallery_ConventionId");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_Gallery_CreatedAt");
+
+                    b.ToTable("Galleries");
+                });
+
+            modelBuilder.Entity("LocalRAG.Models.GalleryImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Caption")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("GalleryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrderNum")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("getdate()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GalleryId")
+                        .HasDatabaseName("IX_GalleryImage_GalleryId");
+
+                    b.ToTable("GalleryImages");
+                });
+
             modelBuilder.Entity("LocalRAG.Models.Guest", b =>
                 {
                     b.Property<int>("Id")
@@ -176,7 +347,15 @@ namespace LocalRAG.Migrations
                     b.Property<int>("ConventionId")
                         .HasColumnType("int");
 
+                    b.Property<string>("CorpName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("CorpPart")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Email")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -187,6 +366,9 @@ namespace LocalRAG.Migrations
 
                     b.Property<bool>("IsRegisteredUser")
                         .HasColumnType("bit");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ResidentNumber")
                         .HasMaxLength(50)
@@ -295,6 +477,69 @@ namespace LocalRAG.Migrations
                         .HasDatabaseName("IX_Menu_ConventionId");
 
                     b.ToTable("Menus");
+                });
+
+            modelBuilder.Entity("LocalRAG.Models.Notice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ConventionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("getdate()");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsPinned")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ViewCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId")
+                        .HasDatabaseName("IX_Notice_AuthorId");
+
+                    b.HasIndex("ConventionId")
+                        .HasDatabaseName("IX_Notice_ConventionId");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_Notice_CreatedAt");
+
+                    b.HasIndex("IsPinned")
+                        .HasDatabaseName("IX_Notice_IsPinned");
+
+                    b.ToTable("Notices");
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Owner", b =>
@@ -616,6 +861,17 @@ namespace LocalRAG.Migrations
                     b.Navigation("Convention");
                 });
 
+            modelBuilder.Entity("LocalRAG.Models.AttributeTemplate", b =>
+                {
+                    b.HasOne("LocalRAG.Models.Convention", "Convention")
+                        .WithMany()
+                        .HasForeignKey("ConventionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Convention");
+                });
+
             modelBuilder.Entity("LocalRAG.Models.Feature", b =>
                 {
                     b.HasOne("LocalRAG.Models.Convention", null)
@@ -623,6 +879,46 @@ namespace LocalRAG.Migrations
                         .HasForeignKey("ConventionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("LocalRAG.Models.FileAttachment", b =>
+                {
+                    b.HasOne("LocalRAG.Models.Notice", "Notice")
+                        .WithMany("Attachments")
+                        .HasForeignKey("NoticeId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Notice");
+                });
+
+            modelBuilder.Entity("LocalRAG.Models.Gallery", b =>
+                {
+                    b.HasOne("LocalRAG.Models.User", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LocalRAG.Models.Convention", "Convention")
+                        .WithMany()
+                        .HasForeignKey("ConventionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Convention");
+                });
+
+            modelBuilder.Entity("LocalRAG.Models.GalleryImage", b =>
+                {
+                    b.HasOne("LocalRAG.Models.Gallery", "Gallery")
+                        .WithMany("Images")
+                        .HasForeignKey("GalleryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Gallery");
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Guest", b =>
@@ -680,6 +976,25 @@ namespace LocalRAG.Migrations
                         .HasForeignKey("ConventionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Convention");
+                });
+
+            modelBuilder.Entity("LocalRAG.Models.Notice", b =>
+                {
+                    b.HasOne("LocalRAG.Models.User", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LocalRAG.Models.Convention", "Convention")
+                        .WithMany()
+                        .HasForeignKey("ConventionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
 
                     b.Navigation("Convention");
                 });
@@ -765,6 +1080,11 @@ namespace LocalRAG.Migrations
                     b.Navigation("VectorStores");
                 });
 
+            modelBuilder.Entity("LocalRAG.Models.Gallery", b =>
+                {
+                    b.Navigation("Images");
+                });
+
             modelBuilder.Entity("LocalRAG.Models.Guest", b =>
                 {
                     b.Navigation("GuestAttributes");
@@ -775,6 +1095,11 @@ namespace LocalRAG.Migrations
             modelBuilder.Entity("LocalRAG.Models.Menu", b =>
                 {
                     b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("LocalRAG.Models.Notice", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("LocalRAG.Models.ScheduleTemplate", b =>

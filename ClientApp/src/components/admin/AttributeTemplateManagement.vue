@@ -101,6 +101,11 @@
         </div>
       </div>
     </div>
+
+    <!-- 토스트 알림 -->
+    <div v-if="toast.show" :class="['fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all', toast.type === 'success' ? 'bg-green-600' : 'bg-red-600']">
+      <p class="text-white font-medium">{{ toast.message }}</p>
+    </div>
   </div>
 </template>
 
@@ -119,6 +124,12 @@ const editingTemplate = ref(null)
 const form = ref({
   attributeKey: '',
   attributeValuesText: ''
+})
+
+const toast = ref({
+  show: false,
+  message: '',
+  type: 'success'
 })
 
 const parseValues = (valuesStr) => {
@@ -189,9 +200,10 @@ const saveTemplate = async () => {
 
     await loadTemplates()
     closeModal()
+    showToast('저장되었습니다', 'success')
   } catch (error) {
     console.error('Failed to save template:', error)
-    alert('저장 실패: ' + (error.response?.data?.message || error.message))
+    showToast('저장 실패: ' + (error.response?.data?.message || error.message), 'error')
   }
 }
 
@@ -201,10 +213,18 @@ const deleteTemplate = async (id) => {
   try {
     await apiClient.delete(`/attributetemplate/${id}`)
     await loadTemplates()
+    showToast('삭제되었습니다', 'success')
   } catch (error) {
     console.error('Failed to delete template:', error)
-    alert('삭제 실패')
+    showToast('삭제 실패', 'error')
   }
+}
+
+const showToast = (message, type = 'success') => {
+  toast.value = { show: true, message, type }
+  setTimeout(() => {
+    toast.value.show = false
+  }, 3000)
 }
 
 onMounted(() => {

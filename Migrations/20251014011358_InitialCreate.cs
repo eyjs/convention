@@ -27,7 +27,8 @@ namespace LocalRAG.Migrations
                     BrandColor = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ThemePreset = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RegDtm = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "getdate()"),
-                    DeleteYn = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "N")
+                    DeleteYn = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "N"),
+                    CompleteYn = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -59,6 +60,52 @@ namespace LocalRAG.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AttributeDefinitions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ConventionId = table.Column<int>(type: "int", nullable: false),
+                    AttributeKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Options = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OrderNum = table.Column<int>(type: "int", nullable: false),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AttributeDefinitions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AttributeDefinitions_Conventions_ConventionId",
+                        column: x => x.ConventionId,
+                        principalTable: "Conventions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AttributeTemplates",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ConventionId = table.Column<int>(type: "int", nullable: false),
+                    AttributeKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    AttributeValues = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OrderNum = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AttributeTemplates", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AttributeTemplates_Conventions_ConventionId",
+                        column: x => x.ConventionId,
+                        principalTable: "Conventions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -198,6 +245,37 @@ namespace LocalRAG.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Galleries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ConventionId = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AuthorId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "getdate()"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Galleries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Galleries_Conventions_ConventionId",
+                        column: x => x.ConventionId,
+                        principalTable: "Conventions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Galleries_Users_AuthorId",
+                        column: x => x.AuthorId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Guests",
                 columns: table => new
                 {
@@ -207,11 +285,14 @@ namespace LocalRAG.Migrations
                     UserId = table.Column<int>(type: "int", nullable: true),
                     GuestName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Telephone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    CorpName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     CorpPart = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     ResidentNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Affiliation = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     AccessToken = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    IsRegisteredUser = table.Column<bool>(type: "bit", nullable: false)
+                    IsRegisteredUser = table.Column<bool>(type: "bit", nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -228,6 +309,39 @@ namespace LocalRAG.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Notices",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsPinned = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    ViewCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    AuthorId = table.Column<int>(type: "int", nullable: false),
+                    ConventionId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "getdate()"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notices_Conventions_ConventionId",
+                        column: x => x.ConventionId,
+                        principalTable: "Conventions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Notices_Users_AuthorId",
+                        column: x => x.AuthorId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -282,6 +396,29 @@ namespace LocalRAG.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GalleryImages",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    GalleryId = table.Column<int>(type: "int", nullable: false),
+                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Caption = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OrderNum = table.Column<int>(type: "int", nullable: false),
+                    UploadedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "getdate()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GalleryImages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GalleryImages_Galleries_GalleryId",
+                        column: x => x.GalleryId,
+                        principalTable: "Galleries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "GuestAttributes",
                 columns: table => new
                 {
@@ -326,6 +463,55 @@ namespace LocalRAG.Migrations
                         principalColumn: "Id");
                 });
 
+            migrationBuilder.CreateTable(
+                name: "FileAttachments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OriginalName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SavedName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Size = table.Column<long>(type: "bigint", nullable: false),
+                    ContentType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Category = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    NoticeId = table.Column<int>(type: "int", nullable: true),
+                    BoardPostId = table.Column<int>(type: "int", nullable: true),
+                    UploadedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "getdate()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FileAttachments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FileAttachments_Notices_NoticeId",
+                        column: x => x.NoticeId,
+                        principalTable: "Notices",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AttributeDefinition_ConventionId",
+                table: "AttributeDefinitions",
+                column: "ConventionId");
+
+            migrationBuilder.CreateIndex(
+                name: "UQ_AttributeDefinition_ConventionId_AttributeKey",
+                table: "AttributeDefinitions",
+                columns: new[] { "ConventionId", "AttributeKey" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AttributeTemplate_ConventionId",
+                table: "AttributeTemplates",
+                column: "ConventionId");
+
+            migrationBuilder.CreateIndex(
+                name: "UQ_AttributeTemplate_ConventionId_AttributeKey",
+                table: "AttributeTemplates",
+                columns: new[] { "ConventionId", "AttributeKey" },
+                unique: true);
+
             migrationBuilder.CreateIndex(
                 name: "IX_Convention_ConventionType",
                 table: "Conventions",
@@ -340,6 +526,36 @@ namespace LocalRAG.Migrations
                 name: "IX_Feature_ConventionId",
                 table: "Features",
                 column: "ConventionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FileAttachment_Category",
+                table: "FileAttachments",
+                column: "Category");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FileAttachment_NoticeId",
+                table: "FileAttachments",
+                column: "NoticeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Galleries_AuthorId",
+                table: "Galleries",
+                column: "AuthorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Gallery_ConventionId",
+                table: "Galleries",
+                column: "ConventionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Gallery_CreatedAt",
+                table: "Galleries",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GalleryImage_GalleryId",
+                table: "GalleryImages",
+                column: "GalleryId");
 
             migrationBuilder.CreateIndex(
                 name: "UQ_GuestAttributes_GuestId_AttributeKey",
@@ -378,6 +594,26 @@ namespace LocalRAG.Migrations
                 name: "IX_Menu_ConventionId",
                 table: "Menus",
                 column: "ConventionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notice_AuthorId",
+                table: "Notices",
+                column: "AuthorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notice_ConventionId",
+                table: "Notices",
+                column: "ConventionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notice_CreatedAt",
+                table: "Notices",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notice_IsPinned",
+                table: "Notices",
+                column: "IsPinned");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Owner_ConventionId",
@@ -440,7 +676,19 @@ namespace LocalRAG.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "AttributeDefinitions");
+
+            migrationBuilder.DropTable(
+                name: "AttributeTemplates");
+
+            migrationBuilder.DropTable(
                 name: "Features");
+
+            migrationBuilder.DropTable(
+                name: "FileAttachments");
+
+            migrationBuilder.DropTable(
+                name: "GalleryImages");
 
             migrationBuilder.DropTable(
                 name: "GuestAttributes");
@@ -462,6 +710,12 @@ namespace LocalRAG.Migrations
 
             migrationBuilder.DropTable(
                 name: "VectorStores");
+
+            migrationBuilder.DropTable(
+                name: "Notices");
+
+            migrationBuilder.DropTable(
+                name: "Galleries");
 
             migrationBuilder.DropTable(
                 name: "Guests");

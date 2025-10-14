@@ -55,7 +55,7 @@ namespace LocalRAG.Migrations
                         .IsUnique()
                         .HasDatabaseName("UQ_AttributeDefinition_ConventionId_AttributeKey");
 
-                    b.ToTable("AttributeDefinitions");
+                    b.ToTable("AttributeDefinitions", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.AttributeTemplate", b =>
@@ -91,7 +91,7 @@ namespace LocalRAG.Migrations
                         .IsUnique()
                         .HasDatabaseName("UQ_AttributeTemplate_ConventionId_AttributeKey");
 
-                    b.ToTable("AttributeTemplates");
+                    b.ToTable("AttributeTemplates", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Convention", b =>
@@ -160,7 +160,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("StartDate")
                         .HasDatabaseName("IX_Convention_StartDate");
 
-                    b.ToTable("Conventions");
+                    b.ToTable("Conventions", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Feature", b =>
@@ -187,7 +187,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("ConventionId")
                         .HasDatabaseName("IX_Feature_ConventionId");
 
-                    b.ToTable("Features");
+                    b.ToTable("Features", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.FileAttachment", b =>
@@ -240,7 +240,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("NoticeId")
                         .HasDatabaseName("IX_FileAttachment_NoticeId");
 
-                    b.ToTable("FileAttachments");
+                    b.ToTable("FileAttachments", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Gallery", b =>
@@ -288,7 +288,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("CreatedAt")
                         .HasDatabaseName("IX_Gallery_CreatedAt");
 
-                    b.ToTable("Galleries");
+                    b.ToTable("Galleries", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.GalleryImage", b =>
@@ -322,7 +322,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("GalleryId")
                         .HasDatabaseName("IX_GalleryImage_GalleryId");
 
-                    b.ToTable("GalleryImages");
+                    b.ToTable("GalleryImages", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Guest", b =>
@@ -395,7 +395,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("UserId")
                         .HasDatabaseName("IX_Guest_UserId");
 
-                    b.ToTable("Guests");
+                    b.ToTable("Guests", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.GuestAttribute", b =>
@@ -423,7 +423,7 @@ namespace LocalRAG.Migrations
                         .IsUnique()
                         .HasDatabaseName("UQ_GuestAttributes_GuestId_AttributeKey");
 
-                    b.ToTable("GuestAttributes");
+                    b.ToTable("GuestAttributes", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.GuestScheduleTemplate", b =>
@@ -441,7 +441,7 @@ namespace LocalRAG.Migrations
 
                     b.HasIndex("ScheduleTemplateId");
 
-                    b.ToTable("GuestScheduleTemplates");
+                    b.ToTable("GuestScheduleTemplates", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Menu", b =>
@@ -473,7 +473,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("ConventionId")
                         .HasDatabaseName("IX_Menu_ConventionId");
 
-                    b.ToTable("Menus");
+                    b.ToTable("Menus", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Notice", b =>
@@ -536,7 +536,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("IsPinned")
                         .HasDatabaseName("IX_Notice_IsPinned");
 
-                    b.ToTable("Notices");
+                    b.ToTable("Notices", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Owner", b =>
@@ -563,7 +563,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("ConventionId")
                         .HasDatabaseName("IX_Owner_ConventionId");
 
-                    b.ToTable("Owners");
+                    b.ToTable("Owners", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Schedule", b =>
@@ -606,7 +606,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("ConventionId")
                         .HasDatabaseName("IX_Schedule_ConventionId");
 
-                    b.ToTable("Schedules");
+                    b.ToTable("Schedules", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.ScheduleItem", b =>
@@ -651,7 +651,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("ScheduleTemplateId")
                         .HasDatabaseName("IX_ScheduleItem_ScheduleTemplateId");
 
-                    b.ToTable("ScheduleItems");
+                    b.ToTable("ScheduleItems", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.ScheduleTemplate", b =>
@@ -683,7 +683,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("ConventionId")
                         .HasDatabaseName("IX_ScheduleTemplate_ConventionId");
 
-                    b.ToTable("ScheduleTemplates");
+                    b.ToTable("ScheduleTemplates", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Section", b =>
@@ -718,7 +718,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("MenuId")
                         .HasDatabaseName("IX_Section_MenuId");
 
-                    b.ToTable("Sections");
+                    b.ToTable("Sections", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.User", b =>
@@ -809,7 +809,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("Role")
                         .HasDatabaseName("IX_User_Role");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.VectorStore", b =>
@@ -844,7 +844,7 @@ namespace LocalRAG.Migrations
                     b.HasIndex("SourceType")
                         .HasDatabaseName("IX_VectorStore_SourceType");
 
-                    b.ToTable("VectorStores");
+                    b.ToTable("VectorStores", (string)null);
                 });
 
             modelBuilder.Entity("LocalRAG.Models.AttributeDefinition", b =>

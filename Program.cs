@@ -1,19 +1,20 @@
+using LocalRAG.Configuration;
 using LocalRAG.Data;
 using LocalRAG.HealthChecks;
 using LocalRAG.Interfaces;
 using LocalRAG.Middleware;
 using LocalRAG.Providers;
+using LocalRAG.Repositories;
 using LocalRAG.Services;
 using LocalRAG.Services.Builders;
+using LocalRAG.Services.ChatBot;
 using LocalRAG.Storage;
-using LocalRAG.Configuration;
-using LocalRAG.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Serilog;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,19 +45,17 @@ builder.Services.AddCors(options =>
 
 // --- 3. 데이터베이스 및 리포지토리 설정 ---
 builder.Services.AddConnectionStringProvider();
-builder.Services.AddSingleton<AutoIndexingInterceptor>();
+
 builder.Services.AddDbContext<ConventionDbContext>((serviceProvider, options) =>
 {
     var connectionProvider = serviceProvider.GetRequiredService<IConnectionStringProvider>();
     var connectionString = connectionProvider.GetConnectionString();
-    var interceptor = serviceProvider.GetRequiredService<AutoIndexingInterceptor>();
 
     options.UseSqlServer(connectionString, sqlOptions =>
     {
         sqlOptions.CommandTimeout(60);
         sqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
-    })
-    .AddInterceptors(interceptor);
+    });
 });
 builder.Services.AddRepositories();
 
@@ -82,19 +81,22 @@ builder.Services.AddScoped<Llama3Provider>(provider =>
     var logger = provider.GetRequiredService<ILogger<Llama3Provider>>();
     return new Llama3Provider(httpClient, configuration, logger);
 });
-builder.Services.AddScoped<GeminiProvider>();
 
-// 설정에 따라 사용할 LLM Provider를 동적으로 주입합니다.
+builder.Services.AddScoped<GeminiProvider>(provider =>
+{
+    var httpClient = provider.GetRequiredService<HttpClient>();
+    var configuration = provider.GetRequiredService<IConfiguration>();
+    return new GeminiProvider(httpClient, configuration);
+});
+
 builder.Services.AddScoped<ILlmProvider>(provider =>
 {
-    var configuration = provider.GetRequiredService<IConfiguration>();
-    var llmType = configuration["LlmSettings:Provider"];
-
-    return llmType?.ToLower() switch
+    var llmProvider = builder.Configuration["LlmProvider"];
+    return llmProvider switch
     {
         "llama3" => provider.GetRequiredService<Llama3Provider>(),
         "gemini" => provider.GetRequiredService<GeminiProvider>(),
-        _ => provider.GetRequiredService<Llama3Provider>()
+        _ => provider.GetRequiredService<Llama3Provider>() // Default to GeminiProvider
     };
 });
 
@@ -105,13 +107,15 @@ builder.Services.AddScoped<IRagService, RagService>();
 
 // 기존 수동 서비스는 제거하거나 주석 처리
 builder.Services.AddScoped<ConventionDocumentBuilder>();
-builder.Services.AddScoped<AdvancedConventionIndexingService>();
-
+builder.Services.AddScoped<IndexingService>();
 builder.Services.AddScoped<ConventionChatService>();
-builder.Services.AddScoped<IScheduleUploadService, ScheduleUploadService>();
-builder.Services.AddScoped<INoticeService, NoticeService>();
-builder.Services.AddScoped<IGalleryService, GalleryService>();
 
+builder.Services.AddScoped<ChatIntentRouter>();
+builder.Services.AddScoped<ChatPromptBuilder>();
+builder.Services.AddScoped<LlmResponseService>();
+builder.Services.AddScoped<RagSearchService>();
+builder.Services.AddScoped<GuestContextualDataProvider>();
+builder.Services.AddScoped<ConventionAccessService>();
 // --- 5. 인증 및 기타 서비스 등록 ---
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
 builder.Services.AddSingleton(jwtSettings);

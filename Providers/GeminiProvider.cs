@@ -21,14 +21,14 @@ public class GeminiProvider : ILlmProvider
         _configuration = configuration;
         _baseUrl = _configuration["LlmSettings:Gemini:BaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta";
         _apiKey = _configuration["LlmSettings:Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key not configured");
-        _model = _configuration["LlmSettings:Gemini:Model"] ?? "gemini-1.5-flash";
+        _model = _configuration["LlmSettings:Gemini:Model"] ?? "gemini-2.0-flash";
     }
 
-    public async Task<string> GenerateResponseAsync(string prompt, string? context = null, List<ChatMessage>? history = null)
+    public async Task<string> GenerateResponseAsync(string prompt, string? context = null, List<ChatMessage>? history = null, string? systemInstructionOverride = null)
     {
         try
         {
-            var systemInstruction = @"You are a helpful AI assistant for Star Tour. Your instructions are absolute.
+            var effectiveSystemInstruction = systemInstructionOverride ?? @"You are a helpful AI assistant for Star Tour. Your instructions are absolute.
 1. You MUST respond in Korean.
 2. Base your answers strictly on the provided 'Context'.
 3. If the context does not contain the answer, you MUST respond with '정보가 부족하여 답변할 수 없습니다.'";
@@ -49,7 +49,7 @@ public class GeminiProvider : ILlmProvider
 
             var request = new
             {
-                system_instruction = new { parts = new[] { new { text = systemInstruction } } },
+                system_instruction = new { parts = new[] { new { text = effectiveSystemInstruction } } },
                 contents
             };
 
@@ -82,14 +82,26 @@ public class GeminiProvider : ILlmProvider
     {
         try
         {
-            var prompt = @$"Your task is to classify the user's question into one of the following categories: personal_info, personal_schedule, general_query.
-Respond with ONLY the category name and nothing else.
+            var prompt = @$"Classify the user's question into ONE category. Respond with ONLY the category name.
 
-- 'personal_info': Question about the user themselves (e.g., 'who am I', 'what is my info', '난 누구야', '내 정보').
-- 'personal_schedule': Question about the user's own schedule (e.g., 'what is my schedule', 'my events today', '내 일정').
-- 'general_query': Any other question (e.g., '행사 정보', '색인된 정보').
+Categories:
+- 'personal_info': Questions about the user's own information (who am I, my name, my profile, 내 정보, 난 누구, 내 이름)
+- 'personal_schedule': Questions about the user's schedule (my schedule, my events, my today, 내 일정, 내 스케줄, 오늘 내 일정, 나의 일정)
+- 'event_query': Questions about the event/convention (event info, convention details, when is event, 행사 정보, 컨벤션 정보, 행사 언제)
+- 'general_query': Everything else (weather, news, general knowledge, 날씨, 뉴스)
 
-Question: ""{question}""";
+Examples:
+- ""내 일정"" → personal_schedule
+- ""내 일정 알려줘"" → personal_schedule
+- ""오늘 내 일정은?"" → personal_schedule
+- ""난 누구야?"" → personal_info
+- ""내 정보 알려줘"" → personal_info
+- ""행사 언제야?"" → event_query
+- ""오늘 날씨"" → general_query
+
+Question: ""{question}""
+
+Category:";
 
             var request = new { contents = new[] { new { parts = new[] { new { text = prompt } } } } };
             var json = JsonSerializer.Serialize(request);
@@ -106,9 +118,8 @@ Question: ""{question}""";
                 var parts = candidates[0].GetProperty("content").GetProperty("parts");
                 if (parts.GetArrayLength() > 0)
                 {
-                    var intent = parts[0].GetProperty("text").GetString()?.Trim().ToLower() ?? "general_query";
-                    if (intent.Contains("personal_info")) return "personal_info";
-                    if (intent.Contains("personal_schedule")) return "personal_schedule";
+                    var intentText = parts[0].GetProperty("text").GetString()?.Trim() ?? "general_query";
+                    return intentText;
                 }
             }
             return "general_query";

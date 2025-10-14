@@ -20,7 +20,7 @@
               </svg>
             </div>
             <div>
-              <h2 class="text-lg font-semibold text-gray-900">ChatGPT</h2>
+              <h2 class="text-lg font-semibold text-gray-900">iFA STAR AI</h2>
               <p class="text-xs text-gray-500">
                 {{ conventionStore.currentConvention?.title || '무엇을 도와드릴까요?' }}
               </p>

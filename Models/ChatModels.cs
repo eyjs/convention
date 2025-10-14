@@ -11,6 +11,7 @@ public class ChatResponse
     public string Answer { get; set; } = string.Empty;
     public List<SourceInfo> Sources { get; set; } = new();
     public string LlmProvider { get; set; } = string.Empty;
+    public string? Intent { get; set; }
 }
 
 public class SourceInfo
