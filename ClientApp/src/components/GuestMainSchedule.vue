@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 pb-20">
+  <div class="min-h-screen min-h-dvh bg-gray-50 pb-20">
     <!-- 헤더 -->
     <div class="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6 shadow-lg">
       <h1 class="text-2xl font-bold">{{ conventionTitle }}</h1>

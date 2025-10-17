@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen min-h-dvh bg-gray-50">
     <!-- 헤더 -->
     <div class="sticky top-0 z-40 bg-white shadow-sm">
       <div class="px-4 py-4">
@@ -234,69 +234,33 @@ import { ref, computed, onMounted } from 'vue'
 import apiClient from '@/services/api'
 
 const showCalendarView = ref(false)
-const selectedDate = ref('2025-03-12')
+const selectedDate = ref('')
 const selectedSchedule = ref(null)
+const allSchedules = ref([]) // 전체 일정 저장
+const schedules = computed(() => {
+  if (!selectedDate.value) return allSchedules.value
+  return allSchedules.value.filter(s => s.date === selectedDate.value)
+})
 
 // 날짜 목록 생성
-const dates = ref([
-  { date: '2025-03-11', day: '화', dayNum: '11', month: '3월' },
-  { date: '2025-03-12', day: '수', dayNum: '12', month: '3월' },
-  { date: '2025-03-13', day: '목', dayNum: '13', month: '3월' },
-  { date: '2025-03-14', day: '금', dayNum: '14', month: '3월' },
-  { date: '2025-03-15', day: '토', dayNum: '15', month: '3월' },
-])
+const dates = computed(() => {
+  if (allSchedules.value.length === 0) return []
+  
+  // 일정에서 고유 날짜 추출
+  const uniqueDates = [...new Set(allSchedules.value.map(s => s.date))].sort()
+  
+  return uniqueDates.map(dateStr => {
+    const date = new Date(dateStr)
+    const days = ['일', '월', '화', '수', '목', '금', '토']
+    return {
+      date: dateStr,
+      day: days[date.getDay()],
+      dayNum: String(date.getDate()),
+      month: `${date.getMonth() + 1}월`
+    }
+  })
+})
 
-// 임시 일정 데이터
-const schedules = ref([
-  {
-    id: 1,
-    date: '2025-03-12',
-    startTime: '09:00',
-    endTime: '12:00',
-    title: 'STAFF 선발대 미팅',
-    location: '인천국제공항 제1터미널',
-    category: '미팅',
-    group: '1호차',
-    participants: 45,
-    description: '전체 참가자 오리엔테이션 및 일정 안내'
-  },
-  {
-    id: 2,
-    date: '2025-03-12',
-    startTime: '14:00',
-    endTime: '18:00',
-    title: '로마 도착',
-    location: '로마 피우미치노 공항',
-    category: '이동',
-    group: '전체',
-    participants: 150,
-    description: '인천발 → 로마행 직항편\n\n체크인 시간: 오전 11:00\n탑승 게이트: 미정'
-  },
-  {
-    id: 3,
-    date: '2025-03-13',
-    startTime: '09:30',
-    endTime: '12:00',
-    title: '바티칸 박물관 투어',
-    location: '바티칸 박물관',
-    category: '관광',
-    group: 'A조',
-    participants: 50,
-    description: '세계적인 예술 작품 감상\n가이드 투어 진행'
-  },
-  {
-    id: 4,
-    date: '2025-03-13',
-    startTime: '14:00',
-    endTime: '17:00',
-    title: '콜로세움 관람',
-    location: '콜로세움',
-    category: '관광',
-    group: 'B조',
-    participants: 50,
-    description: '고대 로마 원형 경기장 투어'
-  },
-])
 
 // 날짜별 일정 그룹화
 const groupedSchedules = computed(() => {
@@ -313,7 +277,6 @@ const groupedSchedules = computed(() => {
     schedules: grouped[date].sort((a, b) => a.startTime.localeCompare(b.startTime))
   }))
 })
-
 // 캘린더 날짜 생성
 const calendarDays = computed(() => {
   const days = []
@@ -328,13 +291,15 @@ const calendarDays = computed(() => {
   // 이전 달 날짜
   for (let i = startDay - 1; i >= 0; i--) {
     const date = new Date(currentYear, currentMonth, -i)
+    const dateStr = date.toISOString().split('T')[0]
+    const daySchedules = allSchedules.value.filter(s => s.date === dateStr)
     days.push({
-      date: date.toISOString().split('T')[0],
+      date: dateStr,
       day: date.getDate(),
       isCurrentMonth: false,
       isToday: false,
-      hasSchedule: false,
-      scheduleCount: 0
+      hasSchedule: daySchedules.length > 0,
+      scheduleCount: daySchedules.length
     })
   }
   
@@ -342,7 +307,7 @@ const calendarDays = computed(() => {
   for (let i = 1; i <= lastDay.getDate(); i++) {
     const date = new Date(currentYear, currentMonth, i)
     const dateStr = date.toISOString().split('T')[0]
-    const daySchedules = schedules.value.filter(s => s.date === dateStr)
+    const daySchedules = allSchedules.value.filter(s => s.date === dateStr)
     
     days.push({
       date: dateStr,
@@ -385,8 +350,35 @@ function selectCalendarDay(day) {
 // API에서 일정 불러오기
 onMounted(async () => {
   try {
-    // const response = await apiClient.get('/guest/schedules')
-    // schedules.value = response.data
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const guestId = user.guestId
+    
+    if (!guestId) return
+    
+    const response = await apiClient.get(`/guest-schedules/${guestId}`)
+    
+    allSchedules.value = response.data.map(item => ({
+      id: item.id,
+      date: item.scheduleDate.split('T')[0],
+      startTime: item.startTime,
+      endTime: item.endTime,
+      title: item.title,
+      location: item.location,
+      description: item.content,
+      category: '일정',
+      group: item.courseName || '전체',
+      participants: item.participantCount || 0
+    }))
+    
+    // 기본 선택 날짜: 가장 가까운 미래 일정 또는 첫 번째 날짜
+    if (allSchedules.value.length > 0) {
+      const today = new Date().toISOString().split('T')[0]
+      const futureDates = [...new Set(allSchedules.value.map(s => s.date))]
+        .filter(d => d >= today)
+        .sort()
+      
+      selectedDate.value = futureDates.length > 0 ? futureDates[0] : allSchedules.value[0].date
+    }
   } catch (error) {
     console.error('Failed to load schedules:', error)
   }

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-6">
+  <div class="min-h-screen min-h-dvh bg-gray-50 p-6">
     <div class="max-w-7xl mx-auto">
       <!-- 헤더 -->
       <div class="mb-6 flex items-center justify-between">

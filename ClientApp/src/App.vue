@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen min-h-dvh bg-gray-50">
     <!-- 메인 컨텐츠 -->
     <main class="pb-20">
       <router-view />
@@ -46,28 +46,57 @@
         </button>
       </div>
     </nav>
-    
-    <!-- 챗봇 -->
-    <ChatWindow />
-    <ChatFloatingButton />
+
+    <!-- 사용자 채팅 UI -->
+    <div v-if="uiStore.isChatOpen && conventionId && token" 
+         class="fixed inset-0 bg-black bg-opacity-30 z-40 flex justify-center items-end sm:items-center sm:p-4">
+      <div class="w-full max-w-sm h-[calc(100%-5rem)] sm:h-full sm:max-h-[600px] flex flex-col rounded-t-2xl sm:rounded-lg shadow-xl bg-white overflow-hidden">
+        <ConventionChat :convention-id="conventionId" :token="token" />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import ChatWindow from '@/components/chatbot/ChatWindow.vue'
 import ChatFloatingButton from '@/components/chatbot/ChatFloatingButton.vue'
+import { useUIStore } from '@/stores/ui'
+import ConventionChat from '@/components/ConventionChat.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const uiStore = useUIStore()
+
+let pollingInterval = null;
+
+onMounted(() => {
+  authStore.initAuth();
+  if (authStore.isAuthenticated) {
+    authStore.fetchCurrentUser(); // Initial fetch
+    // Poll every 10 seconds
+    pollingInterval = setInterval(() => {
+      authStore.fetchCurrentUser();
+    }, 10000);
+  }
+});
+
+onUnmounted(() => {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+  }
+});
+
+const conventionId = computed(() => authStore.user?.conventionId)
+const token = computed(() => authStore.accessToken)
 
 const currentRoute = computed(() => route.path)
 const showNav = computed(() => route.path !== '/login')
 
-const navItems = [
+const navItems = computed(() => [
   {
     path: '/',
     label: '홈',
@@ -90,7 +119,7 @@ const navItems = [
     path: '/chat',
     label: '채팅',
     iconPath: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-    badge: 5
+    badge: authStore.totalUnreadCount
   },
   {
     path: '/location',
@@ -98,10 +127,17 @@ const navItems = [
     iconPath: 'M4 6h16M4 12h16M4 18h16',
     badge: 0
   }
-]
+])
 
 function navigateTo(path) {
-  router.push(path)
+  console.log("Navigating to:", path);
+  console.log("uiStore:", uiStore);
+  console.log("router:", router);
+  if (path === '/chat') {
+    uiStore.toggleChat()
+  } else {
+    router.push(path)
+  }
 }
 </script>
 

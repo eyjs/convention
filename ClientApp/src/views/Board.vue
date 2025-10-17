@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen min-h-dvh bg-gray-50">
     <!-- 헤더 -->
     <div class="sticky top-0 z-40 bg-white shadow-sm">
       <div class="px-4 py-4">
@@ -136,7 +136,7 @@
           <!-- 제목 & 메타 -->
           <div class="mb-6">
             <div class="flex items-center space-x-2 mb-3">
-              <span v-if="selectedNotice.isImportant" class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold">필독</span>
+              <span v-if="selectedNotice.isPinned" class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold">필독</span>
               <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">{{ selectedNotice.category }}</span>
             </div>
             <h1 class="text-2xl font-bold text-gray-900 mb-3">{{ selectedNotice.title }}</h1>
@@ -193,7 +193,7 @@
                 <div class="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0"></div>
                 <div class="flex-1">
                   <div class="flex items-center space-x-2 mb-1">
-                    <span class="text-sm font-semibold text-gray-900">{{ comment.author }}</span>
+                    <span class="text-sm font-semibold text-gray-900">{{ comment.authorName }}</span>
                     <span class="text-xs text-gray-500">{{ formatDateTime(comment.createdAt) }}</span>
                   </div>
                   <p class="text-sm text-gray-700">{{ comment.content }}</p>
@@ -251,7 +251,7 @@
 
           <div>
             <label class="flex items-center space-x-2">
-              <input type="checkbox" v-model="newNotice.isImportant" class="rounded" />
+              <input type="checkbox" v-model="newNotice.isPinned" class="rounded" />
               <span class="text-sm font-medium text-gray-700">중요 공지로 등록</span>
             </label>
           </div>
@@ -295,10 +295,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const isAdmin = computed(() => authStore.user?.role === 'Admin')
 
@@ -308,97 +310,26 @@ const showWriteModal = ref(false)
 const newComment = ref('')
 const newNotice = ref({
   category: '공지',
-  isImportant: false,
+  isPinned: false,
   title: '',
   content: ''
 })
 
 const categories = ref([
-  { id: 'all', name: '전체', count: 15 },
-  { id: '공지', name: '공지', count: 8 },
-  { id: '일정', name: '일정', count: 4 },
-  { id: '안내', name: '안내', count: 3 }
+  { id: 'all', name: '전체' },
+  { id: '공지', name: '공지' },
+  { id: '일정', name: '일정' },
+  { id: '안내', name: '안내' }
 ])
 
-const notices = ref([
-  {
-    id: 1,
-    category: '공지',
-    title: '행사 일정 변경 안내',
-    content: '날씨 관계로 일부 일정이 변경되었습니다.\n\n변경 사항:\n- 3월 13일 바티칸 투어 → 3월 14일로 연기\n- 3월 13일은 자유 시간으로 변경\n\n불편을 드려 죄송합니다.',
-    author: '관리자',
-    createdAt: '2025-03-10T10:00:00',
-    views: 234,
-    commentCount: 12,
-    isImportant: true,
-    comments: [
-      { id: 1, author: '김철수', content: '확인했습니다!', createdAt: '2025-03-10T11:00:00' },
-      { id: 2, author: '이영희', content: '감사합니다', createdAt: '2025-03-10T12:00:00' }
-    ],
-    attachments: []
-  },
-  {
-    id: 2,
-    category: '안내',
-    title: '호텔 체크인 정보',
-    content: '호텔 체크인 시간 및 주의사항 안내드립니다.\n\n체크인: 15:00\n체크아웃: 11:00\n\n객실 배정은 현지 도착 후 진행됩니다.',
-    author: '관리자',
-    createdAt: '2025-03-09T14:30:00',
-    views: 189,
-    commentCount: 5,
-    isImportant: true,
-    comments: [],
-    attachments: []
-  },
-  {
-    id: 3,
-    category: '일정',
-    title: '3월 13일 조별 일정 안내',
-    content: 'A조와 B조의 관광 일정이 다릅니다. 각자 배정된 조를 확인해주세요.',
-    author: '관리자',
-    createdAt: '2025-03-08T09:00:00',
-    views: 156,
-    commentCount: 8,
-    isImportant: false,
-    comments: [],
-    attachments: []
-  },
-  {
-    id: 4,
-    category: '공지',
-    title: '로밍 및 와이파이 안내',
-    content: '현지에서 사용 가능한 로밍 요금제와 포켓와이파이 대여 정보입니다.',
-    author: '관리자',
-    createdAt: '2025-03-07T16:00:00',
-    views: 203,
-    commentCount: 15,
-    isImportant: false,
-    comments: [],
-    attachments: [
-      { id: 1, name: '로밍_안내.pdf', size: '1.2MB', url: '#' }
-    ]
-  },
-  {
-    id: 5,
-    category: '안내',
-    title: '여행자 보험 안내',
-    content: '모든 참가자는 여행자 보험에 자동 가입됩니다.',
-    author: '관리자',
-    createdAt: '2025-03-06T10:00:00',
-    views: 145,
-    commentCount: 3,
-    isImportant: false,
-    comments: [],
-    attachments: []
-  }
-])
+const notices = ref([])
 
 const importantNotices = computed(() => 
-  notices.value.filter(n => n.isImportant)
+  notices.value.filter(n => n.isPinned)
 )
 
 const filteredNotices = computed(() => {
-  let filtered = notices.value.filter(n => !n.isImportant)
+  let filtered = notices.value.filter(n => !n.isPinned)
   if (selectedCategory.value !== 'all') {
     filtered = filtered.filter(n => n.category === selectedCategory.value)
   }
@@ -423,10 +354,16 @@ function formatDateTime(dateStr) {
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
-function openNotice(notice) {
+async function openNotice(notice) {
   selectedNotice.value = { ...notice }
+  
   // 조회수 증가 API 호출
-  // apiClient.post(`/board/${notice.id}/view`)
+  apiClient.post(`/notices/${notice.id}/view`).catch(err => {
+    console.error('Failed to increment view count:', err)
+  })
+  
+  // 댓글 불러오기
+  await loadComments(notice.id)
 }
 
 function closeNotice() {
@@ -434,28 +371,42 @@ function closeNotice() {
   newComment.value = ''
 }
 
-function submitComment() {
-  if (!newComment.value.trim()) return
-  
-  const comment = {
-    id: Date.now(),
-    author: authStore.user?.name || '사용자',
-    content: newComment.value,
-    createdAt: new Date().toISOString()
+async function loadComments(noticeId) {
+  try {
+    const response = await apiClient.get(`/notices/${noticeId}/comments`)
+    if (selectedNotice.value) {
+      selectedNotice.value.comments = response.data || []
+    }
+  } catch (error) {
+    console.error('Failed to load comments:', error)
   }
+}
+
+async function submitComment() {
+  if (!newComment.value.trim() || !selectedNotice.value) return
   
-  selectedNotice.value.comments.push(comment)
-  newComment.value = ''
-  
-  // API 호출
-  // apiClient.post(`/board/${selectedNotice.value.id}/comments`, { content: comment.content })
+  try {
+    const response = await apiClient.post(`/notices/${selectedNotice.value.id}/comments`, {
+      content: newComment.value
+    })
+    
+    // 댓글 목록에 추가
+    if (!selectedNotice.value.comments) {
+      selectedNotice.value.comments = []
+    }
+    selectedNotice.value.comments.push(response.data)
+    newComment.value = ''
+  } catch (error) {
+    console.error('Failed to submit comment:', error)
+    alert('댓글 작성에 실패했습니다.')
+  }
 }
 
 function closeWriteModal() {
   showWriteModal.value = false
   newNotice.value = {
     category: '공지',
-    isImportant: false,
+    isPinned: false,
     title: '',
     content: ''
   }
@@ -464,26 +415,73 @@ function closeWriteModal() {
 async function submitNotice() {
   if (!newNotice.value.title || !newNotice.value.content) return
 
-  const notice = {
-    id: Date.now(),
-    ...newNotice.value,
-    author: '관리자',
-    createdAt: new Date().toISOString(),
-    views: 0,
-    commentCount: 0,
-    comments: [],
-    attachments: []
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const conventionId = user.conventionId
+
+    await apiClient.post('/notices', newNotice.value, {
+      params: { conventionId }
+    })
+
+    await loadNotices()
+    closeWriteModal()
+  } catch (error) {
+    console.error('Failed to create notice:', error)
+    alert('공지사항 등록에 실패했습니다.')
   }
-
-  if (newNotice.value.isImportant) {
-    notices.value.unshift(notice)
-  } else {
-    notices.value.push(notice)
-  }
-
-  // API 호출
-  // await apiClient.post('/board', newNotice.value)
-
-  closeWriteModal()
 }
+
+async function loadNotices() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const conventionId = user.conventionId
+
+    console.log('Board.vue - User:', user)
+    console.log('Board.vue - ConventionId:', conventionId)
+
+    if (!conventionId) {
+      console.error('ConventionId가 없습니다. 다시 로그인해주세요.')
+      return
+    }
+
+    const response = await apiClient.get('/notices', {
+      params: {
+        conventionId: conventionId,
+        page: 1,
+        pageSize: 100
+      }
+    })
+
+    notices.value = (response.data.items || []).map(item => ({
+      id: item.id,
+      category: '공지',
+      title: item.title,
+      content: item.content,
+      author: item.authorName || '관리자',
+      createdAt: item.createdAt,
+      views: item.viewCount || 0,
+      commentCount: 0,
+      isPinned: item.isPinned,
+      comments: [],  // 초기화
+      attachments: []
+    }))
+  } catch (error) {
+    console.error('Failed to load notices:', error)
+  }
+}
+
+onMounted(() => {
+  loadNotices().then(() => {
+    // router state에서 selectedNoticeId를 확인
+    const state = history.state
+    if (state?.selectedNoticeId) {
+      const notice = notices.value.find(n => n.id === state.selectedNoticeId)
+      if (notice) {
+        openNotice(notice)
+      }
+      // state 초기화
+      history.replaceState({}, document.title)
+    }
+  })
+})
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center p-4">
+  <div class="min-h-screen min-h-dvh bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center p-4">
     <!-- 배경 패턴 -->
     <div class="absolute inset-0 opacity-10">
       <div class="absolute top-0 left-0 w-96 h-96 bg-white rounded-full -translate-x-48 -translate-y-48"></div>

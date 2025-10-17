@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-6">
+  <div class="min-h-screen min-h-dvh bg-gray-50 p-6">
     <div class="max-w-4xl mx-auto">
       <h1 class="text-3xl font-bold mb-8">참석자 및 일정 업로드</h1>
 

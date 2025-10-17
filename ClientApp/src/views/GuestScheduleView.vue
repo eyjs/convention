@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen min-h-dvh bg-gray-50">
     <!-- 헤더 -->
     <div class="sticky top-0 z-10 bg-white shadow">
       <div class="flex items-center p-4">

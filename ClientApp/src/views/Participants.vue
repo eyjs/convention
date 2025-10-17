@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 px-4 py-6">
+  <div class="min-h-screen min-h-dvh bg-gray-50 px-4 py-6">
     <!-- 헤더 -->
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-gray-900">참가자</h1>
