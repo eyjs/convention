@@ -14,7 +14,6 @@ import TasteSpot from '../views/TasteSpot.vue'
 import GroupSchedule from '../views/GroupSchedule.vue'
 import EventPlace from '../views/EventPlace.vue'
 import Board from '../views/Board.vue'
-import Chat from '../views/Chat.vue'
 import FindId from '../views/FindId.vue'
 import FindPassword from '../views/FindPassword.vue'
 import NoticeList from '../views/NoticeList.vue'
@@ -131,21 +130,9 @@ const routes = [
     meta: { title: '사진첩' }
   },
   {
-    path: '/board',
+    path: '/notices',
     name: 'Board',
     component: Board,
-    meta: { title: '게시판' }
-  },
-  {
-    path: '/chat',
-    name: 'Chat',
-    component: Chat,
-    meta: { title: '채팅' }
-  },
-  {
-    path: '/notices',
-    name: 'NoticeList',
-    component: NoticeList,
     meta: { title: '공지사항', requiresAuth: true }
   },
   {

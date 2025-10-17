@@ -31,7 +31,7 @@ public class ChatIntentRouter
     /// <summary>
     /// LLM을 통해 질문 의도를 분류하고, 결과를 안전하게 Enum으로 변환합니다.
     /// </summary>
-    public async Task<Intent> GetIntentAsync(string question, List<ChatMessage>? history)
+    public async Task<Intent> GetIntentAsync(string question, List<ChatRequestMessage>? history)
     {
         try
         {

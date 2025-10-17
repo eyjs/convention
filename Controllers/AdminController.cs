@@ -1,5 +1,6 @@
 using LocalRAG.Data;
 using LocalRAG.Models;
+using LocalRAG.Models.DTOs;
 using LocalRAG.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -689,10 +690,7 @@ public class GuestDto
     public Dictionary<string, string>? Attributes { get; set; }
 }
 
-public class AssignSchedulesDto
-{
-    public List<int> ScheduleTemplateIds { get; set; } = new();
-}
+
 
 public class CreateUserDto
 {
@@ -711,29 +709,6 @@ public class ResetPasswordDto
     public string NewPassword { get; set; } = string.Empty;
 }
 
-public class ScheduleTemplateDto
-{
-    public string CourseName { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public int OrderNum { get; set; }
-}
-
-public class ScheduleItemDto
-{
-    public int ScheduleTemplateId { get; set; }
-    public DateTime ScheduleDate { get; set; }
-    public string StartTime { get; set; } = string.Empty;
-    public string? EndTime { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string? Location { get; set; }
-    public string? Content { get; set; }
-    public int OrderNum { get; set; }
-}
-
-public class BulkScheduleItemsDto
-{
-    public List<ScheduleItemDto> Items { get; set; } = new();
-}
 
 public class CreateNoticeDto
 {

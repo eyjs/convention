@@ -20,6 +20,7 @@ public class Notice
     public virtual User Author { get; set; } = null!;
     public virtual Convention Convention { get; set; } = null!;
     public virtual ICollection<FileAttachment> Attachments { get; set; } = new List<FileAttachment>();
+    public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 }
 
 /// <summary>

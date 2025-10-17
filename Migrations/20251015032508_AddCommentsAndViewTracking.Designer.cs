@@ -4,6 +4,7 @@ using LocalRAG.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalRAG.Migrations
 {
     [DbContext(typeof(ConventionDbContext))]
-    partial class ConventionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251015032508_AddCommentsAndViewTracking")]
+    partial class AddCommentsAndViewTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -197,50 +200,6 @@ namespace LocalRAG.Migrations
                         .HasDatabaseName("IX_Convention_StartDate");
 
                     b.ToTable("Conventions");
-                });
-
-            modelBuilder.Entity("LocalRAG.Models.ConventionChatMessage", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ConventionId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("getdate()");
-
-                    b.Property<int>("GuestId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("GuestName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("IsAdmin")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ConventionId")
-                        .HasDatabaseName("IX_ChatMessage_ConventionId");
-
-                    b.HasIndex("CreatedAt")
-                        .HasDatabaseName("IX_ChatMessage_CreatedAt");
-
-                    b.HasIndex("GuestId");
-
-                    b.ToTable("ConventionChatMessages");
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Feature", b =>
@@ -443,9 +402,6 @@ namespace LocalRAG.Migrations
 
                     b.Property<bool>("IsRegisteredUser")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastChatReadTimestamp")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -969,25 +925,6 @@ namespace LocalRAG.Migrations
                     b.Navigation("Author");
 
                     b.Navigation("Notice");
-                });
-
-            modelBuilder.Entity("LocalRAG.Models.ConventionChatMessage", b =>
-                {
-                    b.HasOne("LocalRAG.Models.Convention", "Convention")
-                        .WithMany()
-                        .HasForeignKey("ConventionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LocalRAG.Models.Guest", "Guest")
-                        .WithMany()
-                        .HasForeignKey("GuestId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Convention");
-
-                    b.Navigation("Guest");
                 });
 
             modelBuilder.Entity("LocalRAG.Models.Feature", b =>

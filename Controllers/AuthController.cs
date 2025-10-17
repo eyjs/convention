@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace LocalRAG.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/auth")]
 public class AuthController : ControllerBase
 {
     private readonly ConventionDbContext _context;
@@ -98,8 +98,17 @@ public class AuthController : ControllerBase
             {
                 // 이제 user.Guests가 정상적으로 로드되었으므로 if 문 안에서 guest를 찾을 수 있습니다.
                 var guest = user.Guests.OrderByDescending(g => g.Id).FirstOrDefault();
+
+                var unreadCount = 0;
+                if (guest != null)
+                {
+                    unreadCount = await _context.ConventionChatMessages.CountAsync(m => 
+                        m.ConventionId == guest.ConventionId && 
+                        m.CreatedAt > (guest.LastChatReadTimestamp ?? DateTime.MinValue));
+                }
+
                 // [회원 로그인 성공]
-                var accessToken = _authService.GenerateAccessToken(user, guest?.Id);
+                var accessToken = _authService.GenerateAccessToken(user, guest?.Id, guest?.ConventionId);
                 var refreshToken = _authService.GenerateRefreshToken();
                 
                 user.RefreshToken = refreshToken;
@@ -116,7 +125,10 @@ public class AuthController : ControllerBase
                         id = user.Id,
                         loginId = user.LoginId,
                         name = user.Name,
-                        role = user.Role
+                        role = user.Role,
+                        guestId = guest?.Id,
+                        conventionId = guest?.ConventionId,
+                        unreadCount = unreadCount
                     }
                 });
             }
@@ -131,7 +143,7 @@ public class AuthController : ControllerBase
                 var guestUser = new User { Id = nonMemberGuest.Id, Name = nonMemberGuest.GuestName, Role = "Guest", LoginId = $"guest_{nonMemberGuest.Id}" };
 
                 // (핵심 수정) 비회원 로그인 시에도 GuestId를 토큰에 포함시킵니다.
-                var accessToken = _authService.GenerateAccessToken(guestUser, nonMemberGuest.Id);
+                var accessToken = _authService.GenerateAccessToken(guestUser, nonMemberGuest.Id, nonMemberGuest.ConventionId);
                 var refreshToken = _authService.GenerateRefreshToken();
 
                 return Ok(new
@@ -142,6 +154,7 @@ public class AuthController : ControllerBase
                     {
                         id = nonMemberGuest.Id,
                         guestId = nonMemberGuest.Id,
+                        conventionId = nonMemberGuest.ConventionId,
                         name = nonMemberGuest.GuestName,
                         role = "Guest"
                     }
@@ -199,7 +212,7 @@ public class AuthController : ControllerBase
                 Role = "Guest"
             };
 
-            var accessToken = _authService.GenerateAccessToken(guestUser);
+            var accessToken = _authService.GenerateAccessToken(guestUser, guest.Id, guest.ConventionId);
 
             return Ok(new
             {
@@ -304,18 +317,24 @@ public class AuthController : ControllerBase
                 return NotFound(new { message = "사용자를 찾을 수 없습니다." });
             }
 
-            var conventions = user.Guests
-                .Where(g => g.Convention != null)
-                .Select(g => new
+            var conventionList = new List<object>();
+            foreach (var g in user.Guests.Where(g => g.Convention != null))
+            {
+                var unreadCount = await _context.ConventionChatMessages.CountAsync(m => 
+                    m.ConventionId == g.ConventionId && 
+                    m.CreatedAt > (g.LastChatReadTimestamp ?? DateTime.MinValue));
+
+                conventionList.Add(new
                 {
                     id = g.ConventionId,
                     title = g.Convention!.Title,
                     startDate = g.Convention.StartDate,
                     endDate = g.Convention.EndDate,
                     guestId = g.Id,
-                    guestName = g.GuestName
-                })
-                .ToList();
+                    guestName = g.GuestName,
+                    unreadCount = unreadCount
+                });
+            }
 
             return Ok(new
             {
@@ -326,7 +345,7 @@ public class AuthController : ControllerBase
                 phone = user.Phone,
                 role = user.Role,
                 profileImageUrl = user.ProfileImageUrl,
-                conventions
+                conventions = conventionList
             });
         }
         catch (Exception ex)

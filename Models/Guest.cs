@@ -61,4 +61,9 @@ public class Guest
 
     public virtual ICollection<GuestScheduleTemplate> GuestScheduleTemplates { get; set; } = new List<GuestScheduleTemplate>();
     public virtual ICollection<GuestAttribute> GuestAttributes { get; set; } = new List<GuestAttribute>();
+
+    /// <summary>
+    /// 마지막으로 채팅을 읽은 시간
+    /// </summary>
+    public DateTime? LastChatReadTimestamp { get; set; }
 }

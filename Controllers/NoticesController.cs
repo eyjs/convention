@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using LocalRAG.Data;
 using LocalRAG.Interfaces;
+using LocalRAG.Models;
 using LocalRAG.Models.DTOs;
 using System.Security.Claims;
 
@@ -11,11 +14,13 @@ namespace LocalRAG.Controllers;
 public class NoticesController : ControllerBase
 {
     private readonly INoticeService _noticeService;
+    private readonly ConventionDbContext _context;
     private readonly ILogger<NoticesController> _logger;
 
-    public NoticesController(INoticeService noticeService, ILogger<NoticesController> logger)
+    public NoticesController(INoticeService noticeService, ConventionDbContext context, ILogger<NoticesController> logger)
     {
         _noticeService = noticeService;
+        _context = context;
         _logger = logger;
     }
 
@@ -149,15 +154,30 @@ public class NoticesController : ControllerBase
     }
 
     /// <summary>
-    /// 조회수 증가
+    /// 조회수 증가 (세션 기반 - 중복 방지)
     /// </summary>
     [HttpPost("{id}/view")]
     public async Task<IActionResult> IncrementViewCount(int id)
     {
         try
         {
+            // 세션에서 조회한 공지 ID 목록 확인
+            var viewedNotices = HttpContext.Session.GetString("ViewedNotices") ?? "";
+            var viewedList = viewedNotices.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+            
+            // 이미 조회한 공지면 카운트 증가 안함
+            if (viewedList.Contains(id.ToString()))
+            {
+                return Ok(new { message = "Already viewed", incremented = false });
+            }
+            
             await _noticeService.IncrementViewCountAsync(id);
-            return Ok();
+            
+            // 세션에 조회 기록 추가
+            viewedList.Add(id.ToString());
+            HttpContext.Session.SetString("ViewedNotices", string.Join(",", viewedList));
+            
+            return Ok(new { message = "View count incremented", incremented = true });
         }
         catch (Exception ex)
         {
@@ -193,4 +213,214 @@ public class NoticesController : ControllerBase
             return StatusCode(500, new { message = "공지사항 고정 상태 변경에 실패했습니다." });
         }
     }
+
+    // ========== 댓글 CRUD ==========
+
+    /// <summary>
+    /// 댓글 목록 조회
+    /// </summary>
+    [HttpGet("{noticeId}/comments")]
+    public async Task<ActionResult<List<CommentResponse>>> GetComments(int noticeId)
+    {
+        try
+        {
+            var comments = await _context.Comments
+                .Where(c => c.NoticeId == noticeId && !c.IsDeleted)
+                .OrderBy(c => c.CreatedAt)
+                .ToListAsync();
+
+            var responses = new List<CommentResponse>();
+            
+            // 모든 댓글 작성자는 Guest라고 가정
+            var authorIds = comments.Select(c => c.AuthorId).Distinct().ToList();
+            var guests = await _context.Guests
+                .Where(g => authorIds.Contains(g.Id))
+                .ToDictionaryAsync(g => g.Id, g => g.GuestName);
+
+            foreach (var comment in comments)
+            {
+                string authorName = guests.TryGetValue(comment.AuthorId, out var name) ? name : "익명";
+                
+                responses.Add(new CommentResponse
+                {
+                    Id = comment.Id,
+                    NoticeId = comment.NoticeId,
+                    AuthorId = comment.AuthorId,
+                    AuthorName = authorName,
+                    Content = comment.Content,
+                    CreatedAt = comment.CreatedAt,
+                    UpdatedAt = comment.UpdatedAt
+                });
+            }
+
+            return Ok(responses);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "댓글 목록 조회 실패: {NoticeId}", noticeId);
+            return StatusCode(500, new { message = "댓글 목록을 불러오는데 실패했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 댓글 작성
+    /// </summary>
+    [HttpPost("{noticeId}/comments")]
+    [Authorize]
+    public async Task<ActionResult<CommentResponse>> CreateComment(int noticeId, [FromBody] CreateCommentRequest request)
+    {
+        try
+        {
+            var guestIdClaim = User.FindFirst("GuestId");
+
+            if (guestIdClaim == null || !int.TryParse(guestIdClaim.Value, out int guestId))
+            {
+                return Unauthorized("게스트 정보를 확인할 수 없습니다.");
+            }
+
+            var guest = await _context.Guests.FindAsync(guestId);
+            if (guest == null)
+            {
+                return NotFound("해당 게스트를 찾을 수 없습니다.");
+            }
+
+            int authorId = guestId;
+            string authorName = guest.GuestName;
+            _logger.LogInformation("Comment by Guest - GuestId: {GuestId}, Name: {AuthorName}", authorId, authorName);
+
+            var comment = new Comment
+            {
+                NoticeId = noticeId,
+                AuthorId = authorId,
+                Content = request.Content,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Comments.Add(comment);
+            await _context.SaveChangesAsync();
+            
+            var response = new CommentResponse
+            {
+                Id = comment.Id,
+                NoticeId = comment.NoticeId,
+                AuthorId = comment.AuthorId,
+                AuthorName = authorName,
+                Content = comment.Content,
+                CreatedAt = comment.CreatedAt
+            };
+
+            return CreatedAtAction(nameof(GetComments), new { noticeId }, response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "댓글 작성 실패: {NoticeId}", noticeId);
+            return StatusCode(500, new { message = "댓글 작성에 실패했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 댓글 수정
+    /// </summary>
+    [HttpPut("comments/{commentId}")]
+    [Authorize]
+    public async Task<ActionResult<CommentResponse>> UpdateComment(int commentId, [FromBody] UpdateCommentRequest request)
+    {
+        try
+        {
+            var guestIdClaim = User.FindFirst("GuestId");
+            if (guestIdClaim == null || !int.TryParse(guestIdClaim.Value, out int guestId))
+            {
+                return Unauthorized("게스트 정보를 확인할 수 없습니다.");
+            }
+
+            var comment = await _context.Comments.FirstOrDefaultAsync(c => c.Id == commentId);
+
+            if (comment == null) return NotFound(new { message = "댓글을 찾을 수 없습니다." });
+
+            // 작성자 본인만 수정 가능
+            if (comment.AuthorId != guestId)
+                return Forbid("자신의 댓글만 수정할 수 있습니다.");
+
+            comment.Content = request.Content;
+            comment.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            var guest = await _context.Guests.FindAsync(guestId);
+
+            var response = new CommentResponse
+            {
+                Id = comment.Id,
+                NoticeId = comment.NoticeId,
+                AuthorId = comment.AuthorId,
+                AuthorName = guest?.GuestName ?? "익명",
+                Content = comment.Content,
+                CreatedAt = comment.CreatedAt,
+                UpdatedAt = comment.UpdatedAt
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "댓글 수정 실패: {CommentId}", commentId);
+            return StatusCode(500, new { message = "댓글 수정에 실패했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 댓글 삭제
+    /// </summary>
+    [HttpDelete("comments/{commentId}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteComment(int commentId)
+    {
+        try
+        {
+            var guestIdClaim = User.FindFirst("GuestId");
+            if (guestIdClaim == null || !int.TryParse(guestIdClaim.Value, out int guestId))
+            {
+                return Unauthorized("게스트 정보를 확인할 수 없습니다.");
+            }
+
+            var comment = await _context.Comments.FindAsync(commentId);
+
+            if (comment == null) return NotFound(new { message = "댓글을 찾을 수 없습니다." });
+
+            // 작성자 본인만 삭제 가능
+            if (comment.AuthorId != guestId)
+                return Forbid("자신의 댓글만 삭제할 수 있습니다.");
+
+            comment.IsDeleted = true;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "댓글 삭제 실패: {CommentId}", commentId);
+            return StatusCode(500, new { message = "댓글 삭제에 실패했습니다." });
+        }
+    }
+}
+
+public class CreateCommentRequest
+{
+    public string Content { get; set; } = string.Empty;
+}
+
+public class UpdateCommentRequest
+{
+    public string Content { get; set; } = string.Empty;
+}
+
+public class CommentResponse
+{
+    public int Id { get; set; }
+    public int NoticeId { get; set; }
+    public int AuthorId { get; set; }
+    public string AuthorName { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

@@ -43,7 +43,7 @@ public class ConventionChatService
         string question,
         int? conventionId = null,
         ChatUserContext? userContext = null,
-        List<ChatMessage>? history = null)
+        List<ChatRequestMessage>? history = null)
     {
         _logger.LogInformation("Processing question: '{Question}' for ConventionId: {ConventionId}, GuestId: {GuestId}",
             question, conventionId, userContext?.GuestId);

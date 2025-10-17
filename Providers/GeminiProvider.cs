@@ -24,7 +24,7 @@ public class GeminiProvider : ILlmProvider
         _model = _configuration["LlmSettings:Gemini:Model"] ?? "gemini-2.0-flash";
     }
 
-    public async Task<string> GenerateResponseAsync(string prompt, string? context = null, List<ChatMessage>? history = null, string? systemInstructionOverride = null)
+    public async Task<string> GenerateResponseAsync(string prompt, string? context = null, List<ChatRequestMessage>? history = null, string? systemInstructionOverride = null)
     {
         try
         {
@@ -78,7 +78,7 @@ public class GeminiProvider : ILlmProvider
         }
     }
 
-    public async Task<string> ClassifyIntentAsync(string question, List<ChatMessage>? history = null)
+    public async Task<string> ClassifyIntentAsync(string question, List<ChatRequestMessage>? history = null)
     {
         try
         {

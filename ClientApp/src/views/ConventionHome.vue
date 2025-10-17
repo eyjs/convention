@@ -48,7 +48,7 @@
     </div>
 
     <!-- 메인 컨텐츠 -->
-    <div class="px-4 py-6 space-y-6 -mt-8">
+    <div class="px-4 pt-10 space-y-6 -mt-8">
       <!-- 공지사항 -->
       <div class="bg-white rounded-2xl shadow-lg p-5">
         <div class="flex items-center justify-between mb-4">

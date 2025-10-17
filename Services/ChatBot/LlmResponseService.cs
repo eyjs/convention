@@ -14,6 +14,6 @@ public class LlmResponseService
     }
 
     public async Task<string> GenerateResponseAsync(
-        string question, string? context, List<ChatMessage>? history, string? systemInstruction)
+        string question, string? context, List<ChatRequestMessage>? history, string? systemInstruction)
         => await _provider.GenerateResponseAsync(question, context, history, systemInstruction);
 }

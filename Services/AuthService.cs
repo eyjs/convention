@@ -12,7 +12,7 @@ namespace LocalRAG.Services;
 
 public interface IAuthService
 {
-    string GenerateAccessToken(User user, int? guestId = null);
+    string GenerateAccessToken(User user, int? guestId = null, int? conventionId = null);
     string GenerateRefreshToken();
     ClaimsPrincipal? ValidateToken(string token);
     string HashPassword(string password);
@@ -28,7 +28,7 @@ public class AuthService : IAuthService
         _jwtSettings = jwtSettings;
     }
 
-    public string GenerateAccessToken(User user, int? guestId = null)
+    public string GenerateAccessToken(User user, int? guestId = null, int? conventionId = null)
     {
         var claims = new List<Claim>
         {
@@ -38,10 +38,15 @@ public class AuthService : IAuthService
             new Claim("LoginId", user.LoginId)
         };
 
-        // (ÇÙ½É Ãß°¡) GuestId°¡ ÀÖÀ¸¸é ÅäÅ«¿¡ Å¬·¹ÀÓÀ¸·Î Ãß°¡ÇÕ´Ï´Ù.
+        // (ï¿½Ù½ï¿½ ï¿½ß°ï¿½) GuestIdï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å«ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ß°ï¿½ï¿½Õ´Ï´ï¿½.
         if (guestId.HasValue)
         {
             claims.Add(new Claim("GuestId", guestId.Value.ToString()));
+        }
+
+        if (conventionId.HasValue)
+        {
+            claims.Add(new Claim("ConventionId", conventionId.Value.ToString()));
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
@@ -105,12 +110,12 @@ public class AuthService : IAuthService
     {
         try
         {
-            // BCrypt.Net.BCrypt Å¬·¡½ºÀÇ Á¤Àû ¸Þ¼­µåÀÎ Verify¸¦ È£ÃâÇÕ´Ï´Ù.
+            // BCrypt.Net.BCrypt Å¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Þ¼ï¿½ï¿½ï¿½ï¿½ï¿½ Verifyï¿½ï¿½ È£ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
             return BCrypt.Net.BCrypt.Verify(password, passwordHash);
         }
         catch (Exception)
         {
-            // Àß¸øµÈ Çü½ÄÀÇ ÇØ½Ã°¡ µé¾î¿À¸é ¿¹¿Ü°¡ ¹ß»ýÇÒ ¼ö ÀÖÀ¸¹Ç·Î false¸¦ ¹ÝÈ¯ÇÕ´Ï´Ù.
+            // ï¿½ß¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ø½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ü°ï¿½ ï¿½ß»ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ falseï¿½ï¿½ ï¿½ï¿½È¯ï¿½Õ´Ï´ï¿½.
             return false;
         }
     }

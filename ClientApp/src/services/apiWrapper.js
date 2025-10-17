@@ -15,7 +15,6 @@ export const apiWrapper = {
    */
   async get(url, mockFn) {
     if (isDevelopmentMode() && mockFn) {
-      console.log(`🎭 [MOCK] GET ${url}`)
       // 네트워크 지연 시뮬레이션
       await new Promise(resolve => setTimeout(resolve, 300))
       return { data: mockFn() }

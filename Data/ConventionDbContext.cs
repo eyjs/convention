@@ -27,9 +27,11 @@ public class ConventionDbContext : DbContext
     public DbSet<GuestScheduleTemplate> GuestScheduleTemplates { get; set; }
     public DbSet<AttributeTemplate> AttributeTemplates { get; set; }
     public DbSet<Notice> Notices { get; set; }
+    public DbSet<Comment> Comments { get; set; }
     public DbSet<FileAttachment> FileAttachments { get; set; }
     public DbSet<Gallery> Galleries { get; set; }
     public DbSet<GalleryImage> GalleryImages { get; set; }
+    public DbSet<ConventionChatMessage> ConventionChatMessages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -291,6 +293,26 @@ public class ConventionDbContext : DbContext
             entity.Property(e => e.ImageUrl).IsRequired();
             entity.Property(e => e.UploadedAt).HasDefaultValueSql("getdate()");
             entity.HasIndex(e => e.GalleryId).HasDatabaseName("IX_GalleryImage_GalleryId");
+        });
+
+        // ChatMessage 설정
+        modelBuilder.Entity<ConventionChatMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_ChatMessage_ConventionId");
+            entity.HasIndex(e => e.CreatedAt).HasDatabaseName("IX_ChatMessage_CreatedAt");
+
+            entity.HasOne(e => e.Convention)
+                  .WithMany() // Convention 모델에 ChatMessages 컬렉션이 필요하면 추가
+                  .HasForeignKey(e => e.ConventionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Guest)
+                  .WithMany() // Guest 모델에 ChatMessages 컬렉션이 필요하면 추가
+                  .HasForeignKey(e => e.GuestId)
+                  .OnDelete(DeleteBehavior.NoAction); // 순환 종속성 오류 방지
         });
     }
 }

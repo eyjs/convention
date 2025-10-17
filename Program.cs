@@ -16,6 +16,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
+using LocalRAG.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,9 +30,19 @@ builder.Host.UseSerilog();
 
 // --- 2. 컨트롤러, CORS, Swagger 등 기본 서비스 등록 ---
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
+
+// 세션 추가
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(2);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 
 builder.Services.AddCors(options =>
 {
@@ -123,6 +134,7 @@ var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSetting
 
 builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<INoticeService, NoticeService>();
 builder.Services.AddSingleton<ISmsService, SmsService>();
 builder.Services.AddSingleton<IVerificationService, VerificationService>();
 builder.Services.AddHttpContextAccessor();
@@ -145,6 +157,19 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings.Audience,
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 builder.Services.AddAuthorization();
@@ -181,10 +206,13 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 
+app.UseSession();  // 세션 미들웨어 추가
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHealthChecks("/health");
+app.MapHub<ChatHub>("/chathub");
 app.MapControllers();
 
 if (app.Environment.IsDevelopment())

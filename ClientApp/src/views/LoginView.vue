@@ -1,10 +1,6 @@
 <template>
   <div class="min-h-screen min-h-dvh bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center p-4">
-    <!-- 배경 패턴 -->
-    <div class="absolute inset-0 opacity-10">
-      <div class="absolute top-0 left-0 w-96 h-96 bg-white rounded-full -translate-x-48 -translate-y-48"></div>
-      <div class="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-48 translate-y-48"></div>
-    </div>
+
 
     <div class="relative w-full max-w-md">
       <!-- 로고 -->
@@ -17,7 +13,7 @@
       </div>
 
       <!-- 로그인/회원가입 카드 -->
-      <div class="bg-white rounded-2xl shadow-2xl p-8">
+      <div class="bg-white rounded-2xl shadow-2xl p-8 flex flex-col">
         <!-- 탭 -->
         <div class="flex space-x-2 mb-6 bg-gray-100 p-1 rounded-xl">
           <button
@@ -49,8 +45,9 @@
           <p class="text-sm text-red-600">{{ errorMessage }}</p>
         </div>
 
-        <!-- 로그인 폼 -->
-        <form v-if="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-4">
+        <div class="overflow-y-auto custom-scrollbar flex-grow">
+          <!-- 로그인 폼 -->
+          <form v-if="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">아이디</label>
             <input
@@ -168,6 +165,7 @@
             {{ authStore.loading ? '처리 중...' : '회원가입' }}
           </button>
         </form>
+        </div>
       </div>
     </div>
   </div>

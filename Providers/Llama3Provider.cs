@@ -35,7 +35,7 @@ public class Llama3Provider : ILlmProvider
         _topP = double.Parse(settings["TopP"] ?? "0.9");
     }
 
-    public async Task<string> GenerateResponseAsync(string prompt, string? context = null, List<ChatMessage>? history = null, string? systemInstructionOverride = null)
+    public async Task<string> GenerateResponseAsync(string prompt, string? context = null, List<ChatRequestMessage>? history = null, string? systemInstructionOverride = null)
     {
         // 이 메서드는 기존과 동일하게 유지합니다.
         try
@@ -75,7 +75,7 @@ public class Llama3Provider : ILlmProvider
         }
     }
 
-    private List<object> BuildLlama3ChatMessages(string systemPrompt, string userPrompt, List<ChatMessage>? history)
+    private List<object> BuildLlama3ChatMessages(string systemPrompt, string userPrompt, List<ChatRequestMessage>? history)
     {
         var messages = new List<object> { new { role = "system", content = systemPrompt } };
         if (history != null)
@@ -91,7 +91,7 @@ public class Llama3Provider : ILlmProvider
     }
 
     
-    public async Task<string> ClassifyIntentAsync(string question, List<ChatMessage>? history = null)
+    public async Task<string> ClassifyIntentAsync(string question, List<ChatRequestMessage>? history = null)
     {
         try
         {

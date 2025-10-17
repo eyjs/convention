@@ -1,60 +1,52 @@
 <template>
-  <div class="min-h-screen min-h-dvh bg-gray-50">
-    <!-- 메인 컨텐츠 -->
-    <main class="pb-20">
-      <router-view />
-    </main>
-    
-    <!-- 하단 네비게이션 바 (로그인 페이지에서는 숨김) -->
-    <nav v-if="showNav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
-      <div class="flex items-center justify-around h-16 max-w-screen-xl mx-auto">
-        <button
-          v-for="item in navItems"
-          :key="item.path"
-          @click="navigateTo(item.path)"
-          :class="[
+    <div class="min-h-screen min-h-dvh bg-gray-50">
+        <!-- 메인 컨텐츠 -->
+        <main :class="{'pb-20': showNav}">
+            <router-view />
+        </main>
+        <nav v-if="showNav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
+            <div class="flex items-center justify-around h-16 max-w-screen-xl mx-auto">
+                <button v-for="item in navItems"
+                        :key="item.path"
+                        @click="navigateTo(item.path)"
+                        :class="[
             'flex flex-col items-center justify-center flex-1 h-full transition-all relative',
-            currentRoute === item.path 
-              ? 'text-primary-600' 
+            currentRoute === item.path
+              ? 'text-primary-600'
               : 'text-gray-500 active:scale-95'
-          ]"
-        >
-          <svg 
-            class="w-6 h-6 mb-1" 
-            :class="currentRoute === item.path ? 'stroke-[2.5]' : 'stroke-2'"
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" :d="item.iconPath" />
-          </svg>
-          <span class="text-xs font-medium">{{ item.label }}</span>
-          
-          <!-- 활성 인디케이터 -->
-          <span 
-            v-if="currentRoute === item.path"
-            class="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-primary-600 rounded-b-full"
-          ></span>
-          
-          <!-- 뱃지 (알림) -->
-          <span 
-            v-if="item.badge > 0"
-            class="absolute top-2 right-1/4 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
-          >
-            {{ item.badge > 9 ? '9+' : item.badge }}
-          </span>
-        </button>
-      </div>
-    </nav>
+          ]">
+                    <svg class="w-6 h-6 mb-1"
+                         :class="currentRoute === item.path ? 'stroke-[2.5]' : 'stroke-2'"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" :d="item.iconPath" />
+                    </svg>
+                    <span class="text-xs font-medium">{{ item.label }}</span>
 
-    <!-- 사용자 채팅 UI -->
-    <div v-if="uiStore.isChatOpen && conventionId && token" 
-         class="fixed inset-0 bg-black bg-opacity-30 z-40 flex justify-center items-end sm:items-center sm:p-4">
-      <div class="w-full max-w-sm h-[calc(100%-5rem)] sm:h-full sm:max-h-[600px] flex flex-col rounded-t-2xl sm:rounded-lg shadow-xl bg-white overflow-hidden">
-        <ConventionChat :convention-id="conventionId" :token="token" />
-      </div>
+                    <!-- 활성 인디케이터 -->
+                    <span v-if="currentRoute === item.path"
+                          class="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-primary-600 rounded-b-full"></span>
+
+                    <!-- 뱃지 (알림) -->
+                    <span v-if="item.badge > 0"
+                          class="absolute top-2 right-1/4 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                        {{ item.badge > 9 ? '9+' : item.badge }}
+                    </span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- 사용자 채팅 UI -->
+        <div v-if="uiStore.isChatOpen && conventionId && token"
+             class="fixed inset-0 bg-black bg-opacity-30 z-40 flex justify-center items-end sm:items-center sm:p-4">
+            <div class="w-full max-w-sm h-[calc(100%-5rem)] sm:h-full sm:max-h-[600px] flex flex-col rounded-t-2xl sm:rounded-lg shadow-xl bg-white overflow-hidden">
+                <ConventionChat :convention-id="conventionId" :token="token" />
+            </div>
+        </div>
+        <ChatWindow />
+        <ChatFloatingButton v-if="showNav" />
     </div>
-  </div>
 </template>
 
 <script setup>
@@ -77,17 +69,11 @@ onMounted(() => {
   authStore.initAuth();
   if (authStore.isAuthenticated) {
     authStore.fetchCurrentUser(); // Initial fetch
-    // Poll every 10 seconds
-    pollingInterval = setInterval(() => {
-      authStore.fetchCurrentUser();
-    }, 10000);
   }
 });
 
 onUnmounted(() => {
-  if (pollingInterval) {
-    clearInterval(pollingInterval);
-  }
+  
 });
 
 const conventionId = computed(() => authStore.user?.conventionId)
@@ -130,9 +116,6 @@ const navItems = computed(() => [
 ])
 
 function navigateTo(path) {
-  console.log("Navigating to:", path);
-  console.log("uiStore:", uiStore);
-  console.log("router:", router);
   if (path === '/chat') {
     uiStore.toggleChat()
   } else {

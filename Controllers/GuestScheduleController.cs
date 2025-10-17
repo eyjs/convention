@@ -1,5 +1,6 @@
 using LocalRAG.Data;
 using LocalRAG.Models;
+using LocalRAG.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,23 +20,57 @@ public class GuestScheduleController : ControllerBase
     [HttpGet("{guestId}")]
     public async Task<IActionResult> GetSchedules(int guestId)
     {
-        var guest = await _context.Guests
-            .Include(g => g.GuestScheduleTemplates)
-            .ThenInclude(gst => gst.ScheduleTemplate)
-            .ThenInclude(st => st!.ScheduleItems)
-            .FirstOrDefaultAsync(g => g.Id == guestId);
+        try
+        {
+            var guest = await _context.Guests
+                .Include(g => g.GuestScheduleTemplates)
+                .ThenInclude(gst => gst.ScheduleTemplate)
+                .ThenInclude(st => st!.ScheduleItems)
+                .FirstOrDefaultAsync(g => g.Id == guestId);
 
-        if (guest is null) return NotFound();
+            if (guest is null) return NotFound(new { message = "Guest not found" });
 
-        var schedules = guest.GuestScheduleTemplates
-            .Select(gst => gst.ScheduleTemplate)
-            .Where(st => st is not null)
-            .SelectMany(st => st!.ScheduleItems)
-            .OrderBy(si => si.ScheduleDate)
-            .ThenBy(si => si.StartTime)
-            .ToList();
+            var schedules = guest.GuestScheduleTemplates
+                .Where(gst => gst.ScheduleTemplate is not null)
+                .SelectMany(gst => gst.ScheduleTemplate!.ScheduleItems.Select(si => new
+                {
+                    ScheduleItem = si,
+                    TemplateId = gst.ScheduleTemplate.Id,
+                    CourseName = gst.ScheduleTemplate.CourseName
+                }))
+                .OrderBy(x => x.ScheduleItem.ScheduleDate)
+                .ThenBy(x => x.ScheduleItem.StartTime)
+                .ToList();
 
-        return Ok(schedules);
+            // 각 템플릿별 참가자 수 조회
+            var templateIds = schedules.Select(s => s.TemplateId).Distinct().ToList();
+            var participantCounts = await _context.GuestScheduleTemplates
+                .Where(gst => templateIds.Contains(gst.ScheduleTemplateId))
+                .GroupBy(gst => gst.ScheduleTemplateId)
+                .Select(g => new { TemplateId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.TemplateId, x => x.Count);
+
+            var result = schedules.Select(s => new ScheduleItemDto
+            {
+                Id = s.ScheduleItem.Id,
+                ScheduleTemplateId = s.TemplateId,
+                ScheduleDate = s.ScheduleItem.ScheduleDate,
+                StartTime = s.ScheduleItem.StartTime,
+                EndTime = s.ScheduleItem.EndTime,
+                Title = s.ScheduleItem.Title,
+                Content = s.ScheduleItem.Content,
+                Location = s.ScheduleItem.Location,
+                OrderNum = s.ScheduleItem.OrderNum,
+                CourseName = s.CourseName,
+                ParticipantCount = participantCounts.GetValueOrDefault(s.TemplateId, 0)
+            }).ToList();
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+        }
     }
 
     [HttpPost]
@@ -96,10 +131,4 @@ public class GuestScheduleController : ControllerBase
 
         return Ok(templates);
     }
-}
-
-public class GuestScheduleDto
-{
-    public int GuestId { get; set; }
-    public int ScheduleTemplateId { get; set; }
 }

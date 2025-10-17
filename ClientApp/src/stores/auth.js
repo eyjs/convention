@@ -14,6 +14,13 @@ export const useAuthStore = defineStore('auth', () => {
     const isAuthenticated = computed(() => !!accessToken.value)
     const isAdmin = computed(() => user.value?.role === 'Admin')
 
+    const totalUnreadCount = computed(() => {
+        if (user.value?.conventions && Array.isArray(user.value.conventions)) {
+            return user.value.conventions.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
+        }
+        return user.value?.unreadCount || 0;
+    });
+
     function initAuth() {
         const storedToken = localStorage.getItem('accessToken')
         const storedRefreshToken = localStorage.getItem('refreshToken')
@@ -57,7 +64,6 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
-    // 👇 --- [핵심 수정] 로그아웃 시 챗봇 상태를 함께 초기화합니다. --- 👇
     async function logout() {
         const chatStore = useChatStore() // chat.js 스토어 인스턴스를 가져옵니다.
 
@@ -83,7 +89,6 @@ export const useAuthStore = defineStore('auth', () => {
             console.log("Logout successful and all states have been reset.");
         }
     }
-    // 👆 --- 여기까지 --- 👆
 
     async function register(data) {
         loading.value = true
@@ -121,6 +126,7 @@ export const useAuthStore = defineStore('auth', () => {
         error,
         isAuthenticated,
         isAdmin,
+        totalUnreadCount,
         initAuth,
         register,
         login,

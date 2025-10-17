@@ -79,6 +79,11 @@ export const conventionAPI = {
     getConvention: (id) => apiClient.get(`/conventions/${id}`)
 }
 
+// Chat API
+export const chatAPI = {
+    markAsRead: (conventionId) => apiClient.post(`/chat-history/${conventionId}/read`)
+}
+
 // Upload API
 export const uploadAPI = {
     uploadFile: (formData, onProgress) => {
