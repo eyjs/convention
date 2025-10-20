@@ -111,6 +111,7 @@ namespace LocalRAG.Hubs
 
             await Clients.Group(roomName).SendAsync("ReceiveMessage", new 
             {
+                guestId = chatMessage.GuestId,
                 guestName = displayName,
                 message = chatMessage.Message,
                 createdAt = chatMessage.CreatedAt.ToString("o"), // ISO 8601 format

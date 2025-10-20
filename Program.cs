@@ -125,7 +125,7 @@ builder.Services.AddScoped<ConventionDocumentBuilder>();
 builder.Services.AddScoped<IndexingService>();
 builder.Services.AddScoped<IConventionChatService, ConventionChatService>();
 
-builder.Services.AddScoped<ChatIntentRouter>();
+builder.Services.AddScoped<SourceIdentifier>();
 builder.Services.AddScoped<ChatPromptBuilder>();
 builder.Services.AddScoped<LlmResponseService>();
 builder.Services.AddScoped<RagSearchService>();

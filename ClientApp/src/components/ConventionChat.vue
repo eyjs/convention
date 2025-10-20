@@ -90,12 +90,12 @@ let chatService = null;
 const conventionTitle = computed(() => conventionStore.currentConvention?.title || '채팅');
 
 const isMyMessage = (msg) => {
-  if (!authStore.user || !authStore.user.name || !msg.guestName) {
+  if (!authStore.user || !msg.guestId) {
     return false;
   }
-  const myName = authStore.user.name;
-  console.log(`Comparing myName: '${myName}' with msg.guestName: '${msg.guestName}'`);
-  return msg.guestName.includes(myName);
+  // 비회원 로그인의 경우 user.id가 guestId
+  const myGuestId = authStore.user.guestId || authStore.user.id;
+  return msg.guestId === myGuestId;
 };
 
 onMounted(async () => {

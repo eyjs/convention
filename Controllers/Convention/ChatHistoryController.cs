@@ -34,6 +34,7 @@ namespace LocalRAG.Controllers.Convention
                     .ToListAsync();
                 var result = messagesFromDb.Select(m => new ChatHistoryMessageDto
                 {
+                    guestId = m.GuestId,
                     guestName = m.IsAdmin 
                         ? $"[관리자] {m.GuestName ?? "Unknown User"}" 
                         : m.GuestName ?? "Unknown User",
@@ -77,6 +78,7 @@ namespace LocalRAG.Controllers.Convention
 }
 public class ChatHistoryMessageDto
 {
+    public int guestId { get; set; }
     public string guestName { get; set; }
     public string message { get; set; }
     public string createdAt { get; set; }
