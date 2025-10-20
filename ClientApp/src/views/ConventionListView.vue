@@ -102,6 +102,14 @@
                   참석자 {{ convention.guestCount }}명
                 </div>
               </div>
+              <div class="mt-4 pt-4 border-t flex justify-end space-x-2">
+                <button @click.stop="editConvention(convention)" class="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">수정</button>
+                <button @click.stop="completeConvention(convention.id)" 
+                        :class="convention.completeYn === 'Y' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'" 
+                        class="px-3 py-1 text-sm font-medium text-white rounded-md">
+                  {{ convention.completeYn === 'Y' ? '재개' : '종료' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -188,6 +196,12 @@
         </div>
       </div>
     </div>
+    <ConventionFormModal
+      v-if="showCreateModal"
+      :convention="editingConvention"
+      @close="showCreateModal = false"
+      @save="handleSaveConvention"
+    />
   </div>
 </template>
 
@@ -197,6 +211,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
 import ChatbotManagement from '@/components/admin/ChatbotManagement.vue'
+import ConventionFormModal from '@/components/admin/ConventionFormModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -205,6 +220,42 @@ const activeTab = ref('conventions')
 const conventions = ref([])
 const loading = ref(false)
 const showCreateModal = ref(false)
+const editingConvention = ref(null)
+
+async function handleSaveConvention(conventionData) {
+  try {
+    if (editingConvention.value) {
+      // 수정
+      await apiClient.put(`/conventions/${editingConvention.value.id}`, conventionData)
+    } else {
+      // 생성
+      await apiClient.post('/conventions', conventionData)
+    }
+    showCreateModal.value = false
+    editingConvention.value = null
+    await loadConventions()
+  } catch (error) {
+    console.error('Failed to save convention:', error)
+    alert('행사 저장에 실패했습니다.')
+  }
+}
+
+function editConvention(convention) {
+  editingConvention.value = { ...convention };
+  showCreateModal.value = true;
+}
+
+async function completeConvention(conventionId) {
+  if (!confirm('행사를 종료 처리하시겠습니까?')) return;
+
+  try {
+    await apiClient.post(`/conventions/${conventionId}/complete`);
+    await loadConventions();
+  } catch (error) {
+    console.error('Failed to complete convention:', error);
+    alert('행사 종료 처리에 실패했습니다.');
+  }
+}
 
 const tabs = [
   {

@@ -12,6 +12,9 @@ public class ChatIntentRouter
 {
     private readonly ILlmProvider _llmProvider;
     private readonly ILogger<ChatIntentRouter> _logger;
+    
+    private static readonly string[] PersonalInfoKeywords = { "내 정보", "난 누구", "내 이름", "내 프로필", "who am i", "my info", "my profile" };
+    private static readonly string[] PersonalScheduleKeywords = { "내 일정", "내 스케줄", "오늘 내 일정", "나의 일정", "my schedule", "my events", "my today" };
 
     public enum Intent
     {
@@ -35,6 +38,13 @@ public class ChatIntentRouter
     {
         try
         {
+            var ruleBasedIntent = TryClassifyByRules(question);
+            if (ruleBasedIntent.HasValue)
+            {
+                _logger.LogInformation("Intent classified by rule: {Intent}", ruleBasedIntent.Value);
+                return ruleBasedIntent.Value; // 규칙에 맞으면 LLM 호출 없이 바로 반환
+            }
+
             // 1. Provider 호출은 그대로 유지 (이제 Provider는 안정적으로 동작합니다)
             string intentString = await _llmProvider.ClassifyIntentAsync(question, history);
             _logger.LogInformation("Raw intent string from provider: {IntentString}", intentString);
@@ -57,7 +67,25 @@ public class ChatIntentRouter
             return Intent.Unknown;
         }
     }
+    /// <summary>
+    /// 질문 텍스트에서 간단한 키워드 매칭을 시도합니다.
+    /// </summary>
+    private Intent? TryClassifyByRules(string question)
+    {
+        string lowerQuestion = question.ToLowerInvariant(); // 비교를 위해 소문자로 변환
 
+        if (PersonalInfoKeywords.Any(keyword => lowerQuestion.Contains(keyword)))
+        {
+            return Intent.PersonalInfo;
+        }
+
+        if (PersonalScheduleKeywords.Any(keyword => lowerQuestion.Contains(keyword)))
+        {
+            return Intent.PersonalSchedule;
+        }
+
+        return null; // 규칙에 맞는 키워드가 없음
+    }
     /// <summary>
     /// 각 의도에 최적화된 시스템 프롬프트를 반환합니다.
     /// </summary>
