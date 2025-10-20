@@ -44,16 +44,18 @@ export const useAuthStore = defineStore('auth', () => {
         error.value = null
         try {
             const response = await authAPI.login({ loginId, password })
-            const { accessToken: token, refreshToken: refresh, user: userData, conventions: userConventions } = response.data
+            const { accessToken: token, refreshToken: refresh, user: userData } = response.data
 
             accessToken.value = token
             refreshToken.value = refresh
             user.value = userData
-            conventions.value = userConventions || []
 
             localStorage.setItem('accessToken', token)
             localStorage.setItem('refreshToken', refresh)
             localStorage.setItem('user', JSON.stringify(userData))
+
+            // Clear any previously selected convention on a new login
+            localStorage.removeItem('selectedConventionId');
 
             return { success: true }
         } catch (err) {

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using LocalRAG.Services;
+using LocalRAG.Interfaces;
 
 namespace LocalRAG.Controllers.File;
 

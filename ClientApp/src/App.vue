@@ -53,6 +53,7 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useConventionStore } from '@/stores/convention'
 import ChatWindow from '@/components/chatbot/ChatWindow.vue'
 import ChatFloatingButton from '@/components/chatbot/ChatFloatingButton.vue'
 import { useUIStore } from '@/stores/ui'
@@ -61,6 +62,7 @@ import ConventionChat from '@/components/ConventionChat.vue'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const conventionStore = useConventionStore()
 const uiStore = useUIStore()
 
 let pollingInterval = null;
@@ -76,11 +78,11 @@ onUnmounted(() => {
   
 });
 
-const conventionId = computed(() => authStore.user?.conventionId)
+const conventionId = computed(() => conventionStore.currentConvention?.id)
 const token = computed(() => authStore.accessToken)
 
 const currentRoute = computed(() => route.path)
-const showNav = computed(() => route.path !== '/login')
+const showNav = computed(() => route.path !== '/login' && route.path !== '/my-conventions')
 
 const navItems = computed(() => [
   {

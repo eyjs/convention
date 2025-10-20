@@ -51,11 +51,11 @@
         </div>
       </div>
 
-      <SuggestedQuestions
+      <!-- <SuggestedQuestions
         v-if="showSuggestions"
         :questions="chatStore.suggestedQuestions"
         @select="handleSuggestedQuestion"
-      />
+      /> -->
 
       <div 
         ref="messagesContainer"
@@ -175,8 +175,7 @@ onMounted(() => {
   const conventionId = conventionStore.currentConvention?.id
   
   if (conventionId) {
-    chatStore.setConventionContext(conventionId)
-    chatStore.loadSuggestedQuestions(conventionId)
+    // chatStore.loadSuggestedQuestions(conventionId)
     
     const conventionTitle = conventionStore.currentConvention?.title
     chatStore.addWelcomeMessage(conventionTitle)
@@ -194,8 +193,7 @@ watch(
   () => conventionStore.currentConvention?.id,
   (newId) => {
     if (newId) {
-      chatStore.setConventionContext(newId)
-      chatStore.loadSuggestedQuestions(newId)
+      // chatStore.loadSuggestedQuestions(newId)
     }
   }
 )

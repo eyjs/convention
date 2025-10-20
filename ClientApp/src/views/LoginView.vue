@@ -202,7 +202,7 @@ async function handleLogin() {
   const result = await authStore.login(loginForm.value.loginId, loginForm.value.password)
 
   if (result.success) {
-    router.push('/')
+    router.push('/my-conventions')
   } else {
     errorMessage.value = result.error
   }

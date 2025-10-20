@@ -5,10 +5,13 @@ using LocalRAG.Interfaces;
 using LocalRAG.Middleware;
 using LocalRAG.Providers;
 using LocalRAG.Repositories;
-using LocalRAG.Services.Factories;
-using LocalRAG.Services;
-using LocalRAG.Services.Builders;
-using LocalRAG.Services.ChatBot;
+using LocalRAG.Services.Ai;
+using LocalRAG.Services.Auth;
+using LocalRAG.Services.Chat;
+using LocalRAG.Services.Convention;
+using LocalRAG.Services.Guest;
+using LocalRAG.Services.Shared;
+using LocalRAG.Services.Shared.Builders;
 using LocalRAG.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -120,7 +123,7 @@ builder.Services.AddScoped<IRagService, RagService>();
 // 기존 수동 서비스는 제거하거나 주석 처리
 builder.Services.AddScoped<ConventionDocumentBuilder>();
 builder.Services.AddScoped<IndexingService>();
-builder.Services.AddScoped<ConventionChatService>();
+builder.Services.AddScoped<IConventionChatService, ConventionChatService>();
 
 builder.Services.AddScoped<ChatIntentRouter>();
 builder.Services.AddScoped<ChatPromptBuilder>();
@@ -133,12 +136,12 @@ builder.Services.AddScoped<ConventionAccessService>();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
 
 builder.Services.AddSingleton(jwtSettings);
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<INoticeService, NoticeService>();
-builder.Services.AddSingleton<ISmsService, SmsService>();
-builder.Services.AddSingleton<IVerificationService, VerificationService>();
+builder.Services.AddScoped<IAuthService, LocalRAG.Services.Auth.AuthService>();
+builder.Services.AddScoped<INoticeService, LocalRAG.Services.Convention.NoticeService>();
+builder.Services.AddSingleton<ISmsService, LocalRAG.Services.Auth.SmsService>();
+builder.Services.AddSingleton<IVerificationService, LocalRAG.Services.Auth.VerificationService>();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IUserContextFactory, UserContextFactory>();
+builder.Services.AddScoped<LocalRAG.Interfaces.IUserContextFactory, LocalRAG.Services.Shared.UserContextFactory>();
 
 builder.Services.AddAuthentication(options =>
 {

@@ -20,6 +20,8 @@ import NoticeList from '../views/NoticeList.vue'
 import NoticeDetail from '../views/NoticeDetail.vue'
 import AdminChatbotManagement from '../views/AdminChatbotManagement.vue'
 
+import MyConventionsView from '../views/MyConventionsView.vue'
+
 const routes = [
   {
     path: '/setup',
@@ -32,6 +34,12 @@ const routes = [
     name: 'Login',
     component: LoginView,
     meta: { title: '로그인', requiresAuth: false }
+  },
+  {
+    path: '/my-conventions',
+    name: 'MyConventions',
+    component: MyConventionsView,
+    meta: { title: '행사 선택', requiresAuth: true }
   },
   {
     path: '/find-id',
@@ -161,13 +169,16 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.meta.requiresAuth !== false
   const requiresAdmin = to.meta.requiresAdmin || false
-  
+  const selectedConventionId = localStorage.getItem('selectedConventionId');
+
   if (requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (requiresAdmin && !authStore.isAdmin) {
     next('/')
+  } else if (authStore.isAuthenticated && !selectedConventionId && to.path !== '/my-conventions') {
+    next('/my-conventions');
   } else if (to.path === '/login' && authStore.isAuthenticated) {
-    next('/')
+    next(selectedConventionId ? '/' : '/my-conventions')
   } else {
     next()
   }

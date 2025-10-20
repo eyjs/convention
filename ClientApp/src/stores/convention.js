@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { conventionAPI } from '@/services/api'
 import dayjs from 'dayjs'
+import { useAuthStore } from './auth';
 
 export const useConventionStore = defineStore('convention', () => {
   // State
@@ -78,8 +79,9 @@ export const useConventionStore = defineStore('convention', () => {
     
     try {
       const response = await conventionAPI.getConvention(conventionId)
-      currentConvention.value = response.data?.convention
-      schedules.value = response.data?.schedules || []
+      currentConvention.value = response.data
+      // The schedules are loaded separately, not in this call.
+      // schedules.value = response.data?.schedules || []
       
       // 첫 번째 사용 가능한 날짜로 설정
       const availableDates = getAvailableDates.value
@@ -141,6 +143,11 @@ export const useConventionStore = defineStore('convention', () => {
     activeTab.value = tab
   }
 
+  async function selectConvention(conventionId) {
+    localStorage.setItem('selectedConventionId', conventionId);
+    await setCurrentConvention(conventionId);
+  }
+
   return {
     // State
     conventions,
@@ -166,6 +173,7 @@ export const useConventionStore = defineStore('convention', () => {
     fetchTourInfo,
     fetchPhotos,
     setSelectedDate,
-    setActiveTab
+    setActiveTab,
+    selectConvention
   }
 })

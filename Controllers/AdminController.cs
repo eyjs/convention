@@ -1,7 +1,8 @@
 using LocalRAG.Data;
+using LocalRAG.Interfaces;
 using LocalRAG.Models;
+using GuestModel = LocalRAG.Models.Guest;
 using LocalRAG.Models.DTOs;
-using LocalRAG.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -142,7 +143,7 @@ public class AdminController : ControllerBase
         else
             passwordToSet = "123456";
 
-        var guest = new Guest
+        var guest = new GuestModel
         {
             ConventionId = conventionId,
             GuestName = dto.GuestName.Trim(),

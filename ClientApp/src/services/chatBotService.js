@@ -13,7 +13,7 @@ export const chatBotService = {
     return apiClient.post('/conventionchat/ask', payload);
   },
 
-  async getSuggestedQuestions(conventionId, userContextchatBotService) {
+  async getSuggestedQuestions(conventionId, userContext) {
     const params = {
       role: userContext?.role,
       guestId: userContext?.guestId,

@@ -1,5 +1,8 @@
 <template>
-  <div class="min-h-screen min-h-dvh bg-gradient-to-br from-gray-50 to-gray-100">
+  <div v-if="loading" class="min-h-screen min-h-dvh flex items-center justify-center">
+    <div class="inline-block w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+  <div v-else-if="convention" class="min-h-screen min-h-dvh bg-gradient-to-br from-gray-50 to-gray-100">
     <!-- 헤더 배너 -->
     <div class="relative h-48 bg-gradient-to-br from-primary-600 to-primary-800 overflow-hidden">
       <!-- 배경 패턴 -->
@@ -152,6 +155,12 @@
 
 
   </div>
+  <div v-else class="min-h-screen min-h-dvh flex items-center justify-center">
+    <div class="text-center">
+      <p class="text-gray-600">행사 정보를 불러오지 못했습니다.</p>
+      <button @click="handleLogout" class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg">로그아웃</button>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -165,12 +174,8 @@ const router = useRouter()
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
 
-
-
-const conventionId = computed(() => authStore.user?.conventionId)
-
-
-
+const loading = ref(true);
+const convention = computed(() => conventionStore.currentConvention)
 
 const handleLogout = async () => {
   if (confirm('로그아웃하시겠습니까?')) {
@@ -179,18 +184,12 @@ const handleLogout = async () => {
   }
 }
 
-const convention = ref({
-  title: 'iFA STAR TOUR @ ROMA',
-  startDate: '2025-03-12',
-  endDate: '2025-03-05',
-  location: 'Roma, Italy'
-})
-
 const upcomingSchedules = ref([])
 
 const recentNotices = ref([])
 
 const dDay = computed(() => {
+  if (!convention.value || !convention.value.startDate) return 0;
   const today = new Date()
   const start = new Date(convention.value.startDate)
   const diff = Math.ceil((start - today) / (1000 * 60 * 60 * 24))
@@ -267,9 +266,7 @@ async function loadTodaySchedules() {
 
 async function loadRecentNotices() {
   try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const conventionId = user.conventionId
-    
+    const conventionId = conventionStore.currentConvention?.id;
     if (!conventionId) return
     
     const response = await apiClient.get('/notices', {
@@ -286,11 +283,13 @@ async function loadRecentNotices() {
   }
 }
 
-onMounted(() => {
-  if (conventionId.value) {
-    conventionStore.setCurrentConvention(conventionId.value);
+onMounted(async () => {
+  loading.value = true;
+  const selectedConventionId = localStorage.getItem('selectedConventionId');
+  if (selectedConventionId && !conventionStore.currentConvention) {
+    await conventionStore.setCurrentConvention(selectedConventionId);
   }
-  loadTodaySchedules()
-  loadRecentNotices()
+  await Promise.all([loadTodaySchedules(), loadRecentNotices()]);
+  loading.value = false;
 })
 </script>

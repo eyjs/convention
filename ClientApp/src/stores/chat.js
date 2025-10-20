@@ -91,7 +91,7 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  async function loadSuggestedQuestions(id) {
+  /* async function loadSuggestedQuestions(id) {
     if (!id) return;
     try {
       const userContext = getUserContext();
@@ -101,7 +101,7 @@ export const useChatStore = defineStore('chat', () => {
       console.error('Failed to load suggested questions:', err);
       suggestedQuestions.value = ['이번 행사는 언제 진행되나요?', '참석자는 몇 명인가요?'];
     }
-  }
+  } */
   function toggleChat() {
     isOpen.value = !isOpen.value;
   }
@@ -137,7 +137,7 @@ export const useChatStore = defineStore('chat', () => {
     conventionId, // conventionId computed 속성 노출
     lastMessage,
     sendMessage,
-    loadSuggestedQuestions,
+    // loadSuggestedQuestions,
     toggleChat,
     openChat,
     closeChat,

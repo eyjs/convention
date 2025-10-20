@@ -94,6 +94,7 @@ const isMyMessage = (msg) => {
     return false;
   }
   const myName = authStore.user.name;
+  console.log(`Comparing myName: '${myName}' with msg.guestName: '${msg.guestName}'`);
   return msg.guestName.includes(myName);
 };
 
