@@ -78,7 +78,7 @@ builder.Services.AddRepositories();
 // --- 4. [핵심 수정] RAG 및 AI 관련 서비스 등록 (올바른 수명 주기 설정) ---
 
 // VectorStore와 EmbeddingService는 데이터를 메모리에 유지하거나 모델을 로드해야 하므로 'Singleton'으로 등록합니다.
-builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>();
+//builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>();
 if (builder.Configuration.GetValue<bool>("EmbeddingSettings:UseOnnx", false))
 {
     builder.Services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
@@ -86,6 +86,18 @@ if (builder.Configuration.GetValue<bool>("EmbeddingSettings:UseOnnx", false))
 else
 {
     builder.Services.AddSingleton<IEmbeddingService, LocalEmbeddingService>();
+}
+
+// Vector Store 등록
+if (builder.Environment.IsProduction())
+{
+    builder.Services.AddScoped<IVectorStore, MssqlVectorStore>(); // 👈 MSSQL (Scoped)
+    Console.WriteLine("Using MSSQL Vector Store for Production.");
+}
+else
+{
+    builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>(); // 개발용 InMemory
+    Console.WriteLine("Using InMemory Vector Store for Development.");
 }
 
 // LLM Provider들은 상태를 유지할 필요 없으므로 'Scoped'로 등록합니다.

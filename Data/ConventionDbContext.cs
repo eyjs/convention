@@ -37,9 +37,21 @@ public class ConventionDbContext : DbContext
     public DbSet<ConventionAction> ConventionActions { get; set; }
     public DbSet<GuestActionStatus> GuestActionStatuses { get; set; }
 
+    public DbSet<VectorDataEntry> VectorDataEntries { get; set; } //  DbSet 추가
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // VectorDataEntry 테이블 설정
+        modelBuilder.Entity<VectorDataEntry>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.EmbeddingData).HasColumnType("varbinary(max)").IsRequired(); // 벡터 타입
+            entity.Property(e => e.Content).IsRequired();
+            entity.HasIndex(e => e.ConventionId); // ConventionId 인덱스
+            entity.Property(e => e.MetadataJson).HasMaxLength(2048); // 필요시 길이 제한
+        });
 
         modelBuilder.Entity<User>(entity =>
         {
