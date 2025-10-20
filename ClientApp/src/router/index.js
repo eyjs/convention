@@ -1,153 +1,245 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import ConventionHome from '../views/ConventionHome.vue'
-import LoginView from '../views/LoginView.vue'
-import SetupView from '../views/SetupView.vue'
-import ConventionListView from '../views/ConventionListView.vue'
-import AdminDashboard from '../views/AdminDashboard.vue'
-import MySchedule from '../views/MySchedule.vue'
-import LocationInfo from '../views/LocationInfo.vue'
-import Schedule from '../views/Schedule.vue'
-import Participants from '../views/Participants.vue'
-import HotSpot from '../views/HotSpot.vue'
-import TasteSpot from '../views/TasteSpot.vue'
-import GroupSchedule from '../views/GroupSchedule.vue'
-import EventPlace from '../views/EventPlace.vue'
-import Board from '../views/Board.vue'
-import FindId from '../views/FindId.vue'
-import FindPassword from '../views/FindPassword.vue'
-import NoticeList from '../views/NoticeList.vue'
-import NoticeDetail from '../views/NoticeDetail.vue'
-import AdminChatbotManagement from '../views/AdminChatbotManagement.vue'
+import { dynamicFeatureRoutes } from './dynamic'
 
-import MyConventionsView from '../views/MyConventionsView.vue'
+// ============================================
+// Lazy Loading으로 모든 컴포넌트 import
+// 필요할 때만 로드되어 초기 번들 크기 감소
+// ============================================
 
 const routes = [
+  // === Auth Routes (No Layout) ===
   {
     path: '/setup',
     name: 'Setup',
-    component: SetupView,
-    meta: { title: '초기 설정', requiresAuth: false }
+    component: () => import('@/views/SetupView.vue'),
+    meta: { 
+      title: '초기 설정', 
+      requiresAuth: false,
+      layout: null,
+      showNav: false
+    }
   },
   {
     path: '/login',
     name: 'Login',
-    component: LoginView,
-    meta: { title: '로그인', requiresAuth: false }
-  },
-  {
-    path: '/my-conventions',
-    name: 'MyConventions',
-    component: MyConventionsView,
-    meta: { title: '행사 선택', requiresAuth: true }
+    component: () => import('@/views/LoginView.vue'),
+    meta: { 
+      title: '로그인', 
+      requiresAuth: false,
+      layout: null,
+      showNav: false
+    }
   },
   {
     path: '/find-id',
     name: 'FindId',
-    component: FindId,
-    meta: { title: '아이디 찾기', requiresAuth: false }
+    component: () => import('@/views/FindId.vue'),
+    meta: { 
+      title: '아이디 찾기', 
+      requiresAuth: false,
+      layout: null,
+      showNav: false
+    }
   },
   {
     path: '/find-password',
     name: 'FindPassword',
-    component: FindPassword,
-    meta: { title: '비밀번호 찾기', requiresAuth: false }
+    component: () => import('@/views/FindPassword.vue'),
+    meta: { 
+      title: '비밀번호 찾기', 
+      requiresAuth: false,
+      layout: null,
+      showNav: false
+    }
+  },
+
+  // === Main Routes (Default Layout) ===
+  {
+    path: '/my-conventions',
+    name: 'MyConventions',
+    component: () => import('@/views/MyConventionsView.vue'),
+    meta: { 
+      title: '행사 선택', 
+      requiresAuth: true,
+      layout: null,
+      showNav: false
+    }
   },
   {
     path: '/',
     name: 'Home',
-    component: ConventionHome,
-    meta: { title: '행사 홈', requiresAuth: true }
+    component: () => import('@/views/ConventionHome.vue'),
+    meta: { 
+      title: '행사 홈', 
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
   },
+
+  // === Admin Routes ===
   {
     path: '/admin',
     name: 'Admin',
-    component: ConventionListView,
+    component: () => import('@/views/ConventionListView.vue'),
     meta: { 
       title: '행사 관리', 
-      requiresAuth: false,
-      requiresAdmin: false
+      requiresAuth: true,
+      requiresAdmin: true,
+      layout: 'DefaultLayout',
+      showNav: false
     }
   },
   {
     path: '/admin/conventions/:id',
     name: 'AdminDashboard',
-    component: AdminDashboard,
+    component: () => import('@/views/AdminDashboard.vue'),
     meta: { 
       title: '행사 대시보드', 
-      requiresAuth: false,
-      requiresAdmin: false
+      requiresAuth: true,
+      requiresAdmin: true,
+      layout: 'DefaultLayout',
+      showNav: false
     }
   },
   {
     path: '/admin/chatbot',
     name: 'AdminChatbotManagement',
-    component: AdminChatbotManagement,
+    component: () => import('@/views/AdminChatbotManagement.vue'),
     meta: {
       title: '챗봇 관리',
-      requiresAuth: false, // Should be true for admin
-      requiresAdmin: false // Should be true for admin
+      requiresAuth: true,
+      requiresAdmin: true,
+      layout: 'DefaultLayout',
+      showNav: false
     }
   },
+
+  // === Convention Features ===
   {
     path: '/my-schedule',
     name: 'MySchedule',
-    component: MySchedule,
-    meta: { title: '나의일정' }
-  },
-  {
-    path: '/location',
-    name: 'LocationInfo',
-    component: LocationInfo,
-    meta: { title: '로마 정보' }
+    component: () => import('@/views/MySchedule.vue'),
+    meta: { 
+      title: '나의일정',
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
   },
   {
     path: '/schedule',
     name: 'Schedule',
-    component: Schedule,
-    meta: { title: '일정' }
+    component: () => import('@/views/Schedule.vue'),
+    meta: { 
+      title: '일정',
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
   },
   {
     path: '/participants',
     name: 'Participants',
-    component: Participants,
-    meta: { title: '주체국' }
-  },
-  {
-    path: '/hotspot',
-    name: 'HotSpot',
-    component: HotSpot,
-    meta: { title: '핫스팟' }
-  },
-  {
-    path: '/tastespot',
-    name: 'TasteSpot',
-    component: TasteSpot,
-    meta: { title: '맛스팟' }
+    component: () => import('@/views/Participants.vue'),
+    meta: { 
+      title: '주체국',
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
   },
   {
     path: '/group-schedule',
     name: 'GroupSchedule',
-    component: GroupSchedule,
-    meta: { title: '합창국' }
+    component: () => import('@/views/GroupSchedule.vue'),
+    meta: { 
+      title: '합창국',
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
   },
+
+  // === Location Features ===
+  {
+    path: '/location',
+    name: 'LocationInfo',
+    component: () => import('@/views/LocationInfo.vue'),
+    meta: { 
+      title: '로마 정보',
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
+  },
+  {
+    path: '/hotspot',
+    name: 'HotSpot',
+    component: () => import('@/views/HotSpot.vue'),
+    meta: { 
+      title: '핫스팟',
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
+  },
+  {
+    path: '/tastespot',
+    name: 'TasteSpot',
+    component: () => import('@/views/TasteSpot.vue'),
+    meta: { 
+      title: '맛스팟',
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
+  },
+
+  // === Media Features ===
   {
     path: '/event-place',
     name: 'EventPlace',
-    component: EventPlace,
-    meta: { title: '사진첩' }
+    component: () => import('@/views/EventPlace.vue'),
+    meta: { 
+      title: '사진첩',
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
   },
+
+  // === Notice Features ===
   {
     path: '/notices',
     name: 'Board',
-    component: Board,
-    meta: { title: '공지사항', requiresAuth: true }
+    component: () => import('@/views/Board.vue'),
+    meta: { 
+      title: '공지사항', 
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
   },
   {
     path: '/notices/:id',
     name: 'NoticeDetail',
-    component: NoticeDetail,
-    meta: { title: '공지사항 상세', requiresAuth: true }
+    component: () => import('@/views/NoticeDetail.vue'),
+    meta: { 
+      title: '공지사항 상세', 
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
+  },
+
+  // === Dynamic Features ===
+  {
+    path: '/features',
+    name: 'MoreFeatures',
+    component: () => import('@/views/MoreFeaturesView.vue'),
+    meta: {
+      title: '추가 기능',
+      requiresAuth: true,
+      layout: 'DefaultLayout'
+    }
+  },
+  {
+    path: '/feature',
+    children: dynamicFeatureRoutes,
+    meta: {
+      requiresAuth: true
+    }
   }
 ]
 
@@ -169,19 +261,39 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.meta.requiresAuth !== false
   const requiresAdmin = to.meta.requiresAdmin || false
-  const selectedConventionId = localStorage.getItem('selectedConventionId');
+  const selectedConventionId = localStorage.getItem('selectedConventionId')
 
+  // 1. 로그인 페이지 접근 시
+  if (to.path === '/login' && authStore.isAuthenticated) {
+    // 어드민은 어드민 페이지로
+    if (authStore.isAdmin) {
+      next('/admin')
+      return
+    }
+    // 일반 유저는 행사 선택 또는 홈으로
+    next(selectedConventionId ? '/' : '/my-conventions')
+    return
+  }
+
+  // 2. 인증 필요 체크
   if (requiresAuth && !authStore.isAuthenticated) {
     next('/login')
-  } else if (requiresAdmin && !authStore.isAdmin) {
-    next('/')
-  } else if (authStore.isAuthenticated && !selectedConventionId && to.path !== '/my-conventions') {
-    next('/my-conventions');
-  } else if (to.path === '/login' && authStore.isAuthenticated) {
-    next(selectedConventionId ? '/' : '/my-conventions')
-  } else {
-    next()
+    return
   }
+
+  // 3. 어드민 권한 체크
+  if (requiresAdmin && !authStore.isAdmin) {
+    next('/')
+    return
+  }
+
+  // 4. 일반 유저의 행사 선택 체크 (어드민은 제외)
+  if (authStore.isAuthenticated && !authStore.isAdmin && !selectedConventionId && to.path !== '/my-conventions') {
+    next('/my-conventions')
+    return
+  }
+
+  next()
 })
 
 export default router

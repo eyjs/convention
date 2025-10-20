@@ -144,8 +144,13 @@ export const useConventionStore = defineStore('convention', () => {
   }
 
   async function selectConvention(conventionId) {
-    localStorage.setItem('selectedConventionId', conventionId);
-    await setCurrentConvention(conventionId);
+    const id = typeof conventionId === 'number' ? conventionId : parseInt(conventionId, 10);
+    if (isNaN(id)) {
+      console.error('Invalid convention ID:', conventionId);
+      return;
+    }
+    localStorage.setItem('selectedConventionId', id.toString());
+    await setCurrentConvention(id);
   }
 
   return {

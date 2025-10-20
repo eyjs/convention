@@ -110,8 +110,8 @@ const loadUserConventions = async () => {
   }
 }
 
-const selectConvention = async (conventionId) => {
-  await conventionStore.selectConvention(conventionId)
+const selectConvention = async (convention) => {
+  await conventionStore.selectConvention(convention.id)
   router.push('/')
 }
 

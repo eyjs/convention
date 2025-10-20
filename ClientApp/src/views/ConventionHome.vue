@@ -287,7 +287,7 @@ onMounted(async () => {
   loading.value = true;
   const selectedConventionId = localStorage.getItem('selectedConventionId');
   if (selectedConventionId && !conventionStore.currentConvention) {
-    await conventionStore.setCurrentConvention(selectedConventionId);
+    await conventionStore.setCurrentConvention(parseInt(selectedConventionId));
   }
   await Promise.all([loadTodaySchedules(), loadRecentNotices()]);
   loading.value = false;

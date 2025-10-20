@@ -327,7 +327,7 @@ public class ConventionService
 
         // 4. 활성화된 기능 수
         var enabledFeatureCount = await _unitOfWork.Features.CountAsync(
-            f => f.ConventionId == conventionId && f.IsEnabled == "Y");
+            f => f.ConventionId == conventionId && f.IsActive);
 
         return new ConventionStatistics
         {

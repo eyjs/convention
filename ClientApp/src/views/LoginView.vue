@@ -202,7 +202,12 @@ async function handleLogin() {
   const result = await authStore.login(loginForm.value.loginId, loginForm.value.password)
 
   if (result.success) {
-    router.push('/my-conventions')
+    // 어드민 권한에 따라 리다이렉트
+    if (authStore.isAdmin) {
+      router.push('/admin')
+    } else {
+      router.push('/my-conventions')
+    }
   } else {
     errorMessage.value = result.error
   }

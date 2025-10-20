@@ -20,7 +20,7 @@ public class FeatureRepository : Repository<Feature>, IFeatureRepository
         return await _dbSet
             .AsNoTracking()
             .Where(f => f.ConventionId == conventionId)
-            .OrderBy(f => f.FeatureName)
+            .OrderBy(f => f.MenuName)
             .ToListAsync(cancellationToken);
     }
 
@@ -30,8 +30,8 @@ public class FeatureRepository : Repository<Feature>, IFeatureRepository
     {
         return await _dbSet
             .AsNoTracking()
-            .Where(f => f.ConventionId == conventionId && f.IsEnabled == "Y")
-            .OrderBy(f => f.FeatureName)
+            .Where(f => f.ConventionId == conventionId && f.IsActive)
+            .OrderBy(f => f.MenuName)
             .ToListAsync(cancellationToken);
     }
 
@@ -44,8 +44,8 @@ public class FeatureRepository : Repository<Feature>, IFeatureRepository
             .AsNoTracking()
             .AnyAsync(
                 f => f.ConventionId == conventionId && 
-                     f.FeatureName == featureName && 
-                     f.IsEnabled == "Y",
+                     f.MenuUrl == featureName && 
+                     f.IsActive,
                 cancellationToken);
     }
 }

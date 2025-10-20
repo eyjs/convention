@@ -108,7 +108,7 @@ public class ConventionsController : ControllerBase
             convention.RegDtm,
             GuestCount = convention.Guests.Count,
             ScheduleCount = convention.ScheduleTemplates.Count,
-            Features = convention.Features.Select(f => new { f.FeatureName, f.IsEnabled }),
+            Features = convention.Features.Select(f => new { f.MenuName, f.IsActive }),
             Owners = convention.Owners.Select(o => new { o.Name, o.Telephone })
         });
     }
@@ -138,10 +138,10 @@ public class ConventionsController : ControllerBase
         // 기본 Features 추가
         var defaultFeatures = new[]
         {
-            new Feature { ConventionId = convention.Id, FeatureName = "Schedule", IsEnabled = "Y" },
-            new Feature { ConventionId = convention.Id, FeatureName = "Chat", IsEnabled = "Y" },
-            new Feature { ConventionId = convention.Id, FeatureName = "Gallery", IsEnabled = "Y" },
-            new Feature { ConventionId = convention.Id, FeatureName = "Board", IsEnabled = "Y" }
+            new Feature { ConventionId = convention.Id, MenuName = "일정", MenuUrl = "schedule", IsActive = true, IconUrl = "📅" },
+            new Feature { ConventionId = convention.Id, MenuName = "채팅", MenuUrl = "chat", IsActive = true, IconUrl = "💬" },
+            new Feature { ConventionId = convention.Id, MenuName = "갤러리", MenuUrl = "gallery", IsActive = true, IconUrl = "📷" },
+            new Feature { ConventionId = convention.Id, MenuName = "게시판", MenuUrl = "board", IsActive = true, IconUrl = "📋" }
         };
 
         _context.Features.AddRange(defaultFeatures);
