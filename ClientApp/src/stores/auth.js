@@ -8,6 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
     const accessToken = ref(null)
     const refreshToken = ref(null)
     const conventions = ref([])
+    const checklistStatus = ref(null) // 체크리스트 상태
     const loading = ref(false)
     const error = ref(null)
 
@@ -111,6 +112,7 @@ export const useAuthStore = defineStore('auth', () => {
         try {
             const response = await authAPI.getCurrentUser()
             user.value = response.data
+            checklistStatus.value = response.data.checklistStatus // 체크리스트 상태 저장
         } catch (err) {
             console.error('Failed to fetch user', err)
             if (err.response?.status === 401) {
@@ -124,6 +126,7 @@ export const useAuthStore = defineStore('auth', () => {
         accessToken,
         refreshToken,
         conventions,
+        checklistStatus, // export
         loading,
         error,
         isAuthenticated,

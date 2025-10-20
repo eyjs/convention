@@ -321,6 +321,20 @@ public class AuthController : ControllerBase
                 });
             }
 
+            // 현재 선택된 행사의 체크리스트 상태 계산 (selectedConventionId가 필요하면 쿠리 매개변수로 추가)
+            // 여기서는 첨 번째 행사의 체크리스트를 기본으로 반환
+            object? checklistStatus = null;
+            var firstGuest = user.Guests.FirstOrDefault();
+            
+            _logger.LogInformation("GetCurrentUser: UserId={UserId}, GuestCount={GuestCount}, FirstGuest={FirstGuestId}", 
+                user.Id, user.Guests.Count, firstGuest?.Id ?? 0);
+            
+            if (firstGuest != null)
+            {
+                checklistStatus = await BuildChecklistStatusAsync(firstGuest.Id, firstGuest.ConventionId);
+                _logger.LogInformation("Checklist status built: {HasStatus}", checklistStatus != null);
+            }
+
             return Ok(new
             {
                 id = user.Id,
@@ -330,7 +344,8 @@ public class AuthController : ControllerBase
                 phone = user.Phone,
                 role = user.Role,
                 profileImageUrl = user.ProfileImageUrl,
-                conventions = conventionList
+                conventions = conventionList,
+                checklistStatus = checklistStatus
             });
         }
         catch (Exception ex)
@@ -338,6 +353,79 @@ public class AuthController : ControllerBase
             _logger.LogError(ex, "Get current user error");
             return StatusCode(500, new { message = "사용자 정보 조회 중 오류가 발생했습니다." });
         }
+    }
+
+    /// <summary>
+    /// 체크리스트 상태 구축
+    /// </summary>
+    private async Task<object?> BuildChecklistStatusAsync(int guestId, int conventionId)
+    {
+        _logger.LogInformation("BuildChecklistStatusAsync called for GuestId={GuestId}, ConventionId={ConventionId}", guestId, conventionId);
+        
+        // 1. 해당 행사의 활성 액션 목록 조회
+        var actions = await _context.ConventionActions
+            .Where(a => a.ConventionId == conventionId && a.IsActive)
+            .OrderBy(a => a.OrderNum)
+            .ThenBy(a => a.CreatedAt)
+            .ToListAsync();
+
+        _logger.LogInformation("Found {ActionCount} active actions for ConventionId={ConventionId}", actions.Count, conventionId);
+
+        if (actions.Count == 0)
+            return null; // 액션이 없으면 null 반환 (국내 행사 등)
+
+        // 2. 해당 참여자의 액션 상태 조회
+        var statuses = await _context.GuestActionStatuses
+            .Where(s => s.GuestId == guestId)
+            .ToListAsync();
+
+        var statusDict = statuses.ToDictionary(s => s.ConventionActionId, s => s);
+
+        // 3. 체크리스트 아이템 구축
+        var items = new List<object>();
+        int completedCount = 0;
+
+        foreach (var action in actions)
+        {
+            var status = statusDict.GetValueOrDefault(action.Id);
+            bool isComplete = status?.IsComplete ?? false;
+
+            if (isComplete)
+                completedCount++;
+
+            items.Add(new
+            {
+                actionId = action.Id,
+                actionType = action.ActionType,
+                title = action.Title,
+                isComplete = isComplete,
+                deadline = action.Deadline,
+                navigateTo = action.MapsTo,
+                orderNum = action.OrderNum
+            });
+        }
+
+        // 4. 가장 가까운 미완료 액션의 마감일 찾기
+        DateTime? overallDeadline = actions
+            .Where(a => {
+                var status = statusDict.GetValueOrDefault(a.Id);
+                return !(status?.IsComplete ?? false) && a.Deadline.HasValue;
+            })
+            .OrderBy(a => a.Deadline)
+            .FirstOrDefault()?.Deadline;
+
+        // 5. 체크리스트 DTO 반환
+        int totalItems = actions.Count;
+        int progressPercentage = totalItems > 0 ? (completedCount * 100 / totalItems) : 0;
+
+        return new
+        {
+            totalItems = totalItems,
+            completedItems = completedCount,
+            progressPercentage = progressPercentage,
+            overallDeadline = overallDeadline,
+            items = items
+        };
     }
 
     [Authorize]

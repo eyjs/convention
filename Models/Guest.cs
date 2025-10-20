@@ -66,4 +66,31 @@ public class Guest
     /// 마지막으로 채팅을 읽은 시간
     /// </summary>
     public DateTime? LastChatReadTimestamp { get; set; }
+
+    // ===== 해외 여행 정보 (PROFILE_OVERSEAS 액션용) =====
+    
+    /// <summary>
+    /// 영문 이름 (여권상 이름)
+    /// </summary>
+    [MaxLength(100)]
+    public string? EnglishName { get; set; }
+
+    /// <summary>
+    /// 여권 번호
+    /// </summary>
+    [MaxLength(50)]
+    public string? PassportNumber { get; set; }
+
+    /// <summary>
+    /// 여권 만료일
+    /// </summary>
+    public DateOnly? PassportExpiryDate { get; set; }
+
+    /// <summary>
+    /// 비자 서류 첨부파일 ID (FileAttachment 테이블 FK)
+    /// </summary>
+    public int? VisaDocumentAttachmentId { get; set; }
+
+    // Navigation Properties
+    public virtual ICollection<GuestActionStatus> GuestActionStatuses { get; set; } = new List<GuestActionStatus>();
 }

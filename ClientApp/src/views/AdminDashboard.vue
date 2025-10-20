@@ -76,6 +76,11 @@
         <ScheduleManagement :convention-id="conventionId" />
       </div>
 
+      <!-- 액션 관리 -->
+      <div v-if="activeTab === 'actions'">
+        <ActionManagement :convention-id="conventionId" />
+      </div>
+
       <!-- 속성 템플릿 -->
       <div v-if="activeTab === 'attributes'">
         <AttributeTemplateManagement :convention-id="conventionId" />
@@ -102,6 +107,7 @@ import axios from 'axios'
 import DashboardOverview from '@/components/admin/DashboardOverview.vue'
 import GuestManagement from '@/components/admin/GuestManagement.vue'
 import ScheduleManagement from '@/components/admin/ScheduleManagement.vue'
+import ActionManagement from '@/components/admin/ActionManagement.vue'
 import BulkUpload from '@/components/admin/BulkUpload.vue'
 import AttributeTemplateManagement from '@/components/admin/AttributeTemplateManagement.vue'
 import BoardManagement from '@/components/admin/BoardManagement.vue'
@@ -130,6 +136,7 @@ const tabs = [
   { id: 'dashboard', name: '대시보드', shortName: '대시보드' },
   { id: 'guests', name: '참석자 관리', shortName: '참석자' },
   { id: 'schedules', name: '일정 관리', shortName: '일정' },
+  { id: 'actions', name: '액션 관리', shortName: '액션' },
   { id: 'attributes', name: '속성 템플릿', shortName: '속성' },
   { id: 'board', name: '게시판 관리', shortName: '게시판' },
   { id: 'upload', name: '엑셀 업로드', shortName: '업로드' }

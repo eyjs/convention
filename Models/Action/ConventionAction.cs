@@ -1,0 +1,67 @@
+namespace LocalRAG.Models;
+
+/// <summary>
+/// 행사별 참여자 액션 템플릿
+/// 어드민이 동적으로 액션을 추가하고 관리할 수 있음
+/// </summary>
+public class ConventionAction
+{
+    /// <summary>
+    /// Primary Key
+    /// </summary>
+    public int Id { get; set; }
+
+    /// <summary>
+    /// 연관된 행사 ID
+    /// </summary>
+    public int ConventionId { get; set; }
+
+    /// <summary>
+    /// 프로그램적 키 (예: "PROFILE_OVERSEAS", "SCHEDULE_CHOICE", "SURVEY_POST_EVENT")
+    /// </summary>
+    public string ActionType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 체크리스트에 표시될 제목 (예: "여행 서류 제출")
+    /// </summary>
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 액션의 마감일 (카운트다운 타이머에 사용)
+    /// </summary>
+    public DateTime? Deadline { get; set; }
+
+    /// <summary>
+    /// Vue 라우터 경로 (예: "/feature/travel-info")
+    /// </summary>
+    public string MapsTo { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 복잡한 액션을 위한 JSON 설정 (예: 투어 옵션, 설문 문항)
+    /// </summary>
+    public string? ConfigJson { get; set; }
+
+    /// <summary>
+    /// 생성일
+    /// </summary>
+    public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// 수정일
+    /// </summary>
+    public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// 활성화 여부
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// 정렬 순서
+    /// </summary>
+    public int OrderNum { get; set; }
+
+    // Navigation Property
+    public Convention? Convention { get; set; }
+    public ICollection<GuestActionStatus> GuestActionStatuses { get; set; } = new List<GuestActionStatus>();
+}

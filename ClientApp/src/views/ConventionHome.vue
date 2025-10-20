@@ -52,6 +52,12 @@
 
     <!-- 메인 컨텐츠 -->
     <div class="px-4 pt-10 space-y-6 -mt-8">
+      <!-- 체크리스트 -->
+      <ChecklistProgress 
+        v-if="checklistStatus && checklistStatus.totalItems > 0"
+        :checklist="checklistStatus"
+      />
+
       <!-- 공지사항 -->
       <div class="bg-white rounded-2xl shadow-lg p-5">
         <div class="flex items-center justify-between mb-4">
@@ -169,6 +175,8 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
+import DeadlineCountdown from '@/components/common/DeadlineCountdown.vue'
+import ChecklistProgress from '@/components/common/ChecklistProgress.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -176,6 +184,7 @@ const conventionStore = useConventionStore()
 
 const loading = ref(true);
 const convention = computed(() => conventionStore.currentConvention)
+const checklistStatus = ref(null) // authStore가 아니라 ref로 변경
 
 const handleLogout = async () => {
   if (confirm('로그아웃하시겠습니까?')) {
@@ -285,11 +294,25 @@ async function loadRecentNotices() {
 
 onMounted(async () => {
   loading.value = true;
+  
+  // 행사 정보 먼저 로드
   const selectedConventionId = localStorage.getItem('selectedConventionId');
   if (selectedConventionId && !conventionStore.currentConvention) {
     await conventionStore.setCurrentConvention(parseInt(selectedConventionId));
   }
+  
+  // 체크리스트 별도 조회 (GuestId 기반)
+  try {
+    const response = await apiClient.get('/guest/my-checklist');
+    checklistStatus.value = response.data;
+    console.log('Checklist Status:', checklistStatus.value);
+  } catch (error) {
+    console.error('Failed to load checklist:', error);
+    checklistStatus.value = null;
+  }
+  
   await Promise.all([loadTodaySchedules(), loadRecentNotices()]);
+  
   loading.value = false;
 })
 </script>

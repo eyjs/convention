@@ -328,4 +328,187 @@ public class GuestController : ControllerBase
             return StatusCode(500, new { message = "참석자 목록을 불러오는데 실패했습니다." });
         }
     }
+
+    /// <summary>
+    /// 여행 정보 제출 (PROFILE_OVERSEAS 액션)
+    /// </summary>
+    [HttpPut("my-travel-info")]
+    public async Task<IActionResult> UpdateMyTravelInfo([FromBody] LocalRAG.DTOs.Action.TravelInfoDto dto)
+    {
+        try
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            
+            // 사용자의 Guest 정보 조회
+            var guest = await _context.Guests
+                .FirstOrDefaultAsync(g => g.UserId == userId);
+
+            if (guest == null)
+                return NotFound(new { message = "참석자 정보를 찾을 수 없습니다." });
+
+            // 1. Guest 테이블 업데이트
+            guest.EnglishName = dto.EnglishName;
+            guest.PassportNumber = dto.PassportNumber;
+            guest.PassportExpiryDate = dto.PassportExpiryDate;
+            guest.VisaDocumentAttachmentId = dto.VisaDocumentAttachmentId;
+
+            // 2. PROFILE_OVERSEAS 액션 찾기
+            var action = await _context.ConventionActions
+                .FirstOrDefaultAsync(a => 
+                    a.ConventionId == guest.ConventionId && 
+                    a.ActionType == "PROFILE_OVERSEAS");
+
+            if (action != null)
+            {
+                // 3. GuestActionStatus 찾기 또는 생성
+                var status = await _context.GuestActionStatuses
+                    .FirstOrDefaultAsync(s => 
+                        s.GuestId == guest.Id && 
+                        s.ConventionActionId == action.Id);
+
+                if (status == null)
+                {
+                    status = new GuestActionStatus
+                    {
+                        GuestId = guest.Id,
+                        ConventionActionId = action.Id,
+                        IsComplete = true,
+                        CompletedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.GuestActionStatuses.Add(status);
+                }
+                else
+                {
+                    status.IsComplete = true;
+                    status.CompletedAt = DateTime.UtcNow;
+                    status.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Travel info updated for Guest {GuestId}, Action completed",
+                guest.Id);
+
+            return Ok(new { message = "여행 정보가 저장되었습니다." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Travel info update failed");
+            return StatusCode(500, new { message = "여행 정보 저장 중 오류가 발생했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 현재 로그인한 참석자의 체크리스트 조회 (GuestId 기반)
+    /// </summary>
+    [HttpGet("my-checklist")]
+    public async Task<IActionResult> GetMyChecklist([FromQuery] int? conventionId = null)
+    {
+        try
+        {
+            // 1. 토큰에서 GuestId 추출 (JWT에 GuestId가 있어야 함)
+            var guestIdClaim = User.FindFirst("GuestId")?.Value;
+            if (string.IsNullOrEmpty(guestIdClaim))
+            {
+                return BadRequest(new { message = "참석자 정보를 찾을 수 없습니다." });
+            }
+
+            int guestId = int.Parse(guestIdClaim);
+
+            // 2. Guest 정보 조회
+            var guest = await _context.Guests
+                .FirstOrDefaultAsync(g => g.Id == guestId);
+
+            if (guest == null)
+            {
+                return NotFound(new { message = "참석자 정보를 찾을 수 없습니다." });
+            }
+
+            // 3. ConventionId 결정 (파라미터 또는 Guest의 ConventionId)
+            int targetConventionId = conventionId ?? guest.ConventionId;
+
+            // 4. 체크리스트 구축
+            var checklist = await BuildChecklistStatusAsync(guestId, targetConventionId);
+
+            return Ok(checklist);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Get checklist failed");
+            return StatusCode(500, new { message = "체크리스트 조회 중 오류가 발생했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 체크리스트 상태 구축
+    /// </summary>
+    private async Task<object?> BuildChecklistStatusAsync(int guestId, int conventionId)
+    {
+        // 1. 해당 행사의 활성 액션 목록 조회
+        var actions = await _context.ConventionActions
+            .Where(a => a.ConventionId == conventionId && a.IsActive)
+            .OrderBy(a => a.OrderNum)
+            .ThenBy(a => a.CreatedAt)
+            .ToListAsync();
+
+        if (actions.Count == 0)
+            return null; // 액션이 없으면 null 반환
+
+        // 2. 해당 참여자의 액션 상태 조회
+        var statuses = await _context.GuestActionStatuses
+            .Where(s => s.GuestId == guestId)
+            .ToListAsync();
+
+        var statusDict = statuses.ToDictionary(s => s.ConventionActionId, s => s);
+
+        // 3. 체크리스트 아이템 구축
+        var items = new List<object>();
+        int completedCount = 0;
+
+        foreach (var action in actions)
+        {
+            var status = statusDict.GetValueOrDefault(action.Id);
+            bool isComplete = status?.IsComplete ?? false;
+
+            if (isComplete)
+                completedCount++;
+
+            items.Add(new
+            {
+                actionId = action.Id,
+                actionType = action.ActionType,
+                title = action.Title,
+                isComplete = isComplete,
+                deadline = action.Deadline,
+                navigateTo = action.MapsTo,
+                orderNum = action.OrderNum
+            });
+        }
+
+        // 4. 가장 가까운 미완료 액션의 마감일 찾기
+        DateTime? overallDeadline = actions
+            .Where(a => {
+                var status = statusDict.GetValueOrDefault(a.Id);
+                return !(status?.IsComplete ?? false) && a.Deadline.HasValue;
+            })
+            .OrderBy(a => a.Deadline)
+            .FirstOrDefault()?.Deadline;
+
+        // 5. 체크리스트 DTO 반환
+        int totalItems = actions.Count;
+        int progressPercentage = totalItems > 0 ? (completedCount * 100 / totalItems) : 0;
+
+        return new
+        {
+            totalItems = totalItems,
+            completedItems = completedCount,
+            progressPercentage = progressPercentage,
+            overallDeadline = overallDeadline,
+            items = items
+        };
+    }
 }

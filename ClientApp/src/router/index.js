@@ -137,6 +137,17 @@ const routes = [
     }
   },
   {
+    path: '/feature/travel-info',
+    name: 'TravelInfo',
+    component: () => import('@/views/features/TravelInfo.vue'),
+    meta: {
+      title: '여행 서류 제출',
+      requiresAuth: true,
+      layout: 'DefaultLayout',
+      showNav: false
+    }
+  },
+  {
     path: '/participants',
     name: 'Participants',
     component: () => import('@/views/Participants.vue'),

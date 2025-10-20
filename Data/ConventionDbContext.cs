@@ -32,6 +32,10 @@ public class ConventionDbContext : DbContext
     public DbSet<Gallery> Galleries { get; set; }
     public DbSet<GalleryImage> GalleryImages { get; set; }
     public DbSet<ConventionChatMessage> ConventionChatMessages { get; set; }
+    
+    // Dynamic Action System
+    public DbSet<ConventionAction> ConventionActions { get; set; }
+    public DbSet<GuestActionStatus> GuestActionStatuses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -313,6 +317,57 @@ public class ConventionDbContext : DbContext
                   .WithMany() // Guest 모델에 ChatMessages 컬렉션이 필요하면 추가
                   .HasForeignKey(e => e.GuestId)
                   .OnDelete(DeleteBehavior.NoAction); // 순환 종속성 오류 방지
+        });
+
+        // ConventionAction 설정
+        modelBuilder.Entity<ConventionAction>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.ActionType).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.MapsTo).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("getdate()");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.OrderNum).HasDefaultValue(0);
+            
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_ConventionAction_ConventionId");
+            entity.HasIndex(e => e.ActionType).HasDatabaseName("IX_ConventionAction_ActionType");
+            entity.HasIndex(e => new { e.ConventionId, e.ActionType })
+                  .IsUnique()
+                  .HasDatabaseName("UQ_ConventionAction_ConventionId_ActionType");
+
+            entity.HasOne(e => e.Convention)
+                  .WithMany()
+                  .HasForeignKey(e => e.ConventionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // GuestActionStatus 설정
+        modelBuilder.Entity<GuestActionStatus>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.IsComplete).HasDefaultValue(false);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("getdate()");
+            
+            entity.HasIndex(e => e.GuestId).HasDatabaseName("IX_GuestActionStatus_GuestId");
+            entity.HasIndex(e => e.ConventionActionId).HasDatabaseName("IX_GuestActionStatus_ConventionActionId");
+            entity.HasIndex(e => new { e.GuestId, e.ConventionActionId })
+                  .IsUnique()
+                  .HasDatabaseName("UQ_GuestActionStatus_GuestId_ConventionActionId");
+
+            entity.HasOne(e => e.Guest)
+                  .WithMany(g => g.GuestActionStatuses)
+                  .HasForeignKey(e => e.GuestId)
+                  .OnDelete(DeleteBehavior.NoAction); // 순환 참조 방지
+
+            entity.HasOne(e => e.ConventionAction)
+                  .WithMany(ca => ca.GuestActionStatuses)
+                  .HasForeignKey(e => e.ConventionActionId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
