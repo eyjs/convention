@@ -48,6 +48,25 @@
     <None Remove="logs\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Migrations\20251015032508_AddCommentsAndViewTracking.cs" />
+    <Compile Remove="Migrations\20251015032508_AddCommentsAndViewTracking.Designer.cs" />
+    <Compile Remove="Migrations\20251015072245_CreateChatFeature.cs" />
+    <Compile Remove="Migrations\20251015072245_CreateChatFeature.Designer.cs" />
+    <Compile Remove="Migrations\20251015085412_AddLastChatReadTimestampToGuest.cs" />
+    <Compile Remove="Migrations\20251015085412_AddLastChatReadTimestampToGuest.Designer.cs" />
+    <Compile Remove="Migrations\20251020025652_UpdateFeatureModel.cs" />
+    <Compile Remove="Migrations\20251020025652_UpdateFeatureModel.Designer.cs" />
+    <Compile Remove="Migrations\20251020060651_AddDynamicActionSystem.cs" />
+    <Compile Remove="Migrations\20251020060651_AddDynamicActionSystem.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Migrations\migrate_feature_complete.sql" />
+    <None Remove="Migrations\migrate_feature_model.sql" />
+    <None Remove="Migrations\migrate_feature_quick.sql" />
+  </ItemGroup>
+
   <!-- 개발 중에는 주석 처리 -->
   <!--
   <Target Name="CleanWwwroot" BeforeTargets="BuildVueApp">

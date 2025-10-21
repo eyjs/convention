@@ -33,6 +33,23 @@
           <div class="flex-1">
             <div class="flex items-center space-x-3 mb-2">
               <h3 class="text-lg font-bold text-gray-900">{{ action.title }}</h3>
+              
+              <!-- 템플릿/전용 배지 -->
+              <span
+                v-if="action.templateName"
+                class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded"
+                title="공통 템플릿 액션"
+              >
+                공통 템플릿
+              </span>
+              <span
+                v-else
+                class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded"
+                title="이 행사 전용 액션"
+              >
+                이 행사 전용
+              </span>
+              
               <span
                 class="px-2 py-1 text-xs font-medium rounded-full"
                 :class="action.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
@@ -148,6 +165,27 @@
         </div>
 
         <form @submit.prevent="saveAction" class="p-6 space-y-4">
+          <!-- 이 행사 전용 체크박스 -->
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+              <input
+                v-model="form.isCustom"
+                type="checkbox"
+                id="isCustom"
+                class="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <div class="flex-1">
+                <label for="isCustom" class="block text-sm font-semibold text-blue-900 cursor-pointer">
+                  이 행사 전용 액션
+                </label>
+                <p class="text-xs text-blue-700 mt-1">
+                  체크 시: 이 행사에만 적용되는 고유 액션 (예: 1일차 투어 선택)<br>
+                  체크 해제: 여러 행사에서 재사용 가능한 공통 액션 (예: 설문조사, 서류 제출)
+                </p>
+              </div>
+            </div>
+          </div>
+
           <!-- 액션 타입 -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -302,17 +340,23 @@ const form = ref({
   deadline: '',
   orderNum: 0,
   configJson: '',
-  isActive: true
+  isActive: true,
+  isCustom: false
 })
 
 async function loadActions() {
   loading.value = true
   try {
-    const response = await apiClient.get(`/conventions/${props.conventionId}/actions`)
-    actions.value = response.data
+    const response = await apiClient.get(`/admin/action-management/convention/${props.conventionId}`)
+    actions.value = response.data.actions || []
   } catch (error) {
     console.error('Failed to load actions:', error)
-    alert('액션 목록을 불러오는데 실패했습니다.')
+    // 403 에러는 권한 문제, 빈 배열로 처리
+    if (error.response?.status === 403) {
+      actions.value = []
+    } else {
+      alert('액션 목록을 불러오는데 실패했습니다.')
+    }
   } finally {
     loading.value = false
   }
@@ -327,7 +371,8 @@ function openCreateModal() {
     deadline: '',
     orderNum: actions.value.length,
     configJson: '',
-    isActive: true
+    isActive: true,
+    isCustom: false
   }
   showModal.value = true
   errorMessage.value = ''
@@ -335,9 +380,8 @@ function openCreateModal() {
 
 function openEditModal(action) {
   editingAction.value = action
-  // /Feature 접두사 제거하여 표시
   const mapsToWithoutPrefix = action.mapsTo.startsWith('/Feature') 
-    ? action.mapsTo.substring(8) // '/Feature' 길이만큼 제거
+    ? action.mapsTo.substring(8)
     : action.mapsTo
   
   form.value = {
@@ -347,7 +391,8 @@ function openEditModal(action) {
     deadline: action.deadline ? formatDateTimeForInput(action.deadline) : '',
     orderNum: action.orderNum,
     configJson: action.configJson || '',
-    isActive: action.isActive
+    isActive: action.isActive,
+    isCustom: !action.templateName // 템플릿이 없으면 전용
   }
   showModal.value = true
   errorMessage.value = ''
@@ -360,40 +405,25 @@ function closeModal() {
 }
 
 async function saveAction() {
-  submitting.value = true
   errorMessage.value = ''
+  submitting.value = true
 
   try {
-    // /Feature 접두사 자동 추가
-    const mapsToPath = form.value.mapsTo.startsWith('/') 
-      ? `/Feature${form.value.mapsTo}` 
-      : `/Feature/${form.value.mapsTo}`
-    
     const payload = {
-      conventionId: props.conventionId,
-      actionType: form.value.actionType,
-      title: form.value.title,
-      mapsTo: mapsToPath,
-      deadline: form.value.deadline || null,
-      orderNum: form.value.orderNum,
-      configJson: form.value.configJson || null,
-      isActive: form.value.isActive
+      ...form.value,
+      mapsTo: '/Feature' + (form.value.mapsTo.startsWith('/') ? '' : '/') + form.value.mapsTo,
+      conventionId: props.conventionId
     }
 
     if (editingAction.value) {
-      await apiClient.put(
-        `/conventions/${props.conventionId}/actions/${editingAction.value.id}`,
-        payload
-      )
+      await apiClient.put(`/admin/action-management/actions/${editingAction.value.id}`, payload)
     } else {
-      await apiClient.post(`/conventions/${props.conventionId}/actions`, payload)
+      await apiClient.post('/admin/action-management/actions', payload)
     }
 
-    await loadActions()
     closeModal()
-    alert(editingAction.value ? '액션이 수정되었습니다.' : '액션이 추가되었습니다.')
+    await loadActions()
   } catch (error) {
-    console.error('Failed to save action:', error)
     errorMessage.value = error.response?.data?.message || '저장에 실패했습니다.'
   } finally {
     submitting.value = false
@@ -402,32 +432,27 @@ async function saveAction() {
 
 async function toggleAction(action) {
   try {
-    await apiClient.patch(`/conventions/${props.conventionId}/actions/${action.id}/toggle`)
+    await apiClient.put(`/admin/action-management/actions/${action.id}/toggle`)
     action.isActive = !action.isActive
   } catch (error) {
-    console.error('Failed to toggle action:', error)
-    alert('상태 변경에 실패했습니다.')
+    alert('상태 변경 실패: ' + error.message)
   }
 }
 
 async function deleteAction(action) {
-  if (!confirm(`"${action.title}" 액션을 삭제하시겠습니까?\n이 액션과 연관된 모든 참석자 진행 상태도 함께 삭제됩니다.`)) {
-    return
-  }
-
+  if (!confirm(`"${action.title}" 액션을 삭제하시겠습니까?`)) return
+  
   try {
-    await apiClient.delete(`/conventions/${props.conventionId}/actions/${action.id}`)
+    await apiClient.delete(`/admin/action-management/actions/${action.id}`)
     await loadActions()
-    alert('액션이 삭제되었습니다.')
   } catch (error) {
-    console.error('Failed to delete action:', error)
-    alert('삭제에 실패했습니다.')
+    alert('삭제 실패: ' + error.message)
   }
 }
 
-function formatDateTime(dateStr) {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
+function formatDateTime(dateString) {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
   return date.toLocaleString('ko-KR', {
     year: 'numeric',
     month: '2-digit',
@@ -437,8 +462,9 @@ function formatDateTime(dateStr) {
   })
 }
 
-function formatDateTimeForInput(dateStr) {
-  const date = new Date(dateStr)
+function formatDateTimeForInput(dateString) {
+  if (!dateString) return ''
+  const date = new Date(dateString)
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')

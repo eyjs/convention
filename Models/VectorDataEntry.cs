@@ -15,12 +15,19 @@ public class VectorDataEntry
     public int ConventionId { get; set; } // 행사 ID (필터링용)
 
     [Required]
+    [MaxLength(50)]
+    public string SourceType { get; set; } = "Convention"; // 데이터 소스 타입 (Convention, Guest, Schedule, Notice 등)
+
+    [Required]
     public string Content { get; set; } = string.Empty; // 원본 텍스트
 
     [Required]
     public byte[] EmbeddingData { get; set; } = Array.Empty<byte>(); // 벡터 임베딩 (byte 배열)
 
     public string? MetadataJson { get; set; } // 메타데이터 (JSON 직렬화)
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // 생성 시간
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow; // 수정 시간
 
     [NotMapped] // DB 컬럼 아님
     public float[] Embedding

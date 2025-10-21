@@ -88,3 +88,142 @@ body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* ===== 모바일 키보드 대응 스타일 ===== */
+
+/* 키보드가 보일 때 body에 적용되는 클래스 */
+body.keyboard-visible {
+  /* 하단 네비게이션이나 고정 요소를 숨기려면 추가 */
+}
+
+/* 입력 필드 포커스 시 자동 스크롤을 위한 스타일 */
+input:focus,
+textarea:focus,
+[contenteditable="true"]:focus {
+  scroll-margin-top: 80px; /* 상단 헤더 높이 + 여백 */
+  scroll-margin-bottom: 100px; /* 키보드 위 여백 */
+}
+
+/* iOS Safari: 키보드 올라올 때 viewport 높이 문제 해결 */
+@supports (-webkit-touch-callout: none) {
+  /* iOS에서 키보드 올라올 때 fixed 요소 처리 */
+  body.keyboard-visible .fixed-header,
+  body.keyboard-visible .fixed-footer {
+    position: absolute;
+  }
+  
+  /* iOS에서 입력창이 키보드에 가려지는 문제 방지 */
+  body.keyboard-visible {
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  body.keyboard-visible .main-content {
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* 모바일 최적화: 입력 필드 확대 방지 (iOS) */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="password"],
+input[type="search"],
+textarea,
+select {
+  font-size: 16px; /* iOS에서 16px 미만이면 자동 줌 발생 */
+}
+
+/* 입력 필드 포커스 시 부드러운 전환 */
+input,
+textarea {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* 포커스된 입력 필드 강조 */
+input:focus,
+textarea:focus {
+  transform: translateY(0);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-500), 0.3);
+}
+
+/* 모바일에서 입력창 아래 여백 확보 */
+.input-wrapper {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+/* 키보드 올라올 때 하단 여백 추가 */
+body.keyboard-visible .input-wrapper:last-child {
+  margin-bottom: 300px; /* 키보드 높이만큼 */
+}
+
+/* 터치 영역 최적화 (최소 44x44px) */
+button,
+a {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* 체크박스와 라디오 버튼은 기본 크기 유지 */
+input[type="checkbox"],
+input[type="radio"] {
+  /* 기본 크기 사용 */
+}
+
+/* 작은 버튼의 경우 패딩으로 터치 영역 확대 */
+.small-button {
+  padding: 12px;
+}
+
+/* Visual Viewport API를 지원하는 브라우저용 */
+@supports (height: 100dvh) {
+  .full-height {
+    height: 100dvh; /* Dynamic Viewport Height */
+  }
+}
+
+/* 입력 필드 컨테이너 - 키보드 높이 계산 */
+.keyboard-aware-container {
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--keyboard-height, 0px));
+}
+
+/* 플로팅 버튼이나 하단 고정 요소 */
+.floating-action {
+  position: fixed;
+  bottom: 20px;
+  transition: bottom 0.3s ease;
+}
+
+body.keyboard-visible .floating-action {
+  bottom: calc(var(--keyboard-height, 0px) + 20px);
+}
+
+/* 애니메이션: 부드러운 스크롤 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 입력창 포커스 시 배경 강조 */
+.input-focused-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 40;
+}
+
+body.keyboard-visible .input-focused-bg {
+  opacity: 1;
+}

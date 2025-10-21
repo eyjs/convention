@@ -61,7 +61,28 @@ public class ConventionAction
     /// </summary>
     public int OrderNum { get; set; }
 
+    /// <summary>
+    /// 템플릿 ID (공통 템플릿을 사용하는 경우)
+    /// </summary>
+    public int? TemplateId { get; set; }
+
+    /// <summary>
+    /// 필수 여부
+    /// </summary>
+    public bool IsRequired { get; set; } = false;
+
+    /// <summary>
+    /// 아이콘 클래스 (템플릿 아이콘을 덮어쓸 경우)
+    /// </summary>
+    public string? IconClass { get; set; }
+
+    /// <summary>
+    /// 카테고리 (그룹화용)
+    /// </summary>
+    public string? Category { get; set; }
+
     // Navigation Property
     public Convention? Convention { get; set; }
+    public ActionTemplate? Template { get; set; }
     public ICollection<GuestActionStatus> GuestActionStatuses { get; set; } = new List<GuestActionStatus>();
 }

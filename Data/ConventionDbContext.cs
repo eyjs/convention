@@ -28,14 +28,15 @@ public class ConventionDbContext : DbContext
     public DbSet<AttributeTemplate> AttributeTemplates { get; set; }
     public DbSet<Notice> Notices { get; set; }
     public DbSet<Comment> Comments { get; set; }
+    
+    // Action Management
+    public DbSet<ConventionAction> ConventionActions { get; set; }
+    public DbSet<GuestActionStatus> GuestActionStatuses { get; set; }
+    public DbSet<ActionTemplate> ActionTemplates { get; set; }
     public DbSet<FileAttachment> FileAttachments { get; set; }
     public DbSet<Gallery> Galleries { get; set; }
     public DbSet<GalleryImage> GalleryImages { get; set; }
     public DbSet<ConventionChatMessage> ConventionChatMessages { get; set; }
-    
-    // Dynamic Action System
-    public DbSet<ConventionAction> ConventionActions { get; set; }
-    public DbSet<GuestActionStatus> GuestActionStatuses { get; set; }
 
     public DbSet<VectorDataEntry> VectorDataEntries { get; set; } //  DbSet 추가
 
