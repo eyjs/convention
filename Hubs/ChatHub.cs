@@ -12,8 +12,8 @@ namespace LocalRAG.Hubs
 {
     public class ParticipantInfo
     {
-        public string Name { get; set; }
-        public string Affiliation { get; set; }
+        public required string Name { get; set; }
+        public required string Affiliation { get; set; }
     }
 
     [Authorize]

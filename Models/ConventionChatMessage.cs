@@ -19,7 +19,7 @@ namespace LocalRAG.Models
         public int ConventionId { get; set; }
 
         [ForeignKey("ConventionId")]
-        public virtual Convention Convention { get; set; }
+        public virtual Convention Convention { get; set; } = null!;
 
         /// <summary>
         /// 작성자 Guest ID
@@ -28,20 +28,20 @@ namespace LocalRAG.Models
         public int GuestId { get; set; }
 
         [ForeignKey("GuestId")]
-        public virtual Guest Guest { get; set; }
+        public virtual Guest Guest { get; set; } = null!;
 
         /// <summary>
         /// 작성자 이름 (표시용)
         /// </summary>
         [Required]
         [StringLength(100)]
-        public string GuestName { get; set; }
+        public string GuestName { get; set; } = string.Empty;
 
         /// <summary>
         /// 메시지 내용
         /// </summary>
         [Required]
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
 
         /// <summary>
         /// 관리자가 작성한 메시지인지 여부

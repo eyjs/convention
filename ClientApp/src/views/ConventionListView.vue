@@ -117,7 +117,11 @@
 
       <!-- 챗봇 관리 탭 -->
       <div v-if="activeTab === 'chatbot'">
-        <ChatbotManagement />
+        <div class="mb-6">
+          <h2 class="text-xl font-bold text-gray-900">챗봇 관리</h2>
+          <p class="text-sm text-gray-600 mt-1">LLM Provider 관리 및 VectorStore 상태 확인</p>
+        </div>
+        <LlmProviderManagement />
       </div>
 
       <!-- 회원 관리 탭 -->
@@ -210,7 +214,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
-import ChatbotManagement from '@/components/admin/ChatbotManagement.vue'
+
+import LlmProviderManagement from '@/components/admin/LlmProviderManagement.vue'
 import ConventionFormModal from '@/components/admin/ConventionFormModal.vue'
 
 const router = useRouter()

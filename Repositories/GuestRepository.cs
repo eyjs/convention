@@ -91,12 +91,13 @@ public class GuestRepository : Repository<Guest>, IGuestRepository
     {
         return await _context.GuestScheduleTemplates
             .Where(gst => guestIds.Contains(gst.GuestId))
-            .Include(gst => gst.ScheduleTemplate.ScheduleItems)
+            .Include(gst => gst.ScheduleTemplate)
+                .ThenInclude(st => st.ScheduleItems)
             .AsNoTracking()
             .GroupBy(gst => gst.GuestId)
             .ToDictionaryAsync(
                 g => g.Key,
-                g => g.SelectMany(gst => gst.ScheduleTemplate.ScheduleItems)
+                g => g.SelectMany(gst => gst.ScheduleTemplate?.ScheduleItems ?? Enumerable.Empty<ScheduleItem>())
                       .OrderBy(si => si.ScheduleDate).ThenBy(si => si.StartTime)
                       .ToList(),
                 cancellationToken

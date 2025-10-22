@@ -39,6 +39,8 @@ public class ConventionDbContext : DbContext
     public DbSet<ConventionChatMessage> ConventionChatMessages { get; set; }
 
     public DbSet<VectorDataEntry> VectorDataEntries { get; set; } //  DbSet 추가
+    
+    public DbSet<LlmSetting> LlmSettings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

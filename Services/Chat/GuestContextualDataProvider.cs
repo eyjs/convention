@@ -29,7 +29,7 @@ public class GuestContextualDataProvider
         var guest = await _context.Guests
             .Include(g => g.GuestAttributes)
             .Include(g => g.GuestScheduleTemplates)
-                .ThenInclude(gst => gst.ScheduleTemplate)
+                .ThenInclude(gst => gst.ScheduleTemplate!)
                 .ThenInclude(st => st.ScheduleItems)
             .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Id == userContext.GuestId);
@@ -87,7 +87,8 @@ public class GuestContextualDataProvider
         if (!guest.GuestScheduleTemplates.Any()) return;
 
         var allItems = guest.GuestScheduleTemplates
-            .SelectMany(gst => gst.ScheduleTemplate.ScheduleItems)
+            .Where(gst => gst.ScheduleTemplate != null)
+            .SelectMany(gst => gst.ScheduleTemplate!.ScheduleItems)
             .OrderBy(si => si.ScheduleDate)
             .ThenBy(si => si.StartTime);
 

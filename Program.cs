@@ -116,21 +116,18 @@ builder.Services.AddScoped<GeminiProvider>(provider =>
     return new GeminiProvider(httpClient, configuration);
 });
 
+// 👉 LlmProviderManager 등록 (DB 기반 동적 Provider 관리)
+builder.Services.AddScoped<LlmProviderManager>();
+
+// 👉 ILlmProvider를 Factory 패턴으로 주입
 builder.Services.AddScoped<ILlmProvider>(provider =>
 {
-    var llmProvider = builder.Configuration["LlmProvider"];
-    return llmProvider switch
-    {
-        "llama3" => provider.GetRequiredService<Llama3Provider>(),
-        "gemini" => provider.GetRequiredService<GeminiProvider>(),
-        _ => provider.GetRequiredService<Llama3Provider>() // Default to GeminiProvider
-    };
+    var providerManager = provider.GetRequiredService<LlmProviderManager>();
+    return providerManager.GetActiveProviderAsync().GetAwaiter().GetResult();
 });
 
 // 핵심 서비스들을 'Scoped'로 등록합니다.
 builder.Services.AddScoped<IRagService, RagService>();
-
-
 
 // 기존 수동 서비스는 제거하거나 주석 처리
 builder.Services.AddScoped<ConventionDocumentBuilder>();

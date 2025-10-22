@@ -12,7 +12,7 @@ namespace LocalRAG.Services.Shared.Builders
     public class ConventionDocumentBuilder
     {
 
-        public async Task<List<DocumentChunk>> BuildDocumentChunks(ConventionIndexingData data)
+        public Task<List<DocumentChunk>> BuildDocumentChunks(ConventionIndexingData data)
         {
             var chunks = new List<DocumentChunk>();
 
@@ -142,7 +142,7 @@ namespace LocalRAG.Services.Shared.Builders
             // 4. (선택) FAQ, 공지사항 등 다른 공용 정보가 있다면 여기에 청킹 로직 추가
             // 예: AddFaqChunks(chunks, convention);
 
-            return chunks;
+            return Task.FromResult(chunks);
         }
     }
 }

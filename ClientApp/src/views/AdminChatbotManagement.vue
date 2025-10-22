@@ -105,6 +105,16 @@
           </nav>
         </div>
 
+        <!-- LLM Provider 관리 탭 -->
+        <div v-show="activeTab === 'providers'" class="p-6">
+          <div class="space-y-6">
+            <div class="bg-white rounded-lg shadow-sm p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">LLM Provider 관리</h3>
+              <LlmProviderManagement />
+            </div>
+          </div>
+        </div>
+
         <!-- 전체 재색인 탭 -->
         <div v-show="activeTab === 'reindex'" class="p-6">
           <div class="space-y-6">
@@ -274,11 +284,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/services/api'
+import LlmProviderManagement from '@/components/admin/LlmProviderManagement.vue'
 
 const router = useRouter()
 
 // State
-const activeTab = ref('reindex')
+const activeTab = ref('providers')
 const reindexing = ref(false)
 const reindexResult = ref(null)
 const searchQuery = ref('')
@@ -298,6 +309,7 @@ const recentActivities = ref([])
 const logs = ref([])
 
 const tabs = [
+  { id: 'providers', label: 'LLM Provider' },
   { id: 'reindex', label: '전체 재색인' },
   { id: 'conventions', label: '행사별 설정' },
   { id: 'vectors', label: '벡터 DB 통계' },
