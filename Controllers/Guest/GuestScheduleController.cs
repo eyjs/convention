@@ -17,16 +17,16 @@ public class GuestScheduleController : ControllerBase
         _context = context;
     }
 
-    [HttpGet("{guestId}")]
-    public async Task<IActionResult> GetSchedules(int guestId)
+    [HttpGet("{guestId}/{conventionId}")]
+    public async Task<IActionResult> GetSchedules(int guestId, int conventionId)
     {
         try
         {
             var guest = await _context.Guests
-                .Include(g => g.GuestScheduleTemplates)
+                .Include(g => g.GuestScheduleTemplates.Where(gst => gst.ScheduleTemplate!.ConventionId == conventionId))
                 .ThenInclude(gst => gst.ScheduleTemplate)
                 .ThenInclude(st => st!.ScheduleItems)
-                .FirstOrDefaultAsync(g => g.Id == guestId);
+                .FirstOrDefaultAsync(g => g.Id == guestId && g.ConventionId == conventionId);
 
             if (guest is null) return NotFound(new { message = "Guest not found" });
 

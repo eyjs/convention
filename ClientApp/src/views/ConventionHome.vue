@@ -228,10 +228,11 @@ async function loadTodaySchedules() {
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
     const guestId = user.guestId
+    const conventionId = conventionStore.currentConvention?.id
     
-    if (!guestId) return
+    if (!guestId || !conventionId) return
     
-    const response = await apiClient.get(`/guest-schedules/${guestId}`)
+    const response = await apiClient.get(`/guest-schedules/${guestId}/${conventionId}`)
     const now = new Date()
     const today = now.toISOString().split('T')[0]
     
