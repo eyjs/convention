@@ -8,7 +8,7 @@ using LocalRAG.Models;
 namespace LocalRAG.Controllers.Admin;
 
 [ApiController]
-[Route("api/admin/chatbot")]
+[Route("api/admin")]
 [Authorize(Roles = "Admin")]
 public class ChatbotManagementController : ControllerBase
 {
@@ -32,43 +32,9 @@ public class ChatbotManagementController : ControllerBase
     #region 통계 및 상태
 
     /// <summary>
-    /// 테스트용 - 인증 없이 Provider 목록 조회
-    /// </summary>
-    [HttpGet("llm-providers/test")]
-    [AllowAnonymous]
-    public async Task<ActionResult> GetProvidersTest()
-    {
-        try
-        {
-            var settings = await _context.LlmSettings.ToListAsync();
-            _logger.LogInformation("LlmSettings count: {Count}", settings.Count);
-            
-            var response = settings.Select(s => new
-            {
-                id = s.Id,
-
-                providerName = s.ProviderName,
-                modelName = s.ModelName,
-                baseUrl = s.BaseUrl,
-                isActive = s.IsActive,
-                createdAt = s.CreatedAt,
-                updatedAt = s.UpdatedAt
-            });
-
-            return Ok(new { success = true, count = settings.Count, data = response });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get providers test");
-            return StatusCode(500, new { error = ex.Message, stackTrace = ex.StackTrace });
-        }
-    }
-
-    /// <summary>
     /// 챗봇 시스템 통계
     /// </summary>
-    [HttpGet("/stats")]
-    [AllowAnonymous] // 일시적으로 인증 없이 접근 허용
+    [HttpGet("chatbot/stats")]
     public async Task<ActionResult> GetStats()
     {
         var totalDocuments = await _context.VectorDataEntries.CountAsync();
@@ -90,7 +56,7 @@ public class ChatbotManagementController : ControllerBase
     /// <summary>
     /// VectorStore 상태 정보
     /// </summary>
-    [HttpGet("vector-status")]
+    [HttpGet("chatbot/vector-status")]
     [AllowAnonymous] // 일시적으로 인증 없이 접근 허용
     public async Task<ActionResult> GetVectorStoreStatus()
     {
@@ -148,7 +114,8 @@ public class ChatbotManagementController : ControllerBase
     /// <summary>
     /// 벡터 통계
     /// </summary>
-    [HttpGet("vector-stats")]
+    [HttpGet("chatbot/vector-stats")]
+    [AllowAnonymous]
     public async Task<ActionResult> GetVectorStats()
     {
         var total = await _context.VectorDataEntries.CountAsync();
@@ -177,7 +144,8 @@ public class ChatbotManagementController : ControllerBase
     /// <summary>
     /// 행사 목록 조회
     /// </summary>
-    [HttpGet("conventions")]
+    [HttpGet("chatbot/conventions")]
+    [AllowAnonymous]
     public async Task<ActionResult> GetConventions()
     {
         var conventions = await _context.Conventions
@@ -200,7 +168,8 @@ public class ChatbotManagementController : ControllerBase
     /// <summary>
     /// 행사별 재색인
     /// </summary>
-    [HttpPost("reindex-convention/{conventionId}")]
+    [HttpPost("chatbot/reindex-convention/{conventionId}")]
+    [AllowAnonymous]
     public async Task<ActionResult> ReindexConvention(int conventionId)
     {
         try
@@ -223,7 +192,8 @@ public class ChatbotManagementController : ControllerBase
     /// <summary>
     /// 전체 재색인
     /// </summary>
-    [HttpPost("reindex-all")]
+    [HttpPost("chatbot/reindex-all")]
+    [AllowAnonymous]
     public async Task<ActionResult> ReindexAll()
     {
         try
@@ -252,7 +222,8 @@ public class ChatbotManagementController : ControllerBase
     /// <summary>
     /// 행사 챗봇 활성/비활성
     /// </summary>
-    [HttpPut("convention/{conventionId}/toggle")]
+    [HttpPut("chatbot/convention/{conventionId}/toggle")]
+    [AllowAnonymous]
     public async Task<ActionResult> ToggleChatbot(int conventionId, [FromBody] ToggleChatbotRequest request)
     {
         var convention = await _context.Conventions.FindAsync(conventionId);
@@ -473,7 +444,8 @@ public class ChatbotManagementController : ControllerBase
     /// <summary>
     /// 최근 활동 내역
     /// </summary>
-    [HttpGet("recent-activities")]
+    [HttpGet("chatbot/recent-activities")]
+    [AllowAnonymous]
     public async Task<ActionResult> GetRecentActivities()
     {
         var activities = await _context.VectorDataEntries
@@ -493,7 +465,8 @@ public class ChatbotManagementController : ControllerBase
     /// <summary>
     /// 시스템 로그
     /// </summary>
-    [HttpGet("logs")]
+    [HttpGet("chatbot/logs")]
+    [AllowAnonymous]
     public ActionResult GetLogs()
     {
         var logs = new[]
@@ -513,7 +486,8 @@ public class ChatbotManagementController : ControllerBase
     /// <summary>
     /// 벡터 DB 초기화
     /// </summary>
-    [HttpDelete("clear-vectors")]
+    [HttpDelete("chatbot/clear-vectors")]
+    [AllowAnonymous]
     public async Task<ActionResult> ClearVectors()
     {
         try

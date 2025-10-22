@@ -1,79 +1,141 @@
 <template>
-  <div class="more-features-view max-w-6xl mx-auto p-4">
-    <div class="page-header mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">추가 기능</h1>
-      <p class="text-gray-600">이 행사에서 사용 가능한 추가 기능들입니다</p>
+  <div class="min-h-screen min-h-dvh bg-gray-50">
+    <!-- 헤더 -->
+    <div class="bg-white border-b sticky top-0 z-40">
+      <div class="px-4 py-4">
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">전체 액션</h1>
+        <p class="text-sm text-gray-600">완료해야 할 모든 액션 목록입니다</p>
+      </div>
     </div>
 
-    <div v-if="isLoading" class="flex flex-col items-center justify-center min-h-[300px] gap-4">
-      <div class="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
-      <p class="text-gray-600">기능 목록을 불러오는 중...</p>
+    <!-- 로딩 -->
+    <div v-if="isLoading" class="flex items-center justify-center py-12">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p class="mt-4 text-gray-600">액션 목록을 불러오는 중...</p>
+      </div>
     </div>
 
-    <div v-else-if="activeFeatures.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div
-        v-for="feature in activeFeatures"
-        :key="feature.id"
-        class="feature-card bg-white border border-gray-200 rounded-xl p-6 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all"
-        :class="{ 'opacity-50 cursor-not-allowed': !feature.isActive }"
-        @click="navigateToFeature(feature)"
-      >
-        <div class="flex items-start gap-4">
-          <div class="flex-shrink-0">
-            <img
-              v-if="feature.iconUrl"
-              :src="feature.iconUrl"
-              :alt="feature.menuName"
-              class="w-12 h-12 object-contain"
-            />
-            <div v-else class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-              📦
-            </div>
+    <!-- 3x3 그리드 -->
+    <div v-else-if="allActions.length > 0" class="px-4 py-6">
+      <div class="grid grid-cols-3 gap-4">
+        <div
+          v-for="action in allActions"
+          :key="action.id"
+          @click="!isExpired(action.deadline) && navigateToAction(action)"
+          class="flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm transition-all p-4 border border-gray-100"
+          :class="[
+            isExpired(action.deadline) ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md cursor-pointer'
+          ]"
+        >
+          <!-- 아이콘 -->
+          <div class="w-16 h-16 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mb-3">
+            <span class="text-3xl">{{ action.iconClass || '📌' }}</span>
           </div>
-
-          <div class="flex-1">
-            <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ feature.menuName }}</h3>
-            <span v-if="!feature.isActive" class="text-sm text-red-600">비활성화됨</span>
+          
+          <!-- 이름 -->
+          <h3 
+            class="text-center font-semibold text-sm leading-tight"
+            :class="isExpired(action.deadline) ? 'text-gray-400 line-through' : 'text-gray-900'"
+          >
+            {{ action.title }}
+          </h3>
+          
+          <!-- 마감기한 뱃지 (있는 경우만) -->
+          <div 
+            v-if="action.deadline" 
+            class="mt-2 px-2 py-1 text-xs font-medium rounded-full"
+            :class="isExpired(action.deadline) ? 'bg-gray-200 text-gray-600' : 'bg-red-100 text-red-700'"
+          >
+            {{ isExpired(action.deadline) ? '마감완료' : formatDeadlineShort(action.deadline) }}
           </div>
-
-          <div class="text-2xl text-gray-400">→</div>
+          
+          <!-- 필수 뱃지 -->
+          <div v-if="action.isRequired" class="mt-2 px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">
+            필수
+          </div>
         </div>
       </div>
     </div>
 
-    <div v-else class="flex flex-col items-center justify-center min-h-[300px] gap-4 text-center">
-      <p class="text-lg text-gray-600">현재 사용 가능한 추가 기능이 없습니다.</p>
-      <button @click="router.push('/')" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-        홈으로 돌아가기
-      </button>
+    <!-- 빈 상태 -->
+    <div v-else class="px-4 py-12">
+      <div class="flex flex-col items-center justify-center text-center bg-white rounded-2xl shadow-sm p-8">
+        <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        <p class="text-lg text-gray-600 mb-4">현재 사용 가능한 액션이 없습니다.</p>
+        <button @click="router.push('/')" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          홈으로 돌아가기
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useFeatureStore } from '@/stores/feature'
+import apiClient from '@/services/api'
 
 const router = useRouter()
-const featureStore = useFeatureStore()
+const allActions = ref([])
+const isLoading = ref(false)
 
 onMounted(async () => {
   const conventionId = localStorage.getItem('selectedConventionId')
-  if (conventionId) {
-    await featureStore.fetchActiveFeatures(conventionId)
+  console.log('ConventionId:', conventionId)
+  
+  if (!conventionId) {
+    console.log('No conventionId found, redirecting to home')
+    router.push('/')
+    return
+  }
+  
+  isLoading.value = true
+  try {
+    const url = `/conventions/${conventionId}/actions/all`
+    console.log('Fetching actions from:', url)
+    const response = await apiClient.get(url)
+    console.log('Actions response:', response)
+    console.log('Actions data:', response.data)
+    allActions.value = response.data || []
+    console.log('All actions loaded:', allActions.value)
+  } catch (error) {
+    console.error('Failed to load actions:', error)
+    console.error('Error response:', error.response)
+    allActions.value = []
+  } finally {
+    isLoading.value = false
   }
 })
 
-const activeFeatures = computed(() => featureStore.activeFeatures)
-const isLoading = computed(() => featureStore.loading)
+const navigateToAction = (action) => {
+  if (isExpired(action.deadline)) return
+  router.push(action.mapsTo)
+}
 
-const navigateToFeature = (feature) => {
-  if (!feature.isActive) return
+const isExpired = (deadline) => {
+  if (!deadline) return false
+  const end = new Date(deadline).getTime()
+  const now = Date.now()
+  return end <= now
+}
+
+const formatDeadlineShort = (dateStr) => {
+  const deadline = new Date(dateStr)
+  const now = new Date()
+  const diff = deadline - now
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   
-  router.push({
-    name: 'DynamicFeature',
-    params: { featureName: feature.menuUrl }
-  })
+  if (days > 0) {
+    return `D-${days}`
+  } else {
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    if (hours > 0) {
+      return `${hours}시간 남음`
+    }
+    return '마감임박'
+  }
 }
 </script>

@@ -2,20 +2,27 @@ import apiClient from './api'
 
 // 챗봇 관리 API
 export const chatbotAdminAPI = {
-  // 시스템 상태
-  getStatus: () => apiClient.get('/admin/chatbot/stats'),
-  
-  // 모델 관리 (Ollama 연동 시 별도 구현 필요)
-  getModels: () => {
-    // TODO: Ollama API 연동
-    return Promise.resolve({
-      data: {
-        models: [],
-        currentModel: ''
-      }
-    })
-  },
-  
+    // 시스템 상태
+    getStatus: () => apiClient.get('/admin/chatbot/stats'),
+    // LLM Provider 관리 (LlmProviderManagement.vue용)
+    getLlmProviders: () => apiClient.get('/admin/llm-providers'),
+    createLlmProvider: (data) => apiClient.post('/admin/llm-providers', data),
+    updateLlmProvider: (id, data) => apiClient.put(`/admin/llm-providers/${id}`, data),
+    deleteLlmProvider: (id) => apiClient.delete(`/admin/llm-providers/${id}`),
+    swapLlmProvider: (id) => apiClient.patch(`/admin/llm-providers/${id}/toggle`, { isActive: true }),
+
+    getVectorStatus: () => apiClient.get('/admin/chatbot/vector-status'),
+    // 모델 관리 (Ollama 연동 시 별도 구현 필요)
+    getModels: () => {
+        // TODO: Ollama API 연동
+        return Promise.resolve({
+            data: {
+                models: [],
+                currentModel: ''
+            }
+        })
+    },
+
   selectModel: (modelName) => {
     // TODO: Ollama API 연동
     return Promise.resolve({ data: { success: true } })

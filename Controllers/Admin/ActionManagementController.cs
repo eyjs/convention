@@ -249,7 +249,7 @@ public class ActionManagementController : ControllerBase
                 ActionType = request.ActionType,
                 Title = request.Title,
                 MapsTo = request.MapsTo,
-                Deadline = request.Deadline,
+                Deadline = request.Deadline == DateTime.MinValue ? null : request.Deadline,
                 OrderNum = request.OrderNum,
                 ConfigJson = request.ConfigJson,
                 IsActive = request.IsActive,
@@ -296,7 +296,7 @@ public class ActionManagementController : ControllerBase
             action.ActionType = request.ActionType;
             action.Title = request.Title;
             action.MapsTo = request.MapsTo;
-            action.Deadline = request.Deadline;
+            action.Deadline = request.Deadline == DateTime.MinValue ? null : request.Deadline;
             action.OrderNum = request.OrderNum;
             action.ConfigJson = request.ConfigJson;
             action.IsActive = request.IsActive;

@@ -194,7 +194,6 @@ const handleLogout = async () => {
 }
 
 const upcomingSchedules = ref([])
-
 const recentNotices = ref([])
 
 const dDay = computed(() => {
@@ -301,11 +300,30 @@ onMounted(async () => {
     await conventionStore.setCurrentConvention(parseInt(selectedConventionId));
   }
   
-  // 체크리스트 별도 조회 (GuestId 기반)
+  // 체크리스트 별도 조회 (ConventionAction 기반)
   try {
-    const response = await apiClient.get('/guest/my-checklist');
-    checklistStatus.value = response.data;
-    console.log('Checklist Status:', checklistStatus.value);
+    const conventionId = conventionStore.currentConvention?.id;
+    if (conventionId) {
+      const response = await apiClient.get(`/conventions/${conventionId}/actions/urgent`)
+      const actions = response.data || []
+      
+      if (actions.length > 0) {
+        // ConventionAction 데이터를 ChecklistProgress 형식으로 변환
+        const completedCount = 0 // TODO: GuestActionStatus로 완료 여부 확인 필요
+        checklistStatus.value = {
+          totalItems: actions.length,
+          completedItems: completedCount,
+          progressPercentage: Math.round((completedCount / actions.length) * 100),
+          items: actions.map(action => ({
+            actionId: action.id,
+            title: action.title,
+            deadline: action.deadline,
+            navigateTo: action.mapsTo,
+            isComplete: false // TODO: GuestActionStatus로 확인
+          }))
+        }
+      }
+    }
   } catch (error) {
     console.error('Failed to load checklist:', error);
     checklistStatus.value = null;

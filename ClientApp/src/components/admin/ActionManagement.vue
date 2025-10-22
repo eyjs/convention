@@ -404,7 +404,8 @@ function closeModal() {
   errorMessage.value = ''
 }
 
-async function saveAction() {
+    async function saveAction() {
+    console.log('hi')
   errorMessage.value = ''
   submitting.value = true
 

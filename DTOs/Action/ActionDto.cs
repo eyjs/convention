@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using LocalRAG.Utilities;
+
 namespace LocalRAG.DTOs.Action;
 
 /// <summary>
@@ -9,6 +12,7 @@ public class ConventionActionDto
     public int ConventionId { get; set; }
     public string ActionType { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
+    [JsonConverter(typeof(EmptyStringToNullDateTimeConverter))]
     public DateTime? Deadline { get; set; }
     public string MapsTo { get; set; } = string.Empty;
     public string? ConfigJson { get; set; }

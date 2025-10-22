@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-2xl shadow-lg p-6">
+  <div v-if="checklist.progressPercentage !== 100" class="bg-white rounded-2xl shadow-lg p-6">
     <div class="flex items-center justify-between mb-4">
       <div>
         <h3 class="text-lg font-bold text-gray-900">필수 제출 사항</h3>
@@ -31,8 +31,13 @@
         v-for="item in checklist.items"
         :key="item.actionId"
         :to="item.navigateTo"
-        class="flex items-start justify-between p-4 rounded-xl border-2 transition-all hover:border-primary-500 hover:bg-primary-50 group"
-        :class="item.isComplete ? 'border-green-200 bg-green-50' : 'border-gray-200 hover:shadow-sm'"
+        class="flex items-start justify-between p-4 rounded-xl border-2 transition-all group"
+        :class="[
+          item.isComplete ? 'border-green-200 bg-green-50' : 
+          isExpired(item.deadline) ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' :
+          'border-gray-200 hover:shadow-sm hover:border-primary-500 hover:bg-primary-50'
+        ]"
+        @click.prevent="isExpired(item.deadline) ? null : $router.push(item.navigateTo)"
       >
         <div class="flex items-start space-x-3 flex-1">
           <!-- 체크박스 아이콘 -->
@@ -65,17 +70,22 @@
             <div class="flex items-center gap-2 mb-1 flex-wrap">
               <p 
                 class="font-medium transition-colors"
-                :class="item.isComplete ? 'text-green-700' : 'text-gray-900 group-hover:text-primary-600'"
+                :class="[
+                  item.isComplete ? 'text-green-700' : 
+                  isExpired(item.deadline) ? 'text-gray-400 line-through' :
+                  'text-gray-900 group-hover:text-primary-600'
+                ]"
               >
                 {{ item.title }}
               </p>
               <!-- 긴급도 태그 -->
               <span
-                v-if="!item.isComplete && item.deadline && getUrgencyLevel(item.deadline) !== 'safe'"
+                v-if="!item.isComplete && item.deadline"
                 class="px-2 py-0.5 text-xs font-bold rounded-full flex-shrink-0"
-                :class="getUrgencyClass(item.deadline)"
+                :class="isExpired(item.deadline) ? 'bg-gray-200 text-gray-600' : 
+                        getUrgencyLevel(item.deadline) !== 'safe' ? getUrgencyClass(item.deadline) : ''"
               >
-                {{ getUrgencyText(item.deadline) }}
+                {{ isExpired(item.deadline) ? '마감완료' : getUrgencyText(item.deadline) }}
               </span>
             </div>
             
@@ -91,18 +101,28 @@
               
               <!-- 미완료인 경우 -->
               <div v-else class="space-y-1">
-                <div class="text-xs text-gray-500">
-                  마감: {{ formatDeadline(item.deadline) }}
-                </div>
-                <!-- 카운트다운 -->
-                <div 
-                  class="flex items-center gap-2 text-sm font-semibold"
-                  :class="getTimeRemainingClass(item.deadline)"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <!-- 마감된 경우 -->
+                <div v-if="isExpired(item.deadline)" class="text-xs text-gray-400">
+                  <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>{{ getTimeRemaining(item.deadline) }}</span>
+                  마감: {{ formatDeadline(item.deadline) }}
+                </div>
+                <!-- 마감 안됨 -->
+                <div v-else>
+                  <div class="text-xs text-gray-500">
+                    마감: {{ formatDeadline(item.deadline) }}
+                  </div>
+                  <!-- 카운트다운 -->
+                  <div 
+                    class="flex items-center gap-2 text-sm font-semibold"
+                    :class="getTimeRemainingClass(item.deadline)"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{{ getTimeRemaining(item.deadline) }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -170,6 +190,12 @@ function formatDeadline(deadline) {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+function isExpired(deadline) {
+  if (!deadline) return false
+  const end = new Date(deadline).getTime()
+  return end <= now.value
 }
 
 function getTimeRemaining(deadline) {
