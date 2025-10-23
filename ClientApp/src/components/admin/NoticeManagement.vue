@@ -8,6 +8,12 @@
           <p class="mt-2 text-gray-600">공지사항을 등록하고 관리할 수 있습니다</p>
         </div>
         <button
+          @click="showCategoryModal = true"
+          class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
+        >
+          <span>카테고리 관리</span>
+        </button>
+        <button
           @click="openCreateModal"
           class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
         >
@@ -58,6 +64,7 @@
             <tr>
               <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 w-20">번호</th>
               <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 w-24">고정</th>
+              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 w-40">카테고리</th>
               <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">제목</th>
               <th class="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-32">작성자</th>
               <th class="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-40">작성일</th>
@@ -81,6 +88,7 @@
                   <span>{{ notice.isPinned ? '고정됨' : '고정' }}</span>
                 </button>
               </td>
+              <td class="px-6 py-4 text-sm text-gray-900">{{ notice.categoryName }}</td>
               <td class="px-6 py-4">
                 <div class="flex items-center gap-2">
                   <span class="text-sm text-gray-900 font-medium">{{ notice.title }}</span>
@@ -159,6 +167,12 @@
       @close="closeModal"
       @saved="handleSaved"
     />
+
+    <CategoryManagementModal 
+      v-if="showCategoryModal" 
+      @close="showCategoryModal = false"
+      @categories-updated="fetchNotices"
+    />
   </div>
 </template>
 
@@ -166,12 +180,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { noticeAPI } from '@/services/noticeService'
 import NoticeFormModal from '@/components/admin/NoticeFormModal.vue'
+import CategoryManagementModal from '@/components/admin/CategoryManagementModal.vue'
 import dayjs from 'dayjs'
 
 export default {
   name: 'AdminNoticeManagement',
   components: {
-    NoticeFormModal
+    NoticeFormModal,
+    CategoryManagementModal
   },
   setup() {
     // 상태
@@ -184,6 +200,7 @@ export default {
     const searchKeyword = ref('')
     const showModal = ref(false)
     const selectedNotice = ref(null)
+    const showCategoryModal = ref(false)
 
     // 계산된 속성
     const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value))
@@ -213,6 +230,7 @@ export default {
       loading.value = true
       try {
         const response = await noticeAPI.getNotices({
+          conventionId: 1, // TODO: get conventionId from store or props
           page: currentPage.value,
           pageSize: pageSize.value,
           searchType: searchKeyword.value ? searchType.value : undefined,
@@ -309,6 +327,7 @@ export default {
       searchType,
       searchKeyword,
       showModal,
+      showCategoryModal,
       selectedNotice,
       totalPages,
       visiblePages,

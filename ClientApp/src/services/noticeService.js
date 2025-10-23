@@ -6,7 +6,7 @@ import apiClient from './api'
 export const noticeAPI = {
   /**
    * 공지사항 목록 조회
-   * @param {Object} params - 쿼리 파라미터 { page, pageSize, searchType, searchKeyword }
+   * @param {Object} params - 쿼리 파라미터 { conventionId, page, pageSize, searchType, searchKeyword }
    * @returns {Promise<Object>}
    */
   getNotices: (params = {}) => {
@@ -24,11 +24,12 @@ export const noticeAPI = {
 
   /**
    * 공지사항 생성 (관리자)
+   * @param {number} conventionId - 컨벤션 ID
    * @param {Object} data - 공지사항 데이터
    * @returns {Promise<Object>}
    */
-  createNotice: (data) => {
-    return apiClient.post('/notices', data)
+  createNotice: (conventionId, data) => {
+    return apiClient.post(`/notices?conventionId=${conventionId}`, data)
   },
 
   /**

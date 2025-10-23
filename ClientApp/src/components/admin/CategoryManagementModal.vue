@@ -1,0 +1,1 @@
+Vue template and script for a category management modal, allowing CRUD operations on notice categories.

@@ -27,6 +27,7 @@ public class ConventionDbContext : DbContext
     public DbSet<GuestScheduleTemplate> GuestScheduleTemplates { get; set; }
     public DbSet<AttributeTemplate> AttributeTemplates { get; set; }
     public DbSet<Notice> Notices { get; set; }
+    public DbSet<NoticeCategory> NoticeCategories { get; set; }
     public DbSet<Comment> Comments { get; set; }
     
     // Action Management
@@ -237,6 +238,26 @@ public class ConventionDbContext : DbContext
             entity.HasIndex(e => e.SourceType).HasDatabaseName("IX_VectorStore_SourceType");
         });
 
+        // NoticeCategory 설정
+        modelBuilder.Entity<NoticeCategory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.DisplayOrder).HasDefaultValue(0);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_NoticeCategory_ConventionId");
+            entity.HasIndex(e => new { e.ConventionId, e.Name })
+                  .HasDatabaseName("IX_NoticeCategory_ConventionId_Name");
+            
+            entity.HasOne(e => e.Convention)
+                  .WithMany()
+                  .HasForeignKey(e => e.ConventionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
         // Notice 설정
         modelBuilder.Entity<Notice>(entity =>
         {
@@ -252,6 +273,7 @@ public class ConventionDbContext : DbContext
             entity.HasIndex(e => e.AuthorId).HasDatabaseName("IX_Notice_AuthorId");
             entity.HasIndex(e => e.IsPinned).HasDatabaseName("IX_Notice_IsPinned");
             entity.HasIndex(e => e.CreatedAt).HasDatabaseName("IX_Notice_CreatedAt");
+            entity.HasIndex(e => e.NoticeCategoryId).HasDatabaseName("IX_Notice_NoticeCategoryId");
             
             entity.HasOne(e => e.Author)
                   .WithMany()
@@ -262,6 +284,11 @@ public class ConventionDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(e => e.ConventionId)
                   .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.NoticeCategory)
+                  .WithMany(c => c.Notices)
+                  .HasForeignKey(e => e.NoticeCategoryId)
+                  .OnDelete(DeleteBehavior.NoAction);
             
             entity.HasMany(e => e.Attachments)
                   .WithOne(a => a.Notice)
@@ -383,6 +410,24 @@ public class ConventionDbContext : DbContext
                   .WithMany(ca => ca.GuestActionStatuses)
                   .HasForeignKey(e => e.ConventionActionId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Comment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            entity.HasQueryFilter(e => !e.IsDeleted);
+
+            entity.HasOne(e => e.Notice)
+                .WithMany(n => n.Comments)
+                .HasForeignKey(e => e.NoticeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Author)
+                .WithMany()
+                .HasForeignKey(e => e.AuthorId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

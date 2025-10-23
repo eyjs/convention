@@ -10,7 +10,7 @@ using System.Security.Claims;
 namespace LocalRAG.Controllers.Convention;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/notices")]
 public class NoticesController : ControllerBase
 {
     private readonly INoticeService _noticeService;
@@ -224,14 +224,14 @@ public class NoticesController : ControllerBase
     {
         try
         {
-            var comments = await _context.Comments
-                .Where(c => c.NoticeId == noticeId && !c.IsDeleted)
+                    var isAdmin = User.IsInRole("Admin");
+                    var query = _context.Comments.IgnoreQueryFilters().Where(c => c.NoticeId == noticeId);
+            var comments = await query
                 .OrderBy(c => c.CreatedAt)
                 .ToListAsync();
 
             var responses = new List<CommentResponse>();
             
-            // 모든 댓글 작성자는 Guest라고 가정
             var authorIds = comments.Select(c => c.AuthorId).Distinct().ToList();
             var guests = await _context.Guests
                 .Where(g => authorIds.Contains(g.Id))
@@ -247,9 +247,10 @@ public class NoticesController : ControllerBase
                     NoticeId = comment.NoticeId,
                     AuthorId = comment.AuthorId,
                     AuthorName = authorName,
-                    Content = comment.Content,
+                    Content = comment.IsDeleted && !isAdmin ? "삭제된 메시지입니다." : comment.Content,
                     CreatedAt = comment.CreatedAt,
-                    UpdatedAt = comment.UpdatedAt
+                    UpdatedAt = comment.UpdatedAt,
+                    IsDeleted = comment.IsDeleted
                 });
             }
 
@@ -377,19 +378,38 @@ public class NoticesController : ControllerBase
     {
         try
         {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             var guestIdClaim = User.FindFirst("GuestId");
-            if (guestIdClaim == null || !int.TryParse(guestIdClaim.Value, out int guestId))
+
+            if (userIdClaim == null && guestIdClaim == null)
             {
-                return Unauthorized("게스트 정보를 확인할 수 없습니다.");
+                return Unauthorized("사용자 정보를 확인할 수 없습니다.");
             }
 
             var comment = await _context.Comments.FindAsync(commentId);
 
             if (comment == null) return NotFound(new { message = "댓글을 찾을 수 없습니다." });
 
-            // 작성자 본인만 삭제 가능
-            if (comment.AuthorId != guestId)
+            bool isAuthor = false;
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+            {
+                if (comment.AuthorId == userId)
+                {
+                    isAuthor = true;
+                }
+            }
+            else if (guestIdClaim != null && int.TryParse(guestIdClaim.Value, out int guestId))
+            {
+                if (comment.AuthorId == guestId)
+                {
+                    isAuthor = true;
+                }
+            }
+
+            if (!isAuthor)
+            {
                 return Forbid("자신의 댓글만 삭제할 수 있습니다.");
+            }
 
             comment.IsDeleted = true;
             await _context.SaveChangesAsync();
@@ -423,4 +443,5 @@ public class CommentResponse
     public string Content { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public bool IsDeleted { get; set; }
 }

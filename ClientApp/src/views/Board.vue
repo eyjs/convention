@@ -12,31 +12,45 @@
             </button>
             <h1 class="text-xl font-bold text-gray-900">공지사항</h1>
           </div>
-          <button v-if="isAdmin" @click="showWriteModal = true" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">
-            글쓰기
-          </button>
         </div>
       </div>
 
       <!-- 카테고리 탭 -->
-      <div class="border-t overflow-x-auto">
-        <div class="flex px-4 space-x-1 min-w-max">
-          <button
-            v-for="category in categories"
-            :key="category.id"
-            @click="selectedCategory = category.id"
-            :class="[
-              'px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors',
-              selectedCategory === category.id
-                ? 'text-primary-600 border-primary-600'
-                : 'text-gray-500 border-transparent hover:text-gray-700'
-            ]"
-          >
-            {{ category.name }}
-            <span v-if="category.count" class="ml-1 text-xs opacity-70">({{ category.count }})</span>
+      <div class="relative border-t">
+        <div ref="categoryContainer" class="overflow-x-auto whitespace-nowrap no-scrollbar" @scroll="handleScroll">
+          <div class="flex px-4 space-x-1 min-w-max">
+            <button
+              v-for="category in categories"
+              :key="category.id"
+              @click="selectedCategory = category.id"
+              :class="[
+                'px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors',
+                selectedCategory === category.id
+                  ? 'text-primary-600 border-primary-600'
+                  : 'text-gray-500 border-transparent hover:text-gray-700'
+              ]"
+            >
+              {{ category.name }}
+              <span v-if="category.count" class="ml-1 text-xs opacity-70">({{ category.count }})</span>
+            </button>
+          </div>
+        </div>
+        <div v-if="showLeftScroll" class="absolute left-0 top-0 bottom-0 flex items-center bg-gradient-to-r from-white to-transparent pr-4">
+          <button @click="scrollLeft" class="p-1 bg-white rounded-full shadow-md">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
+        <div v-if="showRightScroll" class="absolute right-0 top-0 bottom-0 flex items-center bg-gradient-to-l from-white to-transparent pl-4">
+          <button @click="scrollRight" class="p-1 bg-white rounded-full shadow-md">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         </div>
       </div>
+
     </div>
 
     <!-- 게시글 목록 -->
@@ -195,6 +209,13 @@
                   <div class="flex items-center space-x-2 mb-1">
                     <span class="text-sm font-semibold text-gray-900">{{ comment.authorName }}</span>
                     <span class="text-xs text-gray-500">{{ formatDateTime(comment.createdAt) }}</span>
+                    <div v-if="comment.authorId === authStore.user?.id && !comment.isDeleted" class="flex-grow flex justify-end">
+                      <button @click.stop="deleteComment(comment.id)" class="p-1 hover:bg-gray-100 rounded-full">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                   <p class="text-sm text-gray-700">{{ comment.content }}</p>
                 </div>
@@ -295,7 +316,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
@@ -315,12 +336,21 @@ const newNotice = ref({
   content: ''
 })
 
-const categories = ref([
-  { id: 'all', name: '전체' },
-  { id: '공지', name: '공지' },
-  { id: '일정', name: '일정' },
-  { id: '안내', name: '안내' }
-])
+const categories = ref([])
+
+async function loadCategories() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const conventionId = user.conventionId
+    if (!conventionId) return;
+
+    const response = await apiClient.get(`/conventions/${conventionId}/notice-categories`)
+    categories.value = [{ id: 'all', name: '전체' }, ...response.data]
+  } catch (error) {
+    console.error('Failed to load categories:', error)
+    categories.value = [{ id: 'all', name: '전체' }]
+  }
+}
 
 const notices = ref([])
 
@@ -331,7 +361,7 @@ const importantNotices = computed(() =>
 const filteredNotices = computed(() => {
   let filtered = notices.value.filter(n => !n.isPinned)
   if (selectedCategory.value !== 'all') {
-    filtered = filtered.filter(n => n.category === selectedCategory.value)
+    filtered = filtered.filter(n => n.noticeCategoryId === selectedCategory.value)
   }
   return filtered
 })
@@ -355,15 +385,20 @@ function formatDateTime(dateStr) {
 }
 
 async function openNotice(notice) {
-  selectedNotice.value = { ...notice }
-  
-  // 조회수 증가 API 호출
-  apiClient.post(`/notices/${notice.id}/view`).catch(err => {
-    console.error('Failed to increment view count:', err)
-  })
-  
-  // 댓글 불러오기
-  await loadComments(notice.id)
+  try {
+    const response = await apiClient.get(`/notices/${notice.id}`)
+    selectedNotice.value = response.data
+    
+    // 조회수 증가 API 호출
+    apiClient.post(`/notices/${notice.id}/view`).catch(err => {
+      console.error('Failed to increment view count:', err)
+    })
+    
+    // 댓글 불러오기
+    await loadComments(notice.id)
+  } catch (error) {
+    console.error('Failed to open notice:', error)
+  }
 }
 
 function closeNotice() {
@@ -399,6 +434,19 @@ async function submitComment() {
   } catch (error) {
     console.error('Failed to submit comment:', error)
     alert('댓글 작성에 실패했습니다.')
+  }
+}
+
+async function deleteComment(commentId) {
+  if (!confirm("댓글을 삭제하시겠습니까?")) return;
+
+  try {
+    await apiClient.delete(`/notices/comments/${commentId}`);
+    const noticeId = selectedNotice.value.id;
+    await loadComments(noticeId);
+  } catch (error) {
+    console.error("Failed to delete comment:", error);
+    alert("댓글 삭제에 실패했습니다.");
   }
 }
 
@@ -454,7 +502,8 @@ async function loadNotices() {
 
     notices.value = (response.data.items || []).map(item => ({
       id: item.id,
-      category: '공지',
+      category: item.categoryName,
+      noticeCategoryId: item.noticeCategoryId,
       title: item.title,
       content: item.content,
       author: item.authorName || '관리자',
@@ -470,7 +519,33 @@ async function loadNotices() {
   }
 }
 
+const categoryContainer = ref(null)
+const showLeftScroll = ref(false)
+const showRightScroll = ref(false)
+
+const handleScroll = () => {
+  if (categoryContainer.value) {
+    showLeftScroll.value = categoryContainer.value.scrollLeft > 0
+    showRightScroll.value = categoryContainer.value.scrollLeft < categoryContainer.value.scrollWidth - categoryContainer.value.clientWidth
+  }
+}
+
+const scrollLeft = () => {
+  categoryContainer.value?.scrollBy({ left: -200, behavior: 'smooth' })
+}
+
+const scrollRight = () => {
+  categoryContainer.value?.scrollBy({ left: 200, behavior: 'smooth' })
+}
+
+watch(categories, () => {
+  setTimeout(() => {
+    handleScroll()
+  }, 100)
+})
+
 onMounted(() => {
+  loadCategories()
   loadNotices().then(() => {
     // router state에서 selectedNoticeId를 확인
     const state = history.state
@@ -485,3 +560,12 @@ onMounted(() => {
   })
 })
 </script>
+<style>
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+</style>

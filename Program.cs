@@ -147,6 +147,7 @@ var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSetting
 builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddScoped<IAuthService, LocalRAG.Services.Auth.AuthService>();
 builder.Services.AddScoped<INoticeService, LocalRAG.Services.Convention.NoticeService>();
+builder.Services.AddScoped<INoticeCategoryService, LocalRAG.Services.Convention.NoticeCategoryService>();
 builder.Services.AddSingleton<ISmsService, LocalRAG.Services.Auth.SmsService>();
 builder.Services.AddSingleton<IVerificationService, LocalRAG.Services.Auth.VerificationService>();
 builder.Services.AddHttpContextAccessor();

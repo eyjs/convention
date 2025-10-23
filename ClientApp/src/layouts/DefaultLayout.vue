@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
@@ -95,6 +95,13 @@ const navItems = computed(() => [
     badge: 0
   }
 ])
+
+watch(() => uiStore.isChatOpen, (isOpen) => {
+  if (isOpen && (!conventionId.value || !token.value)) {
+    uiStore.isChatOpen = false;
+    alert('채팅 기능이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.');
+  }
+});
 
 function navigateTo(path) {
   if (path === '/chat') {

@@ -124,6 +124,31 @@
     <!-- 캘린더 뷰 -->
     <div v-else class="px-4 py-6">
       <div class="bg-white rounded-xl shadow-sm p-4">
+        <!-- 캘린더 헤더: 월/년 표시 및 네비게이션 -->
+        <div class="flex items-center justify-between mb-6">
+          <button 
+            @click="changeMonth(-1)" 
+            class="p-2 hover:bg-gray-100 rounded-lg transition-all"
+          >
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          
+          <h3 class="text-lg font-bold text-gray-900">
+            {{ currentCalendarYear }}년 {{ currentCalendarMonth + 1 }}월
+          </h3>
+          
+          <button 
+            @click="changeMonth(1)" 
+            class="p-2 hover:bg-gray-100 rounded-lg transition-all"
+          >
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+        
         <div class="grid grid-cols-7 gap-2 mb-4">
           <div v-for="day in ['일', '월', '화', '수', '목', '금', '토']" :key="day" class="text-center text-xs font-bold text-gray-500 py-2">
             {{ day }}
@@ -213,16 +238,6 @@
             <h4 class="font-semibold text-gray-900">상세 설명</h4>
             <p class="text-gray-600 whitespace-pre-wrap leading-relaxed">{{ selectedSchedule.description }}</p>
           </div>
-
-          <!-- 액션 버튼 -->
-          <div class="flex space-x-3 pt-4">
-            <button class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200">
-              캘린더에 추가
-            </button>
-            <button class="flex-1 px-4 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700">
-              길찾기
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -250,7 +265,7 @@ const dates = computed(() => {
   const uniqueDates = [...new Set(allSchedules.value.map(s => s.date))].sort()
   
   return uniqueDates.map(dateStr => {
-    const date = new Date(dateStr)
+    const date = parseLocalDate(dateStr)
     const days = ['일', '월', '화', '수', '목', '금', '토']
     return {
       date: dateStr,
@@ -277,12 +292,18 @@ const groupedSchedules = computed(() => {
     schedules: grouped[date].sort((a, b) => a.startTime.localeCompare(b.startTime))
   }))
 })
+// 캘린더 현재 월/년 상태
+const currentCalendarYear = ref(new Date().getFullYear())
+const currentCalendarMonth = ref(new Date().getMonth())
+
 // 캘린더 날짜 생성
 const calendarDays = computed(() => {
   const days = []
   const today = new Date()
-  const currentMonth = today.getMonth()
-  const currentYear = today.getFullYear()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  
+  const currentMonth = currentCalendarMonth.value
+  const currentYear = currentCalendarYear.value
   
   const firstDay = new Date(currentYear, currentMonth, 1)
   const lastDay = new Date(currentYear, currentMonth + 1, 0)
@@ -291,13 +312,13 @@ const calendarDays = computed(() => {
   // 이전 달 날짜
   for (let i = startDay - 1; i >= 0; i--) {
     const date = new Date(currentYear, currentMonth, -i)
-    const dateStr = date.toISOString().split('T')[0]
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
     const daySchedules = allSchedules.value.filter(s => s.date === dateStr)
     days.push({
       date: dateStr,
       day: date.getDate(),
       isCurrentMonth: false,
-      isToday: false,
+      isToday: dateStr === todayStr,
       hasSchedule: daySchedules.length > 0,
       scheduleCount: daySchedules.length
     })
@@ -306,14 +327,14 @@ const calendarDays = computed(() => {
   // 현재 달 날짜
   for (let i = 1; i <= lastDay.getDate(); i++) {
     const date = new Date(currentYear, currentMonth, i)
-    const dateStr = date.toISOString().split('T')[0]
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
     const daySchedules = allSchedules.value.filter(s => s.date === dateStr)
     
     days.push({
       date: dateStr,
       day: i,
       isCurrentMonth: true,
-      isToday: dateStr === today.toISOString().split('T')[0],
+      isToday: dateStr === todayStr,
       hasSchedule: daySchedules.length > 0,
       scheduleCount: daySchedules.length
     })
@@ -322,14 +343,20 @@ const calendarDays = computed(() => {
   return days
 })
 
+// 날짜 문자열을 로컬 Date 객체로 변환 (타임존 이슈 방지)
+function parseLocalDate(dateStr) {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
 function formatDateHeader(dateStr) {
-  const date = new Date(dateStr)
+  const date = parseLocalDate(dateStr)
   const days = ['일', '월', '화', '수', '목', '금', '토']
   return `${date.getMonth() + 1}월 ${date.getDate()}일 (${days[date.getDay()]})`
 }
 
 function formatDate(dateStr) {
-  const date = new Date(dateStr)
+  const date = parseLocalDate(dateStr)
   const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
   return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${days[date.getDay()]}`
 }
@@ -347,15 +374,28 @@ function selectCalendarDay(day) {
   showCalendarView.value = false
 }
 
+function changeMonth(direction) {
+  currentCalendarMonth.value += direction
+  
+  if (currentCalendarMonth.value < 0) {
+    currentCalendarMonth.value = 11
+    currentCalendarYear.value -= 1
+  } else if (currentCalendarMonth.value > 11) {
+    currentCalendarMonth.value = 0
+    currentCalendarYear.value += 1
+  }
+}
+
 // API에서 일정 불러오기
 onMounted(async () => {
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
     const guestId = user.guestId
+    const conventionId = user.conventionId
     
-    if (!guestId) return
+    if (!guestId || !conventionId) return
     
-    const response = await apiClient.get(`/guest-schedules/${guestId}`)
+    const response = await apiClient.get(`/guest-schedules/${guestId}/${conventionId}`)
     
     allSchedules.value = response.data.map(item => ({
       id: item.id,
@@ -378,9 +418,15 @@ onMounted(async () => {
         .sort()
       
       selectedDate.value = futureDates.length > 0 ? futureDates[0] : allSchedules.value[0].date
+      
+      // 캘린더를 첫 번째 일정의 월로 초기화
+      const firstScheduleDate = parseLocalDate(allSchedules.value[0].date)
+      currentCalendarYear.value = firstScheduleDate.getFullYear()
+      currentCalendarMonth.value = firstScheduleDate.getMonth()
     }
   } catch (error) {
     console.error('Failed to load schedules:', error)
+    // 에러 시 사용자에게 피드백 제공 가능
   }
 })
 </script>

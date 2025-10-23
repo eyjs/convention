@@ -17,6 +17,21 @@
       <!-- 본문 -->
       <div class="flex-1 overflow-y-auto p-6">
         <form @submit.prevent="handleSubmit" class="space-y-6">
+          <!-- 카테고리 -->
+          <div>
+            <label for="category" class="block text-sm font-semibold text-gray-700 mb-2">카테고리</label>
+            <select
+              id="category"
+              v-model="form.noticeCategoryId"
+              class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option :value="null">카테고리 선택</option>
+              <option v-for="category in categories" :key="category.id" :value="category.id">
+                {{ category.name }}
+              </option>
+            </select>
+          </div>
+
           <!-- 제목 -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -154,6 +169,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import { noticeAPI } from '@/services/noticeService'
+import { categoryAPI } from '@/services/categoryService'
 import { uploadFile, validateFileExtension, validateFileSize, formatFileSize, handleQuillImageUpload } from '@/utils/fileUpload'
 
 export default {
@@ -174,13 +190,15 @@ export default {
     const saving = ref(false)
     const uploading = ref(false)
     const uploadProgress = ref(0)
+    const categories = ref([])
 
     // 폼 데이터
     const form = ref({
       title: '',
       content: '',
       isPinned: false,
-      attachments: []
+      attachments: [],
+      noticeCategoryId: null
     })
 
     // Quill 에디터 툴바 설정
@@ -205,6 +223,18 @@ export default {
     const closeModal = () => {
       if (saving.value) return
       emit('close')
+    }
+
+    const fetchCategories = async () => {
+      try {
+        // TODO: get conventionId from store or props
+        const conventionId = 1; 
+        const response = await categoryAPI.getNoticeCategories(conventionId);
+        categories.value = response.data;
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+        alert('카테고리를 불러오는데 실패했습니다.');
+      }
     }
 
     const handleFileSelect = async (event) => {
@@ -264,6 +294,7 @@ export default {
           title: form.value.title.trim(),
           content: form.value.content.trim(),
           isPinned: form.value.isPinned,
+          noticeCategoryId: form.value.noticeCategoryId,
           attachmentIds: form.value.attachments.map(a => a.id).filter(Boolean)
         }
 
@@ -271,7 +302,9 @@ export default {
           await noticeAPI.updateNotice(props.notice.id, data)
           alert('수정되었습니다.')
         } else {
-          await noticeAPI.createNotice(data)
+          // TODO: get conventionId from store or props
+          const conventionId = 1;
+          await noticeAPI.createNotice(conventionId, data)
           alert('등록되었습니다.')
         }
 
@@ -301,14 +334,16 @@ export default {
           title: props.notice.title || '',
           content: props.notice.content || '',
           isPinned: props.notice.isPinned || false,
-          attachments: props.notice.attachments || []
+          attachments: props.notice.attachments || [],
+          noticeCategoryId: props.notice.noticeCategoryId || null
         }
       } else {
         form.value = {
           title: '',
           content: '',
           isPinned: false,
-          attachments: []
+          attachments: [],
+          noticeCategoryId: null
         }
       }
     }
@@ -316,6 +351,7 @@ export default {
     // 생명주기
     onMounted(() => {
       initializeForm()
+      fetchCategories()
       
       // Quill 이미지 핸들러 설정 (약간의 지연 필요)
       setTimeout(() => {
@@ -334,6 +370,7 @@ export default {
       uploading,
       uploadProgress,
       form,
+      categories,
       editorToolbar,
       isEdit,
       isFormValid,

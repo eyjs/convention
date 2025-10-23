@@ -102,12 +102,10 @@ public class AuthService : IAuthService
     {
         try
         {
-            // BCrypt.Net.BCrypt Ŭ������ ���� �޼����� Verify�� ȣ���մϴ�.
             return BCrypt.Net.BCrypt.Verify(password, passwordHash);
         }
         catch (Exception)
-        {
-            // �߸��� ������ �ؽð� ������ ���ܰ� �߻��� �� �����Ƿ� false�� ��ȯ�մϴ�.
+        {   
             return false;
         }
     }

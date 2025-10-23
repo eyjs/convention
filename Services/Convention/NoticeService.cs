@@ -28,6 +28,7 @@ public class NoticeService : INoticeService
             .Where(n => n.ConventionId == conventionId && !n.IsDeleted)
             .Include(n => n.Author)
             .Include(n => n.Attachments)
+            .Include(n => n.NoticeCategory)
             .AsQueryable();
 
         // 검색 필터
@@ -58,6 +59,8 @@ public class NoticeService : INoticeService
                 IsPinned = n.IsPinned,
                 ViewCount = n.ViewCount,
                 AuthorName = n.Author.Name ?? "관리자",
+                NoticeCategoryId = n.NoticeCategoryId,
+                CategoryName = n.NoticeCategory != null ? n.NoticeCategory.Name : null,
                 CreatedAt = n.CreatedAt,
                 HasAttachment = n.Attachments.Any()
             })
@@ -77,6 +80,7 @@ public class NoticeService : INoticeService
         var notice = await _context.Notices
             .Include(n => n.Author)
             .Include(n => n.Attachments)
+            .Include(n => n.NoticeCategory)
             .FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
 
         if (notice == null)
@@ -104,6 +108,8 @@ public class NoticeService : INoticeService
             ViewCount = notice.ViewCount,
             AuthorName = notice.Author.Name ?? "관리자",
             AuthorId = notice.AuthorId,
+            NoticeCategoryId = notice.NoticeCategoryId,
+            CategoryName = notice.NoticeCategory?.Name,
             CreatedAt = notice.CreatedAt,
             UpdatedAt = notice.UpdatedAt,
             HasAttachment = notice.Attachments.Any(),
@@ -130,6 +136,7 @@ public class NoticeService : INoticeService
             Title = request.Title,
             Content = request.Content,
             IsPinned = request.IsPinned,
+            NoticeCategoryId = request.NoticeCategoryId,
             AuthorId = authorId,
             ConventionId = conventionId,
             CreatedAt = DateTime.Now
@@ -158,6 +165,7 @@ public class NoticeService : INoticeService
 
     public async Task<NoticeResponse> UpdateNoticeAsync(int id, UpdateNoticeRequest request, int userId)
     {
+        _logger.LogInformation("Updating notice {Id} by user {UserId}. Request: {@Request}", id, userId, request);
         var notice = await _context.Notices
             .Include(n => n.Attachments)
             .FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
@@ -173,6 +181,7 @@ public class NoticeService : INoticeService
         notice.Title = request.Title;
         notice.Content = request.Content;
         notice.IsPinned = request.IsPinned;
+        notice.NoticeCategoryId = request.NoticeCategoryId;
         notice.UpdatedAt = DateTime.Now;
 
         // 첨부파일 업데이트

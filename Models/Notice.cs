@@ -12,6 +12,7 @@ public class Notice
     public int ViewCount { get; set; } = 0;
     public int AuthorId { get; set; }
     public int ConventionId { get; set; }
+    public int? NoticeCategoryId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; } = false;
@@ -19,6 +20,7 @@ public class Notice
     // Navigation Properties
     public virtual User Author { get; set; } = null!;
     public virtual Convention Convention { get; set; } = null!;
+    public virtual NoticeCategory? NoticeCategory { get; set; }
     public virtual ICollection<FileAttachment> Attachments { get; set; } = new List<FileAttachment>();
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 }

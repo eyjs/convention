@@ -8,6 +8,7 @@ public class CreateNoticeRequest
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public bool IsPinned { get; set; } = false;
+    public int? NoticeCategoryId { get; set; }
     public List<int>? AttachmentIds { get; set; }
 }
 
@@ -19,6 +20,7 @@ public class UpdateNoticeRequest
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public bool IsPinned { get; set; } = false;
+    public int? NoticeCategoryId { get; set; }
     public List<int>? AttachmentIds { get; set; }
 }
 
@@ -34,6 +36,8 @@ public class NoticeResponse
     public int ViewCount { get; set; }
     public string AuthorName { get; set; } = string.Empty;
     public int AuthorId { get; set; }
+    public int? NoticeCategoryId { get; set; }
+    public string? CategoryName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool HasAttachment { get; set; }
@@ -51,6 +55,8 @@ public class NoticeListItemResponse
     public bool IsPinned { get; set; }
     public int ViewCount { get; set; }
     public string AuthorName { get; set; } = string.Empty;
+    public int? NoticeCategoryId { get; set; }
+    public string? CategoryName { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool HasAttachment { get; set; }
 }
