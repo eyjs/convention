@@ -45,6 +45,13 @@ public class Guest
     public string? Affiliation { get; set; }
 
     /// <summary>
+    /// 그룹명 (일정 템플릿 일괄 배정용)
+    /// 예: "A그룹", "VIP", "일반참석자" 등
+    /// </summary>
+    [MaxLength(100)]
+    public string? GroupName { get; set; }
+
+    /// <summary>
     /// 비회원 접근용 고유 토큰
     /// </summary>
     [MaxLength(64)]

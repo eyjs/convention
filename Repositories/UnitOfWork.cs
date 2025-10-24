@@ -34,6 +34,8 @@ public class UnitOfWork : IUnitOfWork
     private ISectionRepository? _sections;
     private IOwnerRepository? _owners;
     private IVectorStoreRepository? _vectorStores;
+    private IRepository<Entities.Action.ConventionAction>? _conventionActions;
+    private IRepository<Entities.GuestActionStatus>? _guestActionStatuses;
 
     public UnitOfWork(ConventionDbContext context)
     {
@@ -80,6 +82,12 @@ public class UnitOfWork : IUnitOfWork
 
     public IVectorStoreRepository VectorStores =>
         _vectorStores ??= new VectorStoreRepository(_context);
+
+    public IRepository<Entities.Action.ConventionAction> ConventionActions =>
+        _conventionActions ??= new Repository<Entities.Action.ConventionAction>(_context);
+
+    public IRepository<Entities.GuestActionStatus> GuestActionStatuses =>
+        _guestActionStatuses ??= new Repository<Entities.GuestActionStatus>(_context);
 
     // ============================================================
     // Transaction Methods

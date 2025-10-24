@@ -157,6 +157,12 @@ builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextFactory, UserContextFactory>();
 
+// --- Excel 업로드 서비스 등록 (리팩토링된 업로드 시스템) ---
+builder.Services.AddScoped<IGuestUploadService, LocalRAG.Services.Upload.GuestUploadService>();
+builder.Services.AddScoped<IScheduleTemplateUploadService, LocalRAG.Services.Upload.ScheduleTemplateUploadService>();
+builder.Services.AddScoped<IAttributeUploadService, LocalRAG.Services.Upload.AttributeUploadService>();
+builder.Services.AddScoped<IGroupScheduleMappingService, LocalRAG.Services.Upload.GroupScheduleMappingService>();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

@@ -28,6 +28,8 @@ public interface IUnitOfWork : IDisposable
     ISectionRepository Sections { get; }
     IOwnerRepository Owners { get; }
     IVectorStoreRepository VectorStores { get; }
+    IRepository<Entities.Action.ConventionAction> ConventionActions { get; }
+    IRepository<Entities.GuestActionStatus> GuestActionStatuses { get; }
 
 
     // --- Transaction Methods ---

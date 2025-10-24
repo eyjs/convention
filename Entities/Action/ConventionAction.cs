@@ -27,6 +27,11 @@ public class ConventionAction
     public string Title { get; set; } = string.Empty;
 
     /// <summary>
+    /// 액션의 상세 설명 (HTML 지원)
+    /// </summary>
+    public string? Description { get; set; }
+
+    /// <summary>
     /// 액션의 마감일 (카운트다운 타이머에 사용)
     /// </summary>
     public DateTime? Deadline { get; set; }

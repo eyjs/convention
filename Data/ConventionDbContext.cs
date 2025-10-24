@@ -372,12 +372,14 @@ public class ConventionDbContext : DbContext
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.Property(e => e.ActionType).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(4000); // 상세 설명 (HTML 지원)
             entity.Property(e => e.MapsTo).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.ConfigJson).HasMaxLength(4000); // JSON 설정
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("getdate()");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.OrderNum).HasDefaultValue(0);
-            
+
             entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_ConventionAction_ConventionId");
             entity.HasIndex(e => e.ActionType).HasDatabaseName("IX_ConventionAction_ActionType");
             entity.HasIndex(e => new { e.ConventionId, e.ActionType })

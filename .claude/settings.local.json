@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(python analyze_excel.py:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
