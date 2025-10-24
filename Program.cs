@@ -145,17 +145,17 @@ builder.Services.AddScoped<ConventionAccessService>();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
 
 builder.Services.AddSingleton(jwtSettings);
-builder.Services.AddScoped<IAuthService, LocalRAG.Services.Auth.AuthService>();
-builder.Services.AddScoped<INoticeService, LocalRAG.Services.Convention.NoticeService>();
-builder.Services.AddScoped<INoticeCategoryService, LocalRAG.Services.Convention.NoticeCategoryService>();
-builder.Services.AddScoped<ISurveyService, LocalRAG.Services.Convention.SurveyService>();
-builder.Services.AddSingleton<ISmsService, LocalRAG.Services.Auth.SmsService>();
-builder.Services.AddSingleton<IVerificationService, LocalRAG.Services.Auth.VerificationService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<INoticeService, NoticeService>();
+builder.Services.AddScoped<INoticeCategoryService, NoticeCategoryService>();
+builder.Services.AddScoped<ISurveyService, SurveyService>();
+builder.Services.AddSingleton<ISmsService, SmsService>();
+builder.Services.AddSingleton<IVerificationService, VerificationService>();
 
 // 파일 업로드 서비스 등록
-builder.Services.AddScoped<IFileUploadService, LocalRAG.Services.Shared.FileUploadService>();
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<LocalRAG.Interfaces.IUserContextFactory, LocalRAG.Services.Shared.UserContextFactory>();
+builder.Services.AddScoped<IUserContextFactory, UserContextFactory>();
 
 builder.Services.AddAuthentication(options =>
 {
