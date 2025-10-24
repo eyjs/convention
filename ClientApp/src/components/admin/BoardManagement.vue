@@ -226,7 +226,7 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">내용 *</label>
-            <textarea v-model="noticeForm.content" rows="12" placeholder="내용을 입력하세요" class="w-full px-3 py-2 border rounded-lg resize-none"></textarea>
+            <RichTextEditor v-model="noticeForm.content" />
           </div>
 
           <div class="flex justify-end space-x-3 pt-4">
@@ -319,6 +319,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import apiClient from '@/services/api'
+import RichTextEditor from '@/components/common/RichTextEditor.vue'
 
 const props = defineProps({
   conventionId: { type: Number, required: true }
@@ -426,6 +427,7 @@ async function saveNotice() {
       ...noticeForm.value,
       attachmentIds: noticeForm.value.attachments?.map(a => a.id) || []
     }
+    console.log('Saving notice with payload:', payload);
 
     if (editingNotice.value) {
       await apiClient.put(`/admin/notices/${editingNotice.value.id}`, payload)
@@ -435,7 +437,7 @@ async function saveNotice() {
     await loadNotices()
     closeModal()
   } catch (error) {
-    console.error('Failed to save notice:', error)
+    console.error('Failed to save notice:', error.response || error);
     alert('저장에 실패했습니다')
   }
 }
@@ -444,10 +446,11 @@ async function deleteNotice(id) {
   if (!confirm('삭제하시겠습니까?')) return
 
   try {
+    console.log('Deleting notice with id:', id);
     await apiClient.delete(`/admin/notices/${id}`)
     await loadNotices()
   } catch (error) {
-    console.error('Failed to delete notice:', error)
+    console.error('Failed to delete notice:', error.response || error);
     alert('삭제에 실패했습니다')
   }
 }

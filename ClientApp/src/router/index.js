@@ -148,6 +148,17 @@ const routes = [
     }
   },
   {
+    path: '/feature/survey/:actionType',
+    name: 'Survey',
+    component: () => import('@/views/feature/Survey.vue'),
+    meta: {
+      title: 'Survey',
+      requiresAuth: true,
+      layout: 'DefaultLayout',
+      showNav: false
+    }
+  },
+  {
     path: '/participants',
     name: 'Participants',
     component: () => import('@/views/Participants.vue'),

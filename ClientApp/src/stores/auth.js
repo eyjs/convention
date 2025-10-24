@@ -79,9 +79,9 @@ export const useAuthStore = defineStore('auth', () => {
             // 1. 인증 관련 상태와 localStorage를 먼저 비웁니다.
             accessToken.value = null
             refreshToken.value = null
-            user.value = null
-            conventions.value = []
-
+                    user.value = null
+                    conventions.value = []
+                    checklistStatus.value = null
             localStorage.removeItem('accessToken')
             localStorage.removeItem('refreshToken')
             localStorage.removeItem('user')

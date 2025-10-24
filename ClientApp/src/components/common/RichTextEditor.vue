@@ -5,6 +5,7 @@
       v-model:content="content"
       content-type="html"
       :toolbar="toolbarOptions"
+      :modules="editorModules"
       @ready="onEditorReady"
       theme="snow"
       :style="{ height: editorHeight }"
@@ -14,9 +15,22 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { QuillEditor } from '@vueup/vue-quill'
+import { QuillEditor, Quill } from '@vueup/vue-quill'
+import BlotFormatter from 'quill-blot-formatter'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import apiClient from '@/services/api'
+
+if (!Quill.imports['modules/blotFormatter']) {
+  Quill.register('modules/blotFormatter', BlotFormatter)
+}
+
+const editorModules = [
+  {
+    name: 'blotFormatter',
+    module: BlotFormatter,
+    options: {},
+  },
+];
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -87,12 +101,8 @@ async function uploadImage(file) {
   const formData = new FormData()
   formData.append('file', file)
 
-  const today = new Date()
-  const dateFolder = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
-
-  const response = await apiClient.post('/upload/image', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    params: { dateFolder }
+  const response = await apiClient.post('/file/upload/image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
   })
 
   return response.data.url
@@ -198,8 +208,10 @@ defineExpose({
   font-size: 14px;
 }
 
-.ql-editor {
-  min-height: 200px;
+:deep(.ql-editor) {
+  all: revert;
+  min-height: 400px;
+  padding: 20px;
 }
 
 .ql-editor img {
@@ -215,5 +227,16 @@ defineExpose({
 .ql-editor.ql-blank::before {
   color: #9ca3af;
   font-style: normal;
+}
+
+.quill-editor-wrapper :deep(.ql-editor ol),
+.quill-editor-wrapper :deep(.ql-editor ul) {
+  padding-left: 1.5em;
+}
+.quill-editor-wrapper :deep(.ql-editor ol > li) {
+  list-style-type: decimal;
+}
+.quill-editor-wrapper :deep(.ql-editor ul > li) {
+  list-style-type: disc;
 }
 </style>

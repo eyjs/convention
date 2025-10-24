@@ -40,9 +40,11 @@ public class FileUploadService : IFileUploadService
         // 파일 검증
         ValidateImageFile(file);
 
-        // 날짜 폴더 생성 (예: 20250114)
-        var folder = dateFolder ?? DateTime.Now.ToString("yyyyMMdd");
-        var uploadPath = Path.Combine(_uploadBasePath, folder);
+        // 날짜 폴더 생성 (YYYY/1~365)
+        var year = DateTime.Now.Year.ToString();
+        var dayOfYear = DateTime.Now.DayOfYear.ToString();
+        var folderPath = Path.Combine(year, dayOfYear);
+        var uploadPath = Path.Combine(_uploadBasePath, folderPath);
         
         if (!Directory.Exists(uploadPath))
         {
@@ -60,8 +62,8 @@ public class FileUploadService : IFileUploadService
         }
 
         // 상대 경로 및 URL 생성
-        var relativePath = $"{folder}/{fileName}";
-        var url = $"{_baseUrl}/{relativePath}";
+        var relativePath = $"{year}/{dayOfYear}/{fileName}";
+        var url = $"/api/file/viewer/{year}/{dayOfYear}/{fileName}";
 
         _logger.LogInformation("Image uploaded: {FileName} -> {Path}", file.FileName, filePath);
 
@@ -81,8 +83,10 @@ public class FileUploadService : IFileUploadService
         // 파일 검증 (악성 파일 차단)
         ValidateFile(file);
 
-        var folder = dateFolder ?? DateTime.Now.ToString("yyyyMMdd");
-        var uploadPath = Path.Combine(_uploadBasePath, folder);
+        var year = DateTime.Now.Year.ToString();
+        var dayOfYear = DateTime.Now.DayOfYear.ToString();
+        var folderPath = Path.Combine(year, dayOfYear);
+        var uploadPath = Path.Combine(_uploadBasePath, folderPath);
         
         if (!Directory.Exists(uploadPath))
         {
@@ -97,8 +101,8 @@ public class FileUploadService : IFileUploadService
             await file.CopyToAsync(stream);
         }
 
-        var relativePath = $"{folder}/{fileName}";
-        var url = $"{_baseUrl}/{relativePath}";
+        var relativePath = $"{year}/{dayOfYear}/{fileName}";
+        var url = $"/api/file/viewer/{year}/{dayOfYear}/{fileName}";
 
         _logger.LogInformation("File uploaded: {FileName} -> {Path}", file.FileName, filePath);
 
@@ -133,8 +137,10 @@ public class FileUploadService : IFileUploadService
                 throw new InvalidOperationException("파일 크기가 10MB를 초과합니다.");
             }
 
-            var folder = dateFolder ?? DateTime.Now.ToString("yyyyMMdd");
-            var uploadPath = Path.Combine(_uploadBasePath, folder);
+            var year = DateTime.Now.Year.ToString();
+            var dayOfYear = DateTime.Now.DayOfYear.ToString();
+            var folderPath = Path.Combine(year, dayOfYear);
+            var uploadPath = Path.Combine(_uploadBasePath, folderPath);
             
             if (!Directory.Exists(uploadPath))
             {
@@ -147,8 +153,8 @@ public class FileUploadService : IFileUploadService
             // 파일 저장
             await System.IO.File.WriteAllBytesAsync(filePath, fileBytes);
 
-            var relativePath = $"{folder}/{newFileName}";
-            var url = $"{_baseUrl}/{relativePath}";
+            var relativePath = $"{year}/{dayOfYear}/{newFileName}";
+            var url = $"/api/file/viewer/{year}/{dayOfYear}/{newFileName}";
 
             _logger.LogInformation("Base64 image uploaded: {FileName} -> {Path}", fileName, filePath);
 
@@ -199,6 +205,11 @@ public class FileUploadService : IFileUploadService
     public string GetFileUrl(string relativePath)
     {
         return $"{_baseUrl}/{relativePath}";
+    }
+
+    public string GetUploadBasePath()
+    {
+        return _uploadBasePath;
     }
 
     #region Private Methods

@@ -42,6 +42,8 @@ public class ConventionDbContext : DbContext
     public DbSet<VectorDataEntry> VectorDataEntries { get; set; } //  DbSet 추가
     
     public DbSet<LlmSetting> LlmSettings { get; set; }
+    public DbSet<SurveyResponse> SurveyResponses { get; set; }
+    public DbSet<SurveyResponseAnswer> SurveyResponseAnswers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -428,6 +430,32 @@ public class ConventionDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.AuthorId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SurveyResponse>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SubmittedAt).HasDefaultValueSql("getdate()");
+
+            entity.HasOne(e => e.ConventionAction)
+                .WithMany()
+                .HasForeignKey(e => e.ConventionActionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Guest)
+                .WithMany()
+                .HasForeignKey(e => e.GuestId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<SurveyResponseAnswer>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.SurveyResponse)
+                .WithMany(r => r.Answers)
+                .HasForeignKey(e => e.SurveyResponseId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

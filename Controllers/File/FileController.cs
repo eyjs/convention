@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using LocalRAG.Interfaces;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace LocalRAG.Controllers.File;
 
@@ -171,6 +173,114 @@ public class FileController : ControllerBase
             return StatusCode(500, new { message = "삭제 중 오류가 발생했습니다." });
         }
     }
+
+    [HttpGet("viewer/{year}/{dayOfYear}/{fileName}")]
+#pragma warning disable CA1416 // Validate platform compatibility
+    public IActionResult GetImage(string year, string dayOfYear, string fileName, [FromQuery] string? resize = null)
+    {
+        var basePath = _fileUploadService.GetUploadBasePath();
+        var filePath = Path.Combine(basePath, year, dayOfYear, fileName);
+
+        if (!System.IO.File.Exists(filePath))
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            string extension = Path.GetExtension(filePath);
+            string lowerExtension = extension.Replace(".", "").ToLower();
+
+            using Image origin = ExifRotate(Image.FromFile(filePath));
+            using Image image = ResizeImageCommon(origin, resize);
+            
+            var stream = new MemoryStream();
+            image.Save(stream, GetImageFormat(lowerExtension));
+            stream.Position = 0;
+
+            return File(stream, $"image/{lowerExtension}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to process image {FilePath}", filePath);
+            // Return a placeholder or error image? For now, just return a server error.
+            return StatusCode(500, "Failed to process image.");
+        }
+    }
+
+    #region Image Processing Helpers
+
+    private static Image ExifRotate(Image img)
+    {
+        if (!img.PropertyIdList.Contains(0x0112)) return img;
+
+        var prop = img.GetPropertyItem(0x0112);
+        if (prop == null || prop.Value == null) return img;
+        int val = BitConverter.ToUInt16(prop.Value, 0);
+        var rot = RotateFlipType.RotateNoneFlipNone;
+
+        if (val == 3 || val == 4)
+            rot = RotateFlipType.Rotate180FlipNone;
+        else if (val == 5 || val == 6)
+            rot = RotateFlipType.Rotate90FlipNone;
+        else if (val == 7 || val == 8)
+            rot = RotateFlipType.Rotate270FlipNone;
+
+        if (val == 2 || val == 4 || val == 5 || val == 7)
+            rot |= RotateFlipType.RotateNoneFlipX;
+
+        if (rot != RotateFlipType.RotateNoneFlipNone)
+            img.RotateFlip(rot);
+
+        return img;
+    }
+
+    private static Image ResizeImageCommon(Image origin, string? resize)
+    {
+        if (string.IsNullOrEmpty(resize)) return origin;
+
+        int width, height;
+        try
+        {
+            var parts = resize.Split('x');
+            width = int.Parse(parts[0]);
+            height = int.Parse(parts[1]);
+        }
+        catch
+        {
+            return origin; // Invalid resize format
+        }
+
+        if (width <= 0 || height <= 0) return origin;
+
+        var newImage = new Bitmap(width, height);
+        using (var graphics = Graphics.FromImage(newImage))
+        {
+            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            graphics.DrawImage(origin, 0, 0, width, height);
+        }
+
+        return newImage;
+    }
+
+    private static ImageFormat GetImageFormat(string lowerExtension)
+    {
+        return lowerExtension switch
+        {
+            "jpg" or "jpeg" => ImageFormat.Jpeg,
+            "png" => ImageFormat.Png,
+            "gif" => ImageFormat.Gif,
+            "bmp" => ImageFormat.Bmp,
+            "tiff" => ImageFormat.Tiff,
+            "ico" => ImageFormat.Icon,
+            _ => ImageFormat.Jpeg,
+        };
+    }
+
+    #endregion
+#pragma warning restore CA1416 // Validate platform compatibility
 }
 
 public record Base64UploadRequest(

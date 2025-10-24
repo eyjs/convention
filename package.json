@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "quill-blot-formatter": "^1.0.5",
+    "v-viewer": "^3.0.22"
+  }
+}

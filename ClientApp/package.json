@@ -20,6 +20,8 @@
     "lucide-vue-next": "^0.279.0",
     "pinia": "^2.1.6",
     "quill": "^2.0.2",
+    "v-viewer": "^3.0.22",
+    "viewerjs": "^1.11.7",
     "vue": "^3.3.4",
     "vue-router": "^4.2.4"
   },

@@ -305,12 +305,15 @@ onMounted(async () => {
   try {
     const conventionId = conventionStore.currentConvention?.id;
     if (conventionId) {
-      const response = await apiClient.get(`/conventions/${conventionId}/actions/urgent`)
-      const actions = response.data || []
+      const actionsResponse = await apiClient.get(`/conventions/${conventionId}/actions/urgent`)
+      const statusesResponse = await apiClient.get(`/conventions/${conventionId}/actions/statuses`)
+      const actions = actionsResponse.data || []
+      const statuses = statusesResponse.data || []
       
       if (actions.length > 0) {
-        // ConventionAction 데이터를 ChecklistProgress 형식으로 변환
-        const completedCount = 0 // TODO: GuestActionStatus로 완료 여부 확인 필요
+        const statusMap = new Map(statuses.map(s => [s.conventionActionId, s]));
+        const completedCount = actions.filter(a => statusMap.get(a.id)?.isComplete).length;
+
         checklistStatus.value = {
           totalItems: actions.length,
           completedItems: completedCount,
@@ -320,7 +323,7 @@ onMounted(async () => {
             title: action.title,
             deadline: action.deadline,
             navigateTo: action.mapsTo,
-            isComplete: false // TODO: GuestActionStatus로 확인
+            isComplete: statusMap.get(action.id)?.isComplete || false
           }))
         }
       }

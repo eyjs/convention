@@ -148,8 +148,12 @@ builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddScoped<IAuthService, LocalRAG.Services.Auth.AuthService>();
 builder.Services.AddScoped<INoticeService, LocalRAG.Services.Convention.NoticeService>();
 builder.Services.AddScoped<INoticeCategoryService, LocalRAG.Services.Convention.NoticeCategoryService>();
+builder.Services.AddScoped<ISurveyService, LocalRAG.Services.Convention.SurveyService>();
 builder.Services.AddSingleton<ISmsService, LocalRAG.Services.Auth.SmsService>();
 builder.Services.AddSingleton<IVerificationService, LocalRAG.Services.Auth.VerificationService>();
+
+// 파일 업로드 서비스 등록
+builder.Services.AddScoped<IFileUploadService, LocalRAG.Services.Shared.FileUploadService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LocalRAG.Interfaces.IUserContextFactory, LocalRAG.Services.Shared.UserContextFactory>();
 
@@ -217,7 +221,16 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-app.UseStaticFiles();
+// 정적 파일 서비스 설정
+app.UseStaticFiles(); // wwwroot 폴더
+
+// 업로드된 파일 서비스 설정 (d:\home 폴더)
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine("d:", "home")),
+    RequestPath = "/uploads"
+});
 
 app.UseSession();  // 세션 미들웨어 추가
 

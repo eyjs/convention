@@ -1,7 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
 using LocalRAG.DTOs.Action;
+using LocalRAG.Models;
+using System.Security.Claims;
 
 namespace LocalRAG.Controllers.Convention;
 
@@ -37,8 +40,6 @@ public class GuestActionController : ControllerBase
                        a.IsActive && 
                        a.Deadline.HasValue &&
                        a.Deadline.Value > now) // 미래 마감기한만
-            .OrderBy(a => a.Deadline) // 가장 가까운 순
-            .Take(3)
             .Select(a => new
             {
                 a.Id,
@@ -47,8 +48,8 @@ public class GuestActionController : ControllerBase
                 a.Deadline,
                 a.MapsTo,
                 a.IsRequired,
-                IconClass = a.IconClass ?? a.Template.IconClass,
-                Category = a.Category ?? a.Template.Category
+                IconClass = a.IconClass ?? (a.Template == null ? null : a.Template.IconClass),
+                Category = a.Category ?? (a.Template == null ? null : a.Template.Category)
             })
             .ToListAsync();
 
@@ -74,12 +75,29 @@ public class GuestActionController : ControllerBase
                 a.Deadline,
                 a.MapsTo,
                 a.IsRequired,
-                IconClass = a.IconClass ?? a.Template.IconClass,
-                Category = a.Category ?? a.Template.Category
+                IconClass = a.IconClass ?? (a.Template == null ? null : a.Template.IconClass),
+                Category = a.Category ?? (a.Template == null ? null : a.Template.Category)
             })
             .ToListAsync();
 
         return Ok(actions);
+    }
+
+    [Authorize]
+    [HttpGet("statuses")]
+    public async Task<ActionResult> GetActionStatuses(int conventionId)
+    {
+        var guestIdClaim = User.FindFirst("GuestId");
+        if (guestIdClaim == null || !int.TryParse(guestIdClaim.Value, out int guestId))
+        {
+            return Unauthorized("게스트 정보를 확인할 수 없습니다.");
+        }
+
+        var statuses = await _context.GuestActionStatuses
+            .Where(s => s.GuestId == guestId && s.ConventionAction != null && s.ConventionAction.ConventionId == conventionId)
+            .ToListAsync();
+
+        return Ok(statuses);
     }
 
     /// <summary>
@@ -109,5 +127,43 @@ public class GuestActionController : ControllerBase
             IconClass = action.IconClass ?? action.Template?.IconClass,
             Category = action.Category ?? action.Template?.Category
         });
+    }
+
+    [Authorize]
+    [HttpPost("{actionType}/complete")]
+    public async Task<IActionResult> CompleteAction(int conventionId, string actionType, [FromBody] ActionResponseDto responseDto)
+    {
+        var guestIdClaim = User.FindFirst("GuestId");
+        if (guestIdClaim == null || !int.TryParse(guestIdClaim.Value, out int guestId))
+        {
+            return Unauthorized("게스트 정보를 확인할 수 없습니다.");
+        }
+
+        var action = await _context.ConventionActions.FirstOrDefaultAsync(a => a.ConventionId == conventionId && a.ActionType == actionType);
+        if (action == null)
+        {
+            return NotFound(new { message = "액션을 찾을 수 없습니다." });
+        }
+
+        var status = await _context.GuestActionStatuses.FirstOrDefaultAsync(s => s.GuestId == guestId && s.ConventionActionId == action.Id);
+        if (status == null)
+        {
+            status = new GuestActionStatus
+            {
+                GuestId = guestId,
+                ConventionActionId = action.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.GuestActionStatuses.Add(status);
+        }
+
+        status.IsComplete = true;
+        status.CompletedAt = DateTime.UtcNow;
+        status.ResponseDataJson = responseDto.ResponseDataJson;
+        status.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "액션이 완료되었습니다." });
     }
 }

@@ -173,8 +173,8 @@
           </div>
 
           <!-- 본문 -->
-          <div class="prose max-w-none mb-6">
-            <div class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ selectedNotice.content }}</div>
+          <div class="mb-6" v-viewer>
+            <QuillViewer :content="selectedNotice.content" @image-clicked="openImageViewer" />
           </div>
 
           <!-- 첨부파일 -->
@@ -289,12 +289,8 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">내용</label>
-            <textarea
-              v-model="newNotice.content"
-              rows="10"
-              placeholder="내용을 입력하세요"
-              class="w-full px-3 py-2 border rounded-lg resize-none"
-            ></textarea>
+            <!-- Quill 에디터 -->
+            <div ref="editorRef" class="border rounded-lg" style="min-height: 300px;"></div>
           </div>
 
           <div class="flex justify-end space-x-3 pt-4">
@@ -320,6 +316,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
+import { useQuillEditor } from '@/composables/useQuillEditor'
+import QuillViewer from '@/components/common/QuillViewer.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -329,11 +327,18 @@ const selectedCategory = ref('all')
 const selectedNotice = ref(null)
 const showWriteModal = ref(false)
 const newComment = ref('')
+
 const newNotice = ref({
   category: '공지',
   isPinned: false,
   title: '',
   content: ''
+})
+
+// Quill 에디터 초기화
+const { editorRef, content: editorContent, setContent, getHTML } = useQuillEditor({
+  placeholder: '내용을 입력하세요...',
+  theme: 'snow'
 })
 
 const categories = ref([])
@@ -458,16 +463,28 @@ function closeWriteModal() {
     title: '',
     content: ''
   }
+  // Quill 에디터 내용 초기화
+  setContent('')
 }
 
 async function submitNotice() {
-  if (!newNotice.value.title || !newNotice.value.content) return
+  // Quill 에디터에서 HTML 내용 가져오기
+  const htmlContent = getHTML()
+  
+  if (!newNotice.value.title || !htmlContent || htmlContent === '<p><br></p>') {
+    alert('제목과 내용을 모두 입력해주세요.')
+    return
+  }
 
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
     const conventionId = user.conventionId
 
-    await apiClient.post('/notices', newNotice.value, {
+    // Quill 에디터 내용을 newNotice에 할당
+    await apiClient.post('/notices', {
+      ...newNotice.value,
+      content: htmlContent
+    }, {
       params: { conventionId }
     })
 

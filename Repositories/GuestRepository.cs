@@ -97,7 +97,7 @@ public class GuestRepository : Repository<Guest>, IGuestRepository
             .GroupBy(gst => gst.GuestId)
             .ToDictionaryAsync(
                 g => g.Key,
-                g => g.SelectMany(gst => gst.ScheduleTemplate?.ScheduleItems ?? Enumerable.Empty<ScheduleItem>())
+                g => g.Where(gst => gst.ScheduleTemplate != null).SelectMany(gst => gst.ScheduleTemplate!.ScheduleItems)
                       .OrderBy(si => si.ScheduleDate).ThenBy(si => si.StartTime)
                       .ToList(),
                 cancellationToken

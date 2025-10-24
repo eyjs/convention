@@ -9,6 +9,7 @@ public interface IFileUploadService
     Task<FileUploadResult> UploadBase64ImageAsync(string base64Data, string fileName, string? dateFolder = null);
     Task<bool> DeleteFileAsync(string filePath);
     string GetFileUrl(string relativePath);
+    string GetUploadBasePath();
 }
 
 public record FileUploadResult(
