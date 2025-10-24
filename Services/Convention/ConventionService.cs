@@ -1,6 +1,6 @@
-using LocalRAG.Models;
+using LocalRAG.Entities;
 using LocalRAG.Repositories;
-using ConventionModel = LocalRAG.Models.Convention;
+using ConventionModel = LocalRAG.Entities.Convention;
 
 namespace LocalRAG.Services.Convention;
 
@@ -119,7 +119,7 @@ public class ConventionService
     /// - 여러 SaveChangesAsync 호출이 필요한 경우
     /// - 중간 결과를 확인하고 조건부로 진행해야 하는 경우
     /// </summary>
-    public async Task RegisterGuestAsync(Models.Guest guest)
+    public async Task RegisterGuestAsync(Entities.Guest guest)
     {
         await _unitOfWork.BeginTransactionAsync();
 
@@ -259,7 +259,7 @@ public class ConventionService
     /// 
     /// Repository 특화 메서드 활용
     /// </summary>
-    public async Task<IEnumerable<Models.Guest>> SearchGuestsAsync(
+    public async Task<IEnumerable<Entities.Guest>> SearchGuestsAsync(
         string searchKeyword,
         int? conventionId = null)
     {
@@ -280,7 +280,7 @@ public class ConventionService
     /// - 데이터베이스 왕복 횟수 감소
     /// - 성능 향상
     /// </summary>
-    public async Task<int> BulkRegisterGuestsAsync(List<Models.Guest> guests)
+    public async Task<int> BulkRegisterGuestsAsync(List<Entities.Guest> guests)
     {
         // 기본값 설정
         foreach (var guest in guests)

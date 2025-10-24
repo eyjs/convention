@@ -1,6 +1,6 @@
 using LocalRAG.Data;
+using LocalRAG.DTOs.NoticeModels;
 using LocalRAG.Interfaces;
-using LocalRAG.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

@@ -1,7 +1,7 @@
 // ----------------- ChatIntentRouter.cs (수정된 최종 버전) -----------------
 
+using LocalRAG.DTOs.ChatModels;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
 
 namespace LocalRAG.Services.Chat; // 네임스페이스는 기존 프로젝트에 맞게 확인해주세요.
 

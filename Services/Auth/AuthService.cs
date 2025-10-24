@@ -6,8 +6,8 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using LocalRAG.Configuration;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
 using BCrypt.Net;
+using LocalRAG.Entities;
 
 namespace LocalRAG.Services.Auth;
 

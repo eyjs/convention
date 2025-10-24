@@ -1,5 +1,5 @@
-﻿using LocalRAG.Interfaces;
-using LocalRAG.Models;
+﻿using LocalRAG.DTOs.ChatModels;
+using LocalRAG.Interfaces;
 
 namespace LocalRAG.Services.Chat;
 

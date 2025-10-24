@@ -3,7 +3,7 @@ using LocalRAG.Configuration;
 using LocalRAG.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace LocalRAG.Controllers;
+namespace LocalRAG.Controllers.System;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -104,7 +104,7 @@ public class EnvironmentController : ControllerBase
             return StatusCode(500, new
             {
                 Error = "Database status check failed",
-                Message = ex.Message,
+                ex.Message,
                 Timestamp = DateTime.Now
             });
         }

@@ -1,5 +1,5 @@
+using LocalRAG.DTOs.ChatModels;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
 using System.Text;
 using System.Text.Json;
 

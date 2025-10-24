@@ -1,7 +1,7 @@
 // ----------------- Llama3Provider.cs (수정된 최종 버전) -----------------
 
+using LocalRAG.DTOs.ChatModels;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;

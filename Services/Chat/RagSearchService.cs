@@ -1,7 +1,6 @@
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
 using System.Text.Json; // For potential metadata parsing if needed in the future
-using LocalRAG.Models.DTOs; // Assuming SourceInfo is here
+using LocalRAG.DTOs.ChatModels; // Assuming SourceInfo is here
 
 namespace LocalRAG.Services.Chat;
 

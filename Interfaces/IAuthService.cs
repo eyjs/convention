@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using LocalRAG.Models;
+using LocalRAG.Entities;
 
 namespace LocalRAG.Interfaces;
 

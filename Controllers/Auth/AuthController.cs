@@ -1,6 +1,6 @@
 using LocalRAG.Data;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -49,7 +49,7 @@ public class AuthController : ControllerBase
                 }
             }
 
-            var user = new User
+            var user = new Entities.User
             {
                 LoginId = request.LoginId,
                 PasswordHash = _authService.HashPassword(request.Password),
@@ -125,7 +125,7 @@ public class AuthController : ControllerBase
 
             if (nonMemberGuest != null && !string.IsNullOrEmpty(nonMemberGuest.PasswordHash) && _authService.VerifyPassword(request.Password, nonMemberGuest.PasswordHash))
             {
-                var guestUser = new User { Id = nonMemberGuest.Id, Name = nonMemberGuest.GuestName, Role = "Guest", LoginId = $"guest_{nonMemberGuest.Id}" };
+                var guestUser = new Entities.User { Id = nonMemberGuest.Id, Name = nonMemberGuest.GuestName, Role = "Guest", LoginId = $"guest_{nonMemberGuest.Id}" };
 
                 // (핵심 수정) 비회원 로그인 시에도 GuestId를 토큰에 포함시킵니다.
                 var accessToken = _authService.GenerateAccessToken(guestUser, nonMemberGuest.Id, nonMemberGuest.ConventionId);
@@ -188,7 +188,7 @@ public class AuthController : ControllerBase
             }
 
             // 비회원용 토큰 생성 (Guest 정보 기반)
-            var guestUser = new User
+            var guestUser = new Entities.User
             {
                 Id = guest.Id,
                 LoginId = $"guest_{guest.Id}",

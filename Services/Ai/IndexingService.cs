@@ -1,13 +1,14 @@
 ﻿using LocalRAG.Data;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
-using LocalRAG.Models.DTOs;
+using LocalRAG.DTOs;
 using LocalRAG.Services.Shared.Builders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using LocalRAG.DTOs.ChatModels;
+using LocalRAG.DTOs.AiModels;
 
 namespace LocalRAG.Services.Ai;
 

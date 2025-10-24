@@ -1,6 +1,6 @@
 using LocalRAG.Data;
+using LocalRAG.Entities;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
 using LocalRAG.Providers;
 using Microsoft.EntityFrameworkCore;
 

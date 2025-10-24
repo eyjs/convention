@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using LocalRAG.Interfaces;
 using System.Diagnostics;
 
-namespace LocalRAG.Controllers;
+namespace LocalRAG.Controllers.System;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -61,9 +61,9 @@ public class SystemController : ControllerBase
                 Runtime = new
                 {
                     DotNetVersion = Environment.Version.ToString(),
-                    ProcessorCount = Environment.ProcessorCount,
+                    Environment.ProcessorCount,
                     WorkingSet = $"{Environment.WorkingSet / 1024 / 1024} MB",
-                    MachineName = Environment.MachineName
+                    Environment.MachineName
                 }
             };
 
@@ -126,7 +126,7 @@ public class SystemController : ControllerBase
                 Tests = new List<object>()
             };
 
-            var tests = (List<object>)benchmark.Tests;
+            var tests = benchmark.Tests;
 
             // 임베딩 성능 테스트
             var embeddingStart = DateTime.UtcNow;

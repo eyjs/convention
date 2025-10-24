@@ -3,9 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
-using LocalRAG.Models.DTOs;
+using LocalRAG.Entities;
+
 using System.Security.Claims;
+using LocalRAG.DTOs.NoticeModels;
 
 namespace LocalRAG.Controllers.Convention;
 

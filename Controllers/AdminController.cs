@@ -1,11 +1,11 @@
 using LocalRAG.Data;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
-using GuestModel = LocalRAG.Models.Guest;
-using LocalRAG.Models.DTOs;
+using GuestModel = LocalRAG.Entities.Guest;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using LocalRAG.Entities;
+using LocalRAG.DTOs.ScheduleModels;
 
 namespace LocalRAG.Controllers;
 

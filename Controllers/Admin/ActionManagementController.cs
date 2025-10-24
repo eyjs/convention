@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
-using LocalRAG.DTOs.Action;
 using Microsoft.AspNetCore.Authorization;
-using LocalRAG.Models;
+using LocalRAG.Entities.Action;
+using LocalRAG.DTOs.ActionModels;
 
 namespace LocalRAG.Controllers.Admin;
 

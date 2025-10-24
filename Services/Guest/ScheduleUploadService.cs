@@ -1,6 +1,7 @@
 using LocalRAG.Data;
+using LocalRAG.DTOs.ScheduleModels;
+using LocalRAG.Entities;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using System.Text.RegularExpressions;
@@ -101,7 +102,7 @@ public class ScheduleUploadService : IScheduleUploadService
                         
                         if (guest == null)
                         {
-                            guest = new Models.Guest
+                            guest = new LocalRAG.Entities.Guest
                             {
                                 ConventionId = conventionId,
                                 GuestName = name,

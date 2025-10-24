@@ -1,9 +1,9 @@
 using LocalRAG.Data;
-using LocalRAG.Models;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace LocalRAG.Controllers;
+namespace LocalRAG.Controllers.System;
 
 [ApiController]
 [Route("api/test")]

@@ -2,7 +2,7 @@ using LocalRAG.Interfaces;
 
 namespace LocalRAG.Interfaces;
 
-using LocalRAG.Models.DTOs;
+using LocalRAG.DTOs.AiModels;
 
 public interface IRagService
 {

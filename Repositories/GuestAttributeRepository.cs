@@ -1,5 +1,5 @@
 using LocalRAG.Data;
-using LocalRAG.Models;
+using LocalRAG.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Repositories;

@@ -1,4 +1,5 @@
-using LocalRAG.Models;
+using LocalRAG.DTOs.ScheduleModels;
+using LocalRAG.Entities;
 
 namespace LocalRAG.Repositories;
 

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LocalRAG.Interfaces;
-using LocalRAG.Models.DTOs;
+using LocalRAG.DTOs.NoticeModels;
 
 namespace LocalRAG.Controllers.Convention
 {

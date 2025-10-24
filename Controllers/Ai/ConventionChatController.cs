@@ -1,7 +1,7 @@
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using LocalRAG.DTOs.ChatModels;
 
 namespace LocalRAG.Controllers.Ai;
 

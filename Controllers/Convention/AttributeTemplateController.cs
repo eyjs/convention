@@ -1,5 +1,6 @@
 using LocalRAG.Data;
-using LocalRAG.Models;
+using LocalRAG.Entities;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

@@ -1,8 +1,8 @@
 ﻿using LocalRAG.Data;
-using LocalRAG.Models;
-using GuestModel = LocalRAG.Models.Guest;
+using GuestModel = LocalRAG.Entities.Guest;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using LocalRAG.DTOs.ChatModels;
 
 namespace LocalRAG.Services.Chat;
 

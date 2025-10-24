@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using LocalRAG.Models;
+using LocalRAG.Entities;
+using LocalRAG.Entities.Action;
+using LocalRAG.DTOs.ScheduleModels;
 
 namespace LocalRAG.Data;
 
@@ -32,7 +34,7 @@ public class ConventionDbContext : DbContext
     
     // Action Management
     public DbSet<ConventionAction> ConventionActions { get; set; }
-    public DbSet<GuestActionStatus> GuestActionStatuses { get; set; }
+    public DbSet<Entities.GuestActionStatus> GuestActionStatuses { get; set; }
     public DbSet<ActionTemplate> ActionTemplates { get; set; }
     public DbSet<FileAttachment> FileAttachments { get; set; }
     public DbSet<Gallery> Galleries { get; set; }
@@ -389,7 +391,7 @@ public class ConventionDbContext : DbContext
         });
 
         // GuestActionStatus 설정
-        modelBuilder.Entity<GuestActionStatus>(entity =>
+        modelBuilder.Entity<Entities.GuestActionStatus>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();

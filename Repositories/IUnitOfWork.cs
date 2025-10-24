@@ -1,4 +1,4 @@
-using LocalRAG.Models;
+using LocalRAG.Entities;
 using LocalRAG.Repositories;
 
 namespace LocalRAG.Repositories;

@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using LocalRAG.Data;
-using LocalRAG.Models;
+using LocalRAG.Entities;
+
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;

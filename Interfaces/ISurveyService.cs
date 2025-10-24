@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
-using LocalRAG.Models;
-using LocalRAG.Models.DTOs;
+using LocalRAG.DTOs.SurveyModels;
+using LocalRAG.Entities;
 
 namespace LocalRAG.Interfaces
 {

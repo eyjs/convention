@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using LocalRAG.Interfaces;
+using System.IO;
 using System.Drawing;
 using System.Drawing.Imaging;
 
@@ -181,7 +182,7 @@ public class FileController : ControllerBase
         var basePath = _fileUploadService.GetUploadBasePath();
         var filePath = Path.Combine(basePath, year, dayOfYear, fileName);
 
-        if (!System.IO.File.Exists(filePath))
+        if (!global::System.IO.File.Exists(filePath))
         {
             return NotFound();
         }
@@ -191,8 +192,8 @@ public class FileController : ControllerBase
             string extension = Path.GetExtension(filePath);
             string lowerExtension = extension.Replace(".", "").ToLower();
 
-            using Image origin = ExifRotate(Image.FromFile(filePath));
-            using Image image = ResizeImageCommon(origin, resize);
+            using global::System.Drawing.Image origin = ExifRotate(global::System.Drawing.Image.FromFile(filePath));
+            using global::System.Drawing.Image image = ResizeImageCommon(origin, resize);
             
             var stream = new MemoryStream();
             image.Save(stream, GetImageFormat(lowerExtension));
@@ -217,17 +218,17 @@ public class FileController : ControllerBase
         var prop = img.GetPropertyItem(0x0112);
         if (prop == null || prop.Value == null) return img;
         int val = BitConverter.ToUInt16(prop.Value, 0);
-        var rot = RotateFlipType.RotateNoneFlipNone;
+        var rot = global::System.Drawing.RotateFlipType.RotateNoneFlipNone;
 
         if (val == 3 || val == 4)
-            rot = RotateFlipType.Rotate180FlipNone;
+            rot = global::System.Drawing.RotateFlipType.Rotate180FlipNone;
         else if (val == 5 || val == 6)
-            rot = RotateFlipType.Rotate90FlipNone;
+            rot = global::System.Drawing.RotateFlipType.Rotate90FlipNone;
         else if (val == 7 || val == 8)
-            rot = RotateFlipType.Rotate270FlipNone;
+            rot = global::System.Drawing.RotateFlipType.Rotate270FlipNone;
 
         if (val == 2 || val == 4 || val == 5 || val == 7)
-            rot |= RotateFlipType.RotateNoneFlipX;
+            rot |= global::System.Drawing.RotateFlipType.RotateNoneFlipX;
 
         if (rot != RotateFlipType.RotateNoneFlipNone)
             img.RotateFlip(rot);
@@ -253,12 +254,12 @@ public class FileController : ControllerBase
 
         if (width <= 0 || height <= 0) return origin;
 
-        var newImage = new Bitmap(width, height);
-        using (var graphics = Graphics.FromImage(newImage))
+        var newImage = new global::System.Drawing.Bitmap(width, height);
+        using (var graphics = global::System.Drawing.Graphics.FromImage(newImage))
         {
-            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            graphics.CompositingQuality = global::System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            graphics.InterpolationMode = global::System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            graphics.SmoothingMode = global::System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             graphics.DrawImage(origin, 0, 0, width, height);
         }
 
@@ -269,13 +270,13 @@ public class FileController : ControllerBase
     {
         return lowerExtension switch
         {
-            "jpg" or "jpeg" => ImageFormat.Jpeg,
-            "png" => ImageFormat.Png,
-            "gif" => ImageFormat.Gif,
-            "bmp" => ImageFormat.Bmp,
-            "tiff" => ImageFormat.Tiff,
-            "ico" => ImageFormat.Icon,
-            _ => ImageFormat.Jpeg,
+            "jpg" or "jpeg" => global::System.Drawing.Imaging.ImageFormat.Jpeg,
+            "png" => global::System.Drawing.Imaging.ImageFormat.Png,
+            "gif" => global::System.Drawing.Imaging.ImageFormat.Gif,
+            "bmp" => global::System.Drawing.Imaging.ImageFormat.Bmp,
+            "tiff" => global::System.Drawing.Imaging.ImageFormat.Tiff,
+            "ico" => global::System.Drawing.Imaging.ImageFormat.Icon,
+            _ => global::System.Drawing.Imaging.ImageFormat.Jpeg,
         };
     }
 

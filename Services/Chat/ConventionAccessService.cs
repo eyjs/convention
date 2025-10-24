@@ -1,5 +1,5 @@
 ﻿using LocalRAG.Data;
-using LocalRAG.Models;
+using LocalRAG.DTOs.ChatModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Services.Chat;

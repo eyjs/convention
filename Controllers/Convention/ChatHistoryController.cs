@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
-using LocalRAG.Models;
+
 using System.Security.Claims;
 namespace LocalRAG.Controllers.Convention
 {

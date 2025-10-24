@@ -1,4 +1,4 @@
-using LocalRAG.Models.DTOs;
+using LocalRAG.DTOs.GalleryModels;
 
 namespace LocalRAG.Interfaces;
 

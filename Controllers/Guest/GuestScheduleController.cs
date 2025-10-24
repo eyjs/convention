@@ -1,10 +1,9 @@
 using LocalRAG.Data;
-using LocalRAG.Models;
-using LocalRAG.Models.DTOs;
+using LocalRAG.DTOs.ScheduleModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace LocalRAG.Controllers;
+namespace LocalRAG.Controllers.Guest;
 
 [ApiController]
 [Route("api/guest-schedules")]
@@ -36,7 +35,7 @@ public class GuestScheduleController : ControllerBase
                 {
                     ScheduleItem = si,
                     TemplateId = gst.ScheduleTemplate.Id,
-                    CourseName = gst.ScheduleTemplate.CourseName
+                    gst.ScheduleTemplate.CourseName
                 }))
                 .OrderBy(x => x.ScheduleItem.ScheduleDate)
                 .ThenBy(x => x.ScheduleItem.StartTime)

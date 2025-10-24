@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using LocalRAG.Interfaces;
-using LocalRAG.Models.DTOs;
 using LocalRAG.Providers;
+using LocalRAG.DTOs.AiModels;
 
-namespace LocalRAG.Controllers;
+namespace LocalRAG.Controllers.System;
 
 [ApiController]
 [Route("api/[controller]")]

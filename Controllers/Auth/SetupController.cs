@@ -1,6 +1,6 @@
 using LocalRAG.Data;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,7 +35,7 @@ public class SetupController : ControllerBase
                 return BadRequest(new { message = "관리자 계정이 이미 존재합니다." });
             }
 
-            var admin = new User
+            var admin = new Entities.User
             {
                 LoginId = "admin",
                 PasswordHash = _authService.HashPassword("admin123"),

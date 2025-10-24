@@ -67,6 +67,10 @@
     <None Remove="Migrations\migrate_feature_quick.sql" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Entities\" />
+  </ItemGroup>
+
   <!-- 개발 중에는 주석 처리 -->
   <!--
   <Target Name="CleanWwwroot" BeforeTargets="BuildVueApp">

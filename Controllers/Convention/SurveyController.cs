@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
+using LocalRAG.DTOs.SurveyModels;
 using LocalRAG.Interfaces;
-using LocalRAG.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

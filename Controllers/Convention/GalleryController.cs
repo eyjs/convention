@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LocalRAG.Interfaces;
-using LocalRAG.Models.DTOs;
 using System.Security.Claims;
+using LocalRAG.DTOs.GalleryModels;
 
 namespace LocalRAG.Controllers.Convention;
 

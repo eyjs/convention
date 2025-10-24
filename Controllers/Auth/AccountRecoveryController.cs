@@ -1,6 +1,5 @@
 using LocalRAG.Data;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 

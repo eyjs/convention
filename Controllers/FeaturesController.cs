@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
-using LocalRAG.Models;
+using LocalRAG.Entities;
 
 namespace LocalRAG.Controllers
 {

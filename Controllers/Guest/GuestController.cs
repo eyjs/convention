@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
-using LocalRAG.Models;
-using LocalRAG.Models.DTOs;
-using System.Security.Claims;
 
-namespace LocalRAG.Controllers;
+using System.Security.Claims;
+using LocalRAG.Entities;
+using LocalRAG.DTOs.GuestModels;
+using LocalRAG.DTOs.ActionModels;
+
+namespace LocalRAG.Controllers.Guest;
 
 [ApiController]
 [Route("api/guest")]
@@ -87,8 +89,8 @@ public class GuestController : ControllerBase
                 search = search.Trim();
                 query = query.Where(g => 
                     g.GuestName.Contains(search) || 
-                    (g.CorpName != null && g.CorpName.Contains(search)) ||
-                    (g.CorpPart != null && g.CorpPart.Contains(search)));
+                    g.CorpName != null && g.CorpName.Contains(search) ||
+                    g.CorpPart != null && g.CorpPart.Contains(search));
             }
 
             var participants = await query
@@ -333,7 +335,7 @@ public class GuestController : ControllerBase
     /// 여행 정보 제출 (PROFILE_OVERSEAS 액션)
     /// </summary>
     [HttpPut("my-travel-info")]
-    public async Task<IActionResult> UpdateMyTravelInfo([FromBody] LocalRAG.DTOs.Action.TravelInfoDto dto)
+    public async Task<IActionResult> UpdateMyTravelInfo([FromBody] TravelInfoDto dto)
     {
         try
         {
@@ -482,7 +484,7 @@ public class GuestController : ControllerBase
                 actionId = action.Id,
                 actionType = action.ActionType,
                 title = action.Title,
-                isComplete = isComplete,
+                isComplete,
                 deadline = action.Deadline,
                 navigateTo = action.MapsTo,
                 orderNum = action.OrderNum
@@ -500,15 +502,15 @@ public class GuestController : ControllerBase
 
         // 5. 체크리스트 DTO 반환
         int totalItems = actions.Count;
-        int progressPercentage = totalItems > 0 ? (completedCount * 100 / totalItems) : 0;
+        int progressPercentage = totalItems > 0 ? completedCount * 100 / totalItems : 0;
 
         return new
         {
-            totalItems = totalItems,
+            totalItems,
             completedItems = completedCount,
-            progressPercentage = progressPercentage,
-            overallDeadline = overallDeadline,
-            items = items
+            progressPercentage,
+            overallDeadline,
+            items
         };
     }
 }

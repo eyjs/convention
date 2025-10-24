@@ -3,9 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
+using LocalRAG.Entities;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
-using LocalRAG.Models.DTOs;
+using LocalRAG.DTOs.NoticeModels;
 
 namespace LocalRAG.Services.Convention
 {
@@ -52,7 +52,7 @@ namespace LocalRAG.Services.Convention
 
         public async Task<NoticeCategoryDto> CreateCategoryAsync(CreateNoticeCategoryDto dto)
         {
-            var category = new NoticeCategory
+            var category = new Entities.NoticeCategory
             {
                 Name = dto.Name,
                 ConventionId = dto.ConventionId,

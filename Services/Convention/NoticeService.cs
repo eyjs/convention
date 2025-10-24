@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
-using LocalRAG.Models.DTOs;
+using LocalRAG.Entities;
+using LocalRAG.DTOs.NoticeModels;
 
 namespace LocalRAG.Services.Convention;
 

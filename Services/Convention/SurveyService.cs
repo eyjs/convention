@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
 using LocalRAG.Data;
+using LocalRAG.DTOs.SurveyModels;
+using LocalRAG.Entities;
 using LocalRAG.Interfaces;
-using LocalRAG.Models;
-using LocalRAG.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Services.Convention

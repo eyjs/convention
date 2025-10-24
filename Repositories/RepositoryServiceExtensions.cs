@@ -1,8 +1,7 @@
 using LocalRAG.Data;
-using LocalRAG.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace Microsoft.Extensions.DependencyInjection;
+namespace LocalRAG.Repositories;
 
 /// <summary>
 /// Repository 서비스 등록을 위한 확장 메서드

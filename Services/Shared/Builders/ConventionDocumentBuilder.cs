@@ -1,11 +1,11 @@
 // ----------------- ConventionDocumentBuilder.cs (수정된 최종 버전) -----------------
-using LocalRAG.Models;
-using LocalRAG.Models.DTOs;
-using LocalRAG.Data; // ConventionDbContext 사용을 위해 추가
+
+using LocalRAG.Data;
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.EntityFrameworkCore; // Include, OrderByDescending 등을 위해 추가
+using Microsoft.EntityFrameworkCore;
+using LocalRAG.DTOs.AiModels;
 
 namespace LocalRAG.Services.Shared.Builders
 {

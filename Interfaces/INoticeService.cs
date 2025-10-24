@@ -1,5 +1,5 @@
-using LocalRAG.Models;
-using LocalRAG.Models.DTOs;
+using LocalRAG.DTOs.NoticeModels;
+
 
 namespace LocalRAG.Interfaces;
 

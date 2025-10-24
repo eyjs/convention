@@ -1,7 +1,7 @@
-using LocalRAG.Models;
 using LocalRAG.Repositories;
 using LocalRAG.Interfaces;
 using System.Text;
+using LocalRAG.DTOs.ChatModels;
 
 namespace LocalRAG.Services.Chat;
 

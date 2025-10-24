@@ -1,6 +1,6 @@
 ﻿using LocalRAG.Data; // DbContext 네임스페이스
+using LocalRAG.Entities;
 using LocalRAG.Interfaces;
-using LocalRAG.Models; // VectorDataEntry 네임스페이스
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;

@@ -1,5 +1,6 @@
 using LocalRAG.Interfaces;
-using LocalRAG.Models.DTOs;
+using LocalRAG.DTOs;
+using LocalRAG.DTOs.AiModels;
 
 namespace LocalRAG.Services.Ai;
 

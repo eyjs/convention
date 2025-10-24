@@ -1,9 +1,9 @@
 using LocalRAG.Data;
-using LocalRAG.Models;
-using ConventionModel = LocalRAG.Models.Convention;
+using ConventionModel = LocalRAG.Entities.Convention;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using LocalRAG.Entities;
 
 namespace LocalRAG.Controllers.Convention;
 

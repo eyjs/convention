@@ -2,9 +2,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
-using LocalRAG.DTOs.Action;
-using LocalRAG.Models;
+using LocalRAG.Entities;
+
 using System.Security.Claims;
+using LocalRAG.DTOs.ActionModels;
 
 namespace LocalRAG.Controllers.Convention;
 

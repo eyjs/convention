@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using LocalRAG.Models.DTOs;
+using LocalRAG.DTOs.NoticeModels;
 
 namespace LocalRAG.Interfaces
 {
