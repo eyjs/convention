@@ -65,6 +65,7 @@
     <None Remove="Migrations\migrate_feature_complete.sql" />
     <None Remove="Migrations\migrate_feature_model.sql" />
     <None Remove="Migrations\migrate_feature_quick.sql" />
+    <None Remove="NUL" />
   </ItemGroup>
 
   <ItemGroup>

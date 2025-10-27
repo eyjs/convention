@@ -8,16 +8,16 @@ public class RagService : IRagService
 {
     private readonly IVectorStore _vectorStore;
     private readonly IEmbeddingService _embeddingService;
-    private readonly ILlmProvider _llmProvider;
+    private readonly LlmProviderManager _providerManager;
 
     public RagService(
         IVectorStore vectorStore,
         IEmbeddingService embeddingService,
-        ILlmProvider llmProvider)
+        LlmProviderManager providerManager)
     {
         _vectorStore = vectorStore;
         _embeddingService = embeddingService;
-        _llmProvider = llmProvider;
+        _providerManager = providerManager;
     }
     
     public async Task<string> AddDocumentAsync(string content, Dictionary<string, object>? metadata = null)
@@ -39,12 +39,13 @@ public class RagService : IRagService
 
     public async Task<RagResponse> QueryAsync(string question, int topK = 5, Dictionary<string, object>? filter = null)
     {
+        var llmProvider = await _providerManager.GetActiveProviderAsync();
         var queryEmbedding = await _embeddingService.GenerateEmbeddingAsync(question);
         var searchResults = await _vectorStore.SearchAsync(queryEmbedding, topK, filter);
         var context = string.Join("\n\n", searchResults.Select((r, i) => $"[{i + 1}] {r.Content}"));
-        var answer = await _llmProvider.GenerateResponseAsync(question, context);
+        var answer = await llmProvider.GenerateResponseAsync(question, context);
         
-        return new RagResponse(answer, searchResults, _llmProvider.ProviderName);
+        return new RagResponse(answer, searchResults, llmProvider.ProviderName);
     }
 
     public async Task<bool> DeleteDocumentAsync(string documentId)
@@ -59,11 +60,12 @@ public class RagService : IRagService
 
     public async Task<RagStats> GetStatsAsync()
     {
+        var llmProvider = await _providerManager.GetActiveProviderAsync();
         var documentCount = await _vectorStore.GetDocumentCountAsync();
         return new RagStats(
             documentCount,
             "LocalEmbedding", // TODO: 실제 모델명으로 변경
-            _llmProvider.ProviderName
+            llmProvider.ProviderName
         );
     }
 }

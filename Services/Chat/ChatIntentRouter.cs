@@ -2,6 +2,7 @@
 
 using LocalRAG.DTOs.ChatModels;
 using LocalRAG.Interfaces;
+using LocalRAG.Services.Ai;
 
 namespace LocalRAG.Services.Chat; // 네임스페이스는 기존 프로젝트에 맞게 확인해주세요.
 
@@ -10,7 +11,7 @@ namespace LocalRAG.Services.Chat; // 네임스페이스는 기존 프로젝트�
 /// </summary>
 public class ChatIntentRouter
 {
-    private readonly ILlmProvider _llmProvider;
+    private readonly LlmProviderManager _providerManager;
     private readonly ILogger<ChatIntentRouter> _logger;
     
     private static readonly string[] PersonalInfoKeywords = { "내 정보", "난 누구", "내 이름", "내 프로필", "who am i", "my info", "my profile" };
@@ -25,9 +26,9 @@ public class ChatIntentRouter
         Unknown
     }
 
-    public ChatIntentRouter(ILlmProvider llmProvider, ILogger<ChatIntentRouter> logger)
+    public ChatIntentRouter(LlmProviderManager providerManager, ILogger<ChatIntentRouter> logger)
     {
-        _llmProvider = llmProvider;
+        _providerManager = providerManager;
         _logger = logger;
     }
 
@@ -45,8 +46,9 @@ public class ChatIntentRouter
                 return ruleBasedIntent.Value; // 규칙에 맞으면 LLM 호출 없이 바로 반환
             }
 
+            var llmProvider = await _providerManager.GetActiveProviderAsync();
             // 1. Provider 호출은 그대로 유지 (이제 Provider는 안정적으로 동작합니다)
-            string intentString = await _llmProvider.ClassifyIntentAsync(question, history);
+            string intentString = await llmProvider.ClassifyIntentAsync(question, history);
             _logger.LogInformation("Raw intent string from provider: {IntentString}", intentString);
 
             // 2. 수동 파싱 대신 Enum.TryParse 사용 (가장 중요한 변경점)

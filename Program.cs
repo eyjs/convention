@@ -120,11 +120,11 @@ builder.Services.AddScoped<GeminiProvider>(provider =>
 builder.Services.AddScoped<LlmProviderManager>();
 
 // 👉 ILlmProvider를 Factory 패턴으로 주입
-builder.Services.AddScoped<ILlmProvider>(provider =>
-{
-    var providerManager = provider.GetRequiredService<LlmProviderManager>();
-    return providerManager.GetActiveProviderAsync().GetAwaiter().GetResult();
-});
+// builder.Services.AddScoped<ILlmProvider>(provider =>
+// {
+//     var providerManager = provider.GetRequiredService<LlmProviderManager>();
+//     return providerManager.GetActiveProviderAsync().GetAwaiter().GetResult();
+// });
 
 // 핵심 서비스들을 'Scoped'로 등록합니다.
 builder.Services.AddScoped<IRagService, RagService>();
@@ -135,6 +135,7 @@ builder.Services.AddScoped<IndexingService>();
 builder.Services.AddScoped<IConventionChatService, ConventionChatService>();
 
 builder.Services.AddScoped<SourceIdentifier>();
+builder.Services.AddScoped<ChatIntentRouter>();
 builder.Services.AddScoped<ChatPromptBuilder>();
 builder.Services.AddScoped<LlmResponseService>();
 builder.Services.AddScoped<RagSearchService>();
