@@ -86,15 +86,22 @@ public class IndexingService
         if (convention is null)
             throw new ArgumentException($"Convention {conventionId} not found");
 
-        
+
         var notices = await _context.Notices
           .Where(n => n.ConventionId == conventionId && !n.IsDeleted)
           .ToListAsync();
+
+        var conventionActions = await _context.ConventionActions
+          .Where(a => a.ConventionId == conventionId && a.IsActive)
+          .OrderBy(a => a.OrderNum)
+          .ToListAsync();
+
         // (핵심 개선) 조회한 모든 데이터를 '바구니(DTO)' 객체에 담습니다.
         var indexingData = new ConventionIndexingData
         {
             Convention = convention,
-            Notices = notices
+            Notices = notices,
+            ConventionActions = conventionActions
             // Faqs = faqs // 나중에 FAQ가 추가되면 여기에 담기만 하면 됩니다.
         };
 

@@ -177,6 +177,10 @@
                                         </div>
                                     </div>
                                     <div class="flex gap-2">
+                                        <button @click="showIndexedItems(convention.id)"
+                                                class="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors">
+                                            색인 상세
+                                        </button>
                                         <button @click="reindexConvention(convention.id)"
                                                 class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
                                             재색인
@@ -256,6 +260,138 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 색인 상세 정보 모달 -->
+            <div v-if="showIndexDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="showIndexDetailModal = false">
+                <div class="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto" @click.stop>
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold text-gray-900">색인 상세 정보</h3>
+                        <button @click="showIndexDetailModal = false" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div v-if="loadingIndexDetail" class="text-center py-12">
+                        <div class="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <p class="mt-4 text-gray-600">로딩 중...</p>
+                    </div>
+
+                    <div v-else-if="indexedItemsDetail" class="space-y-6">
+                        <!-- 전체 벡터 수 -->
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">총 벡터 문서</p>
+                                    <p class="text-3xl font-bold text-blue-600">{{ indexedItemsDetail.vectorCount }}</p>
+                                </div>
+                                <div class="p-4 bg-white rounded-full shadow-sm">
+                                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 색인 항목 상세 -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- 행사 기본 정보 -->
+                            <div class="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-gray-900">행사 기본 정보</h4>
+                                    <span :class="[
+                                        'px-2 py-1 text-xs rounded-full',
+                                        indexedItemsDetail.conventionInfo.indexed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                    ]">
+                                        {{ indexedItemsDetail.conventionInfo.indexed ? '✓ 색인됨' : '미색인' }}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600 space-y-1">
+                                    <p><span class="font-medium">제목:</span> {{ indexedItemsDetail.conventionInfo.title }}</p>
+                                    <p><span class="font-medium">기간:</span> {{ formatDate(indexedItemsDetail.conventionInfo.startDate) }} ~ {{ formatDate(indexedItemsDetail.conventionInfo.endDate) }}</p>
+                                    <p><span class="font-medium">유형:</span> {{ indexedItemsDetail.conventionInfo.type }}</p>
+                                </div>
+                            </div>
+
+                            <!-- 참석자 통계 -->
+                            <div class="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-gray-900">참석자 통계</h4>
+                                    <span :class="[
+                                        'px-2 py-1 text-xs rounded-full',
+                                        indexedItemsDetail.guestSummary.indexed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                    ]">
+                                        {{ indexedItemsDetail.guestSummary.indexed ? '✓ 색인됨' : '미색인' }}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <p class="text-2xl font-bold text-gray-900">{{ indexedItemsDetail.guestSummary.totalCount }}명</p>
+                                    <p class="mt-1">부서별/소속별 통계 포함</p>
+                                </div>
+                            </div>
+
+                            <!-- 일정 템플릿 -->
+                            <div class="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-gray-900">일정 템플릿</h4>
+                                    <span :class="[
+                                        'px-2 py-1 text-xs rounded-full',
+                                        indexedItemsDetail.schedules.indexed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                    ]">
+                                        {{ indexedItemsDetail.schedules.indexed ? '✓ 색인됨' : '미색인' }}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600 space-y-1">
+                                    <p><span class="font-medium">템플릿 수:</span> {{ indexedItemsDetail.schedules.templateCount }}개</p>
+                                    <p><span class="font-medium">일정 항목:</span> {{ indexedItemsDetail.schedules.itemCount }}개</p>
+                                </div>
+                            </div>
+
+                            <!-- 공지사항 -->
+                            <div class="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-gray-900">공지사항</h4>
+                                    <span :class="[
+                                        'px-2 py-1 text-xs rounded-full',
+                                        indexedItemsDetail.notices.indexed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                    ]">
+                                        {{ indexedItemsDetail.notices.indexed ? '✓ 색인됨' : '미색인' }}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <p class="text-2xl font-bold text-gray-900">{{ indexedItemsDetail.notices.count }}개</p>
+                                    <p class="mt-1">고정 공지 및 일반 공지</p>
+                                </div>
+                            </div>
+
+                            <!-- 액션 항목 -->
+                            <div class="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-semibold text-gray-900">액션 항목</h4>
+                                    <span :class="[
+                                        'px-2 py-1 text-xs rounded-full',
+                                        indexedItemsDetail.actions.indexed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                                    ]">
+                                        {{ indexedItemsDetail.actions.indexed ? '✓ 색인됨' : '미색인' }}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <p class="text-2xl font-bold text-gray-900">{{ indexedItemsDetail.actions.count }}개</p>
+                                    <p class="mt-1">활성 액션 및 할 일 목록</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-4 border-t">
+                            <button @click="showIndexDetailModal = false"
+                                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                                닫기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -288,6 +424,9 @@
     })
     const recentActivities = ref([])
     const logs = ref([])
+    const showIndexDetailModal = ref(false)
+    const loadingIndexDetail = ref(false)
+    const indexedItemsDetail = ref(null)
 
     const tabs = [
         { id: 'providers', label: 'LLM Provider' },
@@ -409,6 +548,28 @@
         } catch (error) {
             alert('설정 변경에 실패했습니다: ' + error.message)
         }
+    }
+
+    async function showIndexedItems(conventionId) {
+        showIndexDetailModal.value = true
+        loadingIndexDetail.value = true
+        indexedItemsDetail.value = null
+
+        try {
+            const response = await chatbotAdminAPI.getIndexedItems(conventionId)
+            indexedItemsDetail.value = response.data
+        } catch (error) {
+            console.error('Failed to fetch indexed items:', error)
+            alert('색인 상세 정보를 불러오는데 실패했습니다: ' + error.message)
+            showIndexDetailModal.value = false
+        } finally {
+            loadingIndexDetail.value = false
+        }
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-'
+        return new Date(dateString).toLocaleDateString('ko-KR')
     }
 
     function formatBytes(bytes) {

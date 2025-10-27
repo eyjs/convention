@@ -139,8 +139,110 @@ namespace LocalRAG.Services.Shared.Builders
                 });
             }
 
-            // 4. (선택) FAQ, 공지사항 등 다른 공용 정보가 있다면 여기에 청킹 로직 추가
-            // 예: AddFaqChunks(chunks, convention);
+            // 4. 일정 정보 청크
+            if (convention.ScheduleTemplates != null && convention.ScheduleTemplates.Any())
+            {
+                foreach (var template in convention.ScheduleTemplates)
+                {
+                    if (template.ScheduleItems != null && template.ScheduleItems.Any())
+                    {
+                        var scheduleSb = new StringBuilder();
+                        scheduleSb.AppendLine($"# {template.CourseName} 일정표");
+
+                        var groupedByDate = template.ScheduleItems
+                            .OrderBy(i => i.ScheduleDate)
+                            .ThenBy(i => i.OrderNum)
+                            .GroupBy(i => i.ScheduleDate.Date);
+
+                        foreach (var dateGroup in groupedByDate)
+                        {
+                            scheduleSb.AppendLine($"## {dateGroup.Key:yyyy년 MM월 dd일 (ddd)}");
+
+                            foreach (var item in dateGroup)
+                            {
+                                scheduleSb.AppendLine($"### {item.Title}");
+
+                                if (!string.IsNullOrEmpty(item.StartTime) || !string.IsNullOrEmpty(item.EndTime))
+                                {
+                                    var timeStr = !string.IsNullOrEmpty(item.StartTime) && !string.IsNullOrEmpty(item.EndTime)
+                                        ? $"{item.StartTime} - {item.EndTime}"
+                                        : !string.IsNullOrEmpty(item.StartTime)
+                                            ? item.StartTime
+                                            : $"~ {item.EndTime}";
+                                    scheduleSb.AppendLine($"- 시간: {timeStr}");
+                                }
+
+                                if (!string.IsNullOrEmpty(item.Content))
+                                    scheduleSb.AppendLine($"- 내용: {item.Content}");
+
+                                if (!string.IsNullOrEmpty(item.Location))
+                                    scheduleSb.AppendLine($"- 장소: {item.Location}");
+
+                                scheduleSb.AppendLine(); // 빈 줄
+                            }
+                        }
+
+                        chunks.Add(new DocumentChunk
+                        {
+                            Content = scheduleSb.ToString(),
+                            Metadata = new Dictionary<string, object>
+                            {
+                                { "type", "schedule_template" },
+                                { "convention_id", convention.Id },
+                                { "template_id", template.Id },
+                                { "template_title", template.CourseName }
+                            }
+                        });
+                    }
+                }
+            }
+
+            // 5. ConventionAction 정보 청크 (할 일 목록)
+            if (data.ConventionActions != null && data.ConventionActions.Any())
+            {
+                var actionSb = new StringBuilder();
+                actionSb.AppendLine($"# {convention.Title} 행사 필수 항목 및 할 일");
+                actionSb.AppendLine($"- 총 {data.ConventionActions.Count}개의 항목이 있습니다.");
+                actionSb.AppendLine();
+
+                // 마감일 있는 항목 우선
+                var sortedActions = data.ConventionActions
+                    .OrderBy(a => a.Deadline.HasValue ? 0 : 1)
+                    .ThenBy(a => a.Deadline)
+                    .ThenBy(a => a.OrderNum);
+
+                foreach (var action in sortedActions)
+                {
+                    actionSb.AppendLine($"## {action.Title}");
+
+                    if (!string.IsNullOrEmpty(action.ActionType))
+                        actionSb.AppendLine($"- 유형: {action.ActionType}");
+
+                    if (!string.IsNullOrEmpty(action.Description))
+                        actionSb.AppendLine($"- 설명: {action.Description}");
+
+                    if (action.Deadline.HasValue)
+                        actionSb.AppendLine($"- 마감: {action.Deadline:yyyy년 MM월 dd일 HH:mm}");
+
+                    if (action.IsRequired)
+                        actionSb.AppendLine("- ⚠️ 필수 항목입니다");
+
+                    if (!string.IsNullOrEmpty(action.MapsTo))
+                        actionSb.AppendLine($"- 경로: {action.MapsTo}");
+
+                    actionSb.AppendLine(); // 빈 줄
+                }
+
+                chunks.Add(new DocumentChunk
+                {
+                    Content = actionSb.ToString(),
+                    Metadata = new Dictionary<string, object>
+                    {
+                        { "type", "action_list" },
+                        { "convention_id", convention.Id }
+                    }
+                });
+            }
 
             return Task.FromResult(chunks);
         }

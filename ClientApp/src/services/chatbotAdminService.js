@@ -33,7 +33,10 @@ export const chatbotAdminAPI = {
   
   // 행사 목록
   getConventions: () => apiClient.get('/admin/chatbot/conventions'),
-  
+
+  // 색인 상세 정보
+  getIndexedItems: (conventionId) => apiClient.get(`/admin/chatbot/conventions/${conventionId}/indexed-items`),
+
   // 재색인
   reindexAll: () => apiClient.post('/admin/chatbot/reindex-all'),
   reindexConvention: (conventionId) => apiClient.post(`/admin/chatbot/reindex-convention/${conventionId}`),

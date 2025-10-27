@@ -52,7 +52,7 @@
           <div v-if="config.imageUrl" class="w-full overflow-hidden rounded-t-2xl">
             <img
               :src="config.imageUrl"
-              :alt="feature.actionName"
+              :alt="feature.title"
               class="w-full h-48 object-cover"
             />
           </div>
@@ -64,7 +64,7 @@
               :id="`popup-title-${feature.id}`"
               class="text-xl md:text-2xl font-bold text-gray-900 mb-4"
             >
-              {{ feature.actionName }}
+              {{ feature.title }}
             </h2>
 
             <!-- Message -->
@@ -126,9 +126,9 @@ const dontShowAgain = ref(false)
 // Parse config
 const config = computed(() => {
   try {
-    return typeof props.feature.config === 'string'
-      ? JSON.parse(props.feature.config)
-      : props.feature.config || {}
+    return typeof props.feature.configJson === 'string'
+      ? JSON.parse(props.feature.configJson)
+      : props.feature.configJson || {}
   } catch (error) {
     console.error('Failed to parse popup config:', error)
     return {}

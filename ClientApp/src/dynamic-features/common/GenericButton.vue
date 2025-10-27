@@ -20,7 +20,7 @@
     <span v-if="config.icon" class="button-icon" v-html="config.icon"></span>
 
     <!-- Label -->
-    <span class="button-label">{{ feature.actionName }}</span>
+    <span class="button-label">{{ feature.title }}</span>
 
     <!-- Loading Spinner -->
     <span v-if="isLoading" class="ml-2 inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
@@ -60,9 +60,9 @@ const isLoading = ref(false)
 // Parse config (stored as JSON string in DB)
 const config = computed(() => {
   try {
-    return typeof props.feature.config === 'string'
-      ? JSON.parse(props.feature.config)
-      : props.feature.config || {}
+    return typeof props.feature.configJson === 'string'
+      ? JSON.parse(props.feature.configJson)
+      : props.feature.configJson || {}
   } catch (error) {
     console.error('Failed to parse button config:', error)
     return {}

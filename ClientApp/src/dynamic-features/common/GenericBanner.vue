@@ -28,7 +28,7 @@
       v-if="config.imageUrl"
       class="absolute inset-0 bg-cover bg-center bg-no-repeat"
       :style="{ backgroundImage: `url(${config.imageUrl})` }"
-      :aria-label="feature.actionName"
+      :aria-label="feature.title"
     >
       <!-- Image overlay gradient (for better text readability) -->
       <div
@@ -49,7 +49,7 @@
           class="text-2xl md:text-4xl font-bold mb-2 drop-shadow-lg"
           :style="{ color: config.textColor || '#FFFFFF' }"
         >
-          {{ feature.actionName }}
+          {{ feature.title }}
         </h2>
         <p
           class="text-base md:text-lg drop-shadow-md"
@@ -116,9 +116,9 @@ const router = useRouter()
 // Parse config
 const config = computed(() => {
   try {
-    return typeof props.feature.config === 'string'
-      ? JSON.parse(props.feature.config)
-      : props.feature.config || {}
+    return typeof props.feature.configJson === 'string'
+      ? JSON.parse(props.feature.configJson)
+      : props.feature.configJson || {}
   } catch (error) {
     console.error('Failed to parse banner config:', error)
     return {}

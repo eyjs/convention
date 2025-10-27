@@ -62,6 +62,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="ClientApp\postcss.config.js" />
     <None Remove="Migrations\migrate_feature_complete.sql" />
     <None Remove="Migrations\migrate_feature_model.sql" />
     <None Remove="Migrations\migrate_feature_quick.sql" />

@@ -300,6 +300,7 @@ public class ConventionChatService : IConventionChatService
 
         instruction.AppendLine();
         instruction.AppendLine("Always respond in a natural, conversational tone.");
+        instruction.AppendLine("Use a calm and professional manner. Avoid excessive exclamation marks.");
         instruction.AppendLine("If you're not sure about something, be honest about it.");
 
         return instruction.ToString();

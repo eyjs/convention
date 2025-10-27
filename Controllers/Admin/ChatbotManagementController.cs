@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
 using LocalRAG.Services.Ai;
 using LocalRAG.Entities;
+using LocalRAG.Interfaces;
 
 
 namespace LocalRAG.Controllers.Admin;
@@ -16,17 +17,20 @@ public class ChatbotManagementController : ControllerBase
     private readonly ConventionDbContext _context;
     private readonly IndexingService _indexingService;
     private readonly LlmProviderManager _providerManager;
+    private readonly IVectorStore _vectorStore;
     private readonly ILogger<ChatbotManagementController> _logger;
 
     public ChatbotManagementController(
         ConventionDbContext context,
         IndexingService indexingService,
         LlmProviderManager providerManager,
+        IVectorStore vectorStore,
         ILogger<ChatbotManagementController> logger)
     {
         _context = context;
         _indexingService = indexingService;
         _providerManager = providerManager;
+        _vectorStore = vectorStore;
         _logger = logger;
     }
 
@@ -55,7 +59,7 @@ public class ChatbotManagementController : ControllerBase
     }
 
     /// <summary>
-    /// VectorStore 상태 정보
+    /// VectorStore 상태 정보 (IVectorStore 사용 - InMemory 지원)
     /// </summary>
     [HttpGet("chatbot/vector-status")]
     [AllowAnonymous] // 일시적으로 인증 없이 접근 허용
@@ -63,7 +67,10 @@ public class ChatbotManagementController : ControllerBase
     {
         try
         {
-            var totalVectors = await _context.VectorDataEntries.CountAsync();
+            // IVectorStore를 사용하여 InMemory와 MSSQL 모두 지원
+            var totalVectors = await _vectorStore.GetDocumentCountAsync();
+
+            // DB에서 통계 정보 가져오기 (MSSQL일 경우)
             var lastIndexed = await _context.VectorDataEntries
                 .OrderByDescending(v => v.CreatedAt)
                 .Select(v => v.CreatedAt)
@@ -80,9 +87,9 @@ public class ChatbotManagementController : ControllerBase
 
             return Ok(new
             {
-                isConnected = true, // DB 연결 성공 시 true
+                isConnected = true,
                 totalVectors,
-                lastIndexed,
+                lastIndexed = lastIndexed == default ? (DateTime?)null : lastIndexed,
                 capacity = new
                 {
                     used = totalVectors,
@@ -109,6 +116,78 @@ public class ChatbotManagementController : ControllerBase
                 byType = new object[0],
                 error = ex.Message
             });
+        }
+    }
+
+    /// <summary>
+    /// 행사별 색인 상세 정보 조회
+    /// </summary>
+    [HttpGet("chatbot/conventions/{conventionId}/indexed-items")]
+    [AllowAnonymous]
+    public async Task<ActionResult> GetIndexedItems(int conventionId)
+    {
+        try
+        {
+            var convention = await _context.Conventions
+                .Include(c => c.ScheduleTemplates).ThenInclude(st => st.ScheduleItems)
+                .Include(c => c.Guests)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == conventionId);
+
+            if (convention == null)
+                return NotFound(new { message = "행사를 찾을 수 없습니다." });
+
+            var notices = await _context.Notices
+                .Where(n => n.ConventionId == conventionId && !n.IsDeleted)
+                .CountAsync();
+
+            var conventionActions = await _context.ConventionActions
+                .Where(a => a.ConventionId == conventionId && a.IsActive)
+                .CountAsync();
+
+            var vectorCount = await _vectorStore.GetDocumentCountAsync(conventionId);
+
+            // 색인된 항목 상세 정보
+            var indexedItems = new
+            {
+                conventionInfo = new
+                {
+                    title = convention.Title,
+                    startDate = convention.StartDate,
+                    endDate = convention.EndDate,
+                    type = convention.ConventionType,
+                    indexed = true
+                },
+                guestSummary = new
+                {
+                    totalCount = convention.Guests.Count,
+                    indexed = convention.Guests.Any()
+                },
+                schedules = new
+                {
+                    templateCount = convention.ScheduleTemplates.Count,
+                    itemCount = convention.ScheduleTemplates.SelectMany(st => st.ScheduleItems).Count(),
+                    indexed = convention.ScheduleTemplates.Any()
+                },
+                notices = new
+                {
+                    count = notices,
+                    indexed = notices > 0
+                },
+                actions = new
+                {
+                    count = conventionActions,
+                    indexed = conventionActions > 0
+                },
+                vectorCount = vectorCount
+            };
+
+            return Ok(indexedItems);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "색인 항목 조회 실패: {ConventionId}", conventionId);
+            return StatusCode(500, new { message = "색인 항목 조회 중 오류가 발생했습니다." });
         }
     }
 

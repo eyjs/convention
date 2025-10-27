@@ -26,7 +26,7 @@
     <div v-if="config.imageUrl" class="w-full h-48 overflow-hidden rounded-t-lg">
       <img
         :src="config.imageUrl"
-        :alt="feature.actionName"
+        :alt="feature.title"
         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
       />
     </div>
@@ -47,7 +47,7 @@
         <!-- Title -->
         <div class="flex-1 min-w-0">
           <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-1">
-            {{ feature.actionName }}
+            {{ feature.title }}
           </h3>
 
           <!-- Badge (optional) -->
@@ -146,9 +146,9 @@ const router = useRouter()
 // Parse config
 const config = computed(() => {
   try {
-    return typeof props.feature.config === 'string'
-      ? JSON.parse(props.feature.config)
-      : props.feature.config || {}
+    return typeof props.feature.configJson === 'string'
+      ? JSON.parse(props.feature.configJson)
+      : props.feature.configJson || {}
   } catch (error) {
     console.error('Failed to parse card config:', error)
     return {}

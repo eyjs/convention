@@ -34,7 +34,7 @@
 
     <!-- Content -->
     <div class="menu-content">
-      <h3 class="menu-title">{{ feature.actionName }}</h3>
+      <h3 class="menu-title">{{ feature.title }}</h3>
       <p v-if="config.description" class="menu-description">
         {{ config.description }}
       </p>
@@ -75,9 +75,9 @@ const router = useRouter()
 // Parse config
 const config = computed(() => {
   try {
-    return typeof props.feature.config === 'string'
-      ? JSON.parse(props.feature.config)
-      : props.feature.config || {}
+    return typeof props.feature.configJson === 'string'
+      ? JSON.parse(props.feature.configJson)
+      : props.feature.configJson || {}
   } catch (error) {
     console.error('Failed to parse menu item config:', error)
     return {}
