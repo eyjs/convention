@@ -53,6 +53,11 @@
 
     </div>
 
+    <!-- BOARD_CONTENT_TOP 위치: 카테고리 필터 아래 -->
+    <div v-if="contentTopActions.length > 0" class="px-4 pt-4">
+      <DynamicActionRenderer :features="contentTopActions" />
+    </div>
+
     <!-- 게시글 목록 -->
     <div class="px-4 py-6 space-y-3">
       <!-- 중요 공지 -->
@@ -318,6 +323,7 @@ import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
 import { useQuillEditor } from '@/composables/useQuillEditor'
 import QuillViewer from '@/components/common/QuillViewer.vue'
+import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 
 const router = useRouter()
 const viewer = ref(null)
@@ -328,6 +334,12 @@ const selectedCategory = ref('all')
 const selectedNotice = ref(null)
 const showWriteModal = ref(false)
 const newComment = ref('')
+const allActions = ref([]) // 전체 동적 액션 저장
+
+// BOARD_CONTENT_TOP 위치 액션 필터링
+const contentTopActions = computed(() =>
+  allActions.value.filter(action => action.targetLocation === 'BOARD_CONTENT_TOP')
+)
 
 const newNotice = ref({
   category: '공지',
@@ -575,6 +587,27 @@ const openImageViewer = (src) => {
   }
 }
 
+async function loadDynamicActions() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const conventionId = user.conventionId
+
+    if (!conventionId) return
+
+    const response = await apiClient.get(`/conventions/${conventionId}/actions/all`, {
+      params: {
+        targetLocation: 'BOARD_CONTENT_TOP',
+        isActive: true
+      }
+    })
+
+    allActions.value = response.data || []
+  } catch (error) {
+    console.error('Failed to load dynamic actions:', error)
+    allActions.value = []
+  }
+}
+
 onMounted(() => {
   loadCategories()
   loadNotices().then(() => {
@@ -589,6 +622,7 @@ onMounted(() => {
       history.replaceState({}, document.title)
     }
   })
+  loadDynamicActions()
 })
 </script>
 <style>

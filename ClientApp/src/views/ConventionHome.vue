@@ -50,8 +50,16 @@
       </div>
     </div>
 
+    <!-- HOME_SUB_HEADER 위치: 헤더 배너 바로 아래 -->
+    <div v-if="subHeaderActions.length > 0" class="px-4 pt-4">
+      <DynamicActionRenderer :features="subHeaderActions" />
+    </div>
+
     <!-- 메인 컨텐츠 -->
     <div class="px-4 pt-10 space-y-6 -mt-8">
+      <!-- HOME_CONTENT_TOP 위치: 컨텐츠 영역 상단 -->
+      <DynamicActionRenderer v-if="contentTopActions.length > 0" :features="contentTopActions" />
+
       <!-- 체크리스트 -->
       <ChecklistProgress 
         v-if="checklistStatus && checklistStatus.totalItems > 0"
@@ -177,6 +185,7 @@ import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
 import DeadlineCountdown from '@/components/common/DeadlineCountdown.vue'
 import ChecklistProgress from '@/components/common/ChecklistProgress.vue'
+import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -185,6 +194,15 @@ const conventionStore = useConventionStore()
 const loading = ref(true);
 const convention = computed(() => conventionStore.currentConvention)
 const checklistStatus = ref(null) // authStore가 아니라 ref로 변경
+const allActions = ref([]) // 전체 동적 액션 저장
+
+// 타겟 위치별 액션 필터링
+const subHeaderActions = computed(() =>
+  allActions.value.filter(action => action.targetLocation === 'HOME_SUB_HEADER')
+)
+const contentTopActions = computed(() =>
+  allActions.value.filter(action => action.targetLocation === 'HOME_CONTENT_TOP')
+)
 
 const handleLogout = async () => {
   if (confirm('로그아웃하시겠습니까?')) {
@@ -277,18 +295,37 @@ async function loadRecentNotices() {
   try {
     const conventionId = conventionStore.currentConvention?.id;
     if (!conventionId) return
-    
+
     const response = await apiClient.get('/notices', {
-      params: { 
+      params: {
         conventionId: conventionId,
-        page: 1, 
+        page: 1,
         pageSize: 2  // 최대 2개만
       }
     })
-    
+
     recentNotices.value = response.data.items || []
   } catch (error) {
     console.error('Failed to load notices:', error)
+  }
+}
+
+async function loadDynamicActions() {
+  try {
+    const conventionId = conventionStore.currentConvention?.id;
+    if (!conventionId) return
+
+    const response = await apiClient.get(`/conventions/${conventionId}/actions/all`, {
+      params: {
+        targetLocation: 'HOME_SUB_HEADER,HOME_CONTENT_TOP',
+        isActive: true
+      }
+    })
+
+    allActions.value = response.data || []
+  } catch (error) {
+    console.error('Failed to load dynamic actions:', error)
+    allActions.value = []
   }
 }
 
@@ -333,8 +370,8 @@ onMounted(async () => {
     checklistStatus.value = null;
   }
   
-  await Promise.all([loadTodaySchedules(), loadRecentNotices()]);
-  
+  await Promise.all([loadTodaySchedules(), loadRecentNotices(), loadDynamicActions()]);
+
   loading.value = false;
 })
 </script>

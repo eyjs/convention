@@ -47,6 +47,11 @@
       </div>
     </div>
 
+    <!-- SCHEDULE_CONTENT_TOP 위치: 날짜 선택 스크롤 아래 -->
+    <div v-if="contentTopActions.length > 0" class="px-4 pt-4">
+      <DynamicActionRenderer :features="contentTopActions" />
+    </div>
+
     <!-- 일정 리스트 -->
     <div v-if="!showCalendarView" class="px-4 py-6 space-y-4">
       <!-- 날짜별 그룹 -->
@@ -247,15 +252,23 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import apiClient from '@/services/api'
+import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 
 const showCalendarView = ref(false)
 const selectedDate = ref('')
 const selectedSchedule = ref(null)
 const allSchedules = ref([]) // 전체 일정 저장
+const allActions = ref([]) // 전체 동적 액션 저장
+
 const schedules = computed(() => {
   if (!selectedDate.value) return allSchedules.value
   return allSchedules.value.filter(s => s.date === selectedDate.value)
 })
+
+// SCHEDULE_CONTENT_TOP 위치 액션 필터링
+const contentTopActions = computed(() =>
+  allActions.value.filter(action => action.targetLocation === 'SCHEDULE_CONTENT_TOP')
+)
 
 // 날짜 목록 생성
 const dates = computed(() => {
@@ -386,6 +399,27 @@ function changeMonth(direction) {
   }
 }
 
+async function loadDynamicActions() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const conventionId = user.conventionId
+
+    if (!conventionId) return
+
+    const response = await apiClient.get(`/conventions/${conventionId}/actions/all`, {
+      params: {
+        targetLocation: 'SCHEDULE_CONTENT_TOP',
+        isActive: true
+      }
+    })
+
+    allActions.value = response.data || []
+  } catch (error) {
+    console.error('Failed to load dynamic actions:', error)
+    allActions.value = []
+  }
+}
+
 // API에서 일정 불러오기
 onMounted(async () => {
   try {
@@ -428,6 +462,9 @@ onMounted(async () => {
     console.error('Failed to load schedules:', error)
     // 에러 시 사용자에게 피드백 제공 가능
   }
+
+  // 동적 액션 로드
+  await loadDynamicActions()
 })
 </script>
 

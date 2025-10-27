@@ -82,9 +82,21 @@ public class ConventionAction
     public string? IconClass { get; set; }
 
     /// <summary>
-    /// 카테고리 (그룹화용)
+    /// 카테고리 (체크리스트 그룹화용)
     /// </summary>
     public string? Category { get; set; }
+
+    /// <summary>
+    /// 액션 카테고리 (UI 렌더링 타입: BUTTON, MENU, AUTO_POPUP, BANNER, CARD)
+    /// null이면 체크리스트 전용 액션
+    /// </summary>
+    public string? ActionCategory { get; set; }
+
+    /// <summary>
+    /// 타겟 위치 (UI 렌더링 위치: HOME_SUB_HEADER, SCHEDULE_CONTENT_TOP 등)
+    /// ActionCategory가 있을 때만 의미 있음
+    /// </summary>
+    public string? TargetLocation { get; set; }
 
     // Navigation Property
     public Convention? Convention { get; set; }

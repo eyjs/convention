@@ -5,7 +5,9 @@
       "Bash(python analyze_excel.py:*)",
       "Bash(mkdir:*)",
       "Bash(npm run build:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(dotnet ef migrations:*)",
+      "Bash(dotnet ef database:*)"
     ],
     "deny": [],
     "ask": []

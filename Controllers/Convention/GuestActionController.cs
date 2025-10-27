@@ -37,8 +37,8 @@ public class GuestActionController : ControllerBase
 
         var actions = await _context.ConventionActions
             .Include(a => a.Template)
-            .Where(a => a.ConventionId == conventionId && 
-                       a.IsActive && 
+            .Where(a => a.ConventionId == conventionId &&
+                       a.IsActive &&
                        a.Deadline.HasValue &&
                        a.Deadline.Value > now) // 미래 마감기한만
             .Select(a => new
@@ -49,6 +49,9 @@ public class GuestActionController : ControllerBase
                 a.Deadline,
                 a.MapsTo,
                 a.IsRequired,
+                a.ActionCategory,
+                a.TargetLocation,
+                a.ConfigJson,
                 IconClass = a.IconClass ?? (a.Template == null ? null : a.Template.IconClass),
                 Category = a.Category ?? (a.Template == null ? null : a.Template.Category)
             })
@@ -59,13 +62,48 @@ public class GuestActionController : ControllerBase
 
     /// <summary>
     /// 더보기 메뉴용: 모든 활성 액션 조회 (마감기한 여부 무관)
+    /// 필터링 지원: targetLocation (콤마 구분), actionCategory, isActive
     /// </summary>
     [HttpGet("all")]
-    public async Task<ActionResult> GetAllActions(int conventionId)
+    public async Task<ActionResult> GetAllActions(
+        int conventionId,
+        [FromQuery] string? targetLocation = null,
+        [FromQuery] string? actionCategory = null,
+        [FromQuery] bool? isActive = null)
     {
-        var actions = await _context.ConventionActions
+        var query = _context.ConventionActions
             .Include(a => a.Template)
-            .Where(a => a.ConventionId == conventionId && a.IsActive)
+            .Where(a => a.ConventionId == conventionId);
+
+        // isActive 필터 (기본값: true - 활성 액션만)
+        if (isActive.HasValue)
+        {
+            query = query.Where(a => a.IsActive == isActive.Value);
+        }
+        else
+        {
+            query = query.Where(a => a.IsActive); // 기본: 활성만
+        }
+
+        // targetLocation 필터 (콤마로 여러 위치 지원)
+        if (!string.IsNullOrEmpty(targetLocation))
+        {
+            var locations = targetLocation.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                         .Select(l => l.Trim())
+                                         .ToList();
+            if (locations.Any())
+            {
+                query = query.Where(a => a.TargetLocation != null && locations.Contains(a.TargetLocation));
+            }
+        }
+
+        // actionCategory 필터
+        if (!string.IsNullOrEmpty(actionCategory))
+        {
+            query = query.Where(a => a.ActionCategory == actionCategory);
+        }
+
+        var actions = await query
             .OrderBy(a => a.Category)
             .ThenBy(a => a.OrderNum)
             .Select(a => new
@@ -76,6 +114,9 @@ public class GuestActionController : ControllerBase
                 a.Deadline,
                 a.MapsTo,
                 a.IsRequired,
+                a.ActionCategory,
+                a.TargetLocation,
+                a.ConfigJson,
                 IconClass = a.IconClass ?? (a.Template == null ? null : a.Template.IconClass),
                 Category = a.Category ?? (a.Template == null ? null : a.Template.Category)
             })
@@ -109,8 +150,8 @@ public class GuestActionController : ControllerBase
     {
         var action = await _context.ConventionActions
             .Include(a => a.Template)
-            .FirstOrDefaultAsync(a => a.ConventionId == conventionId && 
-                                    a.Id == actionId && 
+            .FirstOrDefaultAsync(a => a.ConventionId == conventionId &&
+                                    a.Id == actionId &&
                                     a.IsActive);
 
         if (action == null)
@@ -125,6 +166,8 @@ public class GuestActionController : ControllerBase
             action.MapsTo,
             action.ConfigJson,
             action.IsRequired,
+            action.ActionCategory,
+            action.TargetLocation,
             IconClass = action.IconClass ?? action.Template?.IconClass,
             Category = action.Category ?? action.Template?.Category
         });

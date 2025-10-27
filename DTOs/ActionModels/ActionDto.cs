@@ -18,6 +18,17 @@ public class ConventionActionDto
     public string? ConfigJson { get; set; }
     public bool IsActive { get; set; } = true;
     public int OrderNum { get; set; }
+
+    /// <summary>
+    /// 액션 카테고리 (UI 렌더링 타입: BUTTON, MENU, AUTO_POPUP, BANNER, CARD)
+    /// null이면 체크리스트 전용 액션
+    /// </summary>
+    public string? ActionCategory { get; set; }
+
+    /// <summary>
+    /// 타겟 위치 (UI 렌더링 위치: HOME_SUB_HEADER, SCHEDULE_CONTENT_TOP 등)
+    /// </summary>
+    public string? TargetLocation { get; set; }
 }
 
 /// <summary>

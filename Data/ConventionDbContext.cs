@@ -379,6 +379,8 @@ public class ConventionDbContext : DbContext
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("getdate()");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.OrderNum).HasDefaultValue(0);
+            entity.Property(e => e.ActionCategory).HasMaxLength(50); // BUTTON, MENU, AUTO_POPUP, BANNER, CARD
+            entity.Property(e => e.TargetLocation).HasMaxLength(100); // HOME_SUB_HEADER, SCHEDULE_CONTENT_TOP 등
 
             entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_ConventionAction_ConventionId");
             entity.HasIndex(e => e.ActionType).HasDatabaseName("IX_ConventionAction_ActionType");

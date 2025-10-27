@@ -62,6 +62,8 @@ public class ActionManagementController : ControllerBase
                 Category = a.Category ?? (a.Template != null ? a.Template.Category : null),
                 TemplateName = a.Template != null ? a.Template.TemplateName : null,
                 TemplateType = a.Template != null ? a.Template.TemplateType : null,
+                ActionCategory = a.ActionCategory,
+                TargetLocation = a.TargetLocation,
                 CompletedCount = a.GuestActionStatuses.Count(s => s.IsComplete),
                 TotalGuestCount = totalGuests
             })
@@ -253,6 +255,8 @@ public class ActionManagementController : ControllerBase
                 OrderNum = request.OrderNum,
                 ConfigJson = request.ConfigJson,
                 IsActive = request.IsActive,
+                ActionCategory = request.ActionCategory,
+                TargetLocation = request.TargetLocation,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -300,6 +304,8 @@ public class ActionManagementController : ControllerBase
             action.OrderNum = request.OrderNum;
             action.ConfigJson = request.ConfigJson;
             action.IsActive = request.IsActive;
+            action.ActionCategory = request.ActionCategory;
+            action.TargetLocation = request.TargetLocation;
             action.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
