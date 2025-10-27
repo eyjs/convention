@@ -280,9 +280,9 @@
 
     <!-- 상세보기 모달 -->
     <div v-if="viewingNotice" @click.self="closeViewModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 class="text-lg font-bold">게시글 상세</h2>
+      <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b px-4 md:px-6 py-4 flex items-center justify-between">
+          <h2 class="text-base md:text-lg font-bold">게시글 상세</h2>
           <button @click="closeViewModal" class="p-2 hover:bg-gray-100 rounded-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -290,25 +290,29 @@
           </button>
         </div>
 
-        <div class="p-6">
-          <div class="flex items-center space-x-2 mb-3">
+        <div class="px-4 md:px-6 py-5">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
             <span v-if="viewingNotice.isPinned" class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold">필독</span>
-            <span v-if="viewingNotice.categoryName" 
+            <span v-if="viewingNotice.categoryName"
               class="px-2 py-1 rounded text-xs font-medium"
               :style="{ backgroundColor: viewingNotice.categoryColor + '20', color: viewingNotice.categoryColor || '#6B7280' }">
               {{ viewingNotice.categoryName }}
             </span>
           </div>
-          <h1 class="text-2xl font-bold text-gray-900 mb-4">{{ viewingNotice.title }}</h1>
-          <div class="text-sm text-gray-500 mb-4">
-            작성자: {{ viewingNotice.authorName }} | 조회수: {{ viewingNotice.viewCount }} | 작성일: {{ formatDate(viewingNotice.createdAt) }}
+          <h1 class="text-xl md:text-2xl font-bold text-gray-900 mb-4">{{ viewingNotice.title }}</h1>
+          <div class="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500 mb-6">
+            <span>작성자: {{ viewingNotice.authorName }}</span>
+            <span class="hidden md:inline">|</span>
+            <span>조회수: {{ viewingNotice.viewCount }}</span>
+            <span class="hidden md:inline">|</span>
+            <span>작성일: {{ formatDate(viewingNotice.createdAt) }}</span>
           </div>
-          <div class="prose max-w-none mb-6">
-            <p class="text-gray-700 whitespace-pre-wrap">{{ viewingNotice.content }}</p>
+          <div class="prose prose-sm md:prose-base max-w-none mb-6">
+            <div v-html="viewingNotice.content"></div>
           </div>
-          <div class="flex justify-end space-x-3 pt-6 border-t">
-            <button @click="editNotice(viewingNotice); closeViewModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-50">수정</button>
-            <button @click="deleteNotice(viewingNotice.id); closeViewModal()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">삭제</button>
+          <div class="flex justify-end gap-2 md:gap-3 pt-6 border-t">
+            <button @click="editNotice(viewingNotice); closeViewModal()" class="px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg hover:bg-gray-50">수정</button>
+            <button @click="deleteNotice(viewingNotice.id); closeViewModal()" class="px-3 md:px-4 py-2 text-sm md:text-base bg-red-600 text-white rounded-lg hover:bg-red-700">삭제</button>
           </div>
         </div>
       </div>
@@ -320,6 +324,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import apiClient from '@/services/api'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
+import 'quill/dist/quill.snow.css'
 
 const props = defineProps({
   conventionId: { type: Number, required: true }
@@ -387,8 +392,14 @@ function formatDate(dateStr) {
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
 }
 
-function viewNotice(notice) {
-  viewingNotice.value = notice
+async function viewNotice(notice) {
+  try {
+    const response = await apiClient.get(`/notices/${notice.id}`)
+    viewingNotice.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch notice details:', error)
+    alert('공지사항을 불러오는데 실패했습니다.')
+  }
 }
 
 function closeViewModal() {
@@ -539,3 +550,5 @@ onMounted(async () => {
   await loadNotices()
 })
 </script>
+
+

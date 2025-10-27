@@ -173,7 +173,7 @@
           </div>
 
           <!-- 본문 -->
-          <div class="mb-6" v-viewer>
+          <div class="mb-6" v-viewer ref="viewer">
             <QuillViewer :content="selectedNotice.content" @image-clicked="openImageViewer" />
           </div>
 
@@ -320,6 +320,7 @@ import { useQuillEditor } from '@/composables/useQuillEditor'
 import QuillViewer from '@/components/common/QuillViewer.vue'
 
 const router = useRouter()
+const viewer = ref(null)
 const authStore = useAuthStore()
 const isAdmin = computed(() => authStore.user?.role === 'Admin')
 
@@ -560,6 +561,19 @@ watch(categories, () => {
     handleScroll()
   }, 100)
 })
+
+const openImageViewer = (src) => {
+  const viewerInstance = viewer.value?.$viewer
+  if (!viewerInstance) return
+
+  const images = viewer.value.querySelectorAll('img')
+  const urls = Array.from(images).map(img => img.src)
+  const index = urls.findIndex(url => url === src)
+
+  if (index !== -1) {
+    viewerInstance.view(index)
+  }
+}
 
 onMounted(() => {
   loadCategories()

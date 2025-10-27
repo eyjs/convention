@@ -13,15 +13,15 @@
       <!-- 검색 영역 -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div class="flex gap-4">
-          <select 
-            v-model="searchType" 
+          <select
+            v-model="searchType"
             class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="title">제목</option>
             <option value="content">내용</option>
             <option value="all">제목+내용</option>
           </select>
-          
+
           <input
             v-model="searchKeyword"
             type="text"
@@ -29,7 +29,7 @@
             class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             @keyup.enter="handleSearch"
           />
-          
+
           <button
             @click="handleSearch"
             class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -37,6 +37,17 @@
             검색
           </button>
         </div>
+      </div>
+
+      <!-- 새 글 작성 버튼 -->
+      <div v-if="authStore.isAuthenticated" class="mb-6 flex justify-end">
+        <button
+          @click="openCreateModal"
+          class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+        >
+          <span>+</span>
+          <span>새 글 작성</span>
+        </button>
       </div>
 
       <!-- 로딩 상태 -->
@@ -64,7 +75,7 @@
           <div
             v-for="notice in pinnedNotices"
             :key="`pinned-${notice.id}`"
-            @click="goToDetail(notice.id)"
+            @click="openDetailModal(notice.id)"
             class="border-b px-6 py-4 hover:bg-blue-50 cursor-pointer transition-colors bg-yellow-50"
           >
             <div class="grid grid-cols-12 gap-4 items-center">
@@ -89,7 +100,7 @@
           <div
             v-for="notice in regularNotices"
             :key="notice.id"
-            @click="goToDetail(notice.id)"
+            @click="openDetailModal(notice.id)"
             class="border-b px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
           >
             <div class="grid grid-cols-12 gap-4 items-center">
@@ -149,21 +160,46 @@
         </nav>
       </div>
     </div>
+
+    <!-- 공지사항 작성/수정 모달 -->
+    <NoticeFormModal
+      v-if="showModal"
+      :notice="selectedNotice"
+      :categories="categories"
+      :default-category-id="categories[0]?.id"
+      :convention-id="conventionStore.currentConvention?.id || 0"
+      @close="closeModal"
+      @saved="handleSaved"
+    />
+
+    <!-- 공지사항 상세보기 모달 -->
+    <NoticeDetailModal
+      v-if="showDetailModal"
+      :notice-id="selectedNoticeId"
+      @close="closeDetailModal"
+    />
   </div>
 </template>
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { noticeAPI } from '@/services/noticeService'
+import { categoryAPI } from '@/services/categoryService'
 import { useConventionStore } from '@/stores/convention'
+import { useAuthStore } from '@/stores/auth'
+import NoticeFormModal from '@/components/notice/NoticeFormModal.vue'
+import NoticeDetailModal from '@/components/notice/NoticeDetailModal.vue'
 import dayjs from 'dayjs'
 
 export default {
   name: 'NoticeList',
+  components: {
+    NoticeFormModal,
+    NoticeDetailModal
+  },
   setup() {
-    const router = useRouter()
     const conventionStore = useConventionStore()
+    const authStore = useAuthStore()
     
     // 상태
     const loading = ref(false)
@@ -173,6 +209,11 @@ export default {
     const totalCount = ref(0)
     const searchType = ref('title')
     const searchKeyword = ref('')
+    const showModal = ref(false)
+    const selectedNotice = ref(null)
+    const showDetailModal = ref(false)
+    const selectedNoticeId = ref(null)
+    const categories = ref([])
 
     // 계산된 속성
     const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value))
@@ -198,6 +239,18 @@ export default {
     })
 
     // 메서드
+    const fetchCategories = async () => {
+      try {
+        const conventionId = conventionStore.currentConvention?.id
+        if (!conventionId) return
+
+        const response = await categoryAPI.getNoticeCategories(conventionId)
+        categories.value = response.data
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+      }
+    }
+
     const fetchNotices = async () => {
       loading.value = true
       try {
@@ -241,8 +294,16 @@ export default {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
-    const goToDetail = (id) => {
-      router.push(`/notices/${id}`)
+    const openDetailModal = (id) => {
+      selectedNoticeId.value = id
+      showDetailModal.value = true
+    }
+
+    const closeDetailModal = () => {
+      showDetailModal.value = false
+      selectedNoticeId.value = null
+      // 모달 닫을 때 목록 새로고침 (조회수 업데이트 반영)
+      fetchNotices()
     }
 
     const formatDate = (dateString) => {
@@ -254,12 +315,30 @@ export default {
       return daysDiff <= 3
     }
 
+    const openCreateModal = () => {
+      selectedNotice.value = null
+      showModal.value = true
+    }
+
+    const closeModal = () => {
+      showModal.value = false
+      selectedNotice.value = null
+    }
+
+    const handleSaved = () => {
+      closeModal()
+      fetchNotices()
+    }
+
     // 생명주기
     onMounted(() => {
+      fetchCategories()
       fetchNotices()
     })
 
     return {
+      authStore,
+      conventionStore,
       loading,
       notices,
       currentPage,
@@ -267,6 +346,11 @@ export default {
       totalCount,
       searchType,
       searchKeyword,
+      showModal,
+      selectedNotice,
+      showDetailModal,
+      selectedNoticeId,
+      categories,
       totalPages,
       pinnedNotices,
       regularNotices,
@@ -274,9 +358,13 @@ export default {
       fetchNotices,
       handleSearch,
       goToPage,
-      goToDetail,
+      openDetailModal,
+      closeDetailModal,
       formatDate,
-      isNew
+      isNew,
+      openCreateModal,
+      closeModal,
+      handleSaved
     }
   }
 }

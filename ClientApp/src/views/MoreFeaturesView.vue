@@ -1,10 +1,18 @@
 <template>
   <div class="min-h-screen min-h-dvh bg-gray-50">
     <!-- 헤더 -->
-    <div class="bg-white border-b sticky top-0 z-40">
+    <div class="sticky top-0 z-40 bg-white shadow-sm">
       <div class="px-4 py-4">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">전체 액션</h1>
-        <p class="text-sm text-gray-600">완료해야 할 모든 액션 목록입니다</p>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <button @click="$router.back()" class="p-2 hover:bg-gray-100 rounded-lg">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h1 class="text-xl font-bold text-gray-900">추가 메뉴</h1>
+          </div>
+        </div>
       </div>
     </div>
 

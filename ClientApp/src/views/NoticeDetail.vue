@@ -56,7 +56,7 @@
         <!-- 본문 내용 (Quill 에디터 읽기 전용) -->
         <div class="px-8 py-8">
           <div 
-            class="prose max-w-none ql-editor-readonly"
+            class="prose max-w-none"
             v-html="notice.content"
           ></div>
         </div>
@@ -209,78 +209,4 @@ export default {
 }
 </script>
 
-<style scoped>
-/* Quill 에디터 읽기 전용 스타일 */
-.ql-editor-readonly {
-  padding: 0;
-  line-height: 1.8;
-  font-size: 16px;
-}
 
-.ql-editor-readonly :deep(h1) {
-  font-size: 2em;
-  font-weight: bold;
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-}
-
-.ql-editor-readonly :deep(h2) {
-  font-size: 1.5em;
-  font-weight: bold;
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-}
-
-.ql-editor-readonly :deep(h3) {
-  font-size: 1.25em;
-  font-weight: bold;
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-}
-
-.ql-editor-readonly :deep(p) {
-  margin-bottom: 1em;
-}
-
-.ql-editor-readonly :deep(ul),
-.ql-editor-readonly :deep(ol) {
-  margin-left: 1.5em;
-  margin-bottom: 1em;
-}
-
-.ql-editor-readonly :deep(img) {
-  max-width: 100%;
-  height: auto;
-  margin: 1em 0;
-}
-
-.ql-editor-readonly :deep(blockquote) {
-  border-left: 4px solid #ccc;
-  padding-left: 16px;
-  margin: 1em 0;
-  color: #666;
-}
-
-.ql-editor-readonly :deep(pre) {
-  background-color: #f4f4f4;
-  padding: 1em;
-  border-radius: 4px;
-  overflow-x: auto;
-}
-
-.ql-editor-readonly :deep(code) {
-  background-color: #f4f4f4;
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-family: monospace;
-}
-
-.ql-editor-readonly :deep(a) {
-  color: #3b82f6;
-  text-decoration: underline;
-}
-
-.ql-editor-readonly :deep(a:hover) {
-  color: #2563eb;
-}
-</style>

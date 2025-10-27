@@ -14,8 +14,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
               </svg>
             </button>
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">행사 관리</h1>
-            <span v-if="convention" class="ml-4 text-sm text-gray-500">{{ convention.title }}</span>
+            <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">행사 관리</h1>
+            <span v-if="convention" class="ml-2 sm:ml-4 text-xs sm:text-sm text-gray-500">{{ convention.title }}</span>
           </div>
           <div class="flex items-center space-x-4">
             <button

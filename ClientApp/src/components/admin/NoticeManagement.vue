@@ -90,8 +90,12 @@
               </td>
               <td class="px-6 py-4 text-sm text-gray-900">{{ notice.categoryName }}</td>
               <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                  <span class="text-sm text-gray-900 font-medium">{{ notice.title }}</span>
+                <div
+                  class="flex items-center gap-2 cursor-pointer"
+                  @click="() => { alert('클릭됨!'); openDetailModal(notice.id); }"
+                  style="background-color: rgba(255,0,0,0.1);"
+                >
+                  <span class="text-sm text-gray-900 font-medium hover:text-blue-600 transition-colors">{{ notice.title }}</span>
                   <span v-if="notice.hasAttachment" class="text-gray-400">📎</span>
                 </div>
               </td>
@@ -164,14 +168,31 @@
     <NoticeFormModal
       v-if="showModal"
       :notice="selectedNotice"
+      :categories="categories"
+      :default-category-id="categories[0]?.id"
+      :convention-id="conventionId"
       @close="closeModal"
       @saved="handleSaved"
     />
 
-    <CategoryManagementModal 
-      v-if="showCategoryModal" 
+    <CategoryManagementModal
+      v-if="showCategoryModal"
       @close="showCategoryModal = false"
       @categories-updated="fetchNotices"
+    />
+
+    <!-- 디버그 정보 (화면에 표시) -->
+    <div v-if="true" class="fixed bottom-4 right-4 bg-yellow-100 border-2 border-yellow-500 p-4 rounded shadow-lg z-50 text-xs">
+      <p><strong>디버그 정보:</strong></p>
+      <p>showDetailModal: {{ showDetailModal }}</p>
+      <p>selectedNoticeId: {{ selectedNoticeId }}</p>
+    </div>
+
+    <!-- 공지사항 상세보기 모달 -->
+    <NoticeDetailModal
+      v-if="showDetailModal"
+      :notice-id="selectedNoticeId"
+      @close="closeDetailModal"
     />
   </div>
 </template>
@@ -179,7 +200,9 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { noticeAPI } from '@/services/noticeService'
-import NoticeFormModal from '@/components/admin/NoticeFormModal.vue'
+import { categoryAPI } from '@/services/categoryService'
+import NoticeFormModal from '@/components/notice/NoticeFormModal.vue'
+import NoticeDetailModal from '@/components/notice/NoticeDetailModal.vue'
 import CategoryManagementModal from '@/components/admin/CategoryManagementModal.vue'
 import dayjs from 'dayjs'
 
@@ -187,6 +210,7 @@ export default {
   name: 'AdminNoticeManagement',
   components: {
     NoticeFormModal,
+    NoticeDetailModal,
     CategoryManagementModal
   },
   setup() {
@@ -200,7 +224,11 @@ export default {
     const searchKeyword = ref('')
     const showModal = ref(false)
     const selectedNotice = ref(null)
+    const showDetailModal = ref(false)
+    const selectedNoticeId = ref(null)
     const showCategoryModal = ref(false)
+    const categories = ref([])
+    const conventionId = ref(1) // TODO: get from store or props
 
     // 계산된 속성
     const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value))
@@ -226,11 +254,21 @@ export default {
     const isNextButtonDisabled = computed(() => currentPage.value === totalPages.value)
 
     // 메서드
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryAPI.getNoticeCategories(conventionId.value)
+        categories.value = response.data
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+        alert('카테고리를 불러오는데 실패했습니다.')
+      }
+    }
+
     const fetchNotices = async () => {
       loading.value = true
       try {
         const response = await noticeAPI.getNotices({
-          conventionId: 1, // TODO: get conventionId from store or props
+          conventionId: conventionId.value,
           page: currentPage.value,
           pageSize: pageSize.value,
           searchType: searchKeyword.value ? searchType.value : undefined,
@@ -313,8 +351,34 @@ export default {
       return dayjs(dateString).format('YYYY.MM.DD')
     }
 
+    const openDetailModal = (id) => {
+      alert(`상세보기 클릭됨! ID: ${id}`)
+      console.log('[NoticeManagement] openDetailModal 호출됨, id:', id)
+      console.log('[NoticeManagement] 현재 showDetailModal:', showDetailModal.value)
+      console.log('[NoticeManagement] 현재 selectedNoticeId:', selectedNoticeId.value)
+
+      selectedNoticeId.value = id
+      showDetailModal.value = true
+
+      console.log('[NoticeManagement] 변경 후 showDetailModal:', showDetailModal.value)
+      console.log('[NoticeManagement] 변경 후 selectedNoticeId:', selectedNoticeId.value)
+
+      // 다음 틱에서 확인
+      setTimeout(() => {
+        console.log('[NoticeManagement] setTimeout 후 showDetailModal:', showDetailModal.value)
+        console.log('[NoticeManagement] setTimeout 후 selectedNoticeId:', selectedNoticeId.value)
+      }, 100)
+    }
+
+    const closeDetailModal = () => {
+      console.log('[NoticeManagement] closeDetailModal 호출됨')
+      showDetailModal.value = false
+      selectedNoticeId.value = null
+    }
+
     // 생명주기
     onMounted(() => {
+      fetchCategories()
       fetchNotices()
     })
 
@@ -327,8 +391,12 @@ export default {
       searchType,
       searchKeyword,
       showModal,
-      showCategoryModal,
+      showDetailModal,
       selectedNotice,
+      selectedNoticeId,
+      showCategoryModal,
+      categories,
+      conventionId,
       totalPages,
       visiblePages,
       fetchNotices,
@@ -340,7 +408,9 @@ export default {
       handleSaved,
       togglePin,
       confirmDelete,
-      formatDate
+      formatDate,
+      openDetailModal,
+      closeDetailModal
     }
   }
 }

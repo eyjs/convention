@@ -20,9 +20,7 @@ import BlotFormatter from 'quill-blot-formatter'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import apiClient from '@/services/api'
 
-if (!Quill.imports['modules/blotFormatter']) {
-  Quill.register('modules/blotFormatter', BlotFormatter)
-}
+
 
 const editorModules = [
   {
@@ -205,7 +203,6 @@ defineExpose({
 
 .ql-container {
   font-family: inherit;
-  font-size: 14px;
 }
 
 :deep(.ql-editor) {
