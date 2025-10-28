@@ -39,7 +39,7 @@ public class RagSearchService
             Dictionary<string, object>? filter = null;
             if (conventionId.HasValue)
             {
-                filter = new Dictionary<string, object> { { "convention_id", conventionId.Value } };
+                filter = new Dictionary<string, object> { { "conventionId", conventionId.Value } };
             }
             // (핵심 수정) 하드코딩된 { "type", "convention" } 필터를 제거하여
             // convention_info, daily_schedule 등 모든 관련 문서를 검색 대상으로 포함합니다.
@@ -83,7 +83,7 @@ public class RagSearchService
             Dictionary<string, object>? filter = null;
             if (conventionId.HasValue)
             {
-                filter = new Dictionary<string, object> { { "convention_id", conventionId.Value } };
+                filter = new Dictionary<string, object> { { "conventionId", conventionId.Value } };
             }
 
             var results = await _vectorStore.SearchAsync(queryEmbedding, topK: 3, filter);
@@ -120,7 +120,7 @@ public class RagSearchService
     {
         if (metadata == null) return null;
 
-        if (metadata.TryGetValue("convention_id", out var convIdObj))
+        if (metadata.TryGetValue("conventionId", out var convIdObj))
         {
             // Vector Store에서 넘어온 데이터 타입에 따라 안전하게 변환
             if (convIdObj is JsonElement element && element.TryGetInt32(out var convId))

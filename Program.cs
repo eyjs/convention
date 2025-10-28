@@ -38,6 +38,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 
+// LLM Provider 전용 HttpClient (타임아웃 5분)
+builder.Services.AddHttpClient("LlmClient", client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(5);
+});
+
 // 세션 추가
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -88,22 +94,15 @@ else
     builder.Services.AddSingleton<IEmbeddingService, LocalEmbeddingService>();
 }
 
-// Vector Store 등록
-if (builder.Environment.IsProduction())
-{
-    builder.Services.AddScoped<IVectorStore, MssqlVectorStore>(); // 👈 MSSQL (Scoped)
-    Console.WriteLine("Using MSSQL Vector Store for Production.");
-}
-else
-{
-    builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>(); // 개발용 InMemory
-    Console.WriteLine("Using InMemory Vector Store for Development.");
-}
+// Vector Store 등록 - MSSQL 사용
+builder.Services.AddScoped<IVectorStore, MssqlVectorStore>(); // MSSQL Vector Store (Scoped)
+Console.WriteLine("Using MSSQL Vector Store.");
 
 // LLM Provider들은 상태를 유지할 필요 없으므로 'Scoped'로 등록합니다.
 builder.Services.AddScoped<Llama3Provider>(provider =>
 {
-    var httpClient = provider.GetRequiredService<HttpClient>();
+    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = httpClientFactory.CreateClient("LlmClient");
     var configuration = provider.GetRequiredService<IConfiguration>();
     var logger = provider.GetRequiredService<ILogger<Llama3Provider>>();
     return new Llama3Provider(httpClient, configuration, logger);
@@ -111,7 +110,8 @@ builder.Services.AddScoped<Llama3Provider>(provider =>
 
 builder.Services.AddScoped<GeminiProvider>(provider =>
 {
-    var httpClient = provider.GetRequiredService<HttpClient>();
+    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = httpClientFactory.CreateClient("LlmClient");
     var configuration = provider.GetRequiredService<IConfiguration>();
     return new GeminiProvider(httpClient, configuration);
 });

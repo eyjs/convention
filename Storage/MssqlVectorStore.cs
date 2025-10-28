@@ -42,12 +42,33 @@ public class MssqlVectorStore : IVectorStore
         throw new ArgumentException($"Document metadata must contain a valid integer '{key}'.");
     }
 
+    // 메타데이터에서 SourceType 추출 헬퍼
+    private string GetSourceTypeFromMetadata(Dictionary<string, object>? metadata)
+    {
+        const string key = "sourceType";
+        if (metadata != null && metadata.TryGetValue(key, out var valueObj))
+        {
+            if (valueObj is string strValue && !string.IsNullOrWhiteSpace(strValue))
+            {
+                return strValue;
+            }
+            if (valueObj is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.String)
+            {
+                var jsonStr = jsonElement.GetString();
+                if (!string.IsNullOrWhiteSpace(jsonStr)) return jsonStr;
+            }
+        }
+        // 기본값 반환
+        return "Convention";
+    }
+
     // AddDocumentAsync 메서드 (이전과 동일)
     public async Task<string> AddDocumentAsync(string content, float[] embedding, Dictionary<string, object>? metadata = null)
     {
         var entry = new VectorDataEntry
         {
             ConventionId = GetConventionIdFromMetadata(metadata),
+            SourceType = GetSourceTypeFromMetadata(metadata),
             Content = content,
             Embedding = embedding,
             MetadataJson = metadata != null ? JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = false }) : null
@@ -55,7 +76,7 @@ public class MssqlVectorStore : IVectorStore
 
         _dbContext.VectorDataEntries.Add(entry);
         await _dbContext.SaveChangesAsync();
-        _logger.LogInformation("문서 추가 완료. ID: {DocumentId}", entry.Id);
+        _logger.LogInformation("문서 추가 완료. ID: {DocumentId}, SourceType: {SourceType}", entry.Id, entry.SourceType);
         return entry.Id;
     }
 
@@ -70,6 +91,7 @@ public class MssqlVectorStore : IVectorStore
                 entities.Add(new VectorDataEntry
                 {
                     ConventionId = GetConventionIdFromMetadata(doc.Metadata),
+                    SourceType = GetSourceTypeFromMetadata(doc.Metadata),
                     Content = doc.Content,
                     Embedding = doc.Embedding,
                     MetadataJson = doc.Metadata != null ? JsonSerializer.Serialize(doc.Metadata, new JsonSerializerOptions { WriteIndented = false }) : null

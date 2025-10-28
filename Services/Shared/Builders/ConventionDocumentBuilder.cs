@@ -34,7 +34,8 @@ namespace LocalRAG.Services.Shared.Builders
                 Metadata = new Dictionary<string, object>
                 {
                     { "type", "convention_info" },
-                    { "convention_id", convention.Id }
+                    { "conventionId", convention.Id },
+                    { "sourceType", "Convention" }
                 }
             });
 
@@ -83,7 +84,8 @@ namespace LocalRAG.Services.Shared.Builders
                     Metadata = new Dictionary<string, object>
                     {
                         { "type", "guest_summary" },
-                        { "convention_id", convention.Id }
+                        { "conventionId", convention.Id },
+                        { "sourceType", "GuestSummary" }
                     }
                 });
             }
@@ -109,7 +111,8 @@ namespace LocalRAG.Services.Shared.Builders
                         Metadata = new Dictionary<string, object>
                         {
                             { "type", "pinned_notices" },
-                            { "convention_id", convention.Id }
+                            { "conventionId", convention.Id },
+                            { "sourceType", "Notice" }
                         }
                     });
                 }
@@ -134,7 +137,8 @@ namespace LocalRAG.Services.Shared.Builders
                     Metadata = new Dictionary<string, object>
                     {
                         { "type", "notice_summary" },
-                        { "convention_id", convention.Id }
+                        { "conventionId", convention.Id },
+                        { "sourceType", "Notice" }
                     }
                 });
             }
@@ -188,7 +192,8 @@ namespace LocalRAG.Services.Shared.Builders
                             Metadata = new Dictionary<string, object>
                             {
                                 { "type", "schedule_template" },
-                                { "convention_id", convention.Id },
+                                { "conventionId", convention.Id },
+                                { "sourceType", "Schedule" },
                                 { "template_id", template.Id },
                                 { "template_title", template.CourseName }
                             }
@@ -239,7 +244,8 @@ namespace LocalRAG.Services.Shared.Builders
                     Metadata = new Dictionary<string, object>
                     {
                         { "type", "action_list" },
-                        { "convention_id", convention.Id }
+                        { "conventionId", convention.Id },
+                        { "sourceType", "ConventionAction" }
                     }
                 });
             }

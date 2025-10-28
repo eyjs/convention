@@ -22,8 +22,7 @@ public class ConventionDbContext : DbContext
     public DbSet<Menu> Menus { get; set; }
     public DbSet<Section> Sections { get; set; }
     public DbSet<Owner> Owners { get; set; }
-    public DbSet<VectorStore> VectorStores { get; set; }
-    
+
     public DbSet<ScheduleTemplate> ScheduleTemplates { get; set; }
     public DbSet<ScheduleItem> ScheduleItems { get; set; }
     public DbSet<GuestScheduleTemplate> GuestScheduleTemplates { get; set; }
@@ -232,14 +231,6 @@ public class ConventionDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_Owner_ConventionId");
-        });
-
-        modelBuilder.Entity<VectorStore>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_VectorStore_ConventionId");
-            entity.HasIndex(e => e.SourceType).HasDatabaseName("IX_VectorStore_SourceType");
         });
 
         // NoticeCategory 설정

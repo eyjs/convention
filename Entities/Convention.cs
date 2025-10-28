@@ -36,6 +36,5 @@ namespace LocalRAG.Entities
         public ICollection<Menu> Menus { get; set; } = new List<Menu>();
         public ICollection<Owner> Owners { get; set; } = new List<Owner>();
         public ICollection<Feature> Features { get; set; } = new List<Feature>();
-        public ICollection<VectorStore> VectorStores { get; set; } = new List<VectorStore>();
     }
 }
