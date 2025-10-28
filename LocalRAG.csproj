@@ -93,7 +93,7 @@
   -->
 
   <Target Name="PublishVueApp" AfterTargets="ComputeFilesToPublish">
-    <Exec Command="npm install" WorkingDirectory="ClientApp" Condition="!Exists('ClientApp\node_modules')" />
+    <Exec Command="npm install --legacy-peer-deps" WorkingDirectory="ClientApp" Condition="!Exists('ClientApp\node_modules')" />
     <Exec Command="npm run build" WorkingDirectory="ClientApp" />
     
     <ItemGroup>
