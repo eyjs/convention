@@ -67,17 +67,30 @@ builder.Services.AddCors(options =>
 // --- 3. 데이터베이스 및 리포지토리 설정 ---
 builder.Services.AddConnectionStringProvider();
 
-builder.Services.AddDbContext<ConventionDbContext>((serviceProvider, options) =>
-{
-    var connectionProvider = serviceProvider.GetRequiredService<IConnectionStringProvider>();
-    var connectionString = connectionProvider.GetConnectionString();
+// Connection string을 한 번만 가져와서 재사용
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("DefaultConnection이 설정되지 않았습니다.");
 
+// DbContextPool 등록 (일반 리포지토리용)
+builder.Services.AddDbContextPool<ConventionDbContext>(options =>
+{
     options.UseSqlServer(connectionString, sqlOptions =>
     {
         sqlOptions.CommandTimeout(60);
         sqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
     });
 });
+
+// DbContextFactory 등록 (MssqlVectorStore용)
+builder.Services.AddPooledDbContextFactory<ConventionDbContext>(options =>
+{
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.CommandTimeout(60);
+        sqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
+    });
+});
+
 builder.Services.AddRepositories();
 
 

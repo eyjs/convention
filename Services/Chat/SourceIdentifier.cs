@@ -37,6 +37,7 @@ public class SourceIdentifier
                 break;
             case ChatIntentRouter.Intent.PersonalSchedule:
                 sources.Add(SourceType.Schedule_DB);
+                sources.Add(SourceType.RAG_Convention); // 일정 + 행사 정보 통합
                 break;
             case ChatIntentRouter.Intent.Event:
                 sources.Add(SourceType.RAG_Convention);

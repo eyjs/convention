@@ -25,7 +25,8 @@ public static class ConnectionStringExtensions
 {
     public static IServiceCollection AddConnectionStringProvider(this IServiceCollection services)
     {
-        services.AddScoped<IConnectionStringProvider, ConnectionStringProvider>();
+        // Singleton으로 변경: 연결 문자열은 요청별로 변경되지 않으며, DbContextFactory와 호환성 보장
+        services.AddSingleton<IConnectionStringProvider, ConnectionStringProvider>();
         return services;
     }
 }

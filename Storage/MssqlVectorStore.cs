@@ -14,15 +14,14 @@ namespace LocalRAG.Storage;
 
 public class MssqlVectorStore : IVectorStore
 {
-    private readonly ConventionDbContext _dbContext;
+    private readonly IDbContextFactory<ConventionDbContext> _dbContextFactory;
     private readonly ILogger<MssqlVectorStore> _logger;
 
-    // 생성자 및 로거는 이전과 동일
-    public MssqlVectorStore(ConventionDbContext dbContext, ILogger<MssqlVectorStore> logger)
+    public MssqlVectorStore(IDbContextFactory<ConventionDbContext> dbContextFactory, ILogger<MssqlVectorStore> logger)
     {
-        _dbContext = dbContext;
+        _dbContextFactory = dbContextFactory;
         _logger = logger;
-        _logger.LogInformation("MssqlVectorStore 초기화됨.");
+        _logger.LogInformation("MssqlVectorStore 초기화됨 (DbContextFactory 사용).");
     }
 
     // 메타데이터에서 ConventionId 추출 헬퍼 (이전과 동일)
@@ -62,9 +61,11 @@ public class MssqlVectorStore : IVectorStore
         return "Convention";
     }
 
-    // AddDocumentAsync 메서드 (이전과 동일)
+    // AddDocumentAsync 메서드
     public async Task<string> AddDocumentAsync(string content, float[] embedding, Dictionary<string, object>? metadata = null)
     {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+
         var entry = new VectorDataEntry
         {
             ConventionId = GetConventionIdFromMetadata(metadata),
@@ -74,15 +75,17 @@ public class MssqlVectorStore : IVectorStore
             MetadataJson = metadata != null ? JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = false }) : null
         };
 
-        _dbContext.VectorDataEntries.Add(entry);
-        await _dbContext.SaveChangesAsync();
+        dbContext.VectorDataEntries.Add(entry);
+        await dbContext.SaveChangesAsync();
         _logger.LogInformation("문서 추가 완료. ID: {DocumentId}, SourceType: {SourceType}", entry.Id, entry.SourceType);
         return entry.Id;
     }
 
-    // AddDocumentsAsync 메서드 (이전과 동일)
+    // AddDocumentsAsync 메서드
     public async Task AddDocumentsAsync(IEnumerable<VectorDocument> documents)
     {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+
         var entities = new List<VectorDataEntry>();
         foreach (var doc in documents)
         {
@@ -109,11 +112,11 @@ public class MssqlVectorStore : IVectorStore
             return;
         }
 
-        _dbContext.VectorDataEntries.AddRange(entities);
+        dbContext.VectorDataEntries.AddRange(entities);
 
         try
         {
-            await _dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
             _logger.LogInformation("{Count}개 문서를 MSSQL에 추가했습니다.", entities.Count);
         }
         catch (Exception ex)
@@ -125,7 +128,9 @@ public class MssqlVectorStore : IVectorStore
 
     public async Task<List<VectorSearchResult>> SearchAsync(float[] queryEmbedding, int topK = 5, Dictionary<string, object>? filter = null)
     {
-        IQueryable<VectorDataEntry> query = _dbContext.VectorDataEntries.AsNoTracking();
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+
+        IQueryable<VectorDataEntry> query = dbContext.VectorDataEntries.AsNoTracking();
 
         // --- 필터링 (이전과 동일) ---
         if (filter != null)
@@ -252,12 +257,14 @@ public class MssqlVectorStore : IVectorStore
         return finalResults;
     }
 
-    // DeleteDocumentAsync 메서드 (이전과 동일)
+    // DeleteDocumentAsync 메서드
     public async Task<bool> DeleteDocumentAsync(string documentId)
     {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+
         try
         {
-            int affectedRows = await _dbContext.VectorDataEntries
+            int affectedRows = await dbContext.VectorDataEntries
                 .Where(v => v.Id == documentId)
                 .ExecuteDeleteAsync(); // EF Core 7+ 필요
 
@@ -273,9 +280,11 @@ public class MssqlVectorStore : IVectorStore
         }
     }
 
-    // DeleteDocumentsByMetadataAsync 메서드 (이전과 동일)
+    // DeleteDocumentsByMetadataAsync 메서드
     public async Task DeleteDocumentsByMetadataAsync(string key, object value)
     {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+
         _logger.LogWarning("메타데이터 기반 삭제는 MSSQL에서 비효율적일 수 있습니다. (JSON 파싱 필요)");
         string? valueStr = value?.ToString();
         if (string.IsNullOrEmpty(valueStr))
@@ -285,7 +294,7 @@ public class MssqlVectorStore : IVectorStore
         }
         try
         {
-            var candidates = await _dbContext.VectorDataEntries.AsNoTracking()
+            var candidates = await dbContext.VectorDataEntries.AsNoTracking()
                                              .Where(v => v.MetadataJson != null)
                                              .Select(v => new { v.Id, v.MetadataJson })
                                              .ToListAsync();
@@ -309,7 +318,7 @@ public class MssqlVectorStore : IVectorStore
             }
             if (!idsToDelete.Any()) { _logger.LogInformation("메타데이터 '{Key}' = '{Value}' 조건에 맞는 문서 없음.", key, valueStr); return; }
 
-            int deletedCount = await _dbContext.VectorDataEntries
+            int deletedCount = await dbContext.VectorDataEntries
                 .Where(v => idsToDelete.Contains(v.Id))
                 .ExecuteDeleteAsync(); // EF Core 7+ 필요
             _logger.LogInformation("메타데이터 '{Key}' = '{Value}' 조건 문서 {Count}개 삭제 완료.", key, valueStr, deletedCount);
@@ -321,16 +330,18 @@ public class MssqlVectorStore : IVectorStore
         }
     }
 
-    // GetDocumentCountAsync 메서드 (이전과 동일)
-    public Task<int> GetDocumentCountAsync()
+    // GetDocumentCountAsync 메서드
+    public async Task<int> GetDocumentCountAsync()
     {
-        return _dbContext.VectorDataEntries.CountAsync();
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        return await dbContext.VectorDataEntries.CountAsync();
     }
 
-    // GetDocumentCountAsync(int conventionId) 메서드 (이전과 동일)
-    public Task<int> GetDocumentCountAsync(int conventionId)
+    // GetDocumentCountAsync(int conventionId) 메서드
+    public async Task<int> GetDocumentCountAsync(int conventionId)
     {
-        return _dbContext.VectorDataEntries
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        return await dbContext.VectorDataEntries
                .CountAsync(v => v.ConventionId == conventionId);
     }
 }
