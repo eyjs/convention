@@ -251,8 +251,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
+
+const authStore = useAuthStore()
+const conventionStore = useConventionStore()
 
 const showCalendarView = ref(false)
 const selectedDate = ref('')
@@ -401,8 +406,7 @@ function changeMonth(direction) {
 
 async function loadDynamicActions() {
   try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const conventionId = user.conventionId
+    const conventionId = conventionStore.currentConvention?.id
 
     if (!conventionId) return
 
@@ -423,14 +427,30 @@ async function loadDynamicActions() {
 // API에서 일정 불러오기
 onMounted(async () => {
   try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const guestId = user.guestId
-    const conventionId = user.conventionId
+    // 1. Ensure stores are ready
+    if (!authStore.user) {
+      await authStore.fetchCurrentUser();
+    }
+    if (!conventionStore.currentConvention) {
+      const selectedConventionId = localStorage.getItem('selectedConventionId');
+      if (selectedConventionId) {
+        await conventionStore.setCurrentConvention(parseInt(selectedConventionId));
+      }
+    }
+
+    // 2. Get IDs from stores
+    const userId = authStore.user?.id;
+    const conventionId = conventionStore.currentConvention?.id;
+
+    if (!userId || !conventionId) {
+      console.error("User or Convention not found, cannot fetch schedules.");
+      return;
+    }
+
+    // 3. Fetch data from the correct endpoint
+    const response = await apiClient.get(`/user-schedules/${userId}/${conventionId}`);
     
-    if (!guestId || !conventionId) return
-    
-    const response = await apiClient.get(`/guest-schedules/${guestId}/${conventionId}`)
-    
+    // 4. Map data (using existing mapping logic)
     allSchedules.value = response.data.map(item => ({
       id: item.id,
       date: item.scheduleDate.split('T')[0],
@@ -442,29 +462,27 @@ onMounted(async () => {
       category: '일정',
       group: item.courseName || '전체',
       participants: item.participantCount || 0
-    }))
+    }));
     
-    // 기본 선택 날짜: 가장 가까운 미래 일정 또는 첫 번째 날짜
+    // 5. Set default date (using existing logic)
     if (allSchedules.value.length > 0) {
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date().toISOString().split('T')[0];
       const futureDates = [...new Set(allSchedules.value.map(s => s.date))]
         .filter(d => d >= today)
-        .sort()
+        .sort();
       
-      selectedDate.value = futureDates.length > 0 ? futureDates[0] : allSchedules.value[0].date
+      selectedDate.value = futureDates.length > 0 ? futureDates[0] : allSchedules.value[0].date;
       
-      // 캘린더를 첫 번째 일정의 월로 초기화
-      const firstScheduleDate = parseLocalDate(allSchedules.value[0].date)
-      currentCalendarYear.value = firstScheduleDate.getFullYear()
-      currentCalendarMonth.value = firstScheduleDate.getMonth()
+      const firstScheduleDate = parseLocalDate(allSchedules.value[0].date);
+      currentCalendarYear.value = firstScheduleDate.getFullYear();
+      currentCalendarMonth.value = firstScheduleDate.getMonth();
     }
   } catch (error) {
-    console.error('Failed to load schedules:', error)
-    // 에러 시 사용자에게 피드백 제공 가능
+    console.error('Failed to load schedules:', error);
   }
 
-  // 동적 액션 로드
-  await loadDynamicActions()
+  // Load dynamic actions separately
+  await loadDynamicActions();
 })
 </script>
 

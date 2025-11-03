@@ -126,16 +126,7 @@ const routes = [
       layout: 'DefaultLayout'
     }
   },
-  {
-    path: '/schedule',
-    name: 'Schedule',
-    component: () => import('@/views/Schedule.vue'),
-    meta: { 
-      title: '일정',
-      requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
-  },
+
   {
     path: '/feature/travel-info',
     name: 'TravelInfo',
