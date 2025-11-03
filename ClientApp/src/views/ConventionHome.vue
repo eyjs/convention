@@ -244,15 +244,14 @@ function formatDate(dateStr) {
 
 async function loadTodaySchedules() {
   try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const guestId = user.guestId
-    const conventionId = conventionStore.currentConvention?.id
+    const userId = authStore.user?.id;
+    const conventionId = conventionStore.currentConvention?.id;
     
-    if (!guestId || !conventionId) return
+    if (!userId || !conventionId) return;
     
-    const response = await apiClient.get(`/guest-schedules/${guestId}/${conventionId}`)
-    const now = new Date()
-    const today = now.toISOString().split('T')[0]
+    const response = await apiClient.get(`/user-schedules/${userId}/${conventionId}`);
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
     
     // 현재 시간 이후의 일정만 필터링
     upcomingSchedules.value = response.data
@@ -336,6 +335,11 @@ onMounted(async () => {
   const selectedConventionId = localStorage.getItem('selectedConventionId');
   if (selectedConventionId && !conventionStore.currentConvention) {
     await conventionStore.setCurrentConvention(parseInt(selectedConventionId));
+  }
+
+  // 사용자 정보가 없으면 로드
+  if (!authStore.user) {
+    await authStore.fetchCurrentUser();
   }
   
   // 체크리스트 별도 조회 (ConventionAction 기반)

@@ -320,6 +320,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
 import { useQuillEditor } from '@/composables/useQuillEditor'
 import QuillViewer from '@/components/common/QuillViewer.vue'
@@ -328,6 +329,7 @@ import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 const router = useRouter()
 const viewer = ref(null)
 const authStore = useAuthStore()
+const conventionStore = useConventionStore()
 const isAdmin = computed(() => authStore.user?.role === 'Admin')
 
 const selectedCategory = ref('all')
@@ -358,8 +360,7 @@ const categories = ref([])
 
 async function loadCategories() {
   try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const conventionId = user.conventionId
+    const conventionId = conventionStore.currentConvention?.id
     if (!conventionId) return;
 
     const response = await apiClient.get(`/conventions/${conventionId}/notice-categories`)
@@ -490,8 +491,7 @@ async function submitNotice() {
   }
 
   try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const conventionId = user.conventionId
+    const conventionId = conventionStore.currentConvention?.id
 
     // Quill 에디터 내용을 newNotice에 할당
     await apiClient.post('/notices', {
@@ -511,10 +511,8 @@ async function submitNotice() {
 
 async function loadNotices() {
   try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const conventionId = user.conventionId
+    const conventionId = conventionStore.currentConvention?.id
 
-    console.log('Board.vue - User:', user)
     console.log('Board.vue - ConventionId:', conventionId)
 
     if (!conventionId) {
@@ -589,8 +587,7 @@ const openImageViewer = (src) => {
 
 async function loadDynamicActions() {
   try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const conventionId = user.conventionId
+    const conventionId = conventionStore.currentConvention?.id
 
     if (!conventionId) return
 

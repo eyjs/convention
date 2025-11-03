@@ -190,7 +190,9 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
 import { useDevice } from '@/composables/useDevice'
 
@@ -198,6 +200,8 @@ export default {
   name: 'Schedule',
   setup() {
     const { isTouchDevice } = useDevice()
+    const authStore = useAuthStore()
+    const conventionStore = useConventionStore()
     const loading = ref(false)
     const schedules = ref([])
     const selectedDate = ref(null)
@@ -206,7 +210,8 @@ export default {
 
     // 사용 가능한 날짜 목록
     const availableDates = computed(() => {
-      const dates = new Set(schedules.value.map(s => s.scheduleDate))
+      if (!schedules.value) return [];
+      const dates = new Set(schedules.value.map(s => s.scheduleDate.split('T')[0]))
       return Array.from(dates).sort().map(dateStr => {
         const date = new Date(dateStr)
         const days = ['일', '월', '화', '수', '목', '금', '토']
@@ -221,11 +226,12 @@ export default {
 
     // 필터링된 일정
     const filteredSchedules = computed(() => {
+      if (!schedules.value) return [];
       let filtered = schedules.value
 
       // 날짜 필터
       if (selectedDate.value) {
-        filtered = filtered.filter(s => s.scheduleDate === selectedDate.value)
+        filtered = filtered.filter(s => s.scheduleDate.split('T')[0] === selectedDate.value)
       }
 
       // 검색 필터
@@ -274,86 +280,43 @@ export default {
     const fetchSchedules = async () => {
       loading.value = true
       try {
-        // 내가 할당받은 일정 템플릿의 모든 일정 항목을 가져옴
-        const response = await apiClient.get('/guest/my-schedules')
-        schedules.value = response.data
+        const userId = authStore.user?.id;
+        const conventionId = conventionStore.currentConvention?.id;
+
+        if (!userId || !conventionId) {
+          console.error("User or Convention not found, cannot fetch schedules.");
+          schedules.value = []; // Clear schedules if IDs are missing
+          return;
+        }
+
+        const response = await apiClient.get(`/user-schedules/${userId}/${conventionId}`);
+        schedules.value = response.data;
         
         // 첫 번째 날짜를 기본 선택
+        await nextTick();
         if (availableDates.value.length > 0) {
           selectedDate.value = availableDates.value[0].dateStr
         }
       } catch (error) {
-        console.error('Failed to load schedules:', error)
-        // 개발용 임시 데이터
-        schedules.value = [
-          {
-            id: 1,
-            scheduleDate: '2025-03-12',
-            startTime: '09:00',
-            title: '출발 미팅',
-            location: '인천국제공항 제1터미널',
-            content: '전체 참가자 오리엔테이션 및 일정 안내'
-          },
-          {
-            id: 2,
-            scheduleDate: '2025-03-12',
-            startTime: '14:00',
-            title: '로마 도착',
-            location: '로마 피우미치노 공항',
-            content: '인천발 → 로마행 직항편\n\n체크인 시간: 오전 11:00\n탑승 게이트: 미정'
-          },
-          {
-            id: 3,
-            scheduleDate: '2025-03-13',
-            startTime: '09:30',
-            title: '바티칸 박물관 투어',
-            location: '바티칸 박물관',
-            content: '세계적인 예술 작품 감상\n가이드 투어 진행'
-          },
-          {
-            id: 4,
-            scheduleDate: '2025-03-13',
-            startTime: '13:00',
-            title: '점심 식사',
-            location: '트라스테베레 지역 레스토랑',
-            content: '로마 전통 요리 체험'
-          },
-          {
-            id: 5,
-            scheduleDate: '2025-03-13',
-            startTime: '15:00',
-            title: '콜로세움 관람',
-            location: '콜로세움',
-            content: '고대 로마 원형 경기장 투어'
-          },
-          {
-            id: 6,
-            scheduleDate: '2025-03-14',
-            startTime: '10:00',
-            title: '트레비 분수 & 스페인 계단',
-            location: '트레비 분수',
-            content: '로마 명소 자유 관람'
-          },
-          {
-            id: 7,
-            scheduleDate: '2025-03-14',
-            startTime: '14:00',
-            title: '자유 시간',
-            location: null,
-            content: '개인 일정 또는 쇼핑'
-          }
-        ]
-        
-        if (availableDates.value.length > 0) {
-          selectedDate.value = availableDates.value[0].dateStr
-        }
+        console.error('Failed to load schedules:', error);
+        schedules.value = []; // Clear schedules on error
       } finally {
         loading.value = false
       }
     }
 
-    onMounted(() => {
-      fetchSchedules()
+    onMounted(async () => {
+      // Ensure stores are ready before fetching
+      if (!authStore.user) {
+        await authStore.fetchCurrentUser();
+      }
+      if (!conventionStore.currentConvention) {
+        const selectedConventionId = localStorage.getItem('selectedConventionId');
+        if (selectedConventionId) {
+          await conventionStore.setCurrentConvention(parseInt(selectedConventionId));
+        }
+      }
+      fetchSchedules();
     })
 
     return {

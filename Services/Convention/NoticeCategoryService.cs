@@ -26,7 +26,10 @@ namespace LocalRAG.Services.Convention
                 .Select(c => new NoticeCategoryDto
                 {
                     Id = c.Id,
-                    Name = c.Name
+                    Name = c.Name,
+                    Description = c.Description,
+                    DisplayOrder = c.DisplayOrder,
+                    NoticeCount = c.Notices.Count(n => !n.IsDeleted)
                 })
                 .ToListAsync();
         }
@@ -38,7 +41,10 @@ namespace LocalRAG.Services.Convention
                 .Select(c => new NoticeCategoryDto
                 {
                     Id = c.Id,
-                    Name = c.Name
+                    Name = c.Name,
+                    Description = c.Description,
+                    DisplayOrder = c.DisplayOrder,
+                    NoticeCount = c.Notices.Count(n => !n.IsDeleted)
                 })
                 .FirstOrDefaultAsync();
 
@@ -55,6 +61,8 @@ namespace LocalRAG.Services.Convention
             var category = new Entities.NoticeCategory
             {
                 Name = dto.Name,
+                Description = dto.Description,
+                DisplayOrder = dto.DisplayOrder,
                 ConventionId = dto.ConventionId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -65,13 +73,16 @@ namespace LocalRAG.Services.Convention
             return new NoticeCategoryDto
             {
                 Id = category.Id,
-                Name = category.Name
+                Name = category.Name,
+                Description = category.Description,
+                DisplayOrder = category.DisplayOrder,
+                NoticeCount = 0
             };
         }
 
         public async Task<NoticeCategoryDto> UpdateCategoryAsync(int id, UpdateNoticeCategoryDto dto)
         {
-            var category = await _context.NoticeCategories.FindAsync(id);
+            var category = await _context.NoticeCategories.Include(c => c.Notices).FirstOrDefaultAsync(c => c.Id == id);
 
             if (category == null || category.IsDeleted)
             {
@@ -79,12 +90,17 @@ namespace LocalRAG.Services.Convention
             }
 
             category.Name = dto.Name;
+            category.Description = dto.Description;
+            category.DisplayOrder = dto.DisplayOrder;
             await _context.SaveChangesAsync();
 
             return new NoticeCategoryDto
             {
                 Id = category.Id,
-                Name = category.Name
+                Name = category.Name,
+                Description = category.Description,
+                DisplayOrder = category.DisplayOrder,
+                NoticeCount = category.Notices.Count(n => !n.IsDeleted)
             };
         }
 
