@@ -34,7 +34,8 @@ public static class RepositoryServiceExtensions
 
         // 개별 Repository 등록 (필요시 직접 주입받을 수 있도록)
         services.AddScoped<IConventionRepository, ConventionRepository>();
-        services.AddScoped<IGuestRepository, GuestRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+
         services.AddScoped<IScheduleRepository, ScheduleRepository>();
         services.AddScoped<IGuestAttributeRepository, GuestAttributeRepository>();
         services.AddScoped<IFeatureRepository, FeatureRepository>();

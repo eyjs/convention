@@ -8,7 +8,7 @@ namespace LocalRAG.Services.Chat;
 public class ConventionChatService : IConventionChatService
 {
     private readonly SourceIdentifier _sourceIdentifier;
-    private readonly GuestContextualDataProvider _guestContextService;
+    private readonly UserContextualDataProvider _userContextService;
     private readonly RagSearchService _ragSearchService;
     private readonly LlmResponseService _llmResponseService;
     private readonly ConventionAccessService _accessService;
@@ -17,7 +17,7 @@ public class ConventionChatService : IConventionChatService
 
     public ConventionChatService(
         SourceIdentifier sourceIdentifier,
-        GuestContextualDataProvider guestContextService,
+        UserContextualDataProvider userContextService,
         RagSearchService ragSearchService,
         LlmResponseService llmResponseService,
         ConventionAccessService accessService,
@@ -25,7 +25,7 @@ public class ConventionChatService : IConventionChatService
         ILogger<ConventionChatService> logger)
     {
         _sourceIdentifier = sourceIdentifier;
-        _guestContextService = guestContextService;
+        _userContextService = userContextService;
         _ragSearchService = ragSearchService;
         _llmResponseService = llmResponseService;
         _accessService = accessService;
@@ -39,8 +39,8 @@ public class ConventionChatService : IConventionChatService
         ChatUserContext? userContext = null,
         List<ChatRequestMessage>? history = null)
     {
-        _logger.LogInformation("Processing question: '{Question}' for ConventionId: {ConventionId}, GuestId: {GuestId}",
-            question, conventionId, userContext?.GuestId);
+        _logger.LogInformation("Processing question: '{Question}' for ConventionId: {ConventionId}, UserId: {UserId}",
+            question, conventionId, userContext?.UserId);
 
         try
         {
@@ -205,14 +205,14 @@ public class ConventionChatService : IConventionChatService
             {
                 case SourceIdentifier.SourceType.Personal_DB:
                     _logger.LogDebug("Gathering context from Personal_DB");
-                    context = await _guestContextService.BuildGuestContextAsync(
+                    context = await _userContextService.BuildUserContextAsync(
                         userContext, 
                         ChatIntentRouter.Intent.PersonalInfo);
                     break;
 
                 case SourceIdentifier.SourceType.Schedule_DB:
                     _logger.LogDebug("Gathering context from Schedule_DB");
-                    context = await _guestContextService.BuildGuestContextAsync(
+                    context = await _userContextService.BuildUserContextAsync(
                         userContext, 
                         ChatIntentRouter.Intent.PersonalSchedule);
                     break;

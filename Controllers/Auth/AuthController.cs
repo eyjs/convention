@@ -89,9 +89,8 @@ public class AuthController : ControllerBase
         {
             // --- 1. 회원으로 로그인 시도 (ID: LoginId) ---
 
-            // .Include(u => u.Guests)를 추가하여 사용자와 연결된 Guests 정보를 함께 로드합니다.
+            // .Include(u => u.UserConventions)를 추가하여 사용자와 연결된 행사 참여 정보를 함께 로드합니다.
             var user = await _context.Users
-                .Include(u => u.Guests)
                 .FirstOrDefaultAsync(u => u.LoginId == request.LoginId);
 
             if (user != null && user.IsActive && _authService.VerifyPassword(request.Password, user.PasswordHash))
@@ -119,32 +118,8 @@ public class AuthController : ControllerBase
             }
 
             // --- 2. 비회원으로 로그인 시도 (ID: 참석자 이름) ---
-            // 이 부분은 비회원 로그인 로직이므로 기존 코드를 유지합니다.
-            var nonMemberGuest = await _context.Guests
-                .FirstOrDefaultAsync(g => g.GuestName == request.LoginId && !g.IsRegisteredUser);
-
-            if (nonMemberGuest != null && !string.IsNullOrEmpty(nonMemberGuest.PasswordHash) && _authService.VerifyPassword(request.Password, nonMemberGuest.PasswordHash))
-            {
-                var guestUser = new Entities.User { Id = nonMemberGuest.Id, Name = nonMemberGuest.GuestName, Role = "Guest", LoginId = $"guest_{nonMemberGuest.Id}" };
-
-                // (핵심 수정) 비회원 로그인 시에도 GuestId를 토큰에 포함시킵니다.
-                var accessToken = _authService.GenerateAccessToken(guestUser, nonMemberGuest.Id, nonMemberGuest.ConventionId);
-                var refreshToken = _authService.GenerateRefreshToken();
-
-                return Ok(new
-                {
-                    accessToken,
-                    refreshToken,
-                    user = new
-                    {
-                        id = nonMemberGuest.Id,
-                        guestId = nonMemberGuest.Id,
-                        conventionId = nonMemberGuest.ConventionId,
-                        name = nonMemberGuest.GuestName,
-                        role = "Guest"
-                    }
-                });
-            }
+            // NOTE: 이 경로는 더 이상 사용되지 않습니다. UserConvention 모델로 전환되었습니다.
+            // 하위 호환성을 위해 유지하되, guest-login 엔드포인트 사용을 권장합니다.
 
             // --- 3. 로그인 최종 실패 ---
             return Unauthorized(new { message = "아이디 또는 비밀번호를 확인해주세요." });
@@ -165,58 +140,52 @@ public class AuthController : ControllerBase
             // 연락처에서 '-' 제거
             var normalizedPhone = request.Phone.Replace("-", "").Replace(" ", "");
 
-            var guest = await _context.Guests
-                .Include(g => g.Convention)
-                .Include(g => g.User)
-                .FirstOrDefaultAsync(g => 
-                    g.GuestName == request.Name && 
-                    g.Telephone.Replace("-", "").Replace(" ", "") == normalizedPhone &&
-                    g.ConventionId == request.ConventionId);
+            // UserConvention을 통해 사용자 조회
+            var userConvention = await _context.UserConventions
+                .Include(uc => uc.User)
+                .Include(uc => uc.Convention)
+                .FirstOrDefaultAsync(uc =>
+                    uc.User.Name == request.Name &&
+                    uc.User.Phone.Replace("-", "").Replace(" ", "") == normalizedPhone &&
+                    uc.ConventionId == request.ConventionId);
 
-            if (guest == null)
+            if (userConvention == null)
             {
                 return Unauthorized(new { message = "참석자 정보를 찾을 수 없습니다. 이름과 연락처를 확인해주세요." });
             }
 
-            // 회원으로 전환된 경우
-            if (guest.IsRegisteredUser && guest.User != null)
+            var user = userConvention.User;
+
+            // 회원으로 전환된 경우 (LoginId가 있는 경우)
+            if (!string.IsNullOrEmpty(user.LoginId) && !user.LoginId.StartsWith("guest_"))
             {
-                return BadRequest(new { 
+                return BadRequest(new {
                     message = "회원으로 전환된 계정입니다. 일반 로그인을 이용해주세요.",
-                    loginId = guest.User.LoginId
+                    loginId = user.LoginId
                 });
             }
 
-            // 비회원용 토큰 생성 (Guest 정보 기반)
-            var guestUser = new Entities.User
-            {
-                Id = guest.Id,
-                LoginId = $"guest_{guest.Id}",
-                Name = guest.GuestName,
-                Phone = guest.Telephone,
-                Role = "Guest"
-            };
-
-            var accessToken = _authService.GenerateAccessToken(guestUser, guest.Id, guest.ConventionId);
+            // 비회원용 토큰 생성 (User 정보 기반)
+            var accessToken = _authService.GenerateAccessToken(user, user.Id, userConvention.ConventionId);
 
             return Ok(new
             {
                 accessToken,
                 isGuest = true,
-                guest = new
+                user = new
                 {
-                    id = guest.Id,
-                    name = guest.GuestName,
-                    phone = guest.Telephone,
-                    corpPart = guest.CorpPart,
-                    affiliation = guest.Affiliation
+                    id = user.Id,
+                    name = user.Name,
+                    phone = user.Phone,
+                    corpPart = user.CorpPart,
+                    affiliation = user.Affiliation
                 },
                 convention = new
                 {
-                    id = guest.Convention.Id,
-                    title = guest.Convention.Title,
-                    startDate = guest.Convention.StartDate,
-                    endDate = guest.Convention.EndDate
+                    id = userConvention.Convention.Id,
+                    title = userConvention.Convention.Title,
+                    startDate = userConvention.Convention.StartDate,
+                    endDate = userConvention.Convention.EndDate
                 }
             });
         }
@@ -294,8 +263,8 @@ public class AuthController : ControllerBase
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
             var user = await _context.Users
-                .Include(u => u.Guests)
-                    .ThenInclude(g => g.Convention)
+                .Include(u => u.UserConventions)
+                    .ThenInclude(uc => uc.Convention)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -304,35 +273,35 @@ public class AuthController : ControllerBase
             }
 
             var conventionList = new List<object>();
-            foreach (var g in user.Guests.Where(g => g.Convention != null))
+            foreach (var uc in user.UserConventions.Where(uc => uc.Convention != null))
             {
-                var unreadCount = await _context.ConventionChatMessages.CountAsync(m => 
-                    m.ConventionId == g.ConventionId && 
-                    m.CreatedAt > (g.LastChatReadTimestamp ?? DateTime.MinValue));
+                var unreadCount = await _context.ConventionChatMessages.CountAsync(m =>
+                    m.ConventionId == uc.ConventionId &&
+                    m.CreatedAt > (uc.LastChatReadTimestamp ?? DateTime.MinValue));
 
                 conventionList.Add(new
                 {
-                    id = g.ConventionId,
-                    title = g.Convention!.Title,
-                    startDate = g.Convention.StartDate,
-                    endDate = g.Convention.EndDate,
-                    guestId = g.Id,
-                    guestName = g.GuestName,
+                    id = uc.ConventionId,
+                    title = uc.Convention!.Title,
+                    startDate = uc.Convention.StartDate,
+                    endDate = uc.Convention.EndDate,
+                    userId = user.Id,
+                    name = user.Name,
                     unreadCount = unreadCount
                 });
             }
 
-            // 현재 선택된 행사의 체크리스트 상태 계산 (selectedConventionId가 필요하면 쿠리 매개변수로 추가)
-            // 여기서는 첨 번째 행사의 체크리스트를 기본으로 반환
+            // 현재 선택된 행사의 체크리스트 상태 계산 (selectedConventionId가 필요하면 쿼리 매개변수로 추가)
+            // 여기서는 첫 번째 행사의 체크리스트를 기본으로 반환
             object? checklistStatus = null;
-            var firstGuest = user.Guests.FirstOrDefault();
-            
-            _logger.LogInformation("GetCurrentUser: UserId={UserId}, GuestCount={GuestCount}, FirstGuest={FirstGuestId}", 
-                user.Id, user.Guests.Count, firstGuest?.Id ?? 0);
-            
-            if (firstGuest != null)
+            var firstUserConvention = user.UserConventions.FirstOrDefault();
+
+            _logger.LogInformation("GetCurrentUser: UserId={UserId}, ConventionCount={ConventionCount}, FirstConvention={FirstConventionId}",
+                user.Id, user.UserConventions.Count, firstUserConvention?.ConventionId ?? 0);
+
+            if (firstUserConvention != null)
             {
-                checklistStatus = await BuildChecklistStatusAsync(firstGuest.Id, firstGuest.ConventionId);
+                checklistStatus = await BuildChecklistStatusAsync(user.Id, firstUserConvention.ConventionId);
                 _logger.LogInformation("Checklist status built: {HasStatus}", checklistStatus != null);
             }
 
@@ -359,10 +328,10 @@ public class AuthController : ControllerBase
     /// <summary>
     /// 체크리스트 상태 구축
     /// </summary>
-    private async Task<object?> BuildChecklistStatusAsync(int guestId, int conventionId)
+    private async Task<object?> BuildChecklistStatusAsync(int userId, int conventionId)
     {
-        _logger.LogInformation("BuildChecklistStatusAsync called for GuestId={GuestId}, ConventionId={ConventionId}", guestId, conventionId);
-        
+        _logger.LogInformation("BuildChecklistStatusAsync called for UserId={UserId}, ConventionId={ConventionId}", userId, conventionId);
+
         // 1. 해당 행사의 활성 액션 목록 조회
         var actions = await _context.ConventionActions
             .Where(a => a.ConventionId == conventionId && a.IsActive)
@@ -375,9 +344,9 @@ public class AuthController : ControllerBase
         if (actions.Count == 0)
             return null; // 액션이 없으면 null 반환 (국내 행사 등)
 
-        // 2. 해당 참여자의 액션 상태 조회
-        var statuses = await _context.GuestActionStatuses
-            .Where(s => s.GuestId == guestId)
+        // 2. 해당 사용자의 액션 상태 조회
+        var statuses = await _context.UserActionStatuses
+            .Where(s => s.UserId == userId)
             .ToListAsync();
 
         var statusDict = statuses.ToDictionary(s => s.ConventionActionId, s => s);
@@ -437,9 +406,9 @@ public class AuthController : ControllerBase
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
-            var joinedConventionIds = await _context.Guests
-                .Where(g => g.UserId == userId)
-                .Select(g => g.ConventionId)
+            var joinedConventionIds = await _context.UserConventions
+                .Where(uc => uc.UserId == userId)
+                .Select(uc => uc.ConventionId)
                 .ToListAsync();
 
             var availableConventions = await _context.Conventions

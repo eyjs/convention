@@ -52,59 +52,59 @@ public class GroupScheduleMappingService : IGroupScheduleMappingService
                 return result;
             }
 
-            // 그룹에 속한 Guest 찾기
-            var guests = await _unitOfWork.Guests
-                .FindAsync(g => g.ConventionId == request.ConventionId
-                             && g.GroupName == request.GuestGroup);
+            // 그룹에 속한 UserConvention 찾기
+            var userConventions = await _unitOfWork.UserConventions
+                .FindAsync(uc => uc.ConventionId == request.ConventionId
+                             && uc.GroupName == request.UserGroup);
 
-            var guestList = guests.ToList();
+            var userConventionList = userConventions.ToList();
 
-            if (guestList.Count == 0)
+            if (userConventionList.Count == 0)
             {
-                result.Errors.Add($"그룹 '{request.GuestGroup}'에 속한 참석자가 없습니다.");
+                result.Errors.Add($"그룹 '{request.UserGroup}'에 속한 참석자가 없습니다.");
                 return result;
             }
 
-            _logger.LogInformation("Mapping {ActionCount} actions to {GuestCount} guests in group '{Group}'",
-                actionList.Count, guestList.Count, request.GuestGroup);
+            _logger.LogInformation("Mapping {ActionCount} actions to {UserCount} users in group '{Group}'",
+                actionList.Count, userConventionList.Count, request.UserGroup);
 
             // 트랜잭션으로 처리
             await _unitOfWork.BeginTransactionAsync();
 
             try
             {
-                foreach (var guest in guestList)
+                foreach (var userConvention in userConventionList)
                 {
                     foreach (var action in actionList)
                     {
                         // 중복 확인
-                        var existingMappings = await _unitOfWork.GuestActionStatuses
-                            .FindAsync(gas => gas.GuestId == guest.Id
+                        var existingMappings = await _unitOfWork.UserActionStatuses
+                            .FindAsync(gas => gas.UserId == userConvention.UserId
                                            && gas.ConventionActionId == action.Id);
 
                         if (existingMappings.Any())
                         {
                             result.DuplicatesSkipped++;
-                            _logger.LogDebug("Skipping duplicate mapping: Guest {GuestId} - Action {ActionId}",
-                                guest.Id, action.Id);
+                            _logger.LogDebug("Skipping duplicate mapping: User {UserId} - Action {ActionId}",
+                                userConvention.UserId, action.Id);
                             continue;
                         }
 
                         // 새 매핑 생성
-                        var guestActionStatus = new Entities.GuestActionStatus
+                        var userActionStatus = new Entities.UserActionStatus
                         {
-                            GuestId = guest.Id,
+                            UserId = userConvention.UserId,
                             ConventionActionId = action.Id,
                             IsComplete = false,
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
                         };
 
-                        await _unitOfWork.GuestActionStatuses.AddAsync(guestActionStatus);
+                        await _unitOfWork.UserActionStatuses.AddAsync(userActionStatus);
                         result.MappingsCreated++;
                     }
 
-                    result.GuestsAffected++;
+                    result.UsersAffected++;
                 }
 
                 await _unitOfWork.SaveChangesAsync();
@@ -112,8 +112,8 @@ public class GroupScheduleMappingService : IGroupScheduleMappingService
 
                 result.Success = true;
 
-                _logger.LogInformation("Group mapping completed: {Mappings} mappings created for {Guests} guests, {Duplicates} duplicates skipped",
-                    result.MappingsCreated, result.GuestsAffected, result.DuplicatesSkipped);
+                _logger.LogInformation("Group mapping completed: {Mappings} mappings created for {Users} users, {Duplicates} duplicates skipped",
+                    result.MappingsCreated, result.UsersAffected, result.DuplicatesSkipped);
             }
             catch (Exception ex)
             {
@@ -139,11 +139,11 @@ public class GroupScheduleMappingService : IGroupScheduleMappingService
     {
         try
         {
-            var guests = await _unitOfWork.Guests
-                .FindAsync(g => g.ConventionId == conventionId && g.GroupName != null);
+            var userConventions = await _unitOfWork.UserConventions
+                .FindAsync(uc => uc.ConventionId == conventionId && uc.GroupName != null);
 
-            var groups = guests
-                .Select(g => g.GroupName!)
+            var groups = userConventions
+                .Select(uc => uc.GroupName!)
                 .Distinct()
                 .OrderBy(g => g)
                 .ToList();

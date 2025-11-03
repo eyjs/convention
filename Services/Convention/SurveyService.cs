@@ -16,7 +16,7 @@ namespace LocalRAG.Services.Convention
             _context = context;
         }
 
-        public async Task<int> SaveSurveyResponse(string actionType, int guestId, SurveyResponseDto responseDto)
+        public async Task<int> SaveSurveyResponse(string actionType, int userId, SurveyResponseDto responseDto)
         {
             var action = await _context.ConventionActions.FirstOrDefaultAsync(a => a.ActionType == actionType);
             if (action == null)
@@ -27,7 +27,7 @@ namespace LocalRAG.Services.Convention
             var response = new SurveyResponse
             {
                 ConventionActionId = action.Id,
-                GuestId = guestId,
+                UserId = userId,
                 SubmittedAt = DateTime.UtcNow
             };
 
@@ -42,16 +42,16 @@ namespace LocalRAG.Services.Convention
 
             _context.SurveyResponses.Add(response);
 
-            var status = await _context.GuestActionStatuses.FirstOrDefaultAsync(s => s.GuestId == guestId && s.ConventionActionId == action.Id);
+            var status = await _context.UserActionStatuses.FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
             if (status == null)
             {
-                status = new GuestActionStatus
+                status = new UserActionStatus
                 {
-                    GuestId = guestId,
+                    UserId = userId,
                     ConventionActionId = action.Id,
                     CreatedAt = DateTime.UtcNow
                 };
-                _context.GuestActionStatuses.Add(status);
+                _context.UserActionStatuses.Add(status);
             }
 
             status.IsComplete = true;
@@ -64,7 +64,7 @@ namespace LocalRAG.Services.Convention
             return response.Id;
         }
 
-        public async Task<SurveyResponse?> GetSurveyResponse(string actionType, int guestId)
+        public async Task<SurveyResponse?> GetSurveyResponse(string actionType, int userId)
         {
             var action = await _context.ConventionActions.FirstOrDefaultAsync(a => a.ActionType == actionType);
             if (action == null)
@@ -74,7 +74,7 @@ namespace LocalRAG.Services.Convention
 
             var response = await _context.SurveyResponses
                 .Include(r => r.Answers)
-                .FirstOrDefaultAsync(r => r.ConventionActionId == action.Id && r.GuestId == guestId);
+                .FirstOrDefaultAsync(r => r.ConventionActionId == action.Id && r.UserId == userId);
 
             return response;
         }

@@ -1,21 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet build:*)",
-      "Bash(python analyze_excel.py:*)",
-      "Bash(mkdir:*)",
-      "Bash(npm run build:*)",
-      "Bash(npm install:*)",
-      "Bash(dotnet ef migrations:*)",
-      "Bash(dotnet ef database:*)",
-      "Bash(dotnet ef dbcontext:*)",
-      "Bash(sqlcmd:*)",
-      "Bash(dotnet run)",
-      "Bash(curl:*)",
-      "Bash(taskkill:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []

@@ -45,7 +45,7 @@ public class ConventionsController : ControllerBase
                 c.DeleteYn,
                 c.CompleteYn,
                 c.RegDtm,
-                GuestCount = c.Guests.Count,
+                GuestCount = _context.UserConventions.Count(uc => uc.ConventionId == c.Id),
                 ScheduleCount = c.ScheduleTemplates.Count
             })
             .ToListAsync();
@@ -68,7 +68,7 @@ public class ConventionsController : ControllerBase
                 c.EndDate,
                 c.BrandColor,
                 c.CompleteYn,
-                GuestCount = c.Guests.Count,
+                GuestCount = _context.UserConventions.Count(uc => uc.ConventionId == c.Id),
                 ScheduleCount = c.ScheduleTemplates.Count
             })
             .ToListAsync();
@@ -82,7 +82,6 @@ public class ConventionsController : ControllerBase
     public async Task<IActionResult> GetConvention(int id)
     {
         var convention = await _context.Conventions
-            .Include(c => c.Guests)
             .Include(c => c.ScheduleTemplates)
             .Include(c => c.Features)
             .Include(c => c.Owners)
@@ -92,6 +91,8 @@ public class ConventionsController : ControllerBase
         {
             return NotFound(new { message = "행사를 찾을 수 없습니다." });
         }
+
+        var guestCount = await _context.UserConventions.CountAsync(uc => uc.ConventionId == id);
 
         return Ok(new
         {
@@ -106,7 +107,7 @@ public class ConventionsController : ControllerBase
             convention.DeleteYn,
             convention.CompleteYn,
             convention.RegDtm,
-            GuestCount = convention.Guests.Count,
+            GuestCount = guestCount,
             ScheduleCount = convention.ScheduleTemplates.Count,
             Features = convention.Features.Select(f => new { f.MenuName, f.IsActive }),
             Owners = convention.Owners.Select(o => new { o.Name, o.Telephone })

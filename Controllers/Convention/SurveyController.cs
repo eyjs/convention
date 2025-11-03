@@ -22,15 +22,15 @@ namespace LocalRAG.Controllers.Convention
         [HttpPost("{actionType}")]
         public async Task<IActionResult> SubmitSurvey(string actionType, [FromBody] SurveyResponseDto responseDto)
         {
-            var guestIdClaim = User.FindFirst("GuestId");
-            if (guestIdClaim == null || !int.TryParse(guestIdClaim.Value, out int guestId))
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                return Unauthorized("게스트 정보를 확인할 수 없습니다.");
+                return Unauthorized("사용자 정보를 확인할 수 없습니다.");
             }
 
             try
             {
-                var responseId = await _surveyService.SaveSurveyResponse(actionType, guestId, responseDto);
+                var responseId = await _surveyService.SaveSurveyResponse(actionType, userId, responseDto);
                 return Ok(new { message = "Survey submitted successfully.", surveyResponseId = responseId });
             }
             catch (KeyNotFoundException ex)
@@ -42,15 +42,15 @@ namespace LocalRAG.Controllers.Convention
         [HttpGet("{actionType}")]
         public async Task<IActionResult> GetSurveyResponse(string actionType)
         {
-            var guestIdClaim = User.FindFirst("GuestId");
-            if (guestIdClaim == null || !int.TryParse(guestIdClaim.Value, out int guestId))
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                return Unauthorized("게스트 정보를 확인할 수 없습니다.");
+                return Unauthorized("사용자 정보를 확인할 수 없습니다.");
             }
 
             try
             {
-                var response = await _surveyService.GetSurveyResponse(actionType, guestId);
+                var response = await _surveyService.GetSurveyResponse(actionType, userId);
                 if (response == null)
                 {
                     return NotFound("Response not found.");

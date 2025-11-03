@@ -78,7 +78,7 @@ public class IndexingService
 
         // 1.색인에 필요한 모든 '공용' 데이터를 여기서 한번에 조회합니다.
         var convention = await _context.Conventions
-            .Include(c => c.Guests) // guest_summary 청크를 만들기 위해 Guests 정보는 필요합니다.
+            .Include(c => c.UserConventions).ThenInclude(uc => uc.User) // guest_summary 청크를 만들기 위해 UserConventions와 User 정보는 필요합니다.
             .Include(c => c.ScheduleTemplates).ThenInclude(st => st.ScheduleItems)
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == conventionId);

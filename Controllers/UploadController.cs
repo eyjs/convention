@@ -17,20 +17,20 @@ namespace LocalRAG.Controllers;
 [Authorize] // 인증 필요
 public class UploadController : ControllerBase
 {
-    private readonly IGuestUploadService _guestUploadService;
+    private readonly IUserUploadService _userUploadService;
     private readonly IScheduleTemplateUploadService _scheduleTemplateUploadService;
     private readonly IAttributeUploadService _attributeUploadService;
     private readonly IGroupScheduleMappingService _groupScheduleMappingService;
     private readonly ILogger<UploadController> _logger;
 
     public UploadController(
-        IGuestUploadService guestUploadService,
+        IUserUploadService userUploadService,
         IScheduleTemplateUploadService scheduleTemplateUploadService,
         IAttributeUploadService attributeUploadService,
         IGroupScheduleMappingService groupScheduleMappingService,
         ILogger<UploadController> logger)
     {
-        _guestUploadService = guestUploadService;
+        _userUploadService = userUploadService;
         _scheduleTemplateUploadService = scheduleTemplateUploadService;
         _attributeUploadService = attributeUploadService;
         _groupScheduleMappingService = groupScheduleMappingService;
@@ -42,7 +42,7 @@ public class UploadController : ControllerBase
     /// Excel 형식: [소속|부서|이름|사번(주민번호)|전화번호|그룹]
     /// </summary>
     [HttpPost("conventions/{conventionId}/guests")]
-    [ProducesResponseType(typeof(GuestUploadResult), 200)]
+    [ProducesResponseType(typeof(UserUploadResult), 200)]
     public async Task<IActionResult> UploadGuests(int conventionId, IFormFile file)
     {
         if (file == null || file.Length == 0)
@@ -61,7 +61,7 @@ public class UploadController : ControllerBase
         try
         {
             using var stream = file.OpenReadStream();
-            var result = await _guestUploadService.UploadGuestsAsync(conventionId, stream);
+            var result = await _userUploadService.UploadUsersAsync(conventionId, stream);
 
             if (!result.Success)
             {
@@ -125,7 +125,7 @@ public class UploadController : ControllerBase
     /// 통계 정보 포함
     /// </summary>
     [HttpPost("conventions/{conventionId}/attributes")]
-    [ProducesResponseType(typeof(AttributeUploadResult), 200)]
+    [ProducesResponseType(typeof(UserAttributeUploadResult), 200)]
     public async Task<IActionResult> UploadAttributes(int conventionId, IFormFile file)
     {
         if (file == null || file.Length == 0)
@@ -174,7 +174,7 @@ public class UploadController : ControllerBase
         }
 
         _logger.LogInformation("Mapping group '{Group}' to {ActionCount} actions in convention {ConventionId}",
-            request.GuestGroup, request.ActionIds.Count, request.ConventionId);
+            request.UserGroup, request.ActionIds.Count, request.ConventionId);
 
         try
         {

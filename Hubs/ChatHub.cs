@@ -43,15 +43,15 @@ namespace LocalRAG.Hubs
                 return; 
             }
 
-            var guestIdStr = Context.User?.FindFirstValue("GuestId");
-            if (string.IsNullOrEmpty(guestIdStr) || !int.TryParse(guestIdStr, out var guestId))
+            var userIdStr = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
             {
                 Context.Abort();
                 return;
             }
 
-            var guest = await _context.Guests.FindAsync(guestId);
-            if (guest == null)
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
             {
                 Context.Abort();
                 return;
@@ -59,17 +59,17 @@ namespace LocalRAG.Hubs
 
             var roomName = GetRoomName(conventionIdStr);
             var room = _rooms.GetOrAdd(roomName, new ConcurrentDictionary<string, ParticipantInfo>());
-            
-            var participant = new ParticipantInfo 
+
+            var participant = new ParticipantInfo
             {
-                Name = guest.GuestName,
-                Affiliation = guest.CorpName ?? "소속 정보 없음"
+                Name = user.Name,
+                Affiliation = user.Affiliation ?? user.CorpName ?? "소속 정보 없음"
             };
             room[Context.ConnectionId] = participant;
 
             await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
-            
-            _logger.LogInformation($"Client {Context.ConnectionId} ({guest.GuestName}) connected to room {roomName}.");
+
+            _logger.LogInformation($"Client {Context.ConnectionId} ({user.Name}) connected to room {roomName}.");
 
             await Clients.Group(roomName).SendAsync("UpdateParticipantCount", room.Count);
             await Clients.Group(roomName).SendAsync("UpdateParticipantList", room.Values.ToList());
@@ -79,26 +79,26 @@ namespace LocalRAG.Hubs
 
         public async Task SendMessage(string message)
         {
-            var guestIdClaim = Context.User?.FindFirst("GuestId");
-            var guestNameClaim = Context.User?.FindFirst(ClaimTypes.Name);
+            var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier);
+            var userNameClaim = Context.User?.FindFirst(ClaimTypes.Name);
             var conventionIdClaim = Context.User?.FindFirst("ConventionId");
             var isAdminClaim = Context.User?.FindFirst(ClaimTypes.Role)?.Value == "Admin";
 
-            if (guestIdClaim == null || conventionIdClaim == null || guestNameClaim == null)
+            if (userIdClaim == null || conventionIdClaim == null || userNameClaim == null)
             {
                 _logger.LogWarning($"SendMessage aborted: Missing claims for user {Context.UserIdentifier}.");
                 return;
             }
 
-            var guestId = int.Parse(guestIdClaim.Value);
+            var userId = int.Parse(userIdClaim.Value);
             var conventionId = int.Parse(conventionIdClaim.Value);
-            var guestName = guestNameClaim.Value;
+            var userName = userNameClaim.Value;
 
             var chatMessage = new ConventionChatMessage
             {
                 ConventionId = conventionId,
-                GuestId = guestId,
-                GuestName = guestName,
+                UserId = userId,
+                UserName = userName,
                 Message = message,
                 IsAdmin = isAdminClaim,
                 CreatedAt = DateTime.UtcNow
@@ -107,13 +107,13 @@ namespace LocalRAG.Hubs
             _context.ConventionChatMessages.Add(chatMessage);
             await _context.SaveChangesAsync();
 
-            var displayName = isAdminClaim ? $"[관리자] {guestName}" : guestName;
+            var displayName = isAdminClaim ? $"[관리자] {userName}" : userName;
             var roomName = GetRoomName(conventionId.ToString());
 
-            await Clients.Group(roomName).SendAsync("ReceiveMessage", new 
+            await Clients.Group(roomName).SendAsync("ReceiveMessage", new
             {
-                guestId = chatMessage.GuestId,
-                guestName = displayName,
+                userId = chatMessage.UserId,
+                userName = displayName,
                 message = chatMessage.Message,
                 createdAt = chatMessage.CreatedAt.ToString("o"), // ISO 8601 format
                 isAdmin = chatMessage.IsAdmin

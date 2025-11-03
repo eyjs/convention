@@ -28,7 +28,7 @@ public class UserContextFactory : IUserContextFactory
         try
         {
             var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
-            var guestIdClaim = user.FindFirst("GuestId")?.Value;
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (!Enum.TryParse<UserRole>(roleClaim, true, out var userRole))
             {
@@ -36,16 +36,16 @@ public class UserContextFactory : IUserContextFactory
                 _logger.LogWarning("Could not parse user role from claims. Defaulting to Anonymous.");
             }
 
-            int? guestId = int.TryParse(guestIdClaim, out var parsedGuestId) ? parsedGuestId : null;
+            int? userId = int.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : null;
 
             var context = new ChatUserContext
             {
                 Role = userRole,
-                GuestId = guestId,
+                UserId = userId,
                 MemberId = user.FindFirst("LoginId")?.Value
             };
 
-            _logger.LogInformation("Created user context from token: Role={Role}, GuestId={GuestId}", context.Role, context.GuestId);
+            _logger.LogInformation("Created user context from token: Role={Role}, UserId={UserId}", context.Role, context.UserId);
             return context;
         }
         catch (Exception ex)

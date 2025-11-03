@@ -12,7 +12,7 @@ namespace LocalRAG.Repositories;
 /// 
 /// 사용 예시:
 /// await _unitOfWork.Conventions.AddAsync(convention);
-/// await _unitOfWork.Guests.AddAsync(guest);
+/// await _unitOfWork.Users.AddAsync(user);
 /// await _unitOfWork.SaveChangesAsync(); // 한 번의 호출로 모든 변경사항을 커밋
 /// </summary>
 public interface IUnitOfWork : IDisposable
@@ -20,7 +20,8 @@ public interface IUnitOfWork : IDisposable
     // --- Repository Properties ---
     // 각 엔티티별 Repository에 접근할 수 있는 속성
     IConventionRepository Conventions { get; }
-    IGuestRepository Guests { get; }
+    IUserRepository Users { get; }
+    IUserConventionRepository UserConventions { get; }
     IScheduleRepository Schedules { get; }
     IGuestAttributeRepository GuestAttributes { get; }
     IFeatureRepository Features { get; }
@@ -29,7 +30,7 @@ public interface IUnitOfWork : IDisposable
     IOwnerRepository Owners { get; }
     IVectorStoreRepository VectorStores { get; }
     IRepository<Entities.Action.ConventionAction> ConventionActions { get; }
-    IRepository<Entities.GuestActionStatus> GuestActionStatuses { get; }
+    IRepository<UserActionStatus> UserActionStatuses { get; }
 
 
     // --- Transaction Methods ---
@@ -96,30 +97,79 @@ public interface IScheduleRepository : IRepository<Schedule>
 }
 
 /// <summary>
+/// UserConvention Repository 인터페이스
+/// </summary>
+public interface IUserConventionRepository : IRepository<UserConvention>
+{
+    /// <summary>
+    /// 특정 행사의 모든 참석자를 조회합니다.
+    /// </summary>
+    Task<IEnumerable<UserConvention>> GetByConventionIdAsync(
+        int conventionId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 특정 사용자의 모든 행사 참여 정보를 조회합니다.
+    /// </summary>
+    Task<IEnumerable<UserConvention>> GetByUserIdAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 특정 사용자의 특정 행사 참여 정보를 조회합니다.
+    /// </summary>
+    Task<UserConvention?> GetByUserAndConventionAsync(
+        int userId,
+        int conventionId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// AccessToken으로 참여 정보를 조회합니다.
+    /// </summary>
+    Task<UserConvention?> GetByAccessTokenAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 특정 그룹의 참석자들을 조회합니다.
+    /// </summary>
+    Task<IEnumerable<UserConvention>> GetByGroupNameAsync(
+        int conventionId,
+        string groupName,
+        CancellationToken cancellationToken = default);
+
+    Task<UserConvention?> GetUserConventionWithUserAsync(
+        int conventionId,
+        string userName,
+        string userPhone,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>
 /// GuestAttribute Repository 인터페이스
 /// </summary>
 public interface IGuestAttributeRepository : IRepository<GuestAttribute>
 {
     /// <summary>
-    /// 특정 참석자의 모든 속성을 조회합니다.
+    /// 특정 사용자의 모든 속성을 조회합니다.
     /// </summary>
-    Task<IEnumerable<GuestAttribute>> GetAttributesByGuestIdAsync(
-        int guestId,
+    Task<IEnumerable<GuestAttribute>> GetAttributesByUserIdAsync(
+        int userId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 특정 키의 속성 값을 조회합니다.
     /// </summary>
     Task<GuestAttribute?> GetAttributeByKeyAsync(
-        int guestId,
+        int userId,
         string attributeKey,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 참석자의 속성을 Upsert(있으면 수정, 없으면 추가)합니다.
+    /// 사용자의 속성을 Upsert(있으면 수정, 없으면 추가)합니다.
     /// </summary>
     Task UpsertAttributeAsync(
-        int guestId,
+        int userId,
         string attributeKey,
         string attributeValue,
         CancellationToken cancellationToken = default);

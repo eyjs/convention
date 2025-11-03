@@ -46,7 +46,7 @@ public class ChatbotManagementController : ControllerBase
         var activeConventions = await _context.Conventions
             .Where(c => c.DeleteYn == "N")
             .CountAsync();
-        var totalGuests = await _context.Guests.CountAsync();
+        var totalGuests = await _context.UserConventions.CountAsync();
         var dbSize = totalDocuments * 1024; // 대략적인 크기
 
         return Ok(new
@@ -130,12 +130,14 @@ public class ChatbotManagementController : ControllerBase
         {
             var convention = await _context.Conventions
                 .Include(c => c.ScheduleTemplates).ThenInclude(st => st.ScheduleItems)
-                .Include(c => c.Guests)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == conventionId);
 
             if (convention == null)
                 return NotFound(new { message = "행사를 찾을 수 없습니다." });
+
+            var userConventionCount = await _context.UserConventions
+                .CountAsync(uc => uc.ConventionId == conventionId);
 
             var notices = await _context.Notices
                 .Where(n => n.ConventionId == conventionId && !n.IsDeleted)
@@ -160,8 +162,8 @@ public class ChatbotManagementController : ControllerBase
                 },
                 guestSummary = new
                 {
-                    totalCount = convention.Guests.Count,
-                    indexed = convention.Guests.Any()
+                    totalCount = userConventionCount,
+                    indexed = userConventionCount > 0
                 },
                 schedules = new
                 {
@@ -235,7 +237,7 @@ public class ChatbotManagementController : ControllerBase
                 c.Id,
                 c.Title,
                 c.StartDate,
-                GuestCount = c.Guests.Count(),
+                GuestCount = _context.UserConventions.Count(uc => uc.ConventionId == c.Id),
                 VectorCount = _context.VectorDataEntries.Count(v => v.ConventionId == c.Id),
                 ChatbotEnabled = true // 모든 행사 기본 활성화
             })

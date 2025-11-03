@@ -84,20 +84,30 @@ namespace LocalRAG.DTOs.ScheduleModels
     }
     
     /// <summary>
-    /// Guest와 ScheduleTemplate 연결 (참석자별 코스 배정)
+    /// User와 ScheduleTemplate 연결 (참석자별 코스 배정)
     /// </summary>
     public class GuestScheduleTemplate
     {
-        public int GuestId { get; set; }
+        /// <summary>
+        /// 사용자 ID (FK)
+        /// </summary>
+        public int UserId { get; set; }
+
         public int ScheduleTemplateId { get; set; }
-        
+
         /// <summary>
         /// 배정일
         /// </summary>
         public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
-        
+
         // Navigation
-        public Guest? Guest { get; set; }
+        public User? User { get; set; }
         public ScheduleTemplate? ScheduleTemplate { get; set; }
+    }
+
+    public class UserScheduleDto
+    {
+        public int UserId { get; set; }
+        public int ScheduleTemplateId { get; set; }
     }
 }

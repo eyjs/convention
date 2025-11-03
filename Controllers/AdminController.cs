@@ -1,11 +1,12 @@
 using LocalRAG.Data;
 using LocalRAG.Interfaces;
-using GuestModel = LocalRAG.Entities.Guest;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Entities;
 using LocalRAG.DTOs.ScheduleModels;
+using UserEntity = LocalRAG.Entities.User;
+using OfficeOpenXml;
 
 namespace LocalRAG.Controllers;
 
@@ -26,15 +27,19 @@ public class AdminController : ControllerBase
     [HttpGet("conventions/{conventionId}/stats")]
     public async Task<IActionResult> GetStats(int conventionId)
     {
-        var totalGuests = await _context.Guests.CountAsync(g => g.ConventionId == conventionId);
+        var totalGuests = await _context.UserConventions.CountAsync(uc => uc.ConventionId == conventionId);
         var totalSchedules = await _context.ScheduleTemplates.CountAsync(st => st.ConventionId == conventionId);
-        var scheduleAssignments = await _context.Set<GuestScheduleTemplate>().CountAsync(gst => gst.Guest!.ConventionId == conventionId);
+        var scheduleAssignments = await _context.Set<GuestScheduleTemplate>()
+            .Include(gst => gst.User)
+                .ThenInclude(u => u.UserConventions)
+            .CountAsync(gst => gst.User!.UserConventions.Any(uc => uc.ConventionId == conventionId));
 
-        var recentGuests = await _context.Guests
-            .Where(g => g.ConventionId == conventionId)
-            .OrderByDescending(g => g.Id)
+        var recentGuests = await _context.UserConventions
+            .Where(uc => uc.ConventionId == conventionId)
+            .Include(uc => uc.User)
+            .OrderByDescending(uc => uc.UserId)
             .Take(5)
-            .Select(g => new { g.Id, g.GuestName, g.CorpPart, g.Telephone })
+            .Select(uc => new { Id = uc.UserId, Name = uc.User.Name, CorpPart = uc.User.CorpPart, Phone = uc.User.Phone })
             .ToListAsync();
 
         var scheduleStats = await _context.ScheduleTemplates
@@ -48,9 +53,9 @@ public class AdminController : ControllerBase
             })
             .ToListAsync();
 
-        var attributeStats = await _context.Guests
-            .Where(g => g.ConventionId == conventionId)
-            .SelectMany(g => g.GuestAttributes)
+        var attributeStats = await _context.Users
+            .Where(u => u.UserConventions.Any(uc => uc.ConventionId == conventionId))
+            .SelectMany(u => u.GuestAttributes)
             .GroupBy(ga => ga.AttributeKey)
             .Select(group => new
             {
@@ -70,23 +75,35 @@ public class AdminController : ControllerBase
     [HttpGet("conventions/{conventionId}/guests")]
     public async Task<IActionResult> GetGuests(int conventionId)
     {
-        var guests = await _context.Guests
-            .Where(g => g.ConventionId == conventionId)
-            .Include(g => g.User)
-            .Include(g => g.GuestAttributes)
-            .Include(g => g.GuestScheduleTemplates).ThenInclude(gst => gst.ScheduleTemplate)
-            .OrderBy(g => g.GuestName)
-            .Select(g => new
+        var guests = await _context.UserConventions
+            .Where(uc => uc.ConventionId == conventionId)
+            .Include(uc => uc.User)
+                .ThenInclude(u => u.GuestAttributes)
+            .Include(uc => uc.User)
+                .ThenInclude(u => u.GuestScheduleTemplates)
+                    .ThenInclude(gst => gst.ScheduleTemplate)
+            .OrderBy(uc => uc.User.Name)
+            .Select(uc => new
             {
-                g.Id, g.GuestName, g.Telephone, g.CorpPart, g.ResidentNumber, g.Affiliation,
-                g.ConventionId, g.AccessToken, g.IsRegisteredUser,
-                user = g.User == null ? null : new { g.User.Id, g.User.LoginId, g.User.Role },
-                scheduleTemplates = g.GuestScheduleTemplates.Select(gst => new
+                Id = uc.UserId,
+                GuestName = uc.User.Name, // 프론트엔드 호환성
+                Name = uc.User.Name,
+                Telephone = uc.User.Phone, // 프론트엔드 호환성
+                Phone = uc.User.Phone,
+                CorpPart = uc.User.CorpPart,
+                ResidentNumber = uc.User.ResidentNumber,
+                Affiliation = uc.User.Affiliation,
+                GroupName = uc.GroupName, // UserConvention의 그룹명
+                ConventionId = uc.ConventionId,
+                AccessToken = uc.AccessToken,
+                IsRegisteredUser = !string.IsNullOrEmpty(uc.User.LoginId),
+                user = new { uc.User.Id, uc.User.LoginId, uc.User.Role },
+                scheduleTemplates = uc.User.GuestScheduleTemplates.Select(gst => new
                 {
                     gst.ScheduleTemplateId,
                     gst.ScheduleTemplate!.CourseName
                 }).ToList(),
-                attributes = g.GuestAttributes.Select(ga => new { ga.AttributeKey, ga.AttributeValue }).ToList()
+                attributes = uc.User.GuestAttributes.Select(ga => new { ga.AttributeKey, ga.AttributeValue }).ToList()
             })
             .ToListAsync();
 
@@ -96,22 +113,29 @@ public class AdminController : ControllerBase
     [HttpGet("guests/{guestId}/detail")]
     public async Task<IActionResult> GetGuestDetail(int guestId)
     {
-        var guest = await _context.Guests
-            .Include(g => g.User)
-            .Include(g => g.GuestAttributes)
-            .Include(g => g.GuestScheduleTemplates)
+        var user = await _context.Users
+            .Include(u => u.GuestAttributes)
+            .Include(u => u.GuestScheduleTemplates)
                 .ThenInclude(gst => gst.ScheduleTemplate)
                     .ThenInclude(st => st!.ScheduleItems.OrderBy(si => si.OrderNum))
-            .FirstOrDefaultAsync(g => g.Id == guestId);
+            .FirstOrDefaultAsync(u => u.Id == guestId);
 
-        if (guest == null) return NotFound();
+        if (user == null) return NotFound();
 
         return Ok(new
         {
-            guest.Id, guest.GuestName, guest.Telephone, guest.CorpPart,
-            guest.ResidentNumber, guest.Affiliation, guest.AccessToken, guest.IsRegisteredUser,
-            user = guest.User == null ? null : new { guest.User.Id, guest.User.LoginId, guest.User.Role },
-            schedules = guest.GuestScheduleTemplates.Select(gst => new
+            Id = user.Id,
+            GuestName = user.Name, // 프론트엔드 호환성
+            Name = user.Name,
+            Telephone = user.Phone, // 프론트엔드 호환성
+            Phone = user.Phone,
+            CorpPart = user.CorpPart,
+            ResidentNumber = user.ResidentNumber,
+            Affiliation = user.Affiliation,
+            AccessToken = (string?)null, // AccessToken is now in UserConvention, need convention context
+            IsRegisteredUser = !string.IsNullOrEmpty(user.LoginId),
+            user = new { user.Id, user.LoginId, user.Role },
+            schedules = user.GuestScheduleTemplates.Select(gst => new
             {
                 gst.ScheduleTemplateId,
                 gst.ScheduleTemplate!.CourseName,
@@ -122,18 +146,18 @@ public class AdminController : ControllerBase
                     si.Title, si.Content, si.Location, si.OrderNum
                 }).ToList()
             }).ToList(),
-            attributes = guest.GuestAttributes.ToDictionary(ga => ga.AttributeKey, ga => ga.AttributeValue)
+            attributes = user.GuestAttributes.ToDictionary(ga => ga.AttributeKey, ga => ga.AttributeValue)
         });
     }
 
     [HttpPost("conventions/{conventionId}/guests")]
-    public async Task<IActionResult> CreateGuest(int conventionId, [FromBody] GuestDto dto)
+    public async Task<IActionResult> CreateGuest(int conventionId, [FromBody] UserDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.GuestName))
-            return BadRequest(new { field = "guestName", message = "이름을 입력해주세요." });
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            return BadRequest(new { field = "name", message = "이름을 입력해주세요." });
 
-        if (string.IsNullOrWhiteSpace(dto.Telephone))
-            return BadRequest(new { field = "telephone", message = "전화번호를 입력해주세요." });
+        if (string.IsNullOrWhiteSpace(dto.Phone))
+            return BadRequest(new { field = "phone", message = "전화번호를 입력해주세요." });
 
         string passwordToSet;
         if (!string.IsNullOrWhiteSpace(dto.Password))
@@ -143,29 +167,60 @@ public class AdminController : ControllerBase
         else
             passwordToSet = "123456";
 
-        var guest = new GuestModel
-        {
-            ConventionId = conventionId,
-            GuestName = dto.GuestName.Trim(),
-            Telephone = dto.Telephone.Trim(),
-            CorpPart = dto.CorpPart?.Trim(),
-            ResidentNumber = dto.ResidentNumber?.Trim(),
-            Affiliation = dto.Affiliation?.Trim(),
-            AccessToken = GenerateAccessToken(),
-            IsRegisteredUser = false,
-            PasswordHash = _authService.HashPassword(passwordToSet)
-        };
+        // Check if user with this phone already exists
+        var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Phone == dto.Phone.Trim());
 
-        _context.Guests.Add(guest);
+        UserEntity user;
+        if (existingUser != null)
+        {
+            user = existingUser;
+            // Update user info if needed
+            user.Name = dto.Name.Trim();
+            user.CorpPart = dto.CorpPart?.Trim();
+            user.ResidentNumber = dto.ResidentNumber?.Trim();
+            user.Affiliation = dto.Affiliation?.Trim();
+            user.UpdatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            // Create new user (guest without login)
+            user = new UserEntity
+            {
+                LoginId = string.Empty, // No login ID for guests
+                PasswordHash = _authService.HashPassword(passwordToSet),
+                Name = dto.Name.Trim(),
+                Phone = dto.Phone.Trim(),
+                CorpPart = dto.CorpPart?.Trim(),
+                ResidentNumber = dto.ResidentNumber?.Trim(),
+                Affiliation = dto.Affiliation?.Trim(),
+                Role = "Guest",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+
+        // Create UserConvention mapping
+        var userConvention = new UserConvention
+        {
+            UserId = user.Id,
+            ConventionId = conventionId,
+            AccessToken = GenerateAccessToken(),
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.UserConventions.Add(userConvention);
         await _context.SaveChangesAsync();
 
+        // Add attributes if provided
         if (dto.Attributes != null)
         {
             foreach (var attr in dto.Attributes)
             {
                 _context.Set<GuestAttribute>().Add(new GuestAttribute
                 {
-                    GuestId = guest.Id,
+                    UserId = user.Id,
                     AttributeKey = attr.Key,
                     AttributeValue = attr.Value
                 });
@@ -173,56 +228,48 @@ public class AdminController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-        return Ok(new { guest.Id, guest.GuestName, message = "비회원 참석자가 성공적으로 생성되었습니다." });
+        return Ok(new { Id = user.Id, Name = user.Name, message = "비회원 참석자가 성공적으로 생성되었습니다." });
     }
 
     [HttpPut("guests/{id}")]
-    public async Task<IActionResult> UpdateGuest(int id, [FromBody] GuestDto dto)
+    public async Task<IActionResult> UpdateGuest(int id, [FromBody] UserDto dto)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(dto.GuestName))
-                return BadRequest(new { field = "guestName", message = "이름을 입력해주세요." });
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                return BadRequest(new { field = "name", message = "이름을 입력해주세요." });
 
-            if (string.IsNullOrWhiteSpace(dto.Telephone))
-                return BadRequest(new { field = "telephone", message = "전화번호를 입력해주세요." });
+            if (string.IsNullOrWhiteSpace(dto.Phone))
+                return BadRequest(new { field = "phone", message = "전화번호를 입력해주세요." });
 
-            var guest = await _context.Guests
-                .Include(g => g.User)
-                .Include(g => g.GuestAttributes)
-                .FirstOrDefaultAsync(g => g.Id == id);
-                
-            if (guest == null) return NotFound();
+            var user = await _context.Users
+                .Include(u => u.GuestAttributes)
+                .FirstOrDefaultAsync(u => u.Id == id);
 
-            guest.GuestName = dto.GuestName.Trim();
-            guest.Telephone = dto.Telephone.Trim();
-            guest.CorpPart = dto.CorpPart?.Trim();
-            guest.ResidentNumber = dto.ResidentNumber?.Trim();
-            guest.Affiliation = dto.Affiliation?.Trim();
+            if (user == null) return NotFound();
+
+            user.Name = dto.Name.Trim();
+            user.Phone = dto.Phone.Trim();
+            user.CorpPart = dto.CorpPart?.Trim();
+            user.ResidentNumber = dto.ResidentNumber?.Trim();
+            user.Affiliation = dto.Affiliation?.Trim();
+            user.UpdatedAt = DateTime.UtcNow;
 
             if (!string.IsNullOrWhiteSpace(dto.Password))
             {
-                if (guest.IsRegisteredUser && guest.User != null)
-                {
-                    guest.User.PasswordHash = _authService.HashPassword(dto.Password);
-                    guest.User.UpdatedAt = DateTime.UtcNow;
-                }
-                else
-                {
-                    guest.PasswordHash = _authService.HashPassword(dto.Password);
-                }
+                user.PasswordHash = _authService.HashPassword(dto.Password);
             }
 
             if (dto.Attributes != null)
             {
-                var existingAttrs = guest.GuestAttributes.ToList();
+                var existingAttrs = user.GuestAttributes.ToList();
                 _context.Set<GuestAttribute>().RemoveRange(existingAttrs);
-                
+
                 foreach (var attr in dto.Attributes)
                 {
                     _context.Set<GuestAttribute>().Add(new GuestAttribute
                     {
-                        GuestId = guest.Id,
+                        UserId = user.Id,
                         AttributeKey = attr.Key,
                         AttributeValue = attr.Value
                     });
@@ -230,7 +277,7 @@ public class AdminController : ControllerBase
             }
 
             await _context.SaveChangesAsync();
-            return Ok(new { guest.Id, guest.GuestName });
+            return Ok(new { Id = user.Id, Name = user.Name });
         }
         catch (Exception ex)
         {
@@ -241,11 +288,11 @@ public class AdminController : ControllerBase
     [HttpPost("guests/{guestId}/schedules")]
     public async Task<IActionResult> AssignSchedules(int guestId, [FromBody] AssignSchedulesDto dto)
     {
-        var guest = await _context.Guests.FindAsync(guestId);
-        if (guest == null) return NotFound();
+        var user = await _context.Users.FindAsync(guestId);
+        if (user == null) return NotFound();
 
         var existing = await _context.Set<GuestScheduleTemplate>()
-            .Where(gst => gst.GuestId == guestId)
+            .Where(gst => gst.UserId == guestId)
             .ToListAsync();
         _context.Set<GuestScheduleTemplate>().RemoveRange(existing);
 
@@ -253,7 +300,7 @@ public class AdminController : ControllerBase
         {
             _context.Set<GuestScheduleTemplate>().Add(new GuestScheduleTemplate
             {
-                GuestId = guestId,
+                UserId = guestId,
                 ScheduleTemplateId = templateId,
                 AssignedAt = DateTime.UtcNow
             });
@@ -266,10 +313,14 @@ public class AdminController : ControllerBase
     [HttpDelete("guests/{id}")]
     public async Task<IActionResult> DeleteGuest(int id)
     {
-        var guest = await _context.Guests.FindAsync(id);
-        if (guest == null) return NotFound();
+        // Note: This deletes the user entirely. Consider if you only want to remove UserConvention instead.
+        // To only remove from convention: delete UserConvention record
+        // To remove user entirely: delete User (cascades will handle related data)
 
-        _context.Guests.Remove(guest);
+        var user = await _context.Users.FindAsync(id);
+        if (user == null) return NotFound();
+
+        _context.Users.Remove(user);
         await _context.SaveChangesAsync();
         return Ok();
     }
@@ -286,46 +337,35 @@ public class AdminController : ControllerBase
         if (dto.Password.Length < 6)
             return BadRequest(new { field = "password", message = "비밀번호는 최소 6자 이상이어야 합니다." });
 
-        var guest = await _context.Guests.FindAsync(guestId);
-        if (guest == null) return NotFound(new { message = "참석자를 찾을 수 없습니다." });
-        
-        if (guest.IsRegisteredUser)
+        var user = await _context.Users.FindAsync(guestId);
+        if (user == null) return NotFound(new { message = "참석자를 찾을 수 없습니다." });
+
+        if (!string.IsNullOrEmpty(user.LoginId))
             return BadRequest(new { message = "이미 회원입니다." });
 
-        var existing = await _context.Users.FirstOrDefaultAsync(u => u.LoginId == dto.LoginId);
-        if (existing != null) 
+        var existing = await _context.Users.FirstOrDefaultAsync(u => u.LoginId == dto.LoginId && u.Id != guestId);
+        if (existing != null)
             return BadRequest(new { field = "loginId", message = "이미 사용 중인 로그인 ID입니다." });
 
-        var user = new User
-        {
-            LoginId = dto.LoginId,
-            PasswordHash = _authService.HashPassword(dto.Password),
-            Name = guest.GuestName,
-            Phone = guest.Telephone,
-            Role = dto.Role,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        // Convert guest to registered user
+        user.LoginId = dto.LoginId;
+        user.PasswordHash = _authService.HashPassword(dto.Password);
+        user.Role = dto.Role;
+        user.UpdatedAt = DateTime.UtcNow;
 
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-
-        guest.UserId = user.Id;
-        guest.IsRegisteredUser = true;
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "회원으로 전환되었습니다.", userId = user.Id });
     }
 
     [HttpPut("guests/{guestId}/user")]
-    public async Task<IActionResult> UpdateUserForGuest(int guestId, [FromBody] UpdateUserDto dto)
+    public async Task<IActionResult> UpdateUserForGuest(int userId, [FromBody] UpdateUserDto dto)
     {
-        var guest = await _context.Guests.Include(g => g.User).FirstOrDefaultAsync(g => g.Id == guestId);
-        if (guest?.User == null) return NotFound(new { message = "계정을 찾을 수 없습니다." });
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return NotFound(new { message = "계정을 찾을 수 없습니다." });
 
-        guest.User.Role = dto.Role;
-        guest.User.UpdatedAt = DateTime.UtcNow;
+        user.Role = dto.Role;
+        user.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "권한이 수정되었습니다." });
@@ -351,28 +391,40 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("guests/{guestId}/access-link")]
-    public async Task<IActionResult> GetAccessLink(int guestId)
+    public async Task<IActionResult> GetAccessLink(int userId, [FromQuery] int? conventionId = null)
     {
-        var guest = await _context.Guests
-            .Include(g => g.Convention)
-            .FirstOrDefaultAsync(g => g.Id == guestId);
-            
-        if (guest == null) return NotFound();
+        // Note: AccessToken is now in UserConvention, so we need a conventionId
+        // If conventionId is not provided, return first convention's token
+        var query = _context.UserConventions
+            .Where(uc => uc.UserId == userId);
+
+        if (conventionId.HasValue)
+            query = query.Where(uc => uc.ConventionId == conventionId.Value);
+
+        var userConvention = await query.FirstOrDefaultAsync();
+
+        if (userConvention == null) return NotFound();
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        var link = $"{baseUrl}/guest/{guest.Convention.Id}/{guest.AccessToken}";
+        var link = $"{baseUrl}/guest/{userConvention.Convention.Id}/{userConvention.AccessToken}";
 
-        return Ok(new { link, accessToken = guest.AccessToken });
+        return Ok(new { link, accessToken = userConvention.AccessToken });
     }
 
     [HttpPost("guests/{guestId}/send-sms")]
-    public async Task<IActionResult> SendSMS(int guestId)
+    public async Task<IActionResult> SendSMS(int userId, [FromQuery] int? conventionId = null)
     {
-        var guest = await _context.Guests
-            .Include(g => g.Convention)
-            .FirstOrDefaultAsync(g => g.Id == guestId);
-            
-        if (guest == null) return NotFound();
+        var query = _context.UserConventions
+            .Include(uc => uc.Convention)
+            .Include(uc => uc.User)
+            .Where(uc => uc.UserId == userId);
+
+        if (conventionId.HasValue)
+            query = query.Where(uc => uc.ConventionId == conventionId.Value);
+
+        var userConvention = await query.FirstOrDefaultAsync();
+
+        if (userConvention == null) return NotFound();
 
         return Ok(new { message = "SMS 전송 기능은 추후 구현 예정입니다." });
     }
@@ -535,11 +587,15 @@ public class AdminController : ControllerBase
     {
         var guests = await _context.Set<GuestScheduleTemplate>()
             .Where(gst => gst.ScheduleTemplateId == templateId)
-            .Include(gst => gst.Guest)
+            .Include(gst => gst.User)
             .Select(gst => new
             {
-                gst.Guest!.Id, gst.Guest.GuestName, gst.Guest.Telephone,
-                gst.Guest.CorpPart, gst.Guest.Affiliation, gst.AssignedAt
+                Id = gst.User!.Id,
+                Name = gst.User.Name,
+                Phone = gst.User.Phone,
+                CorpPart = gst.User.CorpPart,
+                Affiliation = gst.User.Affiliation,
+                AssignedAt = gst.AssignedAt
             })
             .ToListAsync();
 
@@ -547,10 +603,10 @@ public class AdminController : ControllerBase
     }
 
     [HttpDelete("guests/{guestId}/schedules/{templateId}")]
-    public async Task<IActionResult> RemoveGuestSchedule(int guestId, int templateId)
+    public async Task<IActionResult> RemoveGuestSchedule(int userId, int templateId)
     {
         var assignment = await _context.Set<GuestScheduleTemplate>()
-            .FirstOrDefaultAsync(gst => gst.GuestId == guestId && gst.ScheduleTemplateId == templateId);
+            .FirstOrDefaultAsync(gst => gst.UserId == userId && gst.ScheduleTemplateId == templateId);
 
         if (assignment == null) return NotFound();
 
@@ -578,16 +634,94 @@ public class AdminController : ControllerBase
         return Ok(items);
     }
 
+    /// <summary>
+    /// 참석자 목록을 엑셀로 다운로드 (속성 업로드용 템플릿)
+    /// A열: User ID, B열: 이름, C열: 전화번호, D열부터: 기존 속성들
+    /// </summary>
+    [HttpGet("conventions/{conventionId}/guests/download")]
+    public async Task<IActionResult> DownloadGuestsForAttributeUpload(int conventionId)
+    {
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+        var guests = await _context.UserConventions
+            .Where(uc => uc.ConventionId == conventionId)
+            .Include(uc => uc.User)
+                .ThenInclude(u => u.GuestAttributes)
+            .OrderBy(uc => uc.User.Name)
+            .ToListAsync();
+
+        if (!guests.Any())
+            return NotFound(new { message = "참석자가 없습니다." });
+
+        // 모든 속성 키 수집 (헤더용)
+        var allAttributeKeys = guests
+            .SelectMany(uc => uc.User.GuestAttributes.Select(ga => ga.AttributeKey))
+            .Distinct()
+            .OrderBy(k => k)
+            .ToList();
+
+        using var package = new ExcelPackage();
+        var sheet = package.Workbook.Worksheets.Add("참석자속성");
+
+        // 헤더 작성
+        sheet.Cells[1, 1].Value = "ID";
+        sheet.Cells[1, 2].Value = "이름";
+        sheet.Cells[1, 3].Value = "전화번호";
+
+        for (int i = 0; i < allAttributeKeys.Count; i++)
+        {
+            sheet.Cells[1, 4 + i].Value = allAttributeKeys[i];
+        }
+
+        // 헤더 스타일
+        using (var headerRange = sheet.Cells[1, 1, 1, 3 + allAttributeKeys.Count])
+        {
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+            headerRange.Style.Fill.BackgroundColor.SetColor(255, 211, 211, 211); // LightGray (ARGB)
+        }
+
+        // 데이터 작성
+        int row = 2;
+        foreach (var uc in guests)
+        {
+            sheet.Cells[row, 1].Value = uc.UserId;
+            sheet.Cells[row, 2].Value = uc.User.Name;
+            sheet.Cells[row, 3].Value = uc.User.Phone;
+
+            // 기존 속성 값 채우기
+            for (int i = 0; i < allAttributeKeys.Count; i++)
+            {
+                var attributeKey = allAttributeKeys[i];
+                var attribute = uc.User.GuestAttributes.FirstOrDefault(ga => ga.AttributeKey == attributeKey);
+                if (attribute != null)
+                {
+                    sheet.Cells[row, 4 + i].Value = attribute.AttributeValue;
+                }
+            }
+
+            row++;
+        }
+
+        // 열 너비 자동 조정
+        sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
+
+        var fileBytes = package.GetAsByteArray();
+        var fileName = $"참석자속성_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+        return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
     private string GenerateAccessToken()
     {
         return Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
     }
 }
 
-public class GuestDto
+public class UserDto
 {
-    public string GuestName { get; set; } = string.Empty;
-    public string Telephone { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
     public string? CorpPart { get; set; }
     public string? ResidentNumber { get; set; }
     public string? Affiliation { get; set; }

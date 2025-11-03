@@ -68,7 +68,7 @@ public class EnvironmentController : ControllerBase
                 try
                 {
                     tableCounts["Conventions"] = await _context.Conventions.CountAsync();
-                    tableCounts["Guests"] = await _context.Guests.CountAsync();
+                    tableCounts["UserConventions"] = await _context.UserConventions.CountAsync();
                     tableCounts["Schedules"] = await _context.Schedules.CountAsync();
                     tableCounts["GuestAttributes"] = await _context.GuestAttributes.CountAsync();
                     tableCounts["Features"] = await _context.Features.CountAsync();

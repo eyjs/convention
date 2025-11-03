@@ -16,9 +16,9 @@ public class ConventionAccessService
     public async Task<bool> VerifyAsync(int conventionId, ChatUserContext userContext)
     {
         if (userContext.Role == UserRole.Admin) return true;
-        if (userContext.GuestId is null) return false;
+        if (userContext.UserId is null) return false;
 
-        return await _context.Guests
-            .AnyAsync(g => g.Id == userContext.GuestId && g.ConventionId == conventionId);
+        return await _context.UserConventions
+            .AnyAsync(uc => uc.UserId == userContext.UserId && uc.ConventionId == conventionId);
     }
 }

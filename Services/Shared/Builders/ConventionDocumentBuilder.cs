@@ -40,15 +40,15 @@ namespace LocalRAG.Services.Shared.Builders
             });
 
             // 2. 행사 전체 참석자 정보 청크 (개인정보 제외)
-            if (convention.Guests != null && convention.Guests.Any())
+            if (convention.UserConventions != null && convention.UserConventions.Any())
             {
                 var guestSummarySb = new StringBuilder();
                 guestSummarySb.AppendLine($"# {convention.Title} 행사 참석자 요약");
-                guestSummarySb.AppendLine($"- 총 참석자 수: {convention.Guests.Count}명");
+                guestSummarySb.AppendLine($"- 총 참석자 수: {convention.UserConventions.Count}명");
 
-                var corpPartCounts = convention.Guests
-                    .Where(g => !string.IsNullOrEmpty(g.CorpPart))
-                    .GroupBy(g => g.CorpPart)
+                var corpPartCounts = convention.UserConventions
+                    .Where(uc => uc.User != null && !string.IsNullOrEmpty(uc.User.CorpPart))
+                    .GroupBy(uc => uc.User.CorpPart)
                     .Select(g => new { CorpPart = g.Key, Count = g.Count() })
                     .OrderByDescending(x => x.Count)
                     .ToList();
@@ -62,9 +62,9 @@ namespace LocalRAG.Services.Shared.Builders
                     }
                 }
 
-                var affiliationCounts = convention.Guests
-                    .Where(g => !string.IsNullOrEmpty(g.Affiliation))
-                    .GroupBy(g => g.Affiliation)
+                var affiliationCounts = convention.UserConventions
+                    .Where(uc => uc.User != null && !string.IsNullOrEmpty(uc.User.Affiliation))
+                    .GroupBy(uc => uc.User.Affiliation)
                     .Select(g => new { Affiliation = g.Key, Count = g.Count() })
                     .OrderByDescending(x => x.Count)
                     .ToList();

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using LocalRAG.DTOs.ScheduleModels;
 
 namespace LocalRAG.Entities;
 
@@ -45,9 +46,56 @@ public class User
     [MaxLength(512)]
     public string? ProfileImageUrl { get; set; }
 
+    // ===== Guest 엔티티로부터 병합된 속성들 =====
+
+    /// <summary>
+    /// 회사명
+    /// </summary>
+    [MaxLength(100)]
+    public string? CorpName { get; set; }
+
+    /// <summary>
+    /// 부서
+    /// </summary>
+    [MaxLength(100)]
+    public string? CorpPart { get; set; }
+
+    /// <summary>
+    /// 주민등록번호 (앞 6자리 또는 전체, 암호화 권장)
+    /// </summary>
+    [MaxLength(50)]
+    public string? ResidentNumber { get; set; }
+
+    /// <summary>
+    /// 소속 정보 (통계/라벨용)
+    /// </summary>
+    [MaxLength(100)]
+    public string? Affiliation { get; set; }
+
+    /// <summary>
+    /// 영문 이름 (여권상 이름)
+    /// </summary>
+    [MaxLength(100)]
+    public string? EnglishName { get; set; }
+
+    /// <summary>
+    /// 여권 번호
+    /// </summary>
+    [MaxLength(50)]
+    public string? PassportNumber { get; set; }
+
+    /// <summary>
+    /// 여권 만료일
+    /// </summary>
+    public DateOnly? PassportExpiryDate { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    public virtual ICollection<Guest> Guests { get; set; } = new List<Guest>();
+    // Navigation Properties
+    public virtual ICollection<UserConvention> UserConventions { get; set; } = new List<UserConvention>();
+    public virtual ICollection<GuestAttribute> GuestAttributes { get; set; } = new List<GuestAttribute>();
+    public virtual ICollection<UserActionStatus> UserActionStatuses { get; set; } = new List<UserActionStatus>();
+    public virtual ICollection<GuestScheduleTemplate> GuestScheduleTemplates { get; set; } = new List<GuestScheduleTemplate>();
 }

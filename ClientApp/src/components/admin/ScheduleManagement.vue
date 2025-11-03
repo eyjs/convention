@@ -10,10 +10,30 @@
       </button>
     </div>
 
+    <!-- 템플릿 필터 버튼 -->
+    <div class="mb-4 overflow-x-auto scrollbar-hide">
+      <div class="flex gap-2 min-w-max pb-2">
+        <button
+          @click="selectedTemplateId = 'all'"
+          :class="['flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all', selectedTemplateId === 'all' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 border']"
+        >
+          전체
+        </button>
+        <button
+          v-for="template in templates"
+          :key="template.id"
+          @click="selectedTemplateId = template.id"
+          :class="['flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all', selectedTemplateId === template.id ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100 border']"
+        >
+          {{ template.courseName }}
+        </button>
+      </div>
+    </div>
+
     <!-- 템플릿 목록 -->
     <div class="space-y-4">
       <div
-        v-for="template in templates"
+        v-for="template in filteredTemplates"
         :key="template.id"
         class="bg-white rounded-lg shadow overflow-hidden"
       >
@@ -112,7 +132,7 @@
     </div>
 
     <!-- 템플릿 생성/수정 모달 -->
-    <div v-if="showCreateModal || editingTemplate" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeTemplateModal">
+    <div v-if="showCreateModal || editingTemplate" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="isTouchDevice && closeTemplateModal()">
       <div class="bg-white rounded-lg w-full max-w-md">
         <div class="p-6">
           <h2 class="text-xl font-semibold mb-4">
@@ -160,7 +180,7 @@
     </div>
 
     <!-- 일정 항목 생성/수정 모달 -->
-    <div v-if="showItemModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeItemModal">
+    <div v-if="showItemModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="isTouchDevice && closeItemModal()">
       <div class="bg-white rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div class="p-6">
           <h2 class="text-xl font-semibold mb-4">
@@ -237,7 +257,7 @@
     </div>
 
     <!-- 할당된 참석자 목록 모달 -->
-    <div v-if="showGuestsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeGuestsModal">
+    <div v-if="showGuestsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="isTouchDevice && closeGuestsModal()">
       <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div class="p-6">
           <div class="flex justify-between items-center mb-4">
@@ -284,7 +304,7 @@
     </div>
 
     <!-- 기존 일정 복사 모달 -->
-    <div v-if="showCopyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeCopyModal">
+    <div v-if="showCopyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="isTouchDevice && closeCopyModal()">
       <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div class="p-6">
           <div class="flex justify-between items-center mb-4">
@@ -383,11 +403,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import apiClient from '@/services/api'
+import { useDevice } from '@/composables/useDevice'
 
 const props = defineProps({
   conventionId: { type: Number, required: true }
+})
+
+const { isTouchDevice } = useDevice()
+
+const selectedTemplateId = ref('all')
+
+const filteredTemplates = computed(() => {
+  if (selectedTemplateId.value === 'all') {
+    return templates.value
+  }
+  return templates.value.filter(t => t.id === selectedTemplateId.value)
 })
 
 const templates = ref([])

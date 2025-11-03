@@ -228,19 +228,15 @@ public class NoticesController : ControllerBase
                     var isAdmin = User.IsInRole("Admin");
                     var query = _context.Comments.IgnoreQueryFilters().Where(c => c.NoticeId == noticeId);
             var comments = await query
+                .Include(c => c.Author)
                 .OrderBy(c => c.CreatedAt)
                 .ToListAsync();
 
             var responses = new List<CommentResponse>();
-            
-            var authorIds = comments.Select(c => c.AuthorId).Distinct().ToList();
-            var guests = await _context.Guests
-                .Where(g => authorIds.Contains(g.Id))
-                .ToDictionaryAsync(g => g.Id, g => g.GuestName);
 
             foreach (var comment in comments)
             {
-                string authorName = guests.TryGetValue(comment.AuthorId, out var name) ? name : "익명";
+                string authorName = comment.Author?.Name ?? "익명";
                 
                 responses.Add(new CommentResponse
                 {
@@ -273,22 +269,22 @@ public class NoticesController : ControllerBase
     {
         try
         {
-            var guestIdClaim = User.FindFirst("GuestId");
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
-            if (guestIdClaim == null || !int.TryParse(guestIdClaim.Value, out int guestId))
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                return Unauthorized("게스트 정보를 확인할 수 없습니다.");
+                return Unauthorized("사용자 정보를 확인할 수 없습니다.");
             }
 
-            var guest = await _context.Guests.FindAsync(guestId);
-            if (guest == null)
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
             {
-                return NotFound("해당 게스트를 찾을 수 없습니다.");
+                return NotFound("해당 사용자를 찾을 수 없습니다.");
             }
 
-            int authorId = guestId;
-            string authorName = guest.GuestName;
-            _logger.LogInformation("Comment by Guest - GuestId: {GuestId}, Name: {AuthorName}", authorId, authorName);
+            int authorId = userId;
+            string authorName = user.Name;
+            _logger.LogInformation("Comment by User - UserId: {UserId}, Name: {AuthorName}", authorId, authorName);
 
             var comment = new Comment
             {
@@ -300,7 +296,7 @@ public class NoticesController : ControllerBase
 
             _context.Comments.Add(comment);
             await _context.SaveChangesAsync();
-            
+
             var response = new CommentResponse
             {
                 Id = comment.Id,
@@ -329,18 +325,20 @@ public class NoticesController : ControllerBase
     {
         try
         {
-            var guestIdClaim = User.FindFirst("GuestId");
-            if (guestIdClaim == null || !int.TryParse(guestIdClaim.Value, out int guestId))
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                return Unauthorized("게스트 정보를 확인할 수 없습니다.");
+                return Unauthorized("사용자 정보를 확인할 수 없습니다.");
             }
 
-            var comment = await _context.Comments.FirstOrDefaultAsync(c => c.Id == commentId);
+            var comment = await _context.Comments
+                .Include(c => c.Author)
+                .FirstOrDefaultAsync(c => c.Id == commentId);
 
             if (comment == null) return NotFound(new { message = "댓글을 찾을 수 없습니다." });
 
             // 작성자 본인만 수정 가능
-            if (comment.AuthorId != guestId)
+            if (comment.AuthorId != userId)
                 return Forbid("자신의 댓글만 수정할 수 있습니다.");
 
             comment.Content = request.Content;
@@ -348,14 +346,12 @@ public class NoticesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            var guest = await _context.Guests.FindAsync(guestId);
-
             var response = new CommentResponse
             {
                 Id = comment.Id,
                 NoticeId = comment.NoticeId,
                 AuthorId = comment.AuthorId,
-                AuthorName = guest?.GuestName ?? "익명",
+                AuthorName = comment.Author?.Name ?? "익명",
                 Content = comment.Content,
                 CreatedAt = comment.CreatedAt,
                 UpdatedAt = comment.UpdatedAt
@@ -380,34 +376,23 @@ public class NoticesController : ControllerBase
         try
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            var guestIdClaim = User.FindFirst("GuestId");
 
-            if (userIdClaim == null && guestIdClaim == null)
+            if (userIdClaim == null)
             {
                 return Unauthorized("사용자 정보를 확인할 수 없습니다.");
+            }
+
+            if (!int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return Unauthorized("잘못된 사용자 정보입니다.");
             }
 
             var comment = await _context.Comments.FindAsync(commentId);
 
             if (comment == null) return NotFound(new { message = "댓글을 찾을 수 없습니다." });
 
-            bool isAuthor = false;
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-            {
-                if (comment.AuthorId == userId)
-                {
-                    isAuthor = true;
-                }
-            }
-            else if (guestIdClaim != null && int.TryParse(guestIdClaim.Value, out int guestId))
-            {
-                if (comment.AuthorId == guestId)
-                {
-                    isAuthor = true;
-                }
-            }
-
-            if (!isAuthor)
+            // 작성자 본인만 삭제 가능
+            if (comment.AuthorId != userId)
             {
                 return Forbid("자신의 댓글만 삭제할 수 있습니다.");
             }

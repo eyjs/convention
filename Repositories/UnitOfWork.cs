@@ -1,4 +1,5 @@
 using LocalRAG.Data;
+using LocalRAG.Entities;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace LocalRAG.Repositories;
@@ -26,7 +27,8 @@ public class UnitOfWork : IUnitOfWork
 
     // Repository 인스턴스들 (Lazy Initialization)
     private IConventionRepository? _conventions;
-    private IGuestRepository? _guests;
+    private IUserRepository? _users;
+    private IUserConventionRepository? _userConventions;
     private IScheduleRepository? _schedules;
     private IGuestAttributeRepository? _guestAttributes;
     private IFeatureRepository? _features;
@@ -35,7 +37,7 @@ public class UnitOfWork : IUnitOfWork
     private IOwnerRepository? _owners;
     private IVectorStoreRepository? _vectorStores;
     private IRepository<Entities.Action.ConventionAction>? _conventionActions;
-    private IRepository<Entities.GuestActionStatus>? _guestActionStatuses;
+    private IRepository<UserActionStatus>? _userActionStatuses;
 
     public UnitOfWork(ConventionDbContext context)
     {
@@ -59,8 +61,11 @@ public class UnitOfWork : IUnitOfWork
     public IConventionRepository Conventions =>
         _conventions ??= new ConventionRepository(_context);
 
-    public IGuestRepository Guests =>
-        _guests ??= new GuestRepository(_context);
+    public IUserRepository Users =>
+        _users ??= new UserRepository(_context);
+
+    public IUserConventionRepository UserConventions =>
+        _userConventions ??= new UserConventionRepository(_context);
 
     public IScheduleRepository Schedules =>
         _schedules ??= new ScheduleRepository(_context);
@@ -86,8 +91,8 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<Entities.Action.ConventionAction> ConventionActions =>
         _conventionActions ??= new Repository<Entities.Action.ConventionAction>(_context);
 
-    public IRepository<Entities.GuestActionStatus> GuestActionStatuses =>
-        _guestActionStatuses ??= new Repository<Entities.GuestActionStatus>(_context);
+    public IRepository<UserActionStatus> UserActionStatuses =>
+        _userActionStatuses ??= new Repository<UserActionStatus>(_context);
 
     // ============================================================
     // Transaction Methods

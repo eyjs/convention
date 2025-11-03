@@ -114,24 +114,35 @@ public class ConventionService
 
     /// <summary>
     /// 참석자를 등록하는 작업
-    /// 
+    ///
     /// 명시적 트랜잭션 사용 시나리오:
     /// - 여러 SaveChangesAsync 호출이 필요한 경우
     /// - 중간 결과를 확인하고 조건부로 진행해야 하는 경우
     /// </summary>
-    public async Task RegisterGuestAsync(Entities.Guest guest)
+    public async Task RegisterGuestAsync(Entities.User user, int conventionId)
     {
         await _unitOfWork.BeginTransactionAsync();
 
         try
         {
-            // 1. 참석자 추가
-            await _unitOfWork.Guests.AddAsync(guest);
+            // 1. User 추가
+            await _unitOfWork.Users.AddAsync(user);
             await _unitOfWork.SaveChangesAsync();
 
-            // 2. 참석자 속성 추가
+            // 2. UserConvention 추가
+            var userConvention = new Entities.UserConvention
+            {
+                UserId = user.Id,
+                ConventionId = conventionId,
+                AccessToken = Guid.NewGuid().ToString("N"),
+                CreatedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.UserConventions.AddAsync(userConvention);
+            await _unitOfWork.SaveChangesAsync();
+
+            // 3. 참석자 속성 추가
             await _unitOfWork.GuestAttributes.UpsertAttributeAsync(
-                guest.Id,
+                user.Id,
                 "registration_date",
                 DateTime.Now.ToString("yyyy-MM-dd"));
             await _unitOfWork.SaveChangesAsync();
@@ -256,16 +267,15 @@ public class ConventionService
 
     /// <summary>
     /// 참석자를 검색합니다.
-    /// 
+    ///
     /// Repository 특화 메서드 활용
     /// </summary>
-    public async Task<IEnumerable<Entities.Guest>> SearchGuestsAsync(
+    public async Task<IEnumerable<Entities.User>> SearchGuestsAsync(
         string searchKeyword,
         int? conventionId = null)
     {
-        return await _unitOfWork.Guests.SearchGuestsByNameAsync(
-            searchKeyword,
-            conventionId);
+        return await _unitOfWork.Users.SearchUsersByNameAsync(
+            searchKeyword);
     }
 
     // ============================================================
@@ -274,27 +284,34 @@ public class ConventionService
 
     /// <summary>
     /// 여러 참석자를 일괄 등록합니다.
-    /// 
+    ///
     /// 일괄 처리의 장점:
     /// - 한 번의 트랜잭션으로 처리
     /// - 데이터베이스 왕복 횟수 감소
     /// - 성능 향상
     /// </summary>
-    public async Task<int> BulkRegisterGuestsAsync(List<Entities.Guest> guests)
+    public async Task<int> BulkRegisterGuestsAsync(List<Entities.User> users, int conventionId)
     {
-        // 기본값 설정
-        foreach (var guest in guests)
+        // User 일괄 추가
+        await _unitOfWork.Users.AddRangeAsync(users);
+        await _unitOfWork.SaveChangesAsync();
+
+        // UserConvention 생성
+        var userConventions = new List<Entities.UserConvention>();
+        foreach (var user in users)
         {
-            // AccessToken 생성 (비회원용)
-            if (string.IsNullOrEmpty(guest.AccessToken))
+            userConventions.Add(new Entities.UserConvention
             {
-                guest.AccessToken = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
-            }
+                UserId = user.Id,
+                ConventionId = conventionId,
+                AccessToken = Guid.NewGuid().ToString("N"),
+                CreatedAt = DateTime.UtcNow
+            });
         }
 
-        // 일괄 추가
-        await _unitOfWork.Guests.AddRangeAsync(guests);
-        
+        // UserConvention 일괄 추가
+        await _unitOfWork.UserConventions.AddRangeAsync(userConventions);
+
         // 한 번에 저장
         return await _unitOfWork.SaveChangesAsync();
     }
@@ -318,8 +335,8 @@ public class ConventionService
         }
 
         // 2. 참석자 수
-        var guestCount = await _unitOfWork.Guests.CountAsync(
-            g => g.ConventionId == conventionId);
+        var guestCount = await _unitOfWork.UserConventions.CountAsync(
+            uc => uc.ConventionId == conventionId);
 
         // 3. 일정 수
         var scheduleCount = await _unitOfWork.Schedules.CountAsync(

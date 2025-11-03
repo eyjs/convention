@@ -22,20 +22,20 @@ namespace LocalRAG.Entities
         public virtual Convention Convention { get; set; } = null!;
 
         /// <summary>
-        /// 작성자 Guest ID
+        /// 작성자 User ID
         /// </summary>
         [Required]
-        public int GuestId { get; set; }
+        public int UserId { get; set; }
 
-        [ForeignKey("GuestId")]
-        public virtual Guest Guest { get; set; } = null!;
+        [ForeignKey("UserId")]
+        public virtual User User { get; set; } = null!;
 
         /// <summary>
-        /// 작성자 이름 (표시용)
+        /// 작성자 이름 (표시용, 캐시된 값)
         /// </summary>
         [Required]
         [StringLength(100)]
-        public string GuestName { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
 
         /// <summary>
         /// 메시지 내용

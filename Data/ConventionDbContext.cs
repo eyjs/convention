@@ -14,7 +14,7 @@ public class ConventionDbContext : DbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<Convention> Conventions { get; set; }
-    public DbSet<Guest> Guests { get; set; }
+    public DbSet<UserConvention> UserConventions { get; set; }
     public DbSet<Schedule> Schedules { get; set; }
     public DbSet<GuestAttribute> GuestAttributes { get; set; }
     public DbSet<AttributeDefinition> AttributeDefinitions { get; set; }
@@ -33,7 +33,7 @@ public class ConventionDbContext : DbContext
     
     // Action Management
     public DbSet<ConventionAction> ConventionActions { get; set; }
-    public DbSet<Entities.GuestActionStatus> GuestActionStatuses { get; set; }
+    public DbSet<UserActionStatus> UserActionStatuses { get; set; }
     public DbSet<ActionTemplate> ActionTemplates { get; set; }
     public DbSet<FileAttachment> FileAttachments { get; set; }
     public DbSet<Gallery> Galleries { get; set; }
@@ -68,16 +68,27 @@ public class ConventionDbContext : DbContext
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("getdate()");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Role).HasDefaultValue("Guest");
-            
+
             entity.HasIndex(e => e.LoginId).IsUnique().HasDatabaseName("UQ_User_LoginId");
             entity.HasIndex(e => e.Email).HasDatabaseName("IX_User_Email");
             entity.HasIndex(e => e.Phone).HasDatabaseName("IX_User_Phone");
             entity.HasIndex(e => e.Role).HasDatabaseName("IX_User_Role");
-            
-            entity.HasMany(u => u.Guests)
-                  .WithOne(g => g.User)
-                  .HasForeignKey(g => g.UserId)
-                  .OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(e => e.Name).HasDatabaseName("IX_User_Name");
+
+            entity.HasMany(u => u.UserConventions)
+                  .WithOne(uc => uc.User)
+                  .HasForeignKey(uc => uc.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(u => u.GuestAttributes)
+                  .WithOne(ga => ga.User)
+                  .HasForeignKey(ga => ga.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(u => u.UserActionStatuses)
+                  .WithOne(gas => gas.User)
+                  .HasForeignKey(gas => gas.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Convention>(entity =>
@@ -88,29 +99,39 @@ public class ConventionDbContext : DbContext
             entity.Property(e => e.DeleteYn).HasDefaultValue("N");
             entity.Property(e => e.ConventionType).HasDefaultValue("DOMESTIC");
             entity.Property(e => e.RenderType).HasDefaultValue("STANDARD");
-            
+
             entity.HasIndex(e => e.StartDate).HasDatabaseName("IX_Convention_StartDate");
             entity.HasIndex(e => e.ConventionType).HasDatabaseName("IX_Convention_ConventionType");
+
+            entity.HasMany(c => c.UserConventions)
+                  .WithOne(uc => uc.Convention)
+                  .HasForeignKey(uc => uc.ConventionId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Guest>(entity =>
+        // UserConvention (User-Convention 다대다 매핑 테이블)
+        modelBuilder.Entity<UserConvention>(entity =>
         {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_Guest_ConventionId");
-            entity.HasIndex(e => e.GuestName).HasDatabaseName("IX_Guest_GuestName");
-            entity.HasIndex(e => e.UserId).HasDatabaseName("IX_Guest_UserId");
-            entity.HasIndex(e => e.AccessToken).IsUnique().HasDatabaseName("UQ_Guest_AccessToken");
+            entity.HasKey(uc => new { uc.UserId, uc.ConventionId });
 
-            entity.HasOne(g => g.Convention)
-                  .WithMany(c => c.Guests)
-                  .HasForeignKey(g => g.ConventionId)
+            entity.Property(uc => uc.CreatedAt).HasDefaultValueSql("getdate()");
+
+            entity.HasIndex(e => e.UserId).HasDatabaseName("IX_UserConvention_UserId");
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_UserConvention_ConventionId");
+            entity.HasIndex(e => e.AccessToken).IsUnique().HasDatabaseName("UQ_UserConvention_AccessToken");
+            entity.HasIndex(e => new { e.UserId, e.ConventionId })
+                  .IsUnique()
+                  .HasDatabaseName("UQ_UserConvention_UserId_ConventionId");
+
+            entity.HasOne(uc => uc.User)
+                  .WithMany(u => u.UserConventions)
+                  .HasForeignKey(uc => uc.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
-            
-            entity.HasOne(g => g.User)
-                  .WithMany(u => u.Guests)
-                  .HasForeignKey(g => g.UserId)
-                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(uc => uc.Convention)
+                  .WithMany(c => c.UserConventions)
+                  .HasForeignKey(uc => uc.ConventionId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Schedule>(entity =>
@@ -125,14 +146,14 @@ public class ConventionDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            
-            entity.HasIndex(e => new { e.GuestId, e.AttributeKey })
-                  .IsUnique()
-                  .HasDatabaseName("UQ_GuestAttributes_GuestId_AttributeKey");
 
-            entity.HasOne(ga => ga.Guest)
-                  .WithMany(g => g.GuestAttributes)
-                  .HasForeignKey(ga => ga.GuestId)
+            entity.HasIndex(e => new { e.UserId, e.AttributeKey })
+                  .IsUnique()
+                  .HasDatabaseName("UQ_GuestAttributes_UserId_AttributeKey");
+
+            entity.HasOne(ga => ga.User)
+                  .WithMany(u => u.GuestAttributes)
+                  .HasForeignKey(ga => ga.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
         
@@ -177,11 +198,11 @@ public class ConventionDbContext : DbContext
 
         modelBuilder.Entity<GuestScheduleTemplate>(entity =>
         {
-            entity.HasKey(gst => new { gst.GuestId, gst.ScheduleTemplateId });
+            entity.HasKey(gst => new { gst.UserId, gst.ScheduleTemplateId });
 
-            entity.HasOne(gst => gst.Guest)
-                  .WithMany(g => g.GuestScheduleTemplates)
-                  .HasForeignKey(gst => gst.GuestId)
+            entity.HasOne(gst => gst.User)
+                  .WithMany(u => u.GuestScheduleTemplates)
+                  .HasForeignKey(gst => gst.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(gst => gst.ScheduleTemplate)
@@ -343,6 +364,7 @@ public class ConventionDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
 
             entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_ChatMessage_ConventionId");
+            entity.HasIndex(e => e.UserId).HasDatabaseName("IX_ChatMessage_UserId");
             entity.HasIndex(e => e.CreatedAt).HasDatabaseName("IX_ChatMessage_CreatedAt");
 
             entity.HasOne(e => e.Convention)
@@ -350,9 +372,9 @@ public class ConventionDbContext : DbContext
                   .HasForeignKey(e => e.ConventionId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(e => e.Guest)
-                  .WithMany() // Guest 모델에 ChatMessages 컬렉션이 필요하면 추가
-                  .HasForeignKey(e => e.GuestId)
+            entity.HasOne(e => e.User)
+                  .WithMany() // User 모델에 ChatMessages 컬렉션이 필요하면 추가
+                  .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.NoAction); // 순환 종속성 오류 방지
         });
 
@@ -386,27 +408,27 @@ public class ConventionDbContext : DbContext
         });
 
         // GuestActionStatus 설정
-        modelBuilder.Entity<Entities.GuestActionStatus>(entity =>
+        modelBuilder.Entity<UserActionStatus>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.Property(e => e.IsComplete).HasDefaultValue(false);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("getdate()");
-            
-            entity.HasIndex(e => e.GuestId).HasDatabaseName("IX_GuestActionStatus_GuestId");
-            entity.HasIndex(e => e.ConventionActionId).HasDatabaseName("IX_GuestActionStatus_ConventionActionId");
-            entity.HasIndex(e => new { e.GuestId, e.ConventionActionId })
-                  .IsUnique()
-                  .HasDatabaseName("UQ_GuestActionStatus_GuestId_ConventionActionId");
 
-            entity.HasOne(e => e.Guest)
-                  .WithMany(g => g.GuestActionStatuses)
-                  .HasForeignKey(e => e.GuestId)
+            entity.HasIndex(e => e.UserId).HasDatabaseName("IX_GuestActionStatus_UserId");
+            entity.HasIndex(e => e.ConventionActionId).HasDatabaseName("IX_GuestActionStatus_ConventionActionId");
+            entity.HasIndex(e => new { e.UserId, e.ConventionActionId })
+                  .IsUnique()
+                  .HasDatabaseName("UQ_GuestActionStatus_UserId_ConventionActionId");
+
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.UserActionStatuses)
+                  .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.NoAction); // 순환 참조 방지
 
             entity.HasOne(e => e.ConventionAction)
-                  .WithMany(ca => ca.GuestActionStatuses)
+                  .WithMany(ca => ca.UserActionStatuses)
                   .HasForeignKey(e => e.ConventionActionId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
@@ -434,14 +456,17 @@ public class ConventionDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.SubmittedAt).HasDefaultValueSql("getdate()");
 
+            entity.HasIndex(e => e.UserId).HasDatabaseName("IX_SurveyResponse_UserId");
+            entity.HasIndex(e => e.ConventionActionId).HasDatabaseName("IX_SurveyResponse_ConventionActionId");
+
             entity.HasOne(e => e.ConventionAction)
                 .WithMany()
                 .HasForeignKey(e => e.ConventionActionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(e => e.Guest)
+            entity.HasOne(e => e.User)
                 .WithMany()
-                .HasForeignKey(e => e.GuestId)
+                .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
 

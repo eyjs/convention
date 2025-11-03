@@ -101,5 +101,5 @@ public class ConventionAction
     // Navigation Property
     public Convention? Convention { get; set; }
     public ActionTemplate? Template { get; set; }
-    public ICollection<GuestActionStatus> GuestActionStatuses { get; set; } = new List<GuestActionStatus>();
+    public ICollection<UserActionStatus> UserActionStatuses { get; set; } = new List<UserActionStatus>();
 }

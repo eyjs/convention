@@ -13,48 +13,48 @@ public class GuestAttributeRepository : Repository<GuestAttribute>, IGuestAttrib
     {
     }
 
-    public async Task<IEnumerable<GuestAttribute>> GetAttributesByGuestIdAsync(
-        int guestId,
+    public async Task<IEnumerable<GuestAttribute>> GetAttributesByUserIdAsync(
+        int userId,
         CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .AsNoTracking()
-            .Where(ga => ga.GuestId == guestId)
+            .Where(ga => ga.UserId == userId)
             .OrderBy(ga => ga.AttributeKey)
             .ToListAsync(cancellationToken);
     }
 
     public async Task<GuestAttribute?> GetAttributeByKeyAsync(
-        int guestId,
+        int userId,
         string attributeKey,
         CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                ga => ga.GuestId == guestId && ga.AttributeKey == attributeKey,
+                ga => ga.UserId == userId && ga.AttributeKey == attributeKey,
                 cancellationToken);
     }
 
     /// <summary>
-    /// 참석자의 속성을 Upsert합니다.
-    /// 
+    /// 사용자의 속성을 Upsert합니다.
+    ///
     /// Upsert 패턴 설명:
     /// 1. 기존 데이터 존재 여부 확인
     /// 2. 있으면 Update, 없으면 Insert
-    /// 
+    ///
     /// 주의사항:
     /// - SaveChangesAsync는 UnitOfWork에서 호출해야 함
     /// </summary>
     public async Task UpsertAttributeAsync(
-        int guestId,
+        int userId,
         string attributeKey,
         string attributeValue,
         CancellationToken cancellationToken = default)
     {
         var existingAttribute = await _dbSet
             .FirstOrDefaultAsync(
-                ga => ga.GuestId == guestId && ga.AttributeKey == attributeKey,
+                ga => ga.UserId == userId && ga.AttributeKey == attributeKey,
                 cancellationToken);
 
         if (existingAttribute != null)
@@ -68,7 +68,7 @@ public class GuestAttributeRepository : Repository<GuestAttribute>, IGuestAttrib
             // Insert: 새로운 속성 추가
             var newAttribute = new GuestAttribute
             {
-                GuestId = guestId,
+                UserId = userId,
                 AttributeKey = attributeKey,
                 AttributeValue = attributeValue
             };

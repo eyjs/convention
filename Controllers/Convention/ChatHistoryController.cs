@@ -34,10 +34,10 @@ namespace LocalRAG.Controllers.Convention
                     .ToListAsync();
                 var result = messagesFromDb.Select(m => new ChatHistoryMessageDto
                 {
-                    guestId = m.GuestId,
-                    guestName = m.IsAdmin 
-                        ? $"[관리자] {m.GuestName ?? "Unknown User"}" 
-                        : m.GuestName ?? "Unknown User",
+                    userId = m.UserId,
+                    userName = m.IsAdmin
+                        ? $"[관리자] {m.UserName ?? "Unknown User"}"
+                        : m.UserName ?? "Unknown User",
                     message = m.Message,
                     createdAt = m.CreatedAt.ToString("o"),
                     isAdmin = m.IsAdmin
@@ -60,16 +60,17 @@ namespace LocalRAG.Controllers.Convention
                 return Unauthorized();
             }
 
-            var guest = await _context.Guests.FirstOrDefaultAsync(g => g.UserId == userId && g.ConventionId == conventionId);
+            var userConvention = await _context.UserConventions
+                .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.ConventionId == conventionId);
 
-            if (guest == null)
+            if (userConvention == null)
             {
-                // This might happen if a user is an admin but not a guest, handle as needed.
+                // This might happen if a user is an admin but not in convention, handle as needed.
                 // For now, we just return Ok since there's nothing to update.
                 return Ok();
             }
 
-            guest.LastChatReadTimestamp = DateTime.UtcNow;
+            userConvention.LastChatReadTimestamp = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -78,8 +79,8 @@ namespace LocalRAG.Controllers.Convention
 }
 public class ChatHistoryMessageDto
 {
-    public int guestId { get; set; }
-    public required string guestName { get; set; }
+    public int userId { get; set; }
+    public required string userName { get; set; }
     public required string message { get; set; }
     public required string createdAt { get; set; }
     public bool isAdmin { get; set; }

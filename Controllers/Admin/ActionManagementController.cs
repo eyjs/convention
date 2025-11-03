@@ -36,13 +36,13 @@ public class ActionManagementController : ControllerBase
         if (convention == null)
             return NotFound("Convention not found");
 
-        var totalGuests = await _context.Guests
-            .CountAsync(g => g.ConventionId == conventionId);
+        var totalGuests = await _context.UserConventions
+            .CountAsync(uc => uc.ConventionId == conventionId);
 
         // 현재 행사의 액션 목록
         var actions = await _context.ConventionActions
             .Include(a => a.Template)
-            .Include(a => a.GuestActionStatuses)
+            .Include(a => a.UserActionStatuses)
             .Where(a => a.ConventionId == conventionId)
             .OrderBy(a => a.Category)
             .ThenBy(a => a.OrderNum)
@@ -64,7 +64,7 @@ public class ActionManagementController : ControllerBase
                 TemplateType = a.Template != null ? a.Template.TemplateType : null,
                 ActionCategory = a.ActionCategory,
                 TargetLocation = a.TargetLocation,
-                CompletedCount = a.GuestActionStatuses.Count(s => s.IsComplete),
+                CompletedCount = a.UserActionStatuses.Count(s => s.IsComplete),
                 TotalGuestCount = totalGuests
             })
             .ToListAsync();
@@ -358,14 +358,14 @@ public class ActionManagementController : ControllerBase
         try
         {
             var action = await _context.ConventionActions
-                .Include(a => a.GuestActionStatuses)
+                .Include(a => a.UserActionStatuses)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (action == null)
                 return NotFound(new { message = "액션을 찾을 수 없습니다." });
 
-            // 관련된 GuestActionStatus도 함께 삭제
-            _context.GuestActionStatuses.RemoveRange(action.GuestActionStatuses);
+            // 관련된 UserActionStatus도 함께 삭제
+            _context.UserActionStatuses.RemoveRange(action.UserActionStatuses);
             _context.ConventionActions.Remove(action);
 
             await _context.SaveChangesAsync();

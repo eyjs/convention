@@ -12,7 +12,7 @@ public class GroupScheduleMappingRequest
 
     [Required]
     [MinLength(1)]
-    public string GuestGroup { get; set; } = string.Empty;
+    public string UserGroup { get; set; } = string.Empty;
 
     [Required]
     [MinLength(1)]
@@ -25,7 +25,7 @@ public class GroupScheduleMappingRequest
 public class GroupScheduleMappingResult
 {
     public bool Success { get; set; }
-    public int GuestsAffected { get; set; }
+    public int UsersAffected { get; set; }
     public int MappingsCreated { get; set; }
     public int DuplicatesSkipped { get; set; }
     public List<string> Errors { get; set; } = new();

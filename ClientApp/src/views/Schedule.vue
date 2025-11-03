@@ -127,7 +127,7 @@
     </div>
 
     <!-- 일정 상세 모달 -->
-    <div v-if="selectedSchedule" @click="closeScheduleDetail" class="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+    <div v-if="selectedSchedule" @click="isTouchDevice && closeScheduleDetail()" class="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
       <div @click.stop class="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <!-- 모달 헤더 -->
         <div class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
@@ -192,10 +192,12 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import apiClient from '@/services/api'
+import { useDevice } from '@/composables/useDevice'
 
 export default {
   name: 'Schedule',
   setup() {
+    const { isTouchDevice } = useDevice()
     const loading = ref(false)
     const schedules = ref([])
     const selectedDate = ref(null)
@@ -366,7 +368,8 @@ export default {
       formatDateHeader,
       formatDateFull,
       openScheduleDetail,
-      closeScheduleDetail
+      closeScheduleDetail,
+      isTouchDevice
     }
   }
 }

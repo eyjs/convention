@@ -57,11 +57,11 @@ public class ConventionRepository : Repository<Convention>, IConventionRepositor
 
     /// <summary>
     /// 행사와 관련된 모든 데이터를 포함하여 조회합니다.
-    /// 
+    ///
     /// Eager Loading 설명:
     /// - Include: 관련 엔티티를 함께 로딩 (N+1 문제 방지)
     /// - ThenInclude: 2단계 이상 깊이의 관련 엔티티 로딩
-    /// 
+    ///
     /// 장점: 한 번의 쿼리로 모든 관련 데이터 로딩 (성능 향상)
     /// 단점: 너무 많은 데이터를 로딩하면 메모리 사용량 증가
     /// </summary>
@@ -71,8 +71,9 @@ public class ConventionRepository : Repository<Convention>, IConventionRepositor
     {
         return await _dbSet
             .AsNoTracking()
-            .Include(c => c.Guests)                    // 참석자 포함
-                .ThenInclude(g => g.GuestAttributes)   // 참석자의 속성 포함
+            .Include(c => c.UserConventions)           // 참석자 매핑 포함
+                .ThenInclude(uc => uc.User)            // 참석자 정보 포함
+                    .ThenInclude(u => u.GuestAttributes) // 참석자의 속성 포함
             .Include(c => c.ScheduleTemplates)         // 전체 일정 템플릿 포함
                 .ThenInclude(st => st.ScheduleItems)   // 템플릿의 개별 항목 포함
             .Include(c => c.Features)                  // 기능 포함

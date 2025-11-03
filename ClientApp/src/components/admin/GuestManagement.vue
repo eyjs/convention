@@ -18,6 +18,7 @@
                     </svg>
                     일정 일괄 배정
                 </button>
+
                 <!-- 속성 일괄 매핑 버튼 -->
                 <button v-if="selectedGuests.length > 0"
                         @click="showBulkAttributeModal = true"
@@ -632,8 +633,8 @@ const saveGuest = async () => {
     })
 
     const data = {
-      guestName: guestForm.value.guestName,
-      telephone: guestForm.value.telephone,
+      name: guestForm.value.guestName,
+      phone: guestForm.value.telephone,
       corpPart: guestForm.value.corpPart,
       residentNumber: guestForm.value.residentNumber,
       affiliation: guestForm.value.affiliation,
@@ -674,6 +675,8 @@ const deleteGuest = async (id) => {
     alert('삭제 실패')
   }
 }
+
+
 
 const showGuestDetail = async (guestId) => {
   try {

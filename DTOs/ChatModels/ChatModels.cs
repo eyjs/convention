@@ -26,7 +26,7 @@ public class SourceInfo
 public class ChatUserContext
 {
     public UserRole Role { get; set; }
-    public int? GuestId { get; set; }
+    public int? UserId { get; set; }
     public string? MemberId { get; set; }
 }
 

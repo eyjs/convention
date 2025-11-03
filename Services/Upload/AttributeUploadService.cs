@@ -2,6 +2,7 @@ using LocalRAG.DTOs.UploadModels;
 using LocalRAG.Entities;
 using LocalRAG.Interfaces;
 using LocalRAG.Repositories;
+using LocalRAG.Utilities;
 using OfficeOpenXml;
 
 namespace LocalRAG.Services.Upload;
@@ -9,12 +10,20 @@ namespace LocalRAG.Services.Upload;
 /// <summary>
 /// 속성 업로드 서비스
 /// Excel 형식:
-/// - A열 (또는 1-2열): 참석자 식별 정보 (이름, 전화번호 등)
-/// - 나머지 열: 각 속성 (헤더=AttributeKey, 셀 값=AttributeValue)
+/// - A열: User ID (필수)
+/// - B열: 이름 (참고용, 매칭에 사용하지 않음)
+/// - C열: 전화번호 (참고용, 매칭에 사용하지 않음)
+/// - D열부터: 각 속성 (헤더=AttributeKey, 셀 값=AttributeValue)
 ///
 /// 예시:
-/// | 이름    | 전화번호      | 나이 | 성별 | 직급   | 선호음식 |
-/// | 홍길동  | 010-1234-5678 | 30  | 남   | 과장   | 한식     |
+/// | ID | 이름    | 전화번호      | 룸메이트 | 식이제한 | 알러지 |
+/// | 1  | 홍길동  | 010-1234-5678 | 김철수   | 채식     | 없음   |
+/// | 2  | 김영희  | 010-2345-6789 | -        | 없음     | 갑각류 |
+///
+/// 사용 방법:
+/// 1. GET /api/admin/conventions/{id}/guests/download 로 참석자 목록 다운로드
+/// 2. D열부터 속성 열 추가 및 데이터 입력
+/// 3. POST /api/upload/conventions/{id}/attributes 로 업로드
 ///
 /// 통계 정보를 생성하여 같은 속성값을 가진 사람들의 분포를 파악
 /// </summary>
@@ -32,9 +41,9 @@ public class AttributeUploadService : IAttributeUploadService
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
     }
 
-    public async Task<AttributeUploadResult> UploadAttributesAsync(int conventionId, Stream excelStream)
+    public async Task<UserAttributeUploadResult> UploadAttributesAsync(int conventionId, Stream excelStream)
     {
-        var result = new AttributeUploadResult();
+        var result = new UserAttributeUploadResult();
 
         try
         {
@@ -65,9 +74,9 @@ public class AttributeUploadService : IAttributeUploadService
             var rowCount = sheet.Dimension.Rows;
             var colCount = sheet.Dimension.Columns;
 
-            if (colCount < 3)
+            if (colCount < 4)
             {
-                result.Errors.Add("속성 열이 부족합니다. 최소 3개 열이 필요합니다. (이름|전화번호|속성1...)");
+                result.Errors.Add("속성 열이 부족합니다. 최소 4개 열이 필요합니다. (ID|이름|전화번호|속성1...)");
                 return result;
             }
 
@@ -75,7 +84,7 @@ public class AttributeUploadService : IAttributeUploadService
 
             // 헤더 파싱 (1행)
             var headers = new List<string>();
-            for (int col = 3; col <= colCount; col++) // 1-2열은 참석자 식별정보, 3열부터 속성
+            for (int col = 4; col <= colCount; col++) // 1-3열은 ID/이름/전화번호(참고용), 4열부터 속성
             {
                 var header = sheet.Cells[1, col].Text?.Trim();
                 if (!string.IsNullOrEmpty(header))
@@ -90,9 +99,6 @@ public class AttributeUploadService : IAttributeUploadService
 
             _logger.LogInformation("Attribute headers: {Headers}", string.Join(", ", headers));
 
-            // 트랜잭션으로 처리
-            await _unitOfWork.BeginTransactionAsync();
-
             try
             {
                 // 통계용 딕셔너리
@@ -104,35 +110,38 @@ public class AttributeUploadService : IAttributeUploadService
 
                 for (int row = 2; row <= rowCount; row++) // 1행은 헤더
                 {
-                    var guestName = sheet.Cells[row, 1].Text?.Trim();
-                    var telephone = sheet.Cells[row, 2].Text?.Trim();
+                    var userIdText = sheet.Cells[row, 1].Text?.Trim();
 
-                    if (string.IsNullOrEmpty(guestName) || string.IsNullOrEmpty(telephone))
+                    if (string.IsNullOrEmpty(userIdText))
                     {
-                        result.Warnings.Add($"Row {row}: 이름 또는 전화번호가 비어있습니다. 건너뜁니다.");
+                        result.Warnings.Add($"Row {row}: User ID가 비어있습니다. 건너뜁니다.");
                         continue;
                     }
 
-                    // Guest 찾기
-                    var guests = await _unitOfWork.Guests
-                        .FindAsync(g => g.ConventionId == conventionId
-                                     && g.GuestName == guestName
-                                     && g.Telephone == telephone);
-
-                    var guest = guests.FirstOrDefault();
-
-                    if (guest == null)
+                    // A열은 반드시 User ID여야 함
+                    if (!int.TryParse(userIdText, out int userId))
                     {
-                        result.Warnings.Add($"Row {row}: 참석자를 찾을 수 없습니다. ({guestName}, {telephone})");
+                        result.Warnings.Add($"Row {row}: User ID가 숫자가 아닙니다. ({userIdText})");
                         continue;
                     }
 
-                    result.GuestsProcessed++;
+                    // UserConvention 찾기 (ID 기반)
+                    var userConventions = await _unitOfWork.UserConventions
+                        .FindAsync(uc => uc.ConventionId == conventionId && uc.UserId == userId);
+                    var userConvention = userConventions.FirstOrDefault();
 
-                    // 속성 처리 (3열부터)
-                    for (int col = 3; col <= colCount; col++)
+                    if (userConvention == null)
                     {
-                        var attributeKey = headers[col - 3];
+                        result.Warnings.Add($"Row {row}: User ID {userId}를 찾을 수 없습니다.");
+                        continue;
+                    }
+
+                    result.UsersProcessed++;
+
+                    // 속성 처리 (4열부터 = D열부터)
+                    for (int col = 4; col <= colCount; col++)
+                    {
+                        var attributeKey = headers[col - 4];
                         var attributeValue = sheet.Cells[row, col].Text?.Trim();
 
                         if (string.IsNullOrEmpty(attributeValue))
@@ -140,7 +149,7 @@ public class AttributeUploadService : IAttributeUploadService
 
                         // 기존 속성 찾기
                         var existingAttribute = await _unitOfWork.GuestAttributes
-                            .GetAttributeByKeyAsync(guest.Id, attributeKey);
+                            .GetAttributeByKeyAsync(userConvention.UserId, attributeKey);
 
                         if (existingAttribute != null)
                         {
@@ -154,7 +163,7 @@ public class AttributeUploadService : IAttributeUploadService
                             // 생성
                             var newAttribute = new GuestAttribute
                             {
-                                GuestId = guest.Id,
+                                UserId = userConvention.UserId,
                                 AttributeKey = attributeKey,
                                 AttributeValue = attributeValue
                             };
@@ -172,19 +181,18 @@ public class AttributeUploadService : IAttributeUploadService
                     }
                 }
 
+                // 한 번의 SaveChanges로 모든 변경사항 커밋 (암시적 트랜잭션)
                 await _unitOfWork.SaveChangesAsync();
-                await _unitOfWork.CommitTransactionAsync();
 
                 result.Success = true;
                 result.Statistics = statistics;
 
-                _logger.LogInformation("Attribute upload completed: {Created} created, {Updated} updated for {Guests} guests",
-                    result.AttributesCreated, result.AttributesUpdated, result.GuestsProcessed);
+                _logger.LogInformation("Attribute upload completed: {Created} created, {Updated} updated for {Users} users",
+                    result.AttributesCreated, result.AttributesUpdated, result.UsersProcessed);
             }
             catch (Exception ex)
             {
-                await _unitOfWork.RollbackTransactionAsync();
-                _logger.LogError(ex, "Transaction failed during attribute upload");
+                _logger.LogError(ex, "Attribute upload failed during processing");
                 throw;
             }
         }

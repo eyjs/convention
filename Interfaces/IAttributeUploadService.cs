@@ -14,5 +14,5 @@ public interface IAttributeUploadService
     /// <param name="conventionId">행사 ID</param>
     /// <param name="excelStream">Excel 파일 스트림</param>
     /// <returns>업로드 결과 (통계 정보 포함)</returns>
-    Task<AttributeUploadResult> UploadAttributesAsync(int conventionId, Stream excelStream);
+    Task<UserAttributeUploadResult> UploadAttributesAsync(int conventionId, Stream excelStream);
 }

@@ -9,7 +9,7 @@ using LocalRAG.Services.Ai;
 using LocalRAG.Services.Auth;
 using LocalRAG.Services.Chat;
 using LocalRAG.Services.Convention;
-using LocalRAG.Services.Guest;
+
 using LocalRAG.Services.Shared;
 using LocalRAG.Services.Shared.Builders;
 using LocalRAG.Storage;
@@ -152,7 +152,7 @@ builder.Services.AddScoped<ChatIntentRouter>();
 builder.Services.AddScoped<ChatPromptBuilder>();
 builder.Services.AddScoped<LlmResponseService>();
 builder.Services.AddScoped<RagSearchService>();
-builder.Services.AddScoped<GuestContextualDataProvider>();
+builder.Services.AddScoped<UserContextualDataProvider>();
 builder.Services.AddScoped<ConventionAccessService>();
 
 // --- 5. 인증 및 기타 서비스 등록 ---
@@ -172,8 +172,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextFactory, UserContextFactory>();
 
 // --- Excel 업로드 서비스 등록 (리팩토링된 업로드 시스템) ---
-builder.Services.AddScoped<IGuestUploadService, LocalRAG.Services.Upload.GuestUploadService>();
-builder.Services.AddScoped<IScheduleTemplateUploadService, LocalRAG.Services.Upload.ScheduleTemplateUploadService>();
+builder.Services.AddScoped<IUserUploadService, LocalRAG.Services.Upload.UserUploadService>();
+builder.Services.AddScoped<IScheduleTemplateUploadService, LocalRAG.Services.Upload.ScheduleUploadService>();
 builder.Services.AddScoped<IAttributeUploadService, LocalRAG.Services.Upload.AttributeUploadService>();
 builder.Services.AddScoped<IGroupScheduleMappingService, LocalRAG.Services.Upload.GroupScheduleMappingService>();
 
