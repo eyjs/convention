@@ -14,17 +14,9 @@
         <div class="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-48 translate-y-48"></div>
       </div>
       
-      <!-- 로그아웃 버튼 -->
-      <div class="absolute top-4 right-4 z-10">
-        <button
-          @click="handleLogout"
-          class="flex items-center space-x-2 px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-full text-white text-sm font-medium transition-all"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          <span>로그아웃</span>
-        </button>
+      <!-- 공통 헤더 사용 (오버레이) -->
+      <div class="absolute top-0 left-0 right-0 z-20">
+        <MainHeader title="" :transparent="true" />
       </div>
       
       <div class="relative h-full flex flex-col justify-center px-6 text-white">
@@ -190,6 +182,7 @@ import apiClient from '@/services/api'
 import DeadlineCountdown from '@/components/common/DeadlineCountdown.vue'
 import ChecklistProgress from '@/components/common/ChecklistProgress.vue'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
+import MainHeader from '@/components/common/MainHeader.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -199,6 +192,7 @@ const loading = ref(true);
 const convention = computed(() => conventionStore.currentConvention)
 const checklistStatus = ref(null) // authStore가 아니라 ref로 변경
 const allActions = ref([]) // 전체 동적 액션 저장
+
 
 // 브랜드 컬러 가져오기
 const brandColor = computed(() => {
@@ -231,12 +225,7 @@ const contentTopActions = computed(() =>
   allActions.value.filter(action => action.targetLocation === 'HOME_CONTENT_TOP')
 )
 
-const handleLogout = async () => {
-  if (confirm('로그아웃하시겠습니까?')) {
-    await authStore.logout()
-    router.push('/login')
-  }
-}
+
 
 const upcomingSchedules = ref([])
 const recentNotices = ref([])
@@ -430,3 +419,15 @@ onMounted(async () => {
   loading.value = false;
 })
 </script>
+
+<style scoped>
+.fade-down-enter-active,
+.fade-down-leave-active {
+  transition: all 0.2s ease-out;
+}
+.fade-down-enter-from,
+.fade-down-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>

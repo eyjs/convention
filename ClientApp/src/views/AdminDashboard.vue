@@ -17,25 +17,30 @@
             <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">행사 관리</h1>
             <span v-if="convention" class="ml-2 sm:ml-4 text-xs sm:text-sm text-gray-500">{{ convention.title }}</span>
           </div>
-          <div class="flex items-center space-x-4">
-            <button
-              @click="handleLogout"
-              class="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              <span class="hidden sm:inline">로그아웃</span>
-            </button>
-            <button
-              @click="showMenu = !showMenu"
-              class="sm:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-              </svg>
-            </button>
-          </div>
+                    <div class="relative">
+                      <button @click="showUserMenu = !showUserMenu" class="p-2 hover:bg-gray-100 rounded-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" /></svg>
+                      </button>
+          
+                      <Transition name="fade-down">
+                        <div v-if="showUserMenu" class="fixed inset-0 z-50" @click="showUserMenu = false">
+                          <div class="absolute top-16 right-4 w-56 bg-white rounded-md shadow-lg border">
+                            <ul>
+                              <li>
+                                <router-link to="/" class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                                  사용자 홈으로
+                                </router-link>
+                              </li>
+                              <li>
+                                <button @click="handleLogout" class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-100">
+                                  로그아웃
+                                </button>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </Transition>
+                    </div>
         </div>
       </div>
     </header>
@@ -119,6 +124,7 @@ const conventionId = ref(parseInt(route.params.id))
 const convention = ref(null)
 const activeTab = ref('dashboard')
 const showMenu = ref(false)
+const showUserMenu = ref(false)
 
 const showGuestFromDashboard = (guestId) => {
   activeTab.value = 'guests'
@@ -154,3 +160,15 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.fade-down-enter-active,
+.fade-down-leave-active {
+  transition: all 0.2s ease-out;
+}
+.fade-down-enter-from,
+.fade-down-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>

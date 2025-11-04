@@ -35,7 +35,7 @@
         <div
           v-for="convention in conventions"
           :key="convention.id"
-          class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden cursor-pointer debug-border"
+          class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden cursor-pointer"
           @click="selectConvention(convention)"
         >
           <div 
@@ -134,9 +134,3 @@ onMounted(() => {
   loadUserConventions()
 })
 </script>
-
-<style>
-.debug-border {
-  border: 2px solid red !important;
-}
-</style>

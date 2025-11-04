@@ -1,21 +1,10 @@
 <template>
   <div class="min-h-screen min-h-dvh bg-gray-50">
-    <!-- 헤더 -->
-    <div class="sticky top-0 z-40 bg-white shadow-sm">
-      <div class="px-4 py-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <button @click="$router.back()" class="p-2 hover:bg-gray-100 rounded-lg">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <h1 class="text-xl font-bold text-gray-900">공지사항</h1>
-          </div>
-        </div>
-      </div>
+    <!-- 공통 헤더 사용 -->
+    <MainHeader title="게시판" :show-back="true" />
 
-      <!-- 카테고리 탭 -->
+    <!-- 카테고리 탭 -->
+    <div class="sticky top-[72px] z-30 bg-white">
       <div class="relative border-t">
         <div ref="categoryContainer" class="overflow-x-auto whitespace-nowrap no-scrollbar" @scroll="handleScroll">
           <div class="flex px-4 space-x-1 min-w-max">
@@ -50,7 +39,6 @@
           </button>
         </div>
       </div>
-
     </div>
 
     <!-- BOARD_CONTENT_TOP 위치: 카테고리 필터 아래 -->
@@ -327,6 +315,7 @@ import apiClient from '@/services/api'
 import { useQuillEditor } from '@/composables/useQuillEditor'
 import QuillViewer from '@/components/common/QuillViewer.vue'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
+import MainHeader from '@/components/common/MainHeader.vue'
 
 const router = useRouter()
 const viewer = ref(null)
