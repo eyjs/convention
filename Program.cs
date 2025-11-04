@@ -111,20 +111,20 @@ else
 builder.Services.AddScoped<IVectorStore, MssqlVectorStore>(); // MSSQL Vector Store (Scoped)
 Console.WriteLine("Using MSSQL Vector Store.");
 
-// LLM Provider들은 상태를 유지할 필요 없으므로 'Scoped'로 등록합니다.
-builder.Services.AddScoped<Llama3Provider>(provider =>
+builder.Services.AddScoped<ILlmProvider, Llama3Provider>(provider =>
 {
     var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-    var httpClient = httpClientFactory.CreateClient("LlmClient");
+    var httpClient = httpClientFactory.CreateClient("LlmClient"); // 300초 클라이언트
     var configuration = provider.GetRequiredService<IConfiguration>();
     var logger = provider.GetRequiredService<ILogger<Llama3Provider>>();
     return new Llama3Provider(httpClient, configuration, logger);
 });
 
-builder.Services.AddScoped<GeminiProvider>(provider =>
+// 💥 GeminiProvider도 'ILlmProvider' 인터페이스로 등록합니다.
+builder.Services.AddScoped<ILlmProvider, GeminiProvider>(provider =>
 {
     var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-    var httpClient = httpClientFactory.CreateClient("LlmClient");
+    var httpClient = httpClientFactory.CreateClient("LlmClient"); // 300초 클라이언트
     var configuration = provider.GetRequiredService<IConfiguration>();
     return new GeminiProvider(httpClient, configuration);
 });

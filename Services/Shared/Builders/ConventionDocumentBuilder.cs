@@ -143,16 +143,13 @@ namespace LocalRAG.Services.Shared.Builders
                 });
             }
 
-            // 4. 일정 정보 청크
+            // 4. 일정 정보 청크 (Atomic Chunks - 개별 일정 항목별 청크)
             if (convention.ScheduleTemplates != null && convention.ScheduleTemplates.Any())
             {
                 foreach (var template in convention.ScheduleTemplates)
                 {
                     if (template.ScheduleItems != null && template.ScheduleItems.Any())
                     {
-                        var scheduleSb = new StringBuilder();
-                        scheduleSb.AppendLine($"# {template.CourseName} 일정표");
-
                         var groupedByDate = template.ScheduleItems
                             .OrderBy(i => i.ScheduleDate)
                             .ThenBy(i => i.OrderNum)
@@ -160,44 +157,56 @@ namespace LocalRAG.Services.Shared.Builders
 
                         foreach (var dateGroup in groupedByDate)
                         {
-                            scheduleSb.AppendLine($"## {dateGroup.Key:yyyy년 MM월 dd일 (ddd)}");
-
                             foreach (var item in dateGroup)
                             {
-                                scheduleSb.AppendLine($"### {item.Title}");
+                                // ✅ ATOMIC CHUNK: 각 일정 항목마다 개별 청크 생성
+                                var itemSb = new StringBuilder();
 
+                                // 청크 제목: 템플릿명 + 일정 제목
+                                itemSb.AppendLine($"# {template.CourseName} - {item.Title}");
+
+                                // 일시 정보
+                                itemSb.Append($"- 일시: {dateGroup.Key:yyyy년 MM월 dd일 (ddd)}");
                                 if (!string.IsNullOrEmpty(item.StartTime) || !string.IsNullOrEmpty(item.EndTime))
                                 {
                                     var timeStr = !string.IsNullOrEmpty(item.StartTime) && !string.IsNullOrEmpty(item.EndTime)
-                                        ? $"{item.StartTime} - {item.EndTime}"
+                                        ? $" {item.StartTime} - {item.EndTime}"
                                         : !string.IsNullOrEmpty(item.StartTime)
-                                            ? item.StartTime
-                                            : $"~ {item.EndTime}";
-                                    scheduleSb.AppendLine($"- 시간: {timeStr}");
+                                            ? $" {item.StartTime}"
+                                            : $" ~ {item.EndTime}";
+                                    itemSb.Append(timeStr);
                                 }
+                                itemSb.AppendLine();
 
-                                if (!string.IsNullOrEmpty(item.Content))
-                                    scheduleSb.AppendLine($"- 내용: {item.Content}");
-
+                                // 장소 정보
                                 if (!string.IsNullOrEmpty(item.Location))
-                                    scheduleSb.AppendLine($"- 장소: {item.Location}");
+                                    itemSb.AppendLine($"- 장소: {item.Location}");
 
-                                scheduleSb.AppendLine(); // 빈 줄
+                                // 상세 내용
+                                if (!string.IsNullOrEmpty(item.Content))
+                                    itemSb.AppendLine($"- 내용: {item.Content}");
+
+                                // ✅ ATOMIC CHUNK: 각 항목마다 청크 추가
+                                chunks.Add(new DocumentChunk
+                                {
+                                    Content = itemSb.ToString(),
+                                    Metadata = new Dictionary<string, object>
+                                    {
+                                        // ✅ GRANULAR METADATA: 세밀한 검색을 위한 메타데이터
+                                        { "type", "schedule_item" }, // Changed from "schedule_template"
+                                        { "conventionId", convention.Id },
+                                        { "sourceType", "Schedule" },
+                                        { "template_id", template.Id },
+                                        { "template_title", template.CourseName },
+                                        { "item_id", item.Id }, // 👈 Added: 개별 항목 ID
+                                        { "item_title", item.Title }, // 👈 Added: 개별 항목 제목
+                                        { "schedule_date", dateGroup.Key.ToString("yyyy-MM-dd") }, // 👈 Added: 일정 날짜
+                                        { "start_time", item.StartTime ?? "" }, // 👈 Added: 시작 시간
+                                        { "location", item.Location ?? "" } // 👈 Added: 장소
+                                    }
+                                });
                             }
                         }
-
-                        chunks.Add(new DocumentChunk
-                        {
-                            Content = scheduleSb.ToString(),
-                            Metadata = new Dictionary<string, object>
-                            {
-                                { "type", "schedule_template" },
-                                { "conventionId", convention.Id },
-                                { "sourceType", "Schedule" },
-                                { "template_id", template.Id },
-                                { "template_title", template.CourseName }
-                            }
-                        });
                     }
                 }
             }

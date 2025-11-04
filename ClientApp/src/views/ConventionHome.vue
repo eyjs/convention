@@ -299,10 +299,7 @@ async function loadTodaySchedules() {
         const scheduleDate = item.scheduleDate.split('T')[0]
         if (scheduleDate > today) return true
         if (scheduleDate === today) {
-          // 오늘 일정은 시간 비교
-          const scheduleTime = item.startTime
-          const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-          return scheduleTime >= currentTime
+          return true;
         }
         return false
       })
