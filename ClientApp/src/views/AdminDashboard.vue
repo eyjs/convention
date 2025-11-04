@@ -108,7 +108,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import axios from 'axios'
+import { conventionAPI } from '@/services/api'
 import DashboardOverview from '@/components/admin/DashboardOverview.vue'
 import GuestManagement from '@/components/admin/GuestManagement.vue'
 import ScheduleManagement from '@/components/admin/ScheduleManagement.vue'
@@ -151,7 +151,7 @@ const tabs = [
 onMounted(async () => {
   // 행사 정보 로드
   try {
-    const response = await axios.get(`/api/conventions/${conventionId.value}`)
+    const response = await conventionAPI.getConvention(conventionId.value)
     convention.value = response.data
   } catch (error) {
     console.error('Failed to load convention:', error)

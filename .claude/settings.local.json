@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(sqlcmd:*)",
+      "Bash(echo:*)",
+      "Bash(switch-to-llama3.sh)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []

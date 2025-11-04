@@ -43,18 +43,29 @@ public class LlmProviderManager
             return _cachedProvider;
         }
 
-        // Provider 생성
+        // Provider 생성 - DB 설정 기반
+        var httpClient = _serviceProvider.GetRequiredService<HttpClient>();
+        var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
+        var loggerFactory = _serviceProvider.GetRequiredService<ILoggerFactory>();
+
         _cachedProvider = activeSetting.ProviderName.ToLower() switch
         {
-            "llama3" => _serviceProvider.GetRequiredService<Llama3Provider>(),
-            "gemini" => _serviceProvider.GetRequiredService<GeminiProvider>(),
-            _ => _serviceProvider.GetRequiredService<Llama3Provider>()
+            "llama3" => new Llama3Provider(httpClient, configuration, loggerFactory.CreateLogger<Llama3Provider>()),
+            "gemini" => CreateGeminiProvider(httpClient, activeSetting),
+            "google" => CreateGeminiProvider(httpClient, activeSetting),
+            _ => new Llama3Provider(httpClient, configuration, loggerFactory.CreateLogger<Llama3Provider>())
         };
 
         _cachedProviderName = activeSetting.ProviderName;
-        _logger.LogInformation("LLM Provider switched to: {Provider}", _cachedProviderName);
+        _logger.LogInformation("LLM Provider switched to: {Provider} (Model: {Model}, BaseUrl: {BaseUrl})",
+            _cachedProviderName, activeSetting.ModelName, activeSetting.BaseUrl);
 
         return _cachedProvider;
+    }
+
+    private ILlmProvider CreateGeminiProvider(HttpClient httpClient, LlmSetting setting)
+    {
+        return new GeminiProvider(httpClient, setting);
     }
 
     public async Task<LlmSetting?> GetActiveSettingAsync()
@@ -75,7 +86,6 @@ public class LlmProviderManager
 
     public async Task<LlmSetting> CreateSettingAsync(LlmSetting setting)
     {
-        // 동일 Provider가 이미 존재하는지 확인
         var existing = await _context.LlmSettings
             .FirstOrDefaultAsync(s => s.ProviderName == setting.ProviderName);
 
@@ -86,8 +96,7 @@ public class LlmProviderManager
 
         _context.LlmSettings.Add(setting);
         await _context.SaveChangesAsync();
-        
-        // 캐시 무효화
+
         _cachedProvider = null;
         _cachedProviderName = null;
 
@@ -111,8 +120,7 @@ public class LlmProviderManager
         existing.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        
-        // 캐시 무효화
+
         _cachedProvider = null;
         _cachedProviderName = null;
 
@@ -124,20 +132,17 @@ public class LlmProviderManager
         var setting = await _context.LlmSettings.FindAsync(id);
         if (setting == null) return false;
 
-        // 모든 Provider 비활성화
         var allSettings = await _context.LlmSettings.ToListAsync();
         foreach (var s in allSettings)
         {
             s.IsActive = false;
         }
 
-        // 선택된 Provider 활성화
         setting.IsActive = true;
         setting.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        
-        // 캐시 무효화
+
         _cachedProvider = null;
         _cachedProviderName = null;
 
@@ -157,7 +162,7 @@ public class LlmProviderManager
 
         _context.LlmSettings.Remove(setting);
         await _context.SaveChangesAsync();
-        
+
         return true;
     }
 }

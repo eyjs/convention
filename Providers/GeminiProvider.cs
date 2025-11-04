@@ -1,5 +1,6 @@
 using LocalRAG.DTOs.ChatModels;
 using LocalRAG.Interfaces;
+using LocalRAG.Entities;
 using System.Text;
 using System.Text.Json;
 
@@ -8,20 +9,28 @@ namespace LocalRAG.Providers;
 public class GeminiProvider : ILlmProvider
 {
     private readonly HttpClient _httpClient;
-    private readonly IConfiguration _configuration;
     private readonly string _baseUrl;
     private readonly string _apiKey;
     private readonly string _model;
 
     public string ProviderName => "Gemini";
 
+    // 기존 생성자 - DI 등록용 (IConfiguration 사용)
     public GeminiProvider(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
-        _configuration = configuration;
-        _baseUrl = _configuration["LlmSettings:Gemini:BaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta";
-        _apiKey = _configuration["LlmSettings:Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key not configured");
-        _model = _configuration["LlmSettings:Gemini:Model"] ?? "gemini-2.0-flash";
+        _baseUrl = configuration["LlmSettings:Gemini:BaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta";
+        _apiKey = configuration["LlmSettings:Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key not configured");
+        _model = configuration["LlmSettings:Gemini:Model"] ?? "gemini-2.0-flash";
+    }
+
+    // DB 설정 기반 생성자 - 동적 생성용 (LlmSetting 사용)
+    public GeminiProvider(HttpClient httpClient, LlmSetting setting)
+    {
+        _httpClient = httpClient;
+        _baseUrl = setting.BaseUrl ?? "https://generativelanguage.googleapis.com/v1beta";
+        _apiKey = setting.ApiKey ?? throw new InvalidOperationException("Gemini API key not configured in DB");
+        _model = setting.ModelName ?? "gemini-2.0-flash";
     }
 
     public async Task<string> GenerateResponseAsync(string prompt, string? context = null, List<ChatRequestMessage>? history = null, string? systemInstructionOverride = null)
