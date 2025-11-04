@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using LocalRAG.Entities;
+using System.Security.Claims;
 
 namespace LocalRAG.Controllers.Convention;
 
 [ApiController]
 [Route("api/conventions")]
-//[Authorize]
+[Authorize]
 public class ConventionsController : ControllerBase
 {
     private readonly ConventionDbContext _context;
@@ -56,8 +57,24 @@ public class ConventionsController : ControllerBase
     [HttpGet("my-conventions")]
     public async Task<IActionResult> GetUserConventions()
     {
+        var userIdString = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+        if (!int.TryParse(userIdString, out var userId))
+        {
+            return Unauthorized(new { message = "User not authenticated or user ID is invalid." });
+        }
+
+        var userConventionIds = await _context.UserConventions
+            .Where(uc => uc.UserId == userId)
+            .Select(uc => uc.ConventionId)
+            .ToListAsync();
+
+        if (!userConventionIds.Any())
+        {
+            return Ok(new List<object>());
+        }
+
         var conventions = await _context.Conventions
-            .Where(c => c.DeleteYn == "N" && c.CompleteYn == "N")
+            .Where(c => userConventionIds.Contains(c.Id) && c.DeleteYn == "N")
             .OrderByDescending(c => c.RegDtm)
             .Select(c => new
             {
