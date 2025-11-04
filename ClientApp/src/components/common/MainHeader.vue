@@ -14,44 +14,20 @@
           <slot name="actions"></slot>
 
           <div class="relative">
-            <button @click="showUserMenu = !showUserMenu" class="p-2 -mr-2 rounded-lg" :class="transparent ? 'text-white/80 hover:bg-white/10' : 'text-gray-500 hover:bg-gray-100'">
+            <button @click="isSidebarOpen = true" class="p-2 -mr-2 rounded-lg" :class="transparent ? 'text-white/80 hover:bg-white/10' : 'text-gray-500 hover:bg-gray-100'">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
-
-            <Transition name="fade-down">
-              <div v-if="showUserMenu" class="fixed inset-0 z-50" @click="showUserMenu = false">
-                <div class="absolute top-16 right-4 w-56 bg-white rounded-md shadow-lg border">
-                  <ul>
-                    <li>
-                      <router-link to="/my-conventions" class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
-                        행사 리스트
-                      </router-link>
-                    </li>
-                    <li v-if="authStore.isAdmin">
-                      <router-link to="/admin" class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
-                        관리자 페이지
-                      </router-link>
-                    </li>
-                    <li>
-                      <button @click="handleLogout" class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-100">
-                        로그아웃
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </Transition>
           </div>
         </div>
       </div>
     </div>
+    <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import SidebarMenu from './SidebarMenu.vue';
 
 defineProps({
   title: {
@@ -68,16 +44,7 @@ defineProps({
   }
 });
 
-const router = useRouter();
-const authStore = useAuthStore();
-const showUserMenu = ref(false);
-
-const handleLogout = async () => {
-  if (confirm('로그아웃하시겠습니까?')) {
-    await authStore.logout();
-    router.push('/login');
-  }
-};
+const isSidebarOpen = ref(false);
 </script>
 
 <style scoped>
