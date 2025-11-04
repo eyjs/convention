@@ -96,12 +96,18 @@
         </div>
     </div>
 
+    <div class="relative z-10 text-center mb-2">
+      <a href="#" @click.prevent="openPrivacyPolicyModal" class="text-white/80 text-xs underline hover:text-white">개인정보처리 방침</a>
+    </div>
     <footer class="absolute bottom-6 text-xs text-white/80 z-10">© 2025 iFA StarTour. All rights reserved.</footer>
+
+    <PrivacyPolicyModal :is-open="showPrivacyPolicyModal" @close="closePrivacyPolicyModal" />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import PrivacyPolicyModal from '@/components/common/PrivacyPolicyModal.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -111,6 +117,7 @@ const authStore = useAuthStore()
 const isModalOpen = ref(false)
 const activeTab = ref('login')
 const errorMessage = ref('')
+const showPrivacyPolicyModal = ref(false)
 
 const loginForm = ref({
   loginId: '',
@@ -132,6 +139,14 @@ const openLoginModal = () => {
 
 const closeLoginModal = () => {
   isModalOpen.value = false
+}
+
+const openPrivacyPolicyModal = () => {
+  showPrivacyPolicyModal.value = true
+}
+
+const closePrivacyPolicyModal = () => {
+  showPrivacyPolicyModal.value = false
 }
 
 async function handleLogin() {
