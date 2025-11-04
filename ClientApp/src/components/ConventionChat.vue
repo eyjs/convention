@@ -17,7 +17,12 @@
            :class="{ 'my-message': isMyMessage(msg), 'other-message': !isMyMessage(msg) }">
         <div class="message" :class="{ 'is-admin': msg.isAdmin }">
           <div class="message-header">
-            <span class="font-bold">{{ msg.guestName }}</span>
+            <span v-if="msg.isAdmin" class="mr-2 inline-flex items-center justify-center h-4 w-4 rounded-full bg-blue-600 text-white">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </span>
+            <span class="font-bold">{{ msg.userName }}</span>
             <span class="text-xs text-gray-500 ml-2">{{ formatTime(msg.createdAt) }}</span>
           </div>
           <div class="message-content">
@@ -46,11 +51,13 @@
       </form>
     </div>
 
-    <ParticipantList 
-      v-if="showParticipantList"
-      :participants="participantList"
-      @close="showParticipantList = false"
-    />
+    <Transition name="modal-fade">
+      <ParticipantList 
+        v-if="showParticipantList"
+        :participants="participantList"
+        @close="showParticipantList = false"
+      />
+    </Transition>
   </div>
 </template>
 
@@ -90,12 +97,10 @@ let chatService = null;
 const conventionTitle = computed(() => conventionStore.currentConvention?.title || '채팅');
 
 const isMyMessage = (msg) => {
-  if (!authStore.user || !msg.guestId) {
+  if (!authStore.user || msg.userId === undefined) {
     return false;
   }
-  // 비회원 로그인의 경우 user.id가 guestId
-  const myGuestId = authStore.user.guestId || authStore.user.id;
-  return msg.guestId === myGuestId;
+  return msg.userId === authStore.user.id;
 };
 
 onMounted(async () => {
@@ -238,5 +243,22 @@ const formatTime = (isoString) => {
   padding: 1rem;
   border-top: 1px solid #e2e8f0;
   background-color: #ffffff;
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: all 0.3s ease-in-out;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+.modal-fade-enter-active .bg-white,
+.modal-fade-leave-active .bg-white {
+    transition: all 0.3s ease-in-out;
+}
+.modal-fade-enter-from .bg-white,
+.modal-fade-leave-to .bg-white {
+    transform: scale(0.95);
 }
 </style>

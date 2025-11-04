@@ -21,8 +21,18 @@ namespace LocalRAG.Controllers.Convention
         [HttpGet("{conventionId}")]
         public async Task<IActionResult> GetChatHistory(int conventionId)
         {
-            var userConventionIdClaim = User.FindFirst("ConventionId")?.Value;
-            if (userConventionIdClaim == null || !int.TryParse(userConventionIdClaim, out var userConventionId) || userConventionId != conventionId)
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var isUserInConvention = await _context.UserConventions
+                .AnyAsync(uc => uc.UserId == userId && uc.ConventionId == conventionId);
+
+            var isAdmin = User.IsInRole("Admin");
+
+            if (!isUserInConvention && !isAdmin)
             {
                 return StatusCode(StatusCodes.Status403Forbidden, "You do not have access to this convention's chat history.");
             }

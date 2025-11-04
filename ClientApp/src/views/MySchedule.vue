@@ -25,7 +25,7 @@
     </div>
 
     <!-- 날짜 선택 스크롤 -->
-    <div class="bg-white border-b sticky top-[72px] z-30">
+    <div v-if="!showCalendarView" class="bg-white border-b sticky top-[72px] z-30">
       <div class="overflow-x-auto scrollbar-hide">
         <div class="flex px-4 py-3 space-x-2 min-w-max">
           <button
@@ -35,9 +35,12 @@
             :class="[
               'flex-shrink-0 px-4 py-3 rounded-xl text-center transition-all',
               selectedDate === date.date
-                ? 'bg-primary-600 text-white shadow-lg scale-105'
+                ? 'text-white shadow-lg scale-105'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             ]"
+            :style="selectedDate === date.date ? {
+              backgroundColor: brandColor
+            } : {}"
           >
             <div class="text-xs font-medium mb-1">{{ date.day }}</div>
             <div class="text-xl font-bold">{{ date.dayNum }}</div>
@@ -67,18 +70,38 @@
         <div
           v-for="schedule in dateGroup.schedules"
           :key="schedule.id"
+          :ref="el => { if (currentSchedule?.id === schedule.id) currentScheduleRef = el }"
           @click="openScheduleDetail(schedule)"
-          class="bg-white rounded-xl shadow-sm hover:shadow-md transition-all p-4 cursor-pointer"
+          :class="[
+            'rounded-xl shadow-sm hover:shadow-md transition-all p-4 cursor-pointer border-l-4',
+            currentSchedule?.id === schedule.id ? 'ring-2' : 'bg-white'
+          ]"
+          :style="currentSchedule?.id === schedule.id ? {
+            backgroundColor: brandColor + '10',
+            borderLeftColor: brandColor,
+            '--tw-ring-color': brandColor + '50'
+          } : {
+            borderLeftColor: '#e5e7eb'
+          }"
         >
           <!-- 시간 & 타이틀 -->
           <div class="flex items-start space-x-3">
             <div class="w-16 flex-shrink-0">
-              <div class="px-2 py-1 bg-primary-100 text-primary-700 rounded-lg text-center">
+              <div
+                class="px-2 py-1 rounded-lg text-center"
+                :style="currentSchedule?.id === schedule.id ? {
+                  backgroundColor: brandColor,
+                  color: '#ffffff'
+                } : {
+                  backgroundColor: brandColor + '20',
+                  color: brandColor
+                }"
+              >
                 <div class="text-xs font-bold">{{ schedule.startTime }}</div>
                 <div v-if="schedule.endTime" class="text-xs opacity-70">{{ schedule.endTime }}</div>
               </div>
             </div>
-            
+
             <div class="flex-1 min-w-0">
               <div class="flex items-start justify-between mb-2">
                 <h3 class="font-bold text-gray-900 text-base">{{ schedule.title }}</h3>
@@ -102,15 +125,18 @@
 
               <!-- 참가자/그룹 -->
               <div v-if="schedule.group" class="flex items-center space-x-2 mt-3">
-                <div class="flex items-center space-x-1 px-2 py-1 bg-gray-100 rounded-full text-xs">
+                <button
+                  @click.stop="loadParticipants(schedule.scheduleTemplateId, schedule.group)"
+                  class="flex items-center space-x-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs transition-colors"
+                >
                   <svg class="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                   <span class="text-gray-700 font-medium">{{ schedule.group }}</span>
-                </div>
-                <span v-if="schedule.participants" class="text-xs text-gray-500">
-                  {{ schedule.participants }}명 참여
-                </span>
+                  <span v-if="schedule.participants" class="text-gray-500">
+                    ({{ schedule.participants }}명)
+                  </span>
+                </button>
               </div>
             </div>
           </div>
@@ -166,95 +192,133 @@
             @click="selectCalendarDay(day)"
             :class="[
               'aspect-square flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all',
-              day.isToday ? 'bg-primary-100 border-2 border-primary-600' : '',
-              day.hasSchedule ? 'bg-blue-50' : 'hover:bg-gray-50',
+              day.isToday ? 'border-2' : '',
+              day.hasSchedule && !day.isToday ? 'bg-blue-50' : day.isToday ? '' : 'hover:bg-gray-50',
               !day.isCurrentMonth ? 'opacity-30' : ''
             ]"
+            :style="day.isToday ? {
+              backgroundColor: brandColor + '20',
+              borderColor: brandColor
+            } : {}"
           >
-            <span :class="['text-sm font-medium', day.isToday ? 'text-primary-600 font-bold' : 'text-gray-700']">
+            <span
+              :class="['text-sm font-medium', day.isToday ? 'font-bold' : 'text-gray-700']"
+              :style="day.isToday ? { color: brandColor } : {}"
+            >
               {{ day.day }}
             </span>
             <div v-if="day.scheduleCount > 0" class="flex items-center justify-center mt-1">
-              <div class="w-1 h-1 rounded-full bg-primary-600"></div>
+              <div
+                class="w-1 h-1 rounded-full"
+                :style="{ backgroundColor: brandColor }"
+              ></div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 참석자 목록 모달 -->
+    <ParticipantList
+      v-if="showParticipantsModal"
+      :participants="participants"
+      :title="selectedGroupName"
+      :brand-color="brandColor"
+      :show-phone="isAdmin"
+      :search-placeholder="isAdmin ? '이름, 소속, 연락처로 검색...' : '이름, 소속으로 검색...'"
+      z-index-class="z-[60]"
+      @close="closeParticipantsModal"
+    />
 
     <!-- 일정 상세 모달 -->
-    <div v-if="selectedSchedule" @click="closeScheduleDetail" class="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
-      <div @click.stop class="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <!-- 모달 헤더 -->
-        <div class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 class="text-lg font-bold text-gray-900">일정 상세</h2>
-          <button @click="closeScheduleDetail" class="p-2 hover:bg-gray-100 rounded-lg">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <!-- 모달 내용 -->
-        <div class="p-6 space-y-6">
-          <!-- 카테고리 & 타이틀 -->
-          <div>
-            <span v-if="selectedSchedule.category" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-              {{ selectedSchedule.category }}
-            </span>
-            <h3 class="text-2xl font-bold text-gray-900 mt-3">{{ selectedSchedule.title }}</h3>
+    <Transition name="modal-slide">
+      <div v-if="selectedSchedule" @click="closeScheduleDetail" class="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+        <div @click.stop class="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <!-- 모달 헤더 -->
+          <div class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-gray-900">일정 상세</h2>
+            <button @click="closeScheduleDetail" class="p-2 hover:bg-gray-100 rounded-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
-          <!-- 시간 정보 -->
-          <div class="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl">
-            <svg class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+          <!-- 모달 내용 -->
+          <div class="p-6 space-y-6">
+            <!-- 카테고리 & 타이틀 -->
             <div>
-              <div class="font-semibold text-gray-900">{{ formatDate(selectedSchedule.date) }}</div>
-              <div class="text-gray-600">{{ selectedSchedule.startTime }} ~ {{ selectedSchedule.endTime || '종료시간 미정' }}</div>
+              <span v-if="selectedSchedule.category" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                {{ selectedSchedule.category }}
+              </span>
+              <h3 class="text-2xl font-bold text-gray-900 mt-3">{{ selectedSchedule.title }}</h3>
             </div>
-          </div>
 
-          <!-- 장소 정보 -->
-          <div v-if="selectedSchedule.location" class="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl">
-            <svg class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <div>
-              <div class="font-semibold text-gray-900">장소</div>
-              <div class="text-gray-600">{{ selectedSchedule.location }}</div>
+            <!-- 시간 정보 -->
+            <div class="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl">
+              <svg class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <div class="font-semibold text-gray-900">{{ formatDate(selectedSchedule.date) }}</div>
+                <div class="text-gray-600">{{ selectedSchedule.startTime }} ~ {{ selectedSchedule.endTime || '종료시간 미정' }}</div>
+              </div>
             </div>
-          </div>
 
-          <!-- 그룹 정보 -->
-          <div v-if="selectedSchedule.group" class="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl">
-            <svg class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <div>
-              <div class="font-semibold text-gray-900">참여 그룹</div>
-              <div class="text-gray-600">{{ selectedSchedule.group }} ({{ selectedSchedule.participants }}명)</div>
+            <!-- 장소 정보 -->
+            <div v-if="selectedSchedule.location" class="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl">
+              <svg class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <div>
+                <div class="font-semibold text-gray-900">장소</div>
+                <div class="text-gray-600">{{ selectedSchedule.location }}</div>
+              </div>
             </div>
-          </div>
 
-          <!-- 설명 -->
-          <div v-if="selectedSchedule.description" class="space-y-2">
-            <h4 class="font-semibold text-gray-900">상세 설명</h4>
-            <p class="text-gray-600 whitespace-pre-wrap leading-relaxed">{{ selectedSchedule.description }}</p>
+            <!-- 그룹 정보 -->
+            <div v-if="selectedSchedule.group" class="p-4 bg-gray-50 rounded-xl">
+              <div class="flex items-start space-x-3 mb-3">
+                <svg class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <div class="flex-1">
+                  <div class="font-semibold text-gray-900">참여 그룹</div>
+                  <div class="text-gray-600">{{ selectedSchedule.group }} ({{ selectedSchedule.participants }}명)</div>
+                </div>
+              </div>
+              <button
+                @click="loadParticipants(selectedSchedule.scheduleTemplateId, selectedSchedule.group)"
+                class="w-full px-4 py-2.5 rounded-lg text-white font-medium transition-all hover:opacity-90 flex items-center justify-center space-x-2"
+                :style="{ backgroundColor: brandColor }"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span>참석자 보기</span>
+              </button>
+            </div>
+
+            <!-- 설명 -->
+            <div v-if="selectedSchedule.description" class="space-y-2">
+              <h4 class="font-semibold text-gray-900">상세 설명</h4>
+              <p class="text-gray-600 whitespace-pre-wrap leading-relaxed">{{ selectedSchedule.description }}</p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
+import ParticipantList from '@/components/ParticipantList.vue'
+import dayjs from 'dayjs'
 
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
@@ -264,10 +328,57 @@ const selectedDate = ref('')
 const selectedSchedule = ref(null)
 const allSchedules = ref([]) // 전체 일정 저장
 const allActions = ref([]) // 전체 동적 액션 저장
+const currentScheduleRef = ref(null) // 현재 일정 카드 ref
+const currentScheduleId = ref(null) // 현재 진행 중인 일정 ID
+const showParticipantsModal = ref(false) // 참석자 목록 모달
+const participants = ref([]) // 참석자 목록
+const selectedGroupName = ref('') // 선택된 그룹명
 
 const schedules = computed(() => {
   if (!selectedDate.value) return allSchedules.value
   return allSchedules.value.filter(s => s.date === selectedDate.value)
+})
+
+// 브랜드 컬러 가져오기
+const brandColor = computed(() => {
+  return conventionStore.currentConvention?.brandColor || '#10b981' // 기본값: primary-600 green
+})
+
+// 어드민 권한 확인
+const isAdmin = computed(() => {
+  return authStore.user?.role === 'Admin'
+})
+
+// 현재 시간 기준 진행 중인 일정 계산
+const currentSchedule = computed(() => {
+  const today = dayjs().format('YYYY-MM-DD')
+
+  // 선택된 날짜가 오늘이 아니면 null
+  if (selectedDate.value !== today) {
+    return null
+  }
+
+  const now = dayjs()
+  const todaySchedules = schedules.value
+    .filter(s => s.date === today)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime))
+
+  if (todaySchedules.length === 0) return null
+
+  // 현재 시간 이전의 가장 마지막 일정 찾기
+  let current = null
+  for (const schedule of todaySchedules) {
+    const scheduleDateTime = dayjs(`${schedule.date} ${schedule.startTime}`)
+
+    if (scheduleDateTime.isBefore(now) || scheduleDateTime.isSame(now)) {
+      current = schedule
+    } else {
+      break
+    }
+  }
+
+  // 없으면 첫 번째 일정
+  return current || todaySchedules[0]
 })
 
 // SCHEDULE_CONTENT_TOP 위치 액션 필터링
@@ -387,6 +498,27 @@ function closeScheduleDetail() {
   selectedSchedule.value = null
 }
 
+// 참석자 목록 조회
+async function loadParticipants(scheduleTemplateId, groupName) {
+  selectedGroupName.value = groupName || '참여 그룹'
+  showParticipantsModal.value = true
+
+  try {
+    const response = await apiClient.get(`/user-schedules/participants/${scheduleTemplateId}`)
+    participants.value = response.data.participants || []
+  } catch (error) {
+    console.error('Failed to load participants:', error)
+    participants.value = []
+  }
+}
+
+// 참석자 모달 닫기
+function closeParticipantsModal() {
+  showParticipantsModal.value = false
+  participants.value = []
+  selectedGroupName.value = ''
+}
+
 function selectCalendarDay(day) {
   selectedDate.value = day.date
   showCalendarView.value = false
@@ -403,6 +535,19 @@ function changeMonth(direction) {
     currentCalendarYear.value += 1
   }
 }
+
+// 현재 일정으로 자동 스크롤
+watch(currentSchedule, async (newSchedule) => {
+  if (newSchedule && !showCalendarView.value) {
+    await nextTick()
+    if (currentScheduleRef.value) {
+      currentScheduleRef.value.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      })
+    }
+  }
+}, { immediate: true })
 
 async function loadDynamicActions() {
   try {
@@ -453,6 +598,7 @@ onMounted(async () => {
     // 4. Map data (using existing mapping logic)
     allSchedules.value = response.data.map(item => ({
       id: item.id,
+      scheduleTemplateId: item.scheduleTemplateId,
       date: item.scheduleDate.split('T')[0],
       startTime: item.startTime,
       endTime: item.endTime,
@@ -493,5 +639,34 @@ onMounted(async () => {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.modal-slide-enter-active,
+.modal-slide-leave-active {
+  transition: all 0.3s ease-in-out;
+}
+.modal-slide-enter-active .bg-white,
+.modal-slide-leave-active .bg-white {
+  transition: all 0.3s ease-in-out;
+}
+
+.modal-slide-enter-from,
+.modal-slide-leave-to {
+  background-color: rgba(0,0,0,0);
+}
+
+@media (max-width: 639px) {
+  .modal-slide-enter-from .bg-white,
+  .modal-slide-leave-to .bg-white {
+    transform: translateY(100%);
+  }
+}
+
+@media (min-width: 640px) {
+  .modal-slide-enter-from .bg-white,
+  .modal-slide-leave-to .bg-white {
+    transform: scale(0.95);
+    opacity: 0;
+  }
 }
 </style>

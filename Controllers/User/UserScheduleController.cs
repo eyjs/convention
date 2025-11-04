@@ -135,4 +135,53 @@ public class UserScheduleController : ControllerBase
 
         return Ok(templates);
     }
+
+    /// <summary>
+    /// 특정 일정 템플릿에 할당된 참석자 목록 조회
+    /// 민감정보(연락처, 이메일)는 Admin 권한 사용자만 조회 가능
+    /// </summary>
+    [HttpGet("participants/{scheduleTemplateId}")]
+    public async Task<IActionResult> GetScheduleParticipants(int scheduleTemplateId)
+    {
+        try
+        {
+            var template = await _context.ScheduleTemplates
+                .FirstOrDefaultAsync(st => st.Id == scheduleTemplateId);
+
+            if (template is null)
+                return NotFound(new { message = "Schedule template not found" });
+
+            // 현재 사용자 권한 확인
+            var userRole = User.FindFirst("role")?.Value ?? User.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role")?.Value;
+            var isAdmin = userRole == "Admin";
+
+            var participants = await _context.GuestScheduleTemplates
+                .Where(gst => gst.ScheduleTemplateId == scheduleTemplateId)
+                .Include(gst => gst.User)
+                .Select(gst => new
+                {
+                    id = gst.User.Id,
+                    name = gst.User.Name,
+                    organization = gst.User.CorpName ?? gst.User.Affiliation,
+                    department = gst.User.CorpPart,
+                    phone = isAdmin ? gst.User.Phone : null, // Admin만 조회 가능
+                    email = isAdmin ? gst.User.Email : null, // Admin만 조회 가능
+                    groupName = gst.User.Affiliation
+                })
+                .OrderBy(p => p.name)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                scheduleTemplateId,
+                courseName = template.CourseName,
+                totalCount = participants.Count,
+                participants
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+        }
+    }
 }

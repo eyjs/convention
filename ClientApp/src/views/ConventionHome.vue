@@ -1,10 +1,13 @@
 <template>
   <div v-if="loading" class="min-h-screen min-h-dvh flex items-center justify-center">
-    <div class="inline-block w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+    <div
+      class="inline-block w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+      :style="{ borderColor: brandColor, borderTopColor: 'transparent' }"
+    ></div>
   </div>
   <div v-else-if="convention" class="min-h-screen min-h-dvh bg-gradient-to-br from-gray-50 to-gray-100">
     <!-- 헤더 배너 -->
-    <div class="relative h-48 bg-gradient-to-br from-primary-600 to-primary-800 overflow-hidden">
+    <div class="relative h-48 overflow-hidden" :style="headerGradientStyle">
       <!-- 배경 패턴 -->
       <div class="absolute inset-0 opacity-10">
         <div class="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-32 -translate-y-32"></div>
@@ -30,7 +33,7 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span>{{ convention.startDate }} ~ {{ convention.endDate }}</span>
+          <span>{{ formattedConventionPeriod }}</span>
         </div>
         <div class="flex items-center space-x-2 text-sm text-white/90 mt-1">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,9 +73,10 @@
       <div class="bg-white rounded-2xl shadow-lg p-5">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-gray-900">공지사항</h2>
-          <button 
+          <button
             @click="navigateTo('/notices')"
-            class="text-sm text-primary-600 font-medium flex items-center"
+            class="text-sm font-medium flex items-center"
+            :style="{ color: brandColor }"
           >
             더보기
             <svg class="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,6 +200,29 @@ const convention = computed(() => conventionStore.currentConvention)
 const checklistStatus = ref(null) // authStore가 아니라 ref로 변경
 const allActions = ref([]) // 전체 동적 액션 저장
 
+// 브랜드 컬러 가져오기
+const brandColor = computed(() => {
+  return conventionStore.currentConvention?.brandColor || '#10b981' // 기본값: primary-600 green
+})
+
+// 헤더 그라데이션 스타일 계산
+const headerGradientStyle = computed(() => {
+  const color = brandColor.value
+  // 16진수 색상을 RGB로 변환
+  const r = parseInt(color.slice(1, 3), 16)
+  const g = parseInt(color.slice(3, 5), 16)
+  const b = parseInt(color.slice(5, 7), 16)
+
+  // 약간 더 어두운 색 계산 (0.8배)
+  const darkerR = Math.floor(r * 0.8)
+  const darkerG = Math.floor(g * 0.8)
+  const darkerB = Math.floor(b * 0.8)
+
+  return {
+    background: `linear-gradient(to bottom right, rgb(${r}, ${g}, ${b}), rgb(${darkerR}, ${darkerG}, ${darkerB}))`
+  }
+})
+
 // 타겟 위치별 액션 필터링
 const subHeaderActions = computed(() =>
   allActions.value.filter(action => action.targetLocation === 'HOME_SUB_HEADER')
@@ -241,6 +268,30 @@ function formatDate(dateStr) {
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
+
+// 날짜를 '2025-11-10(월)' 형식으로 변환
+function formatDateWithDay(dateStr) {
+  if (!dateStr) return ''
+
+  const date = new Date(dateStr)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const days = ['일', '월', '화', '수', '목', '금', '토']
+  const dayOfWeek = days[date.getDay()]
+
+  return `${year}-${month}-${day}(${dayOfWeek})`
+}
+
+// 행사 기간 포맷
+const formattedConventionPeriod = computed(() => {
+  if (!convention.value) return ''
+
+  const start = formatDateWithDay(convention.value.startDate)
+  const end = formatDateWithDay(convention.value.endDate)
+
+  return `${start} ~ ${end}`
+})
 
 async function loadTodaySchedules() {
   try {

@@ -15,6 +15,7 @@ namespace LocalRAG.Hubs
     {
         public required string Name { get; set; }
         public required string Affiliation { get; set; }
+        public string? CorpPart { get; set; }
     }
 
     [Authorize]
@@ -63,10 +64,12 @@ namespace LocalRAG.Hubs
             var participant = new ParticipantInfo
             {
                 Name = user.Name,
-                Affiliation = user.Affiliation ?? user.CorpName ?? "소속 정보 없음"
+                Affiliation = user.Affiliation ?? "소속 정보 없음",
+                CorpPart = user.CorpPart
             };
             room[Context.ConnectionId] = participant;
 
+            Context.Items["ConventionId"] = conventionId; // Store conventionId for later use
             await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
 
             _logger.LogInformation($"Client {Context.ConnectionId} ({user.Name}) connected to room {roomName}.");
@@ -81,17 +84,15 @@ namespace LocalRAG.Hubs
         {
             var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier);
             var userNameClaim = Context.User?.FindFirst(ClaimTypes.Name);
-            var conventionIdClaim = Context.User?.FindFirst("ConventionId");
             var isAdminClaim = Context.User?.FindFirst(ClaimTypes.Role)?.Value == "Admin";
 
-            if (userIdClaim == null || conventionIdClaim == null || userNameClaim == null)
+            if (userIdClaim == null || userNameClaim == null || !Context.Items.TryGetValue("ConventionId", out var conventionIdObj) || conventionIdObj is not int conventionId)
             {
-                _logger.LogWarning($"SendMessage aborted: Missing claims for user {Context.UserIdentifier}.");
+                _logger.LogWarning($"SendMessage aborted: Missing claims or ConventionId from context for user {Context.UserIdentifier}.");
                 return;
             }
 
             var userId = int.Parse(userIdClaim.Value);
-            var conventionId = int.Parse(conventionIdClaim.Value);
             var userName = userNameClaim.Value;
 
             var chatMessage = new ConventionChatMessage

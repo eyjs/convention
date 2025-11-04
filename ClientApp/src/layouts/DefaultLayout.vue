@@ -31,14 +31,16 @@
             </div>
         </nav>
 
-        <div v-if="uiStore.isChatOpen && conventionId && token"
-             class="fixed inset-0 bg-black bg-opacity-30 z-40 flex justify-center items-end sm:items-center sm:p-4">
-            <div class="w-full max-w-sm h-[calc(100%-5rem)] sm:h-full sm:max-h-[600px] flex flex-col rounded-t-2xl sm:rounded-lg shadow-xl bg-white overflow-hidden">
-                <ConventionChat :convention-id="conventionId" :token="token" />
+        <Transition name="modal-slide">
+            <div v-if="uiStore.isChatOpen && conventionId && token"
+                 class="fixed inset-0 bg-black bg-opacity-30 z-40 flex justify-center items-end sm:items-center sm:p-4">
+                <div class="w-full max-w-sm h-[calc(100%-5rem)] sm:h-full sm:max-h-[600px] flex flex-col rounded-t-2xl sm:rounded-lg shadow-xl bg-white overflow-hidden">
+                    <ConventionChat :convention-id="conventionId" :token="token" />
+                </div>
             </div>
-        </div>
+        </Transition>
         <ChatWindow />
-        <ChatFloatingButton v-if="showNav && !uiStore.isChatOpen" />
+        <ChatFloatingButton v-if="showNav && !uiStore.isChatOpen && currentRoute === '/'" />
     </div>
 </template>
 
@@ -113,6 +115,35 @@ function navigateTo(path) {
 </script>
 
 <style scoped>
+.modal-slide-enter-active,
+.modal-slide-leave-active {
+  transition: all 0.3s ease-in-out;
+}
+.modal-slide-enter-active .w-full,
+.modal-slide-leave-active .w-full {
+  transition: all 0.3s ease-in-out;
+}
+
+.modal-slide-enter-from,
+.modal-slide-leave-to {
+  background-color: rgba(0,0,0,0);
+}
+
+@media (max-width: 639px) {
+  .modal-slide-enter-from .w-full,
+  .modal-slide-leave-to .w-full {
+    transform: translateY(100%);
+  }
+}
+
+@media (min-width: 640px) {
+  .modal-slide-enter-from .w-full,
+  .modal-slide-leave-to .w-full {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
 @supports (padding: env(safe-area-inset-bottom)) {
   nav {
     padding-bottom: env(safe-area-inset-bottom);
