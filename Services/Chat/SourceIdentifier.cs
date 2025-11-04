@@ -44,12 +44,7 @@ public class SourceIdentifier
                 sources.Add(SourceType.RAG_Global);
                 break;
             case ChatIntentRouter.Intent.General:
-                sources.Add(SourceType.General_LLM);
-                break;
             case ChatIntentRouter.Intent.Unknown:
-                // Unknown intent might still benefit from RAG or general LLM
-                sources.Add(SourceType.RAG_Convention);
-                sources.Add(SourceType.RAG_Global);
                 sources.Add(SourceType.General_LLM);
                 break;
         }
