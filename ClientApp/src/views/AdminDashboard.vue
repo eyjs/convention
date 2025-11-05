@@ -10,37 +10,80 @@
               class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               title="행사 목록으로"
             >
-              <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+              <svg
+                class="w-5 h-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
             </button>
-            <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">행사 관리</h1>
-            <span v-if="convention" class="ml-2 sm:ml-4 text-xs sm:text-sm text-gray-500">{{ convention.title }}</span>
+            <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+              행사 관리
+            </h1>
+            <span
+              v-if="convention"
+              class="ml-2 sm:ml-4 text-xs sm:text-sm text-gray-500"
+              >{{ convention.title }}</span
+            >
           </div>
-                    <div class="relative">
-                      <button @click="showUserMenu = !showUserMenu" class="p-2 hover:bg-gray-100 rounded-lg">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" /></svg>
+          <div class="relative">
+            <button
+              @click="showUserMenu = !showUserMenu"
+              class="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 5v.01M12 12v.01M12 19v.01"
+                />
+              </svg>
+            </button>
+
+            <Transition name="fade-down">
+              <div
+                v-if="showUserMenu"
+                class="fixed inset-0 z-50"
+                @click="showUserMenu = false"
+              >
+                <div
+                  class="absolute top-16 right-4 w-56 bg-white rounded-md shadow-lg border"
+                >
+                  <ul>
+                    <li>
+                      <router-link
+                        to="/"
+                        class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        사용자 홈으로
+                      </router-link>
+                    </li>
+                    <li>
+                      <button
+                        @click="handleLogout"
+                        class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-100"
+                      >
+                        로그아웃
                       </button>
-          
-                      <Transition name="fade-down">
-                        <div v-if="showUserMenu" class="fixed inset-0 z-50" @click="showUserMenu = false">
-                          <div class="absolute top-16 right-4 w-56 bg-white rounded-md shadow-lg border">
-                            <ul>
-                              <li>
-                                <router-link to="/" class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
-                                  사용자 홈으로
-                                </router-link>
-                              </li>
-                              <li>
-                                <button @click="handleLogout" class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-100">
-                                  로그아웃
-                                </button>
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-                      </Transition>
-                    </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </Transition>
+          </div>
         </div>
       </div>
     </header>
@@ -57,7 +100,7 @@
               'pb-3 px-3 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors',
               activeTab === tab.id
                 ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
             ]"
           >
             <span class="hidden sm:inline">{{ tab.name }}</span>
@@ -68,7 +111,10 @@
 
       <!-- 대시보드 -->
       <div v-if="activeTab === 'dashboard'">
-        <DashboardOverview :convention-id="conventionId" @show-guest="showGuestFromDashboard" />
+        <DashboardOverview
+          :convention-id="conventionId"
+          @show-guest="showGuestFromDashboard"
+        />
       </div>
 
       <!-- 참석자 관리 -->
@@ -145,7 +191,7 @@ const tabs = [
   { id: 'actions', name: '액션 관리', shortName: '액션' },
   { id: 'attributes', name: '속성 템플릿', shortName: '속성' },
   { id: 'board', name: '게시판 관리', shortName: '게시판' },
-  { id: 'upload', name: '엑셀 업로드', shortName: '업로드' }
+  { id: 'upload', name: '엑셀 업로드', shortName: '업로드' },
 ]
 
 onMounted(async () => {

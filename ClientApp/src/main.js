@@ -7,7 +7,6 @@ import App from './App.vue'
 import './assets/main.css'
 import { setupQuill } from './plugins/quill'
 
-
 import 'viewerjs/dist/viewer.css'
 import Viewer from 'v-viewer'
 

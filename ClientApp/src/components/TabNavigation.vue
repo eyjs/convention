@@ -9,7 +9,7 @@
             'flex-1 py-4 px-2 text-sm font-medium border-b-2 transition-colors duration-200',
             activeTab === tab.id
               ? 'border-ifa-green text-ifa-green'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-gray-500 hover:text-gray-700',
           ]"
           @click="setActiveTab(tab.id)"
         >
@@ -31,16 +31,16 @@ const tabs = [
   { id: '나의일정', name: '나의일정' },
   { id: '공지사항', name: '공지사항' },
   { id: '투어정보', name: '투어정보' },
-  { id: '사진첩', name: '사진첩' }
+  { id: '사진첩', name: '사진첩' },
 ]
 
 const setActiveTab = (tabId) => {
   conventionStore.setActiveTab(tabId)
-  
+
   // 탭별 데이터 로드
   const conventionId = conventionStore.getCurrentConvention?.id
   if (!conventionId) return
-  
+
   switch (tabId) {
     case '공지사항':
       conventionStore.fetchNotices(conventionId)

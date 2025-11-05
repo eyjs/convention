@@ -67,7 +67,7 @@ export const noticeAPI = {
    */
   togglePin: (id) => {
     return apiClient.post(`/notices/${id}/toggle-pin`)
-  }
+  },
 }
 
 export default noticeAPI

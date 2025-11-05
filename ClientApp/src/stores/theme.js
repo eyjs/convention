@@ -17,7 +17,7 @@ export const useThemeStore = defineStore('theme', () => {
       700: '15 118 110',
       800: '17 94 89',
       900: '19 78 74',
-    }
+    },
   }
 
   // 사전 정의된 테마들
@@ -36,7 +36,7 @@ export const useThemeStore = defineStore('theme', () => {
         700: '15 118 110',
         800: '17 94 89',
         900: '19 78 74',
-      }
+      },
     },
     blue: {
       id: 'blue',
@@ -52,7 +52,7 @@ export const useThemeStore = defineStore('theme', () => {
         700: '29 78 216',
         800: '30 64 175',
         900: '30 58 138',
-      }
+      },
     },
     purple: {
       id: 'purple',
@@ -68,7 +68,7 @@ export const useThemeStore = defineStore('theme', () => {
         700: '126 34 206',
         800: '107 33 168',
         900: '88 28 135',
-      }
+      },
     },
     green: {
       id: 'green',
@@ -84,7 +84,7 @@ export const useThemeStore = defineStore('theme', () => {
         700: '21 128 61',
         800: '22 101 52',
         900: '20 83 45',
-      }
+      },
     },
     orange: {
       id: 'orange',
@@ -100,7 +100,7 @@ export const useThemeStore = defineStore('theme', () => {
         700: '194 65 12',
         800: '154 52 18',
         900: '124 45 18',
-      }
+      },
     },
     pink: {
       id: 'pink',
@@ -116,7 +116,7 @@ export const useThemeStore = defineStore('theme', () => {
         700: '190 24 93',
         800: '157 23 77',
         900: '131 24 67',
-      }
+      },
     },
     red: {
       id: 'red',
@@ -132,8 +132,8 @@ export const useThemeStore = defineStore('theme', () => {
         700: '185 28 28',
         800: '153 27 27',
         900: '127 29 29',
-      }
-    }
+      },
+    },
   })
 
   const currentTheme = ref(defaultTheme)
@@ -141,7 +141,7 @@ export const useThemeStore = defineStore('theme', () => {
   // CSS 변수 적용
   function applyCSSVariables(theme) {
     const root = document.documentElement
-    
+
     Object.entries(theme.primary).forEach(([shade, color]) => {
       root.style.setProperty(`--color-primary-${shade}`, color)
     })
@@ -164,7 +164,7 @@ export const useThemeStore = defineStore('theme', () => {
       const theme = {
         id: `custom-${conventionId}`,
         name: 'Custom Theme',
-        primary: customTheme
+        primary: customTheme,
       }
       currentTheme.value = theme
       applyCSSVariables(theme)
@@ -177,11 +177,13 @@ export const useThemeStore = defineStore('theme', () => {
   // HEX 색상을 RGB로 변환
   function hexToRgb(hex) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : null
+    return result
+      ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16),
+        }
+      : null
   }
 
   // HEX 색상을 기반으로 모든 shade 생성
@@ -193,14 +195,14 @@ export const useThemeStore = defineStore('theme', () => {
     const shades = {
       50: lightenRgb(rgb, 0.95),
       100: lightenRgb(rgb, 0.85),
-      200: lightenRgb(rgb, 0.70),
-      300: lightenRgb(rgb, 0.50),
+      200: lightenRgb(rgb, 0.7),
+      300: lightenRgb(rgb, 0.5),
       400: lightenRgb(rgb, 0.25),
       500: `${rgb.r} ${rgb.g} ${rgb.b}`,
       600: darkenRgb(rgb, 0.15),
-      700: darkenRgb(rgb, 0.30),
+      700: darkenRgb(rgb, 0.3),
       800: darkenRgb(rgb, 0.45),
-      900: darkenRgb(rgb, 0.60),
+      900: darkenRgb(rgb, 0.6),
     }
 
     return shades
@@ -238,6 +240,6 @@ export const useThemeStore = defineStore('theme', () => {
     setTheme,
     setThemeByConvention,
     generateThemeFromColor,
-    init
+    init,
   }
 })

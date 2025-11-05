@@ -23,7 +23,10 @@
     @keydown.space.prevent="handleCardClick"
   >
     <!-- Card Image (optional) -->
-    <div v-if="config.imageUrl" class="w-full h-48 overflow-hidden rounded-t-lg">
+    <div
+      v-if="config.imageUrl"
+      class="w-full h-48 overflow-hidden rounded-t-lg"
+    >
       <img
         :src="config.imageUrl"
         :alt="feature.title"
@@ -65,7 +68,12 @@
           v-if="isClickable"
           class="flex-shrink-0 text-gray-400 transition-colors group-hover:text-blue-600"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -77,7 +85,10 @@
       </div>
 
       <!-- Description -->
-      <p v-if="config.description" class="text-sm md:text-base text-gray-600 leading-relaxed">
+      <p
+        v-if="config.description"
+        class="text-sm md:text-base text-gray-600 leading-relaxed"
+      >
         {{ config.description }}
       </p>
 
@@ -89,14 +100,19 @@
           class="flex items-center gap-2 text-sm text-gray-500"
         >
           <span v-if="item.icon" v-html="item.icon" class="w-4 h-4"></span>
-          <span>{{ item.label }}: <strong class="text-gray-900">{{ item.value }}</strong></span>
+          <span
+            >{{ item.label }}:
+            <strong class="text-gray-900">{{ item.value }}</strong></span
+          >
         </div>
       </div>
     </div>
 
     <!-- Card Footer (optional) -->
     <div
-      v-if="config.footer && config.footer.links && config.footer.links.length > 0"
+      v-if="
+        config.footer && config.footer.links && config.footer.links.length > 0
+      "
       class="px-5 md:px-6 py-4 border-t border-gray-200 bg-gray-50"
     >
       <div class="flex flex-wrap gap-3">
@@ -189,11 +205,14 @@ const cardClasses = computed(() => {
       'cursor-pointer',
       'hover:shadow-lg',
       'hover:border-blue-300',
-      'active:scale-[0.99]'
+      'active:scale-[0.99]',
     )
   }
 
-  return [...baseClasses, variantClasses[variant] || variantClasses.default].join(' ')
+  return [
+    ...baseClasses,
+    variantClasses[variant] || variantClasses.default,
+  ].join(' ')
 })
 
 // Icon style

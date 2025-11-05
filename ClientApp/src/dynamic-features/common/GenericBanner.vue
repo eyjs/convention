@@ -88,7 +88,12 @@
       v-if="isClickable && !config.ctaButton"
       class="absolute top-4 right-4 bg-white/90 rounded-full p-2 shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity"
     >
-      <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        class="w-5 h-5 text-blue-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -152,7 +157,12 @@ const bannerClasses = computed(() => {
   ]
 
   if (isClickable.value) {
-    baseClasses.push('cursor-pointer', 'transition-transform', 'duration-200', 'hover:scale-[1.02]')
+    baseClasses.push(
+      'cursor-pointer',
+      'transition-transform',
+      'duration-200',
+      'hover:scale-[1.02]',
+    )
   }
 
   return [...baseClasses, heightClasses[height] || heightClasses.md].join(' ')
@@ -186,14 +196,16 @@ const overlayClasses = computed(() => {
 const ctaButtonClasses = computed(() => {
   const style = config.value.ctaButton?.style || 'primary'
 
-  const baseClasses = 'px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95'
+  const baseClasses =
+    'px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95'
 
   const styleClasses = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700',
     secondary: 'bg-white text-gray-900 hover:bg-gray-100',
     success: 'bg-green-600 text-white hover:bg-green-700',
     danger: 'bg-red-600 text-white hover:bg-red-700',
-    outline: 'bg-transparent text-white border-2 border-white hover:bg-white/10',
+    outline:
+      'bg-transparent text-white border-2 border-white hover:bg-white/10',
   }
 
   return `${baseClasses} ${styleClasses[style] || styleClasses.primary}`
@@ -219,7 +231,11 @@ const handleCtaClick = () => {
   if (config.value.ctaButton?.url) {
     router.push(config.value.ctaButton.url)
   } else if (config.value.ctaButton?.externalUrl) {
-    window.open(config.value.ctaButton.externalUrl, '_blank', 'noopener,noreferrer')
+    window.open(
+      config.value.ctaButton.externalUrl,
+      '_blank',
+      'noopener,noreferrer',
+    )
   } else {
     // Fallback to banner's default click action
     handleBannerClick()

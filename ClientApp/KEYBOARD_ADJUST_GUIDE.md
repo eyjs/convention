@@ -1,68 +1,65 @@
 # 모바일 키보드 대응 가이드
 
 ## 개요
+
 모바일 환경에서 입력 필드에 포커스할 때 키보드가 올라오면서 입력창이 가려지는 문제를 자동으로 해결하는 시스템입니다.
 
 ## 주요 기능
 
 ### 1. 자동 스크롤 조정
+
 - 입력 필드 포커스 시 자동으로 스크롤하여 키보드 위로 입력창 표시
 - iOS Safari, Android Chrome 등 모든 모바일 브라우저 지원
 - Visual Viewport API를 활용한 정확한 키보드 높이 감지
 
 ### 2. iOS 최적화
+
 - 자동 줌 방지 (font-size: 16px 이상 적용)
 - Safe Area 대응
 - Fixed 요소 처리
 
 ### 3. 터치 영역 최적화
+
 - 최소 44x44px 터치 영역 보장
 - 버튼, 링크, 체크박스 등 모든 인터랙티브 요소에 적용
 
 ## 설치 및 설정
 
 ### 1. Composable 추가 (✅ 완료)
+
 `src/composables/useKeyboardAdjust.js` 파일이 생성되었습니다.
 
 ### 2. 전역 CSS 스타일 (✅ 완료)
+
 `src/assets/main.css`에 키보드 대응 스타일이 추가되었습니다.
 
 ### 3. App.vue에 적용 (✅ 완료)
-```vue
-import { useKeyboardAdjust } from '@/composables/useKeyboardAdjust'
 
-// 전역 키보드 대응 활성화
-const { isKeyboardVisible } = useKeyboardAdjust({
-  offset: 20,        // 키보드 위 여백 (px)
-  duration: 300,     // 스크롤 애니메이션 시간 (ms)
-  enabled: true      // 항상 활성화
-})
+```vue
+import { useKeyboardAdjust } from '@/composables/useKeyboardAdjust' // 전역
+키보드 대응 활성화 const { isKeyboardVisible } = useKeyboardAdjust({ offset: 20,
+// 키보드 위 여백 (px) duration: 300, // 스크롤 애니메이션 시간 (ms) enabled:
+true // 항상 활성화 })
 ```
 
 ## 사용 방법
 
 ### 기본 사용 (자동 적용)
+
 특별한 설정 없이 모든 input, textarea 요소에 자동으로 적용됩니다.
 
 ```vue
 <template>
   <div>
-    <input 
-      v-model="email" 
-      type="email" 
-      placeholder="이메일 입력"
-    />
-    
-    <textarea 
-      v-model="message" 
-      rows="5"
-      placeholder="메시지 입력"
-    />
+    <input v-model="email" type="email" placeholder="이메일 입력" />
+
+    <textarea v-model="message" rows="5" placeholder="메시지 입력" />
   </div>
 </template>
 ```
 
 ### 플로팅 버튼 사용
+
 하단 고정 버튼이 키보드에 가려지지 않도록 처리:
 
 ```vue
@@ -76,6 +73,7 @@ const { isKeyboardVisible } = useKeyboardAdjust({
 CSS에서 자동으로 키보드 높이만큼 올라갑니다.
 
 ### 컨테이너에 적용
+
 전체 페이지를 키보드 대응 컨테이너로 감싸기:
 
 ```vue
@@ -87,6 +85,7 @@ CSS에서 자동으로 키보드 높이만큼 올라갑니다.
 ```
 
 ### 개별 컴포넌트에서 사용
+
 특정 컴포넌트에서만 키보드 상태를 확인하거나 제어하려면:
 
 ```vue
@@ -95,8 +94,8 @@ import { useKeyboardAdjust } from '@/composables/useKeyboardAdjust'
 import { watch } from 'vue'
 
 const { isKeyboardVisible, scrollToElement } = useKeyboardAdjust({
-  offset: 30,        // 더 큰 여백
-  enabled: true
+  offset: 30, // 더 큰 여백
+  enabled: true,
 })
 
 // 키보드 상태에 따라 UI 변경
@@ -133,7 +132,7 @@ const scrollToInput = () => {
   <div class="min-h-screen flex items-center justify-center p-6">
     <div class="w-full max-w-md space-y-6">
       <h1 class="text-2xl font-bold text-center">로그인</h1>
-      
+
       <div class="input-wrapper">
         <label class="block text-sm font-medium mb-2">아이디</label>
         <input
@@ -143,7 +142,7 @@ const scrollToInput = () => {
           placeholder="아이디를 입력하세요"
         />
       </div>
-      
+
       <div class="input-wrapper">
         <label class="block text-sm font-medium mb-2">비밀번호</label>
         <input
@@ -153,7 +152,7 @@ const scrollToInput = () => {
           placeholder="비밀번호를 입력하세요"
         />
       </div>
-      
+
       <button class="w-full py-3 bg-primary-600 text-white rounded-lg">
         로그인
       </button>
@@ -173,7 +172,7 @@ const scrollToInput = () => {
         {{ comment.text }}
       </div>
     </div>
-    
+
     <!-- 하단 고정 댓글 입력창 -->
     <div class="floating-action left-0 right-0 bg-white border-t p-4">
       <div class="flex gap-2">
@@ -203,12 +202,12 @@ const comments = ref([])
 
 const addComment = () => {
   if (!newComment.value.trim()) return
-  
+
   comments.value.push({
     id: Date.now(),
-    text: newComment.value
+    text: newComment.value,
   })
-  
+
   newComment.value = ''
 }
 </script>
@@ -220,7 +219,7 @@ const addComment = () => {
 <template>
   <div class="keyboard-aware-container p-6">
     <h2 class="text-xl font-bold mb-6">행사 만족도 조사</h2>
-    
+
     <div class="space-y-6">
       <!-- 객관식 질문 -->
       <div class="input-wrapper">
@@ -241,7 +240,7 @@ const addComment = () => {
           </label>
         </div>
       </div>
-      
+
       <!-- 주관식 질문 -->
       <div class="input-wrapper">
         <label class="block font-medium mb-2">개선 의견</label>
@@ -253,7 +252,7 @@ const addComment = () => {
         ></textarea>
       </div>
     </div>
-    
+
     <!-- 제출 버튼 -->
     <div class="floating-action right-6">
       <button
@@ -271,7 +270,7 @@ import { ref } from 'vue'
 
 const survey = ref({
   satisfaction: '',
-  feedback: ''
+  feedback: '',
 })
 
 const satisfactionOptions = [
@@ -279,7 +278,7 @@ const satisfactionOptions = [
   { value: 4, label: '만족' },
   { value: 3, label: '보통' },
   { value: 2, label: '불만족' },
-  { value: 1, label: '매우 불만족' }
+  { value: 1, label: '매우 불만족' },
 ]
 
 const submitSurvey = () => {
@@ -294,6 +293,7 @@ const submitSurvey = () => {
 ### iOS에서 입력창이 여전히 가려지는 경우
 
 1. **font-size 확인**: 16px 미만이면 자동 줌이 발생합니다.
+
 ```css
 input {
   font-size: 16px; /* 필수 */
@@ -301,11 +301,16 @@ input {
 ```
 
 2. **viewport 메타태그 확인**: index.html에 올바른 설정이 있는지 확인
+
 ```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+/>
 ```
 
 3. **safe-area 적용**: iOS 노치 대응
+
 ```css
 .container {
   padding-bottom: env(safe-area-inset-bottom);
@@ -315,6 +320,7 @@ input {
 ### Android에서 키보드가 레이아웃을 밀어올리는 경우
 
 1. **CSS로 최대 높이 제한**:
+
 ```css
 .main-content {
   max-height: 100vh;
@@ -325,6 +331,7 @@ input {
 ### 플로팅 버튼이 키보드에 가려지는 경우
 
 `floating-action` 클래스가 제대로 적용되었는지 확인:
+
 ```vue
 <div class="floating-action">
   <button>버튼</button>
@@ -336,11 +343,12 @@ input {
 1. **이벤트 리스너 최소화**: 전역에서 한 번만 적용 (App.vue)
 
 2. **조건부 활성화**: 데스크톱에서는 비활성화
+
 ```javascript
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
 useKeyboardAdjust({
-  enabled: isMobile
+  enabled: isMobile,
 })
 ```
 
@@ -349,11 +357,13 @@ useKeyboardAdjust({
 ### useKeyboardAdjust(options)
 
 **매개변수:**
+
 - `options.offset` (number): 키보드 위 여백 (기본값: 20)
 - `options.duration` (number): 애니메이션 시간 (기본값: 300)
 - `options.enabled` (boolean): 기능 활성화 (기본값: true)
 
 **반환값:**
+
 ```typescript
 {
   isKeyboardVisible: Ref<boolean>,  // 키보드 표시 여부
@@ -364,15 +374,15 @@ useKeyboardAdjust({
 
 ### CSS 클래스
 
-| 클래스 | 설명 |
-|--------|------|
-| `keyboard-visible` | body에 자동 적용 (키보드 표시 시) |
-| `keyboard-aware-container` | 키보드 높이를 고려한 컨테이너 |
-| `input-wrapper` | 입력 필드 래퍼 (자동 여백) |
-| `floating-action` | 플로팅 버튼 (키보드 대응) |
-| `fixed-header` | 고정 헤더 (iOS 처리) |
-| `fixed-footer` | 고정 푸터 (iOS 처리) |
-| `main-content` | 메인 콘텐츠 영역 |
+| 클래스                     | 설명                              |
+| -------------------------- | --------------------------------- |
+| `keyboard-visible`         | body에 자동 적용 (키보드 표시 시) |
+| `keyboard-aware-container` | 키보드 높이를 고려한 컨테이너     |
+| `input-wrapper`            | 입력 필드 래퍼 (자동 여백)        |
+| `floating-action`          | 플로팅 버튼 (키보드 대응)         |
+| `fixed-header`             | 고정 헤더 (iOS 처리)              |
+| `fixed-footer`             | 고정 푸터 (iOS 처리)              |
+| `main-content`             | 메인 콘텐츠 영역                  |
 
 ## 브라우저 지원
 

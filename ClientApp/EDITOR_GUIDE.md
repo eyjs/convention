@@ -19,7 +19,7 @@ async function savePost() {
   if (editor.value) {
     postForm.value.content = await editor.value.beforeSave()
   }
-  
+
   // 저장 로직...
 }
 </script>
@@ -27,7 +27,7 @@ async function savePost() {
 <template>
   <!-- textarea 대신 RichTextEditor 사용 -->
   <RichTextEditor ref="editor" v-model="postForm.content" height="500px" />
-  
+
   <!-- 상세보기에서 HTML 렌더링 -->
   <div v-html="viewingPost.content"></div>
 </template>

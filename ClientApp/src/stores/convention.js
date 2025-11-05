@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { conventionAPI } from '@/services/api'
 import dayjs from 'dayjs'
-import { useAuthStore } from './auth';
+import { useAuthStore } from './auth'
 
 export const useConventionStore = defineStore('convention', () => {
   // State
@@ -17,38 +17,42 @@ export const useConventionStore = defineStore('convention', () => {
 
   // 현재 선택된 날짜
   const selectedDate = ref(dayjs().format('YYYY-MM-DD'))
-  
+
   // 현재 활성 탭
   const activeTab = ref('나의일정')
 
   // Getters
   const getCurrentConvention = computed(() => currentConvention.value)
-  
+
   const getSchedulesByDate = computed(() => {
     if (!schedules.value.length) return []
-    
-    return schedules.value.filter(schedule => {
-      const scheduleDate = dayjs(schedule.scheduleDate).format('YYYY-MM-DD')
-      return scheduleDate === selectedDate.value
-    }).sort((a, b) => {
-      const timeA = a.startTime || '00:00:00'
-      const timeB = b.startTime || '00:00:00'
-      return timeA.localeCompare(timeB)
-    })
+
+    return schedules.value
+      .filter((schedule) => {
+        const scheduleDate = dayjs(schedule.scheduleDate).format('YYYY-MM-DD')
+        return scheduleDate === selectedDate.value
+      })
+      .sort((a, b) => {
+        const timeA = a.startTime || '00:00:00'
+        const timeB = b.startTime || '00:00:00'
+        return timeA.localeCompare(timeB)
+      })
   })
 
   const getAvailableDates = computed(() => {
     if (!schedules.value.length) return []
-    
-    const dates = [...new Set(schedules.value.map(s => 
-      dayjs(s.scheduleDate).format('YYYY-MM-DD')
-    ))].sort()
-    
-    return dates.map(date => ({
+
+    const dates = [
+      ...new Set(
+        schedules.value.map((s) => dayjs(s.scheduleDate).format('YYYY-MM-DD')),
+      ),
+    ].sort()
+
+    return dates.map((date) => ({
       date,
       label: dayjs(date).format('M/D'),
       dayName: dayjs(date).format('(ddd)'),
-      isToday: dayjs(date).isSame(dayjs(), 'day')
+      isToday: dayjs(date).isSame(dayjs(), 'day'),
     }))
   })
 
@@ -56,11 +60,11 @@ export const useConventionStore = defineStore('convention', () => {
   async function fetchConventions() {
     loading.value = true
     error.value = null
-    
+
     try {
       const response = await conventionAPI.getConventions()
       conventions.value = response.data?.conventions || []
-      
+
       // 첫 번째 컨벤션을 현재 컨벤션으로 설정
       if (conventions.value.length > 0) {
         await setCurrentConvention(conventions.value[0].id)
@@ -76,13 +80,13 @@ export const useConventionStore = defineStore('convention', () => {
   async function setCurrentConvention(conventionId) {
     loading.value = true
     error.value = null
-    
+
     try {
       const response = await conventionAPI.getConvention(conventionId)
       currentConvention.value = response.data
       // The schedules are loaded separately, not in this call.
       // schedules.value = response.data?.schedules || []
-      
+
       // 첫 번째 사용 가능한 날짜로 설정
       const availableDates = getAvailableDates.value
       if (availableDates.length > 0) {
@@ -144,13 +148,16 @@ export const useConventionStore = defineStore('convention', () => {
   }
 
   async function selectConvention(conventionId) {
-    const id = typeof conventionId === 'number' ? conventionId : parseInt(conventionId, 10);
+    const id =
+      typeof conventionId === 'number'
+        ? conventionId
+        : parseInt(conventionId, 10)
     if (isNaN(id)) {
-      console.error('Invalid convention ID:', conventionId);
-      return;
+      console.error('Invalid convention ID:', conventionId)
+      return
     }
-    localStorage.setItem('selectedConventionId', id.toString());
-    await setCurrentConvention(id);
+    localStorage.setItem('selectedConventionId', id.toString())
+    await setCurrentConvention(id)
   }
 
   return {
@@ -165,12 +172,12 @@ export const useConventionStore = defineStore('convention', () => {
     error,
     selectedDate,
     activeTab,
-    
+
     // Getters
     getCurrentConvention,
     getSchedulesByDate,
     getAvailableDates,
-    
+
     // Actions
     fetchConventions,
     setCurrentConvention,
@@ -179,6 +186,6 @@ export const useConventionStore = defineStore('convention', () => {
     fetchPhotos,
     setSelectedDate,
     setActiveTab,
-    selectConvention
+    selectConvention,
   }
 })

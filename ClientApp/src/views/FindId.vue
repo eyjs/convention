@@ -1,10 +1,14 @@
 <template>
-  <div class="min-h-screen min-h-dvh flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
+  <div
+    class="min-h-screen min-h-dvh flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8"
+  >
     <div class="max-w-md w-full">
       <!-- 로고/제목 -->
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">아이디 찾기</h1>
-        <p class="text-gray-600">가입 시 입력한 이름과 전화번호를 입력해주세요</p>
+        <p class="text-gray-600">
+          가입 시 입력한 이름과 전화번호를 입력해주세요
+        </p>
       </div>
 
       <!-- 카드 -->
@@ -13,7 +17,9 @@
         <div v-if="step === 1">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">이름</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >이름</label
+              >
               <input
                 v-model="form.name"
                 type="text"
@@ -23,7 +29,9 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >전화번호</label
+              >
               <input
                 v-model="form.phoneNumber"
                 type="tel"
@@ -47,14 +55,17 @@
         <div v-if="step === 2">
           <div class="mb-6 p-4 bg-blue-50 rounded-lg">
             <p class="text-sm text-blue-900">
-              <strong>{{ form.phoneNumber }}</strong>로 인증번호를 발송했습니다.
+              <strong>{{ form.phoneNumber }}</strong
+              >로 인증번호를 발송했습니다.
             </p>
             <p class="text-xs text-blue-700 mt-1">5분 내에 입력해주세요.</p>
           </div>
 
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">인증번호</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >인증번호</label
+              >
               <input
                 v-model="form.code"
                 type="text"
@@ -85,18 +96,36 @@
         <!-- Step 3: 결과 -->
         <div v-if="step === 3">
           <div class="text-center mb-6">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-              <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            <div
+              class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4"
+            >
+              <svg
+                class="w-8 h-8 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">아이디를 찾았습니다</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">
+              아이디를 찾았습니다
+            </h3>
           </div>
 
           <div class="p-4 bg-gray-50 rounded-lg mb-6">
             <div class="text-sm text-gray-600 mb-1">회원님의 아이디</div>
-            <div class="text-lg font-bold text-gray-900 break-all">{{ foundLoginId }}</div>
-            <div class="text-xs text-gray-500 mt-2">가입일: {{ formatDate(foundCreatedAt) }}</div>
+            <div class="text-lg font-bold text-gray-900 break-all">
+              {{ foundLoginId }}
+            </div>
+            <div class="text-xs text-gray-500 mt-2">
+              가입일: {{ formatDate(foundCreatedAt) }}
+            </div>
           </div>
 
           <div class="space-y-3">
@@ -123,11 +152,17 @@
 
       <!-- 하단 링크 -->
       <div class="mt-6 text-center space-y-2">
-        <router-link to="/login" class="text-sm text-gray-600 hover:text-gray-900">
+        <router-link
+          to="/login"
+          class="text-sm text-gray-600 hover:text-gray-900"
+        >
           로그인으로 돌아가기
         </router-link>
         <span class="text-gray-400 mx-2">|</span>
-        <router-link to="/find-password" class="text-sm text-gray-600 hover:text-gray-900">
+        <router-link
+          to="/find-password"
+          class="text-sm text-gray-600 hover:text-gray-900"
+        >
           비밀번호 찾기
         </router-link>
       </div>
@@ -151,19 +186,19 @@ const foundCreatedAt = ref('')
 const form = ref({
   name: '',
   phoneNumber: '',
-  code: ''
+  code: '',
 })
 
 const sendCode = async () => {
   loading.value = true
   error.value = ''
-  
+
   try {
     await apiClient.post('/accountrecovery/find-id/send-code', {
       name: form.value.name,
-      phoneNumber: form.value.phoneNumber
+      phoneNumber: form.value.phoneNumber,
     })
-    
+
     step.value = 2
   } catch (err) {
     error.value = err.response?.data?.message || '인증번호 발송에 실패했습니다.'
@@ -175,14 +210,14 @@ const sendCode = async () => {
 const verifyCode = async () => {
   loading.value = true
   error.value = ''
-  
+
   try {
     const response = await apiClient.post('/accountrecovery/find-id/verify', {
       name: form.value.name,
       phoneNumber: form.value.phoneNumber,
-      code: form.value.code
+      code: form.value.code,
     })
-    
+
     foundLoginId.value = response.data.loginId
     foundCreatedAt.value = response.data.createdAt
     step.value = 3

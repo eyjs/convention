@@ -41,18 +41,18 @@
 
 ### 기본 크기 정의
 
-| Class | Size (rem) | Size (px) | Line Height | 용도 |
-|-------|-----------|-----------|-------------|------|
-| `text-xs` | 0.75rem | 12px | 1.5 | Badge, Tag, Caption |
-| `text-sm` | 0.875rem | 14px | 1.6 | Small Text, Form Helper |
-| `text-base` | 0.9375rem | **15px** | 1.7 | **Body Text (Mobile)** |
-| `text-lg` | 1rem | 16px | 1.75 | Body Text (Desktop) |
-| `text-xl` | 1.125rem | 18px | 1.75 | Subtitle, Card Title |
-| `text-2xl` | 1.25rem | 20px | 1.6 | Section Title |
-| `text-3xl` | 1.5rem | 24px | 1.5 | Page Title (H1) |
-| `text-4xl` | 1.875rem | 30px | 1.4 | Large Title |
-| `text-5xl` | 2.25rem | 36px | 1.3 | Hero Title |
-| `text-6xl` | 3rem | 48px | 1.2 | Display Title |
+| Class       | Size (rem) | Size (px) | Line Height | 용도                    |
+| ----------- | ---------- | --------- | ----------- | ----------------------- |
+| `text-xs`   | 0.75rem    | 12px      | 1.5         | Badge, Tag, Caption     |
+| `text-sm`   | 0.875rem   | 14px      | 1.6         | Small Text, Form Helper |
+| `text-base` | 0.9375rem  | **15px**  | 1.7         | **Body Text (Mobile)**  |
+| `text-lg`   | 1rem       | 16px      | 1.75        | Body Text (Desktop)     |
+| `text-xl`   | 1.125rem   | 18px      | 1.75        | Subtitle, Card Title    |
+| `text-2xl`  | 1.25rem    | 20px      | 1.6         | Section Title           |
+| `text-3xl`  | 1.5rem     | 24px      | 1.5         | Page Title (H1)         |
+| `text-4xl`  | 1.875rem   | 30px      | 1.4         | Large Title             |
+| `text-5xl`  | 2.25rem    | 36px      | 1.3         | Hero Title              |
+| `text-6xl`  | 3rem       | 48px      | 1.2         | Display Title           |
 
 ### 자동 적용
 
@@ -81,8 +81,10 @@
 
 ```vue
 <!-- HTML 태그 사용 (권장) -->
-<h1>페이지 제목</h1>  <!-- 자동으로 text-3xl 적용 -->
-<h2>섹션 제목</h2>      <!-- 자동으로 text-2xl 적용 -->
+<h1>페이지 제목</h1>
+<!-- 자동으로 text-3xl 적용 -->
+<h2>섹션 제목</h2>
+<!-- 자동으로 text-2xl 적용 -->
 
 <!-- 또는 클래스 사용 -->
 <div class="text-3xl font-bold">페이지 제목</div>
@@ -111,6 +113,7 @@
 ### 권장 반응형 패턴
 
 #### 제목 (Title)
+
 ```vue
 <!-- Mobile 20px → Desktop 24px -->
 <h1 class="text-2xl md:text-3xl font-bold">
@@ -119,6 +122,7 @@
 ```
 
 #### 부제목 (Subtitle)
+
 ```vue
 <!-- Mobile 15px → Desktop 18px -->
 <h2 class="text-base md:text-xl font-semibold">
@@ -127,6 +131,7 @@
 ```
 
 #### 본문 (Body)
+
 ```vue
 <!-- Mobile 14px → Desktop 15px -->
 <p class="text-sm md:text-base">
@@ -140,6 +145,7 @@
 ```
 
 #### 버튼 (Button)
+
 ```vue
 <!-- Mobile 14px → Desktop 16px -->
 <button class="text-sm md:text-base">
@@ -182,19 +188,13 @@
 <template>
   <div class="bg-white rounded-lg p-4 md:p-6">
     <!-- Title -->
-    <h3 class="text-base md:text-lg font-semibold mb-2">
-      카드 제목
-    </h3>
+    <h3 class="text-base md:text-lg font-semibold mb-2">카드 제목</h3>
 
     <!-- Content -->
-    <p class="text-sm md:text-base text-gray-600">
-      카드 내용
-    </p>
+    <p class="text-sm md:text-base text-gray-600">카드 내용</p>
 
     <!-- Metadata -->
-    <div class="text-xs text-gray-500 mt-3">
-      메타 정보
-    </div>
+    <div class="text-xs text-gray-500 mt-3">메타 정보</div>
   </div>
 </template>
 ```
@@ -205,21 +205,13 @@
 <template>
   <form>
     <!-- Label -->
-    <label class="text-sm font-medium text-gray-700">
-      이메일
-    </label>
+    <label class="text-sm font-medium text-gray-700"> 이메일 </label>
 
     <!-- Input (자동으로 16px 적용됨) -->
-    <input
-      type="email"
-      class="text-base"
-      placeholder="email@example.com"
-    />
+    <input type="email" class="text-base" placeholder="email@example.com" />
 
     <!-- Helper Text -->
-    <p class="text-xs text-gray-500 mt-1">
-      이메일 주소를 입력하세요
-    </p>
+    <p class="text-xs text-gray-500 mt-1">이메일 주소를 입력하세요</p>
   </form>
 </template>
 ```
@@ -232,17 +224,13 @@
     <thead>
       <tr>
         <!-- Header: 소문자 + 굵게 -->
-        <th class="text-xs uppercase font-semibold">
-          이름
-        </th>
+        <th class="text-xs uppercase font-semibold">이름</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <!-- Cell: 보통 크기 -->
-        <td class="text-sm">
-          홍길동
-        </td>
+        <td class="text-sm">홍길동</td>
       </tr>
     </tbody>
   </table>
@@ -285,12 +273,12 @@ Rich text 콘텐츠는 **Prose 클래스**를 사용합니다.
 
 ### Prose 크기 변형
 
-| Class | Mobile | Desktop | 용도 |
-|-------|--------|---------|------|
-| `prose-sm` | 14px | 15px | 작은 콘텐츠 |
-| `prose` (또는 `prose-base`) | 15px | 16px | **기본** |
-| `prose-lg` | 16px | 18px | 큰 콘텐츠 |
-| `prose-xl` | 18px | 20px | 강조 콘텐츠 |
+| Class                       | Mobile | Desktop | 용도        |
+| --------------------------- | ------ | ------- | ----------- |
+| `prose-sm`                  | 14px   | 15px    | 작은 콘텐츠 |
+| `prose` (또는 `prose-base`) | 15px   | 16px    | **기본**    |
+| `prose-lg`                  | 16px   | 18px    | 큰 콘텐츠   |
+| `prose-xl`                  | 18px   | 20px    | 강조 콘텐츠 |
 
 ### 반응형 Prose
 
@@ -328,7 +316,8 @@ iOS Safari에서 16px 미만의 입력 필드는 자동 줌이 발생합니다.
 
 ```vue
 <!-- ✅ 자동으로 16px 이상 유지됨 -->
-<input class="text-base" />  <!-- Mobile/Desktop 모두 16px 이상 -->
+<input class="text-base" />
+<!-- Mobile/Desktop 모두 16px 이상 -->
 ```
 
 ### 3. Line Height 자동 적용
@@ -414,6 +403,7 @@ Prose 클래스는 기본적으로 max-width를 가지므로 제거해야 합니
 ## 📞 문의
 
 타이포그래피 시스템 관련 문의:
+
 - 슬랙: #frontend-team
 - 담당자: Claude Code
 - 문서 업데이트: 변경 사항 발생 시 이 문서도 함께 업데이트

@@ -5,7 +5,9 @@
       <div class="mb-6 flex items-center justify-between">
         <div>
           <h1 class="text-3xl font-bold text-gray-900">공지사항 관리</h1>
-          <p class="mt-2 text-gray-600">공지사항을 등록하고 관리할 수 있습니다</p>
+          <p class="mt-2 text-gray-600">
+            공지사항을 등록하고 관리할 수 있습니다
+          </p>
         </div>
         <button
           @click="showCategoryModal = true"
@@ -25,15 +27,15 @@
       <!-- 검색 영역 -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div class="flex gap-4">
-          <select 
-            v-model="searchType" 
+          <select
+            v-model="searchType"
             class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="title">제목</option>
             <option value="content">내용</option>
             <option value="all">제목+내용</option>
           </select>
-          
+
           <input
             v-model="searchKeyword"
             type="text"
@@ -41,7 +43,7 @@
             class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             @keyup.enter="handleSearch"
           />
-          
+
           <button
             @click="handleSearch"
             class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -53,7 +55,9 @@
 
       <!-- 로딩 상태 -->
       <div v-if="loading" class="text-center py-12">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div
+          class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+        ></div>
         <p class="mt-4 text-gray-600">로딩 중...</p>
       </div>
 
@@ -62,46 +66,115 @@
         <table class="w-full">
           <thead class="bg-gray-50 border-b">
             <tr>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 w-20">번호</th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 w-24">고정</th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 w-40">카테고리</th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">제목</th>
-              <th class="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-32">작성자</th>
-              <th class="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-40">작성일</th>
-              <th class="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-24">조회</th>
-              <th class="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-40">관리</th>
+              <th
+                class="px-6 py-4 text-left text-sm font-semibold text-gray-700 w-20"
+              >
+                번호
+              </th>
+              <th
+                class="px-6 py-4 text-left text-sm font-semibold text-gray-700 w-24"
+              >
+                고정
+              </th>
+              <th
+                class="px-6 py-4 text-left text-sm font-semibold text-gray-700 w-40"
+              >
+                카테고리
+              </th>
+              <th
+                class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+              >
+                제목
+              </th>
+              <th
+                class="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-32"
+              >
+                작성자
+              </th>
+              <th
+                class="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-40"
+              >
+                작성일
+              </th>
+              <th
+                class="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-24"
+              >
+                조회
+              </th>
+              <th
+                class="px-6 py-4 text-center text-sm font-semibold text-gray-700 w-40"
+              >
+                관리
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y">
             <tr
               v-for="notice in notices"
               :key="notice.id"
-              :class="['hover:bg-gray-50', 'transition-colors', { 'bg-yellow-50': notice.isPinned }]"
+              :class="[
+                'hover:bg-gray-50',
+                'transition-colors',
+                { 'bg-yellow-50': notice.isPinned },
+              ]"
             >
-              <td class="px-6 py-4 text-sm text-gray-900">{{ notice.displayNumber }}</td>
+              <td class="px-6 py-4 text-sm text-gray-900">
+                {{ notice.displayNumber }}
+              </td>
               <td class="px-6 py-4">
                 <button
                   @click="togglePin(notice.id)"
-                  :class="['flex', 'items-center', 'gap-1', 'px-3', 'py-1', 'rounded-full', 'text-xs', 'font-semibold', 'transition-colors', notice.isPinned ? 'bg-red-100 text-red-800 hover:bg-red-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200']"
+                  :class="[
+                    'flex',
+                    'items-center',
+                    'gap-1',
+                    'px-3',
+                    'py-1',
+                    'rounded-full',
+                    'text-xs',
+                    'font-semibold',
+                    'transition-colors',
+                    notice.isPinned
+                      ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                  ]"
                 >
                   <span>{{ notice.isPinned ? '📌' : '📍' }}</span>
                   <span>{{ notice.isPinned ? '고정됨' : '고정' }}</span>
                 </button>
               </td>
-              <td class="px-6 py-4 text-sm text-gray-900">{{ notice.categoryName }}</td>
+              <td class="px-6 py-4 text-sm text-gray-900">
+                {{ notice.categoryName }}
+              </td>
               <td class="px-6 py-4">
                 <div
                   class="flex items-center gap-2 cursor-pointer"
-                  @click="() => { alert('클릭됨!'); openDetailModal(notice.id); }"
-                  style="background-color: rgba(255,0,0,0.1);"
+                  @click="
+                    () => {
+                      alert('클릭됨!')
+                      openDetailModal(notice.id)
+                    }
+                  "
+                  style="background-color: rgba(255, 0, 0, 0.1)"
                 >
-                  <span class="text-sm text-gray-900 font-medium hover:text-blue-600 transition-colors">{{ notice.title }}</span>
-                  <span v-if="notice.hasAttachment" class="text-gray-400">📎</span>
+                  <span
+                    class="text-sm text-gray-900 font-medium hover:text-blue-600 transition-colors"
+                    >{{ notice.title }}</span
+                  >
+                  <span v-if="notice.hasAttachment" class="text-gray-400"
+                    >📎</span
+                  >
                 </div>
               </td>
-              <td class="px-6 py-4 text-center text-sm text-gray-600">{{ notice.authorName }}</td>
-              <td class="px-6 py-4 text-center text-sm text-gray-600">{{ formatDate(notice.createdAt) }}</td>
-              <td class="px-6 py-4 text-center text-sm text-gray-600">{{ notice.viewCount }}</td>
+              <td class="px-6 py-4 text-center text-sm text-gray-600">
+                {{ notice.authorName }}
+              </td>
+              <td class="px-6 py-4 text-center text-sm text-gray-600">
+                {{ formatDate(notice.createdAt) }}
+              </td>
+              <td class="px-6 py-4 text-center text-sm text-gray-600">
+                {{ notice.viewCount }}
+              </td>
               <td class="px-6 py-4">
                 <div class="flex items-center justify-center gap-2">
                   <button
@@ -123,7 +196,10 @@
         </table>
 
         <!-- 데이터 없음 -->
-        <div v-if="notices.length === 0" class="px-6 py-12 text-center text-gray-500">
+        <div
+          v-if="notices.length === 0"
+          class="px-6 py-12 text-center text-gray-500"
+        >
           <p class="text-lg">등록된 공지사항이 없습니다.</p>
         </div>
       </div>
@@ -147,7 +223,7 @@
               'px-4 py-2 rounded-lg border',
               currentPage === page
                 ? 'bg-blue-600 text-white border-blue-600'
-                : 'hover:bg-gray-50'
+                : 'hover:bg-gray-50',
             ]"
           >
             {{ page }}
@@ -182,7 +258,10 @@
     />
 
     <!-- 디버그 정보 (화면에 표시) -->
-    <div v-if="true" class="fixed bottom-4 right-4 bg-yellow-100 border-2 border-yellow-500 p-4 rounded shadow-lg z-50 text-xs">
+    <div
+      v-if="true"
+      class="fixed bottom-4 right-4 bg-yellow-100 border-2 border-yellow-500 p-4 rounded shadow-lg z-50 text-xs"
+    >
       <p><strong>디버그 정보:</strong></p>
       <p>showDetailModal: {{ showDetailModal }}</p>
       <p>selectedNoticeId: {{ selectedNoticeId }}</p>
@@ -211,7 +290,7 @@ export default {
   components: {
     NoticeFormModal,
     NoticeDetailModal,
-    CategoryManagementModal
+    CategoryManagementModal,
   },
   setup() {
     // 상태
@@ -231,32 +310,38 @@ export default {
     const conventionId = ref(1) // TODO: get from store or props
 
     // 계산된 속성
-    const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value))
-    
+    const totalPages = computed(() =>
+      Math.ceil(totalCount.value / pageSize.value),
+    )
+
     const visiblePages = computed(() => {
       const pages = []
       const maxVisible = 5
       let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2))
       let end = Math.min(totalPages.value, start + maxVisible - 1)
-      
+
       if (end - start + 1 < maxVisible) {
         start = Math.max(1, end - maxVisible + 1)
       }
-      
+
       for (let i = start; i <= end; i++) {
         pages.push(i)
       }
-      
+
       return pages
     })
 
     const isPrevButtonDisabled = computed(() => currentPage.value === 1)
-    const isNextButtonDisabled = computed(() => currentPage.value === totalPages.value)
+    const isNextButtonDisabled = computed(
+      () => currentPage.value === totalPages.value,
+    )
 
     // 메서드
     const fetchCategories = async () => {
       try {
-        const response = await categoryAPI.getNoticeCategories(conventionId.value)
+        const response = await categoryAPI.getNoticeCategories(
+          conventionId.value,
+        )
         categories.value = response.data
       } catch (error) {
         console.error('Failed to fetch categories:', error)
@@ -272,12 +357,13 @@ export default {
           page: currentPage.value,
           pageSize: pageSize.value,
           searchType: searchKeyword.value ? searchType.value : undefined,
-          searchKeyword: searchKeyword.value || undefined
+          searchKeyword: searchKeyword.value || undefined,
         })
 
         notices.value = response.data.items.map((item, index) => ({
           ...item,
-          displayNumber: totalCount.value - ((currentPage.value - 1) * pageSize.value) - index
+          displayNumber:
+            totalCount.value - (currentPage.value - 1) * pageSize.value - index,
         }))
         totalCount.value = response.data.totalCount
       } catch (error) {
@@ -354,19 +440,37 @@ export default {
     const openDetailModal = (id) => {
       alert(`상세보기 클릭됨! ID: ${id}`)
       console.log('[NoticeManagement] openDetailModal 호출됨, id:', id)
-      console.log('[NoticeManagement] 현재 showDetailModal:', showDetailModal.value)
-      console.log('[NoticeManagement] 현재 selectedNoticeId:', selectedNoticeId.value)
+      console.log(
+        '[NoticeManagement] 현재 showDetailModal:',
+        showDetailModal.value,
+      )
+      console.log(
+        '[NoticeManagement] 현재 selectedNoticeId:',
+        selectedNoticeId.value,
+      )
 
       selectedNoticeId.value = id
       showDetailModal.value = true
 
-      console.log('[NoticeManagement] 변경 후 showDetailModal:', showDetailModal.value)
-      console.log('[NoticeManagement] 변경 후 selectedNoticeId:', selectedNoticeId.value)
+      console.log(
+        '[NoticeManagement] 변경 후 showDetailModal:',
+        showDetailModal.value,
+      )
+      console.log(
+        '[NoticeManagement] 변경 후 selectedNoticeId:',
+        selectedNoticeId.value,
+      )
 
       // 다음 틱에서 확인
       setTimeout(() => {
-        console.log('[NoticeManagement] setTimeout 후 showDetailModal:', showDetailModal.value)
-        console.log('[NoticeManagement] setTimeout 후 selectedNoticeId:', selectedNoticeId.value)
+        console.log(
+          '[NoticeManagement] setTimeout 후 showDetailModal:',
+          showDetailModal.value,
+        )
+        console.log(
+          '[NoticeManagement] setTimeout 후 selectedNoticeId:',
+          selectedNoticeId.value,
+        )
       }, 100)
     }
 
@@ -410,8 +514,8 @@ export default {
       confirmDelete,
       formatDate,
       openDetailModal,
-      closeDetailModal
+      closeDetailModal,
     }
-  }
+  },
 }
 </script>

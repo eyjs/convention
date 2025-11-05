@@ -5,9 +5,22 @@
       <div class="px-4 py-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <button @click="$router.back()" class="p-2 hover:bg-gray-100 rounded-lg">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            <button
+              @click="$router.back()"
+              class="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
             <h1 class="text-xl font-bold text-gray-900">추가 메뉴</h1>
@@ -19,7 +32,9 @@
     <!-- 로딩 -->
     <div v-if="isLoading" class="flex items-center justify-center py-12">
       <div class="text-center">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div
+          class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+        ></div>
         <p class="mt-4 text-gray-600">액션 목록을 불러오는 중...</p>
       </div>
     </div>
@@ -33,33 +48,52 @@
           @click="!isExpired(action.deadline) && navigateToAction(action)"
           class="flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm transition-all p-4 border border-gray-100"
           :class="[
-            isExpired(action.deadline) ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md cursor-pointer'
+            isExpired(action.deadline)
+              ? 'opacity-50 cursor-not-allowed'
+              : 'hover:shadow-md cursor-pointer',
           ]"
         >
           <!-- 아이콘 -->
-          <div class="w-16 h-16 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mb-3">
+          <div
+            class="w-16 h-16 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mb-3"
+          >
             <span class="text-3xl">{{ action.iconClass || '📌' }}</span>
           </div>
-          
+
           <!-- 이름 -->
-          <h3 
+          <h3
             class="text-center font-semibold text-sm leading-tight"
-            :class="isExpired(action.deadline) ? 'text-gray-400 line-through' : 'text-gray-900'"
+            :class="
+              isExpired(action.deadline)
+                ? 'text-gray-400 line-through'
+                : 'text-gray-900'
+            "
           >
             {{ action.title }}
           </h3>
-          
+
           <!-- 마감기한 뱃지 (있는 경우만) -->
-          <div 
-            v-if="action.deadline" 
+          <div
+            v-if="action.deadline"
             class="mt-2 px-2 py-1 text-xs font-medium rounded-full"
-            :class="isExpired(action.deadline) ? 'bg-gray-200 text-gray-600' : 'bg-red-100 text-red-700'"
+            :class="
+              isExpired(action.deadline)
+                ? 'bg-gray-200 text-gray-600'
+                : 'bg-red-100 text-red-700'
+            "
           >
-            {{ isExpired(action.deadline) ? '마감완료' : formatDeadlineShort(action.deadline) }}
+            {{
+              isExpired(action.deadline)
+                ? '마감완료'
+                : formatDeadlineShort(action.deadline)
+            }}
           </div>
-          
+
           <!-- 필수 뱃지 -->
-          <div v-if="action.isRequired" class="mt-2 px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">
+          <div
+            v-if="action.isRequired"
+            class="mt-2 px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded-full"
+          >
             필수
           </div>
         </div>
@@ -68,12 +102,29 @@
 
     <!-- 빈 상태 -->
     <div v-else class="px-4 py-12">
-      <div class="flex flex-col items-center justify-center text-center bg-white rounded-2xl shadow-sm p-8">
-        <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      <div
+        class="flex flex-col items-center justify-center text-center bg-white rounded-2xl shadow-sm p-8"
+      >
+        <svg
+          class="w-16 h-16 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+          />
         </svg>
-        <p class="text-lg text-gray-600 mb-4">현재 사용 가능한 액션이 없습니다.</p>
-        <button @click="router.push('/')" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+        <p class="text-lg text-gray-600 mb-4">
+          현재 사용 가능한 액션이 없습니다.
+        </p>
+        <button
+          @click="router.push('/')"
+          class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
           홈으로 돌아가기
         </button>
       </div>
@@ -93,13 +144,13 @@ const isLoading = ref(false)
 onMounted(async () => {
   const conventionId = localStorage.getItem('selectedConventionId')
   console.log('ConventionId:', conventionId)
-  
+
   if (!conventionId) {
     console.log('No conventionId found, redirecting to home')
     router.push('/')
     return
   }
-  
+
   isLoading.value = true
   try {
     const url = `/conventions/${conventionId}/actions/all`
@@ -135,7 +186,7 @@ const formatDeadlineShort = (dateStr) => {
   const now = new Date()
   const diff = deadline - now
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  
+
   if (days > 0) {
     return `D-${days}`
   } else {

@@ -22,7 +22,13 @@
     <!-- Icon -->
     <div class="menu-icon" :style="iconStyle">
       <span v-if="config.icon" v-html="config.icon"></span>
-      <svg v-else class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        v-else
+        class="w-8 h-8"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -42,7 +48,12 @@
 
     <!-- Arrow indicator -->
     <div class="menu-arrow">
-      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        class="w-5 h-5 text-gray-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -130,7 +141,10 @@ function handleClick() {
     }
 
     // Custom callback
-    if (config.value.onClick && typeof window[config.value.onClick] === 'function') {
+    if (
+      config.value.onClick &&
+      typeof window[config.value.onClick] === 'function'
+    ) {
       window[config.value.onClick](props.feature)
     }
   } catch (error) {
@@ -177,7 +191,7 @@ function handleClick() {
 
 .menu-description {
   font-size: 0.875rem;
-  color: #6B7280;
+  color: #6b7280;
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -194,7 +208,7 @@ function handleClick() {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  background-color: #EF4444;
+  background-color: #ef4444;
   color: white;
   font-size: 0.75rem;
   font-weight: 600;

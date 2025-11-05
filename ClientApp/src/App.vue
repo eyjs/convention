@@ -18,9 +18,9 @@ const authStore = useAuthStore()
 
 // 전역 키보드 대응 활성화
 const { isKeyboardVisible } = useKeyboardAdjust({
-  offset: 20,        // 키보드 위 여백 (px)
-  duration: 300,     // 스크롤 애니메이션 시간 (ms)
-  enabled: true      // 항상 활성화
+  offset: 20, // 키보드 위 여백 (px)
+  duration: 300, // 스크롤 애니메이션 시간 (ms)
+  enabled: true, // 항상 활성화
 })
 
 onMounted(() => {
@@ -32,14 +32,12 @@ onMounted(() => {
 
 const currentLayout = computed(() => {
   const layoutName = route.meta.layout
-  
+
   if (!layoutName) {
     return null
   }
-  
-  return defineAsyncComponent(() => 
-    import(`@/layouts/${layoutName}.vue`)
-  )
+
+  return defineAsyncComponent(() => import(`@/layouts/${layoutName}.vue`))
 })
 </script>
 

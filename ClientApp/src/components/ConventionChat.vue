@@ -3,27 +3,66 @@
     <div class="chat-header">
       <div>
         <h2 class="font-bold text-lg">{{ conventionTitle }}</h2>
-        <button @click="showParticipantList = true" class="text-sm text-gray-600 hover:underline">
+        <button
+          @click="showParticipantList = true"
+          class="text-sm text-gray-600 hover:underline"
+        >
           {{ participantCount }}명 참여중
         </button>
       </div>
-      <button @click="uiStore.closeChat()" class="p-2 -mr-2 text-gray-500 hover:text-gray-800">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      <button
+        @click="uiStore.closeChat()"
+        class="p-2 -mr-2 text-gray-500 hover:text-gray-800"
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          ></path>
+        </svg>
       </button>
     </div>
     <div class="messages-area" ref="messagesArea">
-      <div v-for="(msg, index) in messages" :key="index" 
-           class="message-wrapper" 
-           :class="{ 'my-message': isMyMessage(msg), 'other-message': !isMyMessage(msg) }">
+      <div
+        v-for="(msg, index) in messages"
+        :key="index"
+        class="message-wrapper"
+        :class="{
+          'my-message': isMyMessage(msg),
+          'other-message': !isMyMessage(msg),
+        }"
+      >
         <div class="message" :class="{ 'is-admin': msg.isAdmin }">
           <div class="message-header">
-            <span v-if="msg.isAdmin" class="mr-2 inline-flex items-center justify-center h-4 w-4 rounded-full bg-blue-600 text-white">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+            <span
+              v-if="msg.isAdmin"
+              class="mr-2 inline-flex items-center justify-center h-4 w-4 rounded-full bg-blue-600 text-white"
+            >
+              <svg
+                class="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="3"
+                  d="M5 13l4 4L19 7"
+                ></path>
               </svg>
             </span>
             <span class="font-bold">{{ msg.userName }}</span>
-            <span class="text-xs text-gray-500 ml-2">{{ formatTime(msg.createdAt) }}</span>
+            <span class="text-xs text-gray-500 ml-2">{{
+              formatTime(msg.createdAt)
+            }}</span>
           </div>
           <div class="message-content">
             <p>{{ msg.message }}</p>
@@ -52,7 +91,7 @@
     </div>
 
     <Transition name="modal-fade">
-      <ParticipantList 
+      <ParticipantList
         v-if="showParticipantList"
         :participants="participantList"
         @close="showParticipantList = false"
@@ -62,13 +101,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
-import ConventionChatService from '@/services/conventionChatService.js';
-import { useAuthStore } from '@/stores/auth';
-import { useConventionStore } from '@/stores/convention';
-import { useUIStore } from '@/stores/ui';
-import ParticipantList from './ParticipantList.vue';
-import { chatAPI } from '@/services/api';
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import ConventionChatService from '@/services/conventionChatService.js'
+import { useAuthStore } from '@/stores/auth'
+import { useConventionStore } from '@/stores/convention'
+import { useUIStore } from '@/stores/ui'
+import ParticipantList from './ParticipantList.vue'
+import { chatAPI } from '@/services/api'
 
 const props = defineProps({
   conventionId: {
@@ -79,96 +118,104 @@ const props = defineProps({
     type: String,
     required: true,
   },
-});
+})
 
-const authStore = useAuthStore();
-const conventionStore = useConventionStore();
-const uiStore = useUIStore();
+const authStore = useAuthStore()
+const conventionStore = useConventionStore()
+const uiStore = useUIStore()
 
-const messages = ref([]);
-const newMessage = ref('');
-const isConnected = ref(false);
-const participantCount = ref(0);
-const participantList = ref([]);
-const showParticipantList = ref(false);
-const messagesArea = ref(null);
-let chatService = null;
+const messages = ref([])
+const newMessage = ref('')
+const isConnected = ref(false)
+const participantCount = ref(0)
+const participantList = ref([])
+const showParticipantList = ref(false)
+const messagesArea = ref(null)
+let chatService = null
 
-const conventionTitle = computed(() => conventionStore.currentConvention?.title || '채팅');
+const conventionTitle = computed(
+  () => conventionStore.currentConvention?.title || '채팅',
+)
 
 const isMyMessage = (msg) => {
   if (!authStore.user || msg.userId === undefined) {
-    return false;
+    return false
   }
-  return msg.userId === authStore.user.id;
-};
+  return msg.userId === authStore.user.id
+}
 
 onMounted(async () => {
   // Mark chat as read
-  chatAPI.markAsRead(props.conventionId).catch(err => console.error('Failed to mark chat as read:', err));
+  chatAPI
+    .markAsRead(props.conventionId)
+    .catch((err) => console.error('Failed to mark chat as read:', err))
 
   if (props.conventionId && props.token) {
-    chatService = new ConventionChatService(props.conventionId, props.token);
+    chatService = new ConventionChatService(props.conventionId, props.token)
 
     try {
-      const history = await chatService.getHistory();
-      messages.value = history;
-      scrollToBottom();
+      const history = await chatService.getHistory()
+      messages.value = history
+      scrollToBottom()
 
-      await chatService.connect();
-      isConnected.value = true;
-      console.log("Chat service connected successfully.");
+      await chatService.connect()
+      isConnected.value = true
+      console.log('Chat service connected successfully.')
 
       chatService.onReceiveMessage((messageData) => {
-        messages.value.push(messageData);
-        scrollToBottom();
-      });
+        messages.value.push(messageData)
+        scrollToBottom()
+      })
 
       chatService.onUpdateParticipantCount((count) => {
-        participantCount.value = count;
-      });
+        participantCount.value = count
+      })
 
       chatService.onUpdateParticipantList((list) => {
-        participantList.value = list;
-      });
-
+        participantList.value = list
+      })
     } catch (error) {
-      console.error("Failed to initialize chat service:", error);
+      console.error('Failed to initialize chat service:', error)
     }
   } else {
-    console.error("Convention ID or token is missing.");
+    console.error('Convention ID or token is missing.')
   }
-});
+})
 
 onUnmounted(() => {
   if (chatService) {
-    chatService.disconnect();
-    isConnected.value = false;
-    console.log("Chat service disconnected.");
+    chatService.disconnect()
+    isConnected.value = false
+    console.log('Chat service disconnected.')
   }
-});
+})
 
 const handleSendMessage = () => {
   if (newMessage.value.trim() && chatService) {
-    chatService.sendMessage(newMessage.value)
+    chatService
+      .sendMessage(newMessage.value)
       .then(() => {
-        newMessage.value = '';
+        newMessage.value = ''
       })
-      .catch(err => console.error("Send message error:", err));
+      .catch((err) => console.error('Send message error:', err))
   }
-};
+}
 
 const scrollToBottom = () => {
   nextTick(() => {
     if (messagesArea.value) {
-      messagesArea.value.scrollTop = messagesArea.value.scrollHeight;
+      messagesArea.value.scrollTop = messagesArea.value.scrollHeight
     }
-  });
-};
+  })
+}
 
 const formatTime = (isoString) => {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const date = new Date(isoString)
+  return date.toLocaleTimeString('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
 }
 </script>
 
@@ -215,8 +262,8 @@ const formatTime = (isoString) => {
 }
 
 .message.is-admin .message-header .font-bold {
-    color: #2563eb; /* blue-600 */
-    font-weight: bold;
+  color: #2563eb; /* blue-600 */
+  font-weight: bold;
 }
 
 .message-header {
@@ -255,10 +302,10 @@ const formatTime = (isoString) => {
 }
 .modal-fade-enter-active .bg-white,
 .modal-fade-leave-active .bg-white {
-    transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
 }
 .modal-fade-enter-from .bg-white,
 .modal-fade-leave-to .bg-white {
-    transform: scale(0.95);
+  transform: scale(0.95);
 }
 </style>

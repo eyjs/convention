@@ -6,10 +6,27 @@ import apiClient from '@/services/api'
  */
 
 // 허용된 이미지 확장자
-const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+const ALLOWED_IMAGE_EXTENSIONS = [
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+  '.bmp',
+]
 
 // 허용된 문서 확장자
-const ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.hwp']
+const ALLOWED_DOCUMENT_EXTENSIONS = [
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.ppt',
+  '.pptx',
+  '.txt',
+  '.hwp',
+]
 
 // 최대 파일 크기 (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -22,13 +39,16 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024
  */
 export const validateFileExtension = (fileName, type = 'all') => {
   const extension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase()
-  
+
   if (type === 'image') {
     return ALLOWED_IMAGE_EXTENSIONS.includes(extension)
   } else if (type === 'document') {
     return ALLOWED_DOCUMENT_EXTENSIONS.includes(extension)
   } else {
-    return [...ALLOWED_IMAGE_EXTENSIONS, ...ALLOWED_DOCUMENT_EXTENSIONS].includes(extension)
+    return [
+      ...ALLOWED_IMAGE_EXTENSIONS,
+      ...ALLOWED_DOCUMENT_EXTENSIONS,
+    ].includes(extension)
   }
 }
 
@@ -49,11 +69,11 @@ export const validateFileSize = (file, maxSize = MAX_FILE_SIZE) => {
  */
 export const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes'
-  
+
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
+
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
 }
 
@@ -64,10 +84,16 @@ export const formatFileSize = (bytes) => {
  * @param {Function} onProgress - 진행률 콜백
  * @returns {Promise<Object>} 업로드된 파일 정보
  */
-export const uploadFile = async (file, category = 'notice', onProgress = null) => {
+export const uploadFile = async (
+  file,
+  category = 'notice',
+  onProgress = null,
+) => {
   // 파일 검증
   if (!validateFileSize(file)) {
-    throw new Error(`파일 크기는 ${formatFileSize(MAX_FILE_SIZE)} 이하여야 합니다.`)
+    throw new Error(
+      `파일 크기는 ${formatFileSize(MAX_FILE_SIZE)} 이하여야 합니다.`,
+    )
   }
 
   if (!validateFileExtension(file.name)) {
@@ -81,14 +107,16 @@ export const uploadFile = async (file, category = 'notice', onProgress = null) =
   try {
     const response = await apiClient.post('/upload', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
+        'Content-Type': 'multipart/form-data',
       },
       onUploadProgress: (progressEvent) => {
         if (onProgress) {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total,
+          )
           onProgress(percentCompleted)
         }
-      }
+      },
     })
 
     return response.data
@@ -105,7 +133,11 @@ export const uploadFile = async (file, category = 'notice', onProgress = null) =
  * @param {Function} onProgress - 진행률 콜백
  * @returns {Promise<Array>} 업로드된 파일 정보 배열
  */
-export const uploadMultipleFiles = async (files, category = 'notice', onProgress = null) => {
+export const uploadMultipleFiles = async (
+  files,
+  category = 'notice',
+  onProgress = null,
+) => {
   const uploadPromises = Array.from(files).map((file, index) => {
     return uploadFile(file, category, (progress) => {
       if (onProgress) {
@@ -164,7 +196,7 @@ export const handleQuillImageUpload = (quillInstance) => {
   const input = document.createElement('input')
   input.setAttribute('type', 'file')
   input.setAttribute('accept', 'image/*')
-  
+
   input.onchange = async () => {
     const file = input.files[0]
     if (!file) return

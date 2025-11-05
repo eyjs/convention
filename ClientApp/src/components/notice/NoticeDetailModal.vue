@@ -1,9 +1,17 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+  <div
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+  >
+    <div
+      class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+    >
       <!-- 헤더 -->
-      <div class="px-4 md:px-6 py-4 border-b flex items-center justify-between bg-gray-50">
-        <h2 class="text-lg md:text-xl font-bold text-gray-900">공지사항 상세보기</h2>
+      <div
+        class="px-4 md:px-6 py-4 border-b flex items-center justify-between bg-gray-50"
+      >
+        <h2 class="text-lg md:text-xl font-bold text-gray-900">
+          공지사항 상세보기
+        </h2>
         <button
           @click="closeModal"
           class="text-gray-400 hover:text-gray-600 transition-colors"
@@ -15,7 +23,9 @@
       <!-- 로딩 상태 -->
       <div v-if="loading" class="flex-1 flex items-center justify-center py-12">
         <div class="text-center">
-          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div
+            class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+          ></div>
           <p class="mt-4 text-gray-600">로딩 중...</p>
         </div>
       </div>
@@ -31,10 +41,14 @@
             >
               📌 공지
             </span>
-            <h1 class="text-xl md:text-2xl font-bold text-gray-900 flex-1">{{ notice.title }}</h1>
+            <h1 class="text-xl md:text-2xl font-bold text-gray-900 flex-1">
+              {{ notice.title }}
+            </h1>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-600">
+          <div
+            class="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-600"
+          >
             <span class="flex items-center gap-1 md:gap-2">
               <span class="font-semibold">카테고리:</span>
               <span>{{ notice.categoryName }}</span>
@@ -61,14 +75,17 @@
             class="prose prose-sm md:prose-base max-w-none"
             v-html="notice.content"
           ></div>
-          <div v-else class="text-gray-500 italic">
-            본문 내용이 없습니다.
-          </div>
+          <div v-else class="text-gray-500 italic">본문 내용이 없습니다.</div>
         </div>
 
         <!-- 첨부파일 -->
-        <div v-if="notice.attachments && notice.attachments.length > 0" class="border-t px-4 md:px-6 py-4 md:py-5 bg-gray-50">
-          <h3 class="text-base md:text-lg font-semibold mb-3 text-gray-900">첨부파일</h3>
+        <div
+          v-if="notice.attachments && notice.attachments.length > 0"
+          class="border-t px-4 md:px-6 py-4 md:py-5 bg-gray-50"
+        >
+          <h3 class="text-base md:text-lg font-semibold mb-3 text-gray-900">
+            첨부파일
+          </h3>
           <div class="space-y-2">
             <a
               v-for="file in notice.attachments"
@@ -79,17 +96,28 @@
             >
               <span class="text-xl md:text-2xl">📎</span>
               <div class="flex-1 min-w-0">
-                <p class="font-medium text-gray-900 truncate text-sm md:text-base">{{ file.originalName }}</p>
-                <p class="text-xs md:text-sm text-gray-500">{{ formatFileSize(file.size) }}</p>
+                <p
+                  class="font-medium text-gray-900 truncate text-sm md:text-base"
+                >
+                  {{ file.originalName }}
+                </p>
+                <p class="text-xs md:text-sm text-gray-500">
+                  {{ formatFileSize(file.size) }}
+                </p>
               </div>
-              <span class="text-blue-600 text-xs md:text-sm font-medium flex-shrink-0">다운로드</span>
+              <span
+                class="text-blue-600 text-xs md:text-sm font-medium flex-shrink-0"
+                >다운로드</span
+              >
             </a>
           </div>
         </div>
       </div>
 
       <!-- 푸터 -->
-      <div class="px-4 md:px-6 py-3 md:py-4 border-t flex items-center justify-end gap-2 md:gap-3 bg-gray-50">
+      <div
+        class="px-4 md:px-6 py-3 md:py-4 border-t flex items-center justify-end gap-2 md:gap-3 bg-gray-50"
+      >
         <button
           type="button"
           @click="closeModal"
@@ -116,8 +144,8 @@ export default {
   props: {
     noticeId: {
       type: Number,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: ['close'],
   setup(props, { emit }) {
@@ -132,7 +160,7 @@ export default {
       createdAt: '',
       viewCount: 0,
       isPinned: false,
-      attachments: []
+      attachments: [],
     })
 
     // 메서드
@@ -191,10 +219,8 @@ export default {
       notice,
       closeModal,
       formatDate,
-      formatFileSize
+      formatFileSize,
     }
-  }
+  },
 }
 </script>
-
-

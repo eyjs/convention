@@ -10,12 +10,12 @@ if (!Quill.imports['modules/blotFormatter']) {
 
 /**
  * Quill 에디터 Composable
- * 
+ *
  * 주요 기능:
  * 1. Quill 에디터 초기화 및 생명주기 관리
  * 2. 이미지 업로드 핸들링 (커스텀 이미지 핸들러)
  * 3. 에디터 내용 양방향 바인딩
- * 
+ *
  * @param {Object} options - 설정 옵션
  * @param {String} options.placeholder - 플레이스홀더 텍스트
  * @param {String} options.theme - 에디터 테마 (기본값: 'snow')
@@ -27,7 +27,7 @@ export function useQuillEditor(options = {}) {
   const editorRef = ref(null) // 에디터가 마운트될 DOM 요소
   const quillInstance = ref(null) // Quill 인스턴스
   const content = ref('') // 에디터 내용 (HTML)
-  
+
   // ========== 기본 설정 ==========
   const defaultOptions = {
     placeholder: '내용을 입력하세요...',
@@ -36,31 +36,31 @@ export function useQuillEditor(options = {}) {
     modules: {
       toolbar: [
         // 텍스트 포맷팅
-        [{ 'header': [1, 2, 3, false] }],
+        [{ header: [1, 2, 3, false] }],
         ['bold', 'italic', 'underline', 'strike'],
-        
+
         // 색상 및 배경
-        [{ 'color': [] }, { 'background': [] }],
-        
+        [{ color: [] }, { background: [] }],
+
         // 리스트 및 정렬
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'align': [] }],
-        
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ align: [] }],
+
         // 링크 및 이미지
         ['link', 'image'],
-        
+
         // 기타
-        ['clean'] // 포맷 제거 버튼
+        ['clean'], // 포맷 제거 버튼
       ],
-      blotFormatter: {} // Add blotFormatter module
-    }
+      blotFormatter: {}, // Add blotFormatter module
+    },
   }
 
   const finalOptions = { ...defaultOptions, ...options }
 
   /**
    * 이미지 업로드 핸들러
-   * 
+   *
    * 동작 원리:
    * 1. 사용자가 툴바에서 이미지 아이콘 클릭
    * 2. 파일 선택 대화상자 표시
@@ -76,7 +76,7 @@ export function useQuillEditor(options = {}) {
 
     input.onchange = async () => {
       const file = input.files[0]
-      
+
       // 파일이 선택되지 않았으면 종료
       if (!file) return
 
@@ -93,11 +93,15 @@ export function useQuillEditor(options = {}) {
         formData.append('file', file)
 
         // 서버로 파일 업로드
-        const response = await apiClient.post('/api/file/upload/image', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        })
+        const response = await apiClient.post(
+          '/api/file/upload/image',
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          },
+        )
 
         // 서버에서 반환된 이미지 URL
         const imageUrl = response.data.url
@@ -105,10 +109,9 @@ export function useQuillEditor(options = {}) {
         // 현재 커서 위치에 이미지 삽입
         const range = quillInstance.value.getSelection(true)
         quillInstance.value.insertEmbed(range.index, 'image', imageUrl)
-        
+
         // 커서를 이미지 다음으로 이동
         quillInstance.value.setSelection(range.index + 1)
-
       } catch (error) {
         console.error('이미지 업로드 실패:', error)
         alert('이미지 업로드에 실패했습니다.')
@@ -117,7 +120,8 @@ export function useQuillEditor(options = {}) {
   }
 
   watch(editorRef, (newEl) => {
-    if (newEl && !quillInstance.value) { // check for element and if not already initialized
+    if (newEl && !quillInstance.value) {
+      // check for element and if not already initialized
       // Quill 인스턴스 생성
       quillInstance.value = new Quill(newEl, finalOptions)
 
@@ -150,7 +154,7 @@ export function useQuillEditor(options = {}) {
 
   /**
    * 외부에서 내용 설정 (양방향 바인딩)
-   * 
+   *
    * @param {String} newContent - 설정할 HTML 내용
    */
   function setContent(newContent) {
@@ -162,7 +166,7 @@ export function useQuillEditor(options = {}) {
 
   /**
    * HTML 형식으로 내용 가져오기
-   * 
+   *
    * @returns {String} HTML 형식의 에디터 내용
    */
   function getHTML() {
@@ -171,7 +175,7 @@ export function useQuillEditor(options = {}) {
 
   /**
    * 텍스트만 가져오기 (HTML 태그 제거)
-   * 
+   *
    * @returns {String} 순수 텍스트
    */
   function getText() {
@@ -180,7 +184,7 @@ export function useQuillEditor(options = {}) {
 
   /**
    * 에디터 비활성화/활성화
-   * 
+   *
    * @param {Boolean} disabled - true면 비활성화
    */
   function setDisabled(disabled) {
@@ -190,19 +194,25 @@ export function useQuillEditor(options = {}) {
   }
 
   // Watch content changes from outside
-  watch(() => content.value, (newValue) => {
-    if (quillInstance.value && quillInstance.value.root.innerHTML !== newValue) {
-      quillInstance.value.root.innerHTML = newValue
-    }
-  })
+  watch(
+    () => content.value,
+    (newValue) => {
+      if (
+        quillInstance.value &&
+        quillInstance.value.root.innerHTML !== newValue
+      ) {
+        quillInstance.value.root.innerHTML = newValue
+      }
+    },
+  )
 
   // 외부에서 사용할 수 있도록 반환
   return {
-    editorRef,      // 에디터 DOM ref
-    content,        // 에디터 내용 (반응형)
-    setContent,     // 내용 설정 함수
-    getHTML,        // HTML 가져오기
-    getText,        // 텍스트만 가져오기
-    setDisabled     // 비활성화 설정
+    editorRef, // 에디터 DOM ref
+    content, // 에디터 내용 (반응형)
+    setContent, // 내용 설정 함수
+    getHTML, // HTML 가져오기
+    getText, // 텍스트만 가져오기
+    setDisabled, // 비활성화 설정
   }
 }

@@ -1,23 +1,20 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{vue,js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
     // ===== 타이포그래피 시스템 (Mobile-First) =====
     fontSize: {
       // 기본 폰트 크기 (rem 단위, 줄간격 포함)
-      'xs': ['0.75rem', { lineHeight: '1.5' }],       // 12px
-      'sm': ['0.875rem', { lineHeight: '1.6' }],      // 14px
-      'base': ['0.9375rem', { lineHeight: '1.7' }],   // 15px (Mobile 기본)
-      'lg': ['1rem', { lineHeight: '1.75' }],         // 16px
-      'xl': ['1.125rem', { lineHeight: '1.75' }],     // 18px
-      '2xl': ['1.25rem', { lineHeight: '1.6' }],      // 20px
-      '3xl': ['1.5rem', { lineHeight: '1.5' }],       // 24px
-      '4xl': ['1.875rem', { lineHeight: '1.4' }],     // 30px
-      '5xl': ['2.25rem', { lineHeight: '1.3' }],      // 36px
-      '6xl': ['3rem', { lineHeight: '1.2' }],         // 48px
+      xs: ['0.75rem', { lineHeight: '1.5' }], // 12px
+      sm: ['0.875rem', { lineHeight: '1.6' }], // 14px
+      base: ['0.9375rem', { lineHeight: '1.7' }], // 15px (Mobile 기본)
+      lg: ['1rem', { lineHeight: '1.75' }], // 16px
+      xl: ['1.125rem', { lineHeight: '1.75' }], // 18px
+      '2xl': ['1.25rem', { lineHeight: '1.6' }], // 20px
+      '3xl': ['1.5rem', { lineHeight: '1.5' }], // 24px
+      '4xl': ['1.875rem', { lineHeight: '1.4' }], // 30px
+      '5xl': ['2.25rem', { lineHeight: '1.3' }], // 36px
+      '6xl': ['3rem', { lineHeight: '1.2' }], // 48px
     },
     extend: {
       colors: {
@@ -46,7 +43,7 @@ export default {
           700: '#334155',
           800: '#1e293b',
           900: '#0f172a',
-        }
+        },
       },
       fontFamily: {
         sans: [
@@ -65,9 +62,9 @@ export default {
         ],
       },
       boxShadow: {
-        'card': '0 2px 8px rgba(0, 0, 0, 0.08)',
+        card: '0 2px 8px rgba(0, 0, 0, 0.08)',
         'card-hover': '0 4px 12px rgba(0, 0, 0, 0.12)',
-        'float': '0 8px 24px rgba(0, 0, 0, 0.15)',
+        float: '0 8px 24px rgba(0, 0, 0, 0.15)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
@@ -105,21 +102,21 @@ export default {
 
             // Headings
             h1: {
-              fontSize: '1.5rem',        // 24px
+              fontSize: '1.5rem', // 24px
               lineHeight: '1.4',
               fontWeight: '700',
               marginTop: '0',
               marginBottom: '0.75em',
             },
             h2: {
-              fontSize: '1.25rem',       // 20px
+              fontSize: '1.25rem', // 20px
               lineHeight: '1.5',
               fontWeight: '600',
               marginTop: '1.5em',
               marginBottom: '0.75em',
             },
             h3: {
-              fontSize: '1.125rem',      // 18px
+              fontSize: '1.125rem', // 18px
               lineHeight: '1.5',
               fontWeight: '600',
               marginTop: '1.5em',
@@ -236,7 +233,5 @@ export default {
       }),
     },
   },
-  plugins: [
-    require('@tailwindcss/typography'),
-  ],
+  plugins: [require('@tailwindcss/typography')],
 }

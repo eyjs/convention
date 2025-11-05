@@ -13,7 +13,10 @@
 
 <template>
   <div v-if="features && features.length > 0" class="dynamic-actions-container">
-    <template v-for="feature in features" :key="feature.id || feature.actionType">
+    <template
+      v-for="feature in features"
+      :key="feature.id || feature.actionType"
+    >
       <component
         v-if="resolveComponent(feature.actionCategory)"
         :is="resolveComponent(feature.actionCategory)"
@@ -45,21 +48,13 @@ const props = defineProps({
  * Maps action category keys to their corresponding generic components
  */
 const componentMap = {
-  BUTTON: defineAsyncComponent(() =>
-    import('./common/GenericButton.vue')
+  BUTTON: defineAsyncComponent(() => import('./common/GenericButton.vue')),
+  MENU: defineAsyncComponent(() => import('./common/GenericMenuItem.vue')),
+  AUTO_POPUP: defineAsyncComponent(
+    () => import('./common/GenericAutoPopup.vue'),
   ),
-  MENU: defineAsyncComponent(() =>
-    import('./common/GenericMenuItem.vue')
-  ),
-  AUTO_POPUP: defineAsyncComponent(() =>
-    import('./common/GenericAutoPopup.vue')
-  ),
-  BANNER: defineAsyncComponent(() =>
-    import('./common/GenericBanner.vue')
-  ),
-  CARD: defineAsyncComponent(() =>
-    import('./common/GenericCard.vue')
-  ),
+  BANNER: defineAsyncComponent(() => import('./common/GenericBanner.vue')),
+  CARD: defineAsyncComponent(() => import('./common/GenericCard.vue')),
 }
 
 /**

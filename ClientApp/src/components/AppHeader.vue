@@ -5,9 +5,9 @@
       <div class="flex items-center">
         <h1 class="text-xl font-bold text-gray-800">iFA</h1>
       </div>
-      
+
       <!-- ADMIN 버튼 -->
-      <button 
+      <button
         class="bg-gray-700 text-white px-4 py-2 rounded-full text-sm font-medium touch-feedback"
         @click="goToAdmin"
       >

@@ -8,7 +8,7 @@
 @layer base {
   /* Body 기본 폰트 크기 - Mobile First */
   body {
-    @apply text-base;  /* 15px (mobile), 16px (desktop) */
+    @apply text-base; /* 15px (mobile), 16px (desktop) */
   }
 
   /* 입력 필드는 최소 16px 유지 (iOS 자동 줌 방지) */
@@ -20,22 +20,22 @@
 
   /* 반응형 Heading 기본값 */
   h1 {
-    @apply text-3xl font-bold;  /* 24px */
+    @apply text-3xl font-bold; /* 24px */
   }
   h2 {
-    @apply text-2xl font-semibold;  /* 20px */
+    @apply text-2xl font-semibold; /* 20px */
   }
   h3 {
-    @apply text-xl font-semibold;  /* 18px */
+    @apply text-xl font-semibold; /* 18px */
   }
   h4 {
-    @apply text-lg font-medium;  /* 16px */
+    @apply text-lg font-medium; /* 16px */
   }
   h5 {
-    @apply text-base font-medium;  /* 15px */
+    @apply text-base font-medium; /* 15px */
   }
   h6 {
-    @apply text-sm font-medium;  /* 14px */
+    @apply text-sm font-medium; /* 14px */
   }
 }
 
@@ -75,7 +75,7 @@
   .safe-area-top {
     padding-top: env(safe-area-inset-top);
   }
-  
+
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -126,8 +126,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* ===== 모바일 키보드 대응 스타일 ===== */
@@ -140,7 +144,7 @@ body.keyboard-visible {
 /* 입력 필드 포커스 시 자동 스크롤을 위한 스타일 */
 input:focus,
 textarea:focus,
-[contenteditable="true"]:focus {
+[contenteditable='true']:focus {
   scroll-margin-top: 80px; /* 상단 헤더 높이 + 여백 */
   scroll-margin-bottom: 100px; /* 키보드 위 여백 */
 }
@@ -152,13 +156,13 @@ textarea:focus,
   body.keyboard-visible .fixed-footer {
     position: absolute;
   }
-  
+
   /* iOS에서 입력창이 키보드에 가려지는 문제 방지 */
   body.keyboard-visible {
     height: 100vh;
     overflow: hidden;
   }
-  
+
   body.keyboard-visible .main-content {
     height: 100vh;
     overflow-y: auto;
@@ -167,12 +171,12 @@ textarea:focus,
 }
 
 /* 모바일 최적화: 입력 필드 확대 방지 (iOS) */
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="number"],
-input[type="password"],
-input[type="search"],
+input[type='text'],
+input[type='email'],
+input[type='tel'],
+input[type='number'],
+input[type='password'],
+input[type='search'],
 textarea,
 select {
   font-size: 16px; /* iOS에서 16px 미만이면 자동 줌 발생 */
@@ -181,7 +185,9 @@ select {
 /* 입력 필드 포커스 시 부드러운 전환 */
 input,
 textarea {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* 포커스된 입력 필드 강조 */
@@ -211,8 +217,8 @@ a {
 }
 
 /* 체크박스와 라디오 버튼은 기본 크기 유지 */
-input[type="checkbox"],
-input[type="radio"] {
+input[type='checkbox'],
+input[type='radio'] {
   /* 기본 크기 사용 */
 }
 
@@ -232,7 +238,9 @@ input[type="radio"] {
 .keyboard-aware-container {
   min-height: 100vh;
   padding-bottom: env(safe-area-inset-bottom);
-  padding-bottom: calc(env(safe-area-inset-bottom) + var(--keyboard-height, 0px));
+  padding-bottom: calc(
+    env(safe-area-inset-bottom) + var(--keyboard-height, 0px)
+  );
 }
 
 /* 플로팅 버튼이나 하단 고정 요소 */

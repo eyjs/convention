@@ -1,6 +1,7 @@
 # LLM 챗봇 프론트엔드 설치 및 사용 가이드
 
 ## 📋 목차
+
 1. [프로젝트 구조](#프로젝트-구조)
 2. [설치 방법](#설치-방법)
 3. [사용 방법](#사용-방법)
@@ -44,6 +45,7 @@ cd D:\study\startour\convention\ClientApp
 ```
 
 **package.json 확인:**
+
 ```json
 {
   "dependencies": {
@@ -120,6 +122,7 @@ dotnet run
 ### 1. 기본 사용
 
 #### 채팅 창 열기
+
 ```
 1. 우하단 플로팅 버튼 클릭
 2. 채팅 창이 모달로 열림
@@ -127,6 +130,7 @@ dotnet run
 ```
 
 #### 질문하기
+
 ```
 방법 1: 추천 질문 클릭
 - "이번 행사는 언제 진행되나요?" 클릭
@@ -139,6 +143,7 @@ dotnet run
 ```
 
 #### 답변 확인
+
 ```
 - AI 응답이 왼쪽에 표시됨
 - 출처 정보 클릭 → 근거 문서 확인
@@ -151,14 +156,15 @@ dotnet run
 
 ```javascript
 // 대화 예시:
-사용자: "이번 행사는 언제야?"
-AI:     "3월 15일부터 18일까지입니다."
+사용자: '이번 행사는 언제야?'
+AI: '3월 15일부터 18일까지입니다.'
 
-사용자: "참석자는 몇 명이야?"  // 이전 대화 컨텍스트 유지
-AI:     "이번 행사에 총 50명이 등록되어 있습니다."
+사용자: '참석자는 몇 명이야?' // 이전 대화 컨텍스트 유지
+AI: '이번 행사에 총 50명이 등록되어 있습니다.'
 ```
 
 **작동 원리:**
+
 - 최근 10개의 메시지를 히스토리로 전송
 - LLM이 이전 대화를 참조하여 답변 생성
 - 자연스러운 대화 흐름 유지
@@ -170,7 +176,7 @@ AI:     "이번 행사에 총 50명이 등록되어 있습니다."
 // 자동으로 해당 Convention 정보만 검색
 
 // 예시:
-conventionStore.setCurrentConvention(1)  // Convention ID: 1
+conventionStore.setCurrentConvention(1) // Convention ID: 1
 // → 이후 모든 질문은 Convention 1에 대한 답변만 제공
 ```
 
@@ -205,10 +211,12 @@ await chatService.indexConvention(1)
 ### 1. ChatWindow.vue (메인 채팅 창)
 
 **역할:**
+
 - 채팅 UI의 메인 컨테이너
 - 메시지 목록, 입력창, 추천 질문 통합
 
 **주요 기능:**
+
 ```javascript
 // 헤더
 - AI 아바타 및 제목
@@ -233,6 +241,7 @@ await chatService.indexConvention(1)
 **Props:** 없음 (Store 기반)
 
 **작동 원리:**
+
 ```
 1. onMounted에서 초기화
    - Convention 컨텍스트 설정
@@ -252,10 +261,12 @@ await chatService.indexConvention(1)
 ### 2. ChatMessage.vue (메시지 버블)
 
 **역할:**
+
 - 개별 메시지를 렌더링
 - 사용자/AI 구분하여 표시
 
 **Props:**
+
 ```javascript
 {
   message: {
@@ -271,6 +282,7 @@ await chatService.indexConvention(1)
 ```
 
 **스타일링:**
+
 ```javascript
 // 사용자 메시지
 - 오른쪽 정렬
@@ -286,14 +298,15 @@ await chatService.indexConvention(1)
 ```
 
 **출처 정보 표시:**
+
 ```javascript
 // sources 배열이 있으면 표시
 sources: [
   {
-    content: "행사명: 2025 해외 워크샵...",
+    content: '행사명: 2025 해외 워크샵...',
     similarity: 0.89,
-    conventionTitle: "2025 해외 워크샵"
-  }
+    conventionTitle: '2025 해외 워크샵',
+  },
 ]
 
 // UI: "출처 3개" 버튼 → 클릭 시 상세 정보 표시
@@ -302,10 +315,12 @@ sources: [
 ### 3. ChatInput.vue (입력 영역)
 
 **역할:**
+
 - 사용자 입력 받기
 - 전송 버튼 제공
 
 **Props:**
+
 ```javascript
 {
   loading: boolean,          // 로딩 상태
@@ -318,6 +333,7 @@ sources: [
 ```
 
 **주요 기능:**
+
 ```javascript
 // 자동 높이 조절
 - 내용에 따라 textarea 높이 자동 변경
@@ -333,18 +349,21 @@ sources: [
 ```
 
 **Emits:**
+
 ```javascript
 // 'send' 이벤트
-emit('send', message)  // message: string
+emit('send', message) // message: string
 ```
 
 ### 4. SuggestedQuestions.vue (추천 질문)
 
 **역할:**
+
 - AI가 추천하는 질문 목록 표시
 - 클릭 시 자동 질문 전송
 
 **Props:**
+
 ```javascript
 {
   questions: Array<string>,  // 추천 질문 목록
@@ -355,6 +374,7 @@ emit('send', message)  // message: string
 ```
 
 **작동 원리:**
+
 ```javascript
 // 백엔드에서 추천 질문 생성
 GET /api/conventionchat/conventions/1/suggestions
@@ -372,9 +392,10 @@ GET /api/conventionchat/conventions/1/suggestions
 ```
 
 **Emits:**
+
 ```javascript
 // 'select' 이벤트
-emit('select', question)  // question: string
+emit('select', question) // question: string
 
 // 'refresh' 이벤트
 emit('refresh')
@@ -383,10 +404,12 @@ emit('refresh')
 ### 5. ChatFloatingButton.vue (플로팅 버튼)
 
 **역할:**
+
 - 채팅 창 열기/닫기 토글
 - 화면에 고정된 버튼
 
 **Props:**
+
 ```javascript
 {
   position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left',
@@ -396,6 +419,7 @@ emit('refresh')
 ```
 
 **스타일:**
+
 ```javascript
 // 열려있을 때
 - 빨간색 배경
@@ -417,10 +441,7 @@ emit('refresh')
 
 ```vue
 <!-- 현재: 파란색 그라디언트 -->
-<div class="bg-gradient-to-r from-blue-600 to-blue-700">
-
-<!-- 변경 예시: 초록색 그라디언트 -->
-<div class="bg-gradient-to-r from-green-600 to-green-700">
+<div class="bg-gradient-to-r from-blue-600 to-blue-700"></div>
 ```
 
 **플로팅 버튼 색상:**
@@ -457,13 +478,7 @@ bg-gradient-to-r from-purple-600 to-purple-700
 ```vue
 <!-- ChatMessage.vue -->
 <!-- 현재: 둥근 사각형 -->
-<div class="rounded-2xl">
-
-<!-- 더 둥글게 -->
-<div class="rounded-3xl">
-
-<!-- 각지게 -->
-<div class="rounded-lg">
+<div class="rounded-2xl"></div>
 ```
 
 ### 4. 추천 질문 개수 조절
@@ -497,7 +512,7 @@ function addWelcomeMessage(conventionTitle = null) {
   const welcomeText = conventionTitle
     ? `안녕하세요! "${conventionTitle}" 행사에 대해 궁금하신 점을 물어보세요.`
     : '안녕하세요! 행사에 대해 궁금하신 점을 물어보세요.'
-  
+
   // ...
 }
 
@@ -506,7 +521,7 @@ function addWelcomeMessage(conventionTitle = null) {
   const welcomeText = conventionTitle
     ? `👋 ${conventionTitle} AI 어시스턴트입니다. 무엇을 도와드릴까요?`
     : '👋 무엇을 도와드릴까요?'
-  
+
   // ...
 }
 ```
@@ -518,9 +533,11 @@ function addWelcomeMessage(conventionTitle = null) {
 ### 문제 1: 채팅창이 열리지 않음
 
 **증상:**
+
 - 플로팅 버튼 클릭 시 아무 반응 없음
 
 **원인:**
+
 - Store가 제대로 import되지 않음
 - 컴포넌트 경로 오류
 
@@ -536,6 +553,7 @@ import ChatFloatingButton from '@/components/chatbot/ChatFloatingButton.vue'
 ```
 
 **브라우저 콘솔 확인:**
+
 ```
 F12 → Console 탭
 에러 메시지 확인
@@ -544,11 +562,13 @@ F12 → Console 탭
 ### 문제 2: API 호출 실패 (404 Not Found)
 
 **증상:**
+
 ```
 POST http://localhost:3000/api/conventionchat/ask 404 (Not Found)
 ```
 
 **원인:**
+
 - 백엔드 서버가 실행되지 않음
 - API 경로 오류
 
@@ -572,12 +592,14 @@ builder.Services.AddScoped<ConventionIndexingService>();
 ### 문제 3: CORS 에러
 
 **증상:**
+
 ```
-Access to XMLHttpRequest at 'http://localhost:5001/api/...' 
+Access to XMLHttpRequest at 'http://localhost:5001/api/...'
 from origin 'http://localhost:3000' has been blocked by CORS policy
 ```
 
 **원인:**
+
 - 백엔드에서 CORS 설정이 안 됨
 
 **해결책:**
@@ -602,10 +624,12 @@ app.UseCors("AllowFrontend");
 ### 문제 4: 답변이 생성되지 않음
 
 **증상:**
+
 - 질문 전송은 되지만 답변이 오지 않음
 - 로딩 상태가 계속됨
 
 **원인:**
+
 - LLM 프로바이더 설정 오류
 - Vector Store에 데이터가 없음
 
@@ -634,9 +658,11 @@ POST http://localhost:5001/api/conventionchat/reindex
 ### 문제 5: 추천 질문이 표시되지 않음
 
 **증상:**
+
 - 채팅창은 열리지만 추천 질문이 없음
 
 **원인:**
+
 - Convention 데이터가 로드되지 않음
 - API 호출 실패
 
@@ -652,16 +678,18 @@ console.log('Convention:', conventionStore.currentConvention)
 suggestedQuestions.value = [
   '이번 행사는 언제 진행되나요?',
   '참석자는 몇 명인가요?',
-  '행사 장소를 알려주세요'
+  '행사 장소를 알려주세요',
 ]
 ```
 
 ### 문제 6: 스타일이 깨짐
 
 **증상:**
+
 - 버튼이나 레이아웃이 이상하게 표시됨
 
 **원인:**
+
 - Tailwind CSS가 제대로 로드되지 않음
 
 **해결책:**
@@ -680,6 +708,7 @@ import './assets/main.css'
 ### 문제 7: 메시지가 스크롤되지 않음
 
 **증상:**
+
 - 새 메시지가 추가되지만 스크롤이 안 됨
 
 **해결책:**
@@ -689,8 +718,8 @@ import './assets/main.css'
 watch(
   () => chatStore.messages.length,
   () => {
-    scrollToBottom()  // 이 함수가 호출되는지 확인
-  }
+    scrollToBottom() // 이 함수가 호출되는지 확인
+  },
 )
 
 // 브라우저 콘솔에서 테스트
@@ -718,11 +747,7 @@ npm install vue-virtual-scroller
 ```vue
 <!-- ChatWindow.vue -->
 <template>
-  <RecycleScroller
-    :items="chatStore.messages"
-    :item-size="100"
-    key-field="id"
-  >
+  <RecycleScroller :items="chatStore.messages" :item-size="100" key-field="id">
     <template #default="{ item }">
       <ChatMessage :message="item" />
     </template>
@@ -747,14 +772,14 @@ const messageCache = new Map()
 
 async function sendMessage(question) {
   const cacheKey = `${currentConventionId.value}:${question}`
-  
+
   if (messageCache.has(cacheKey)) {
     // 캐시된 응답 사용
     const cachedResponse = messageCache.get(cacheKey)
     messages.value.push(cachedResponse)
     return
   }
-  
+
   // ... API 호출
   // 응답을 캐시에 저장
   messageCache.set(cacheKey, assistantMessage)
@@ -766,17 +791,20 @@ async function sendMessage(question) {
 ## 다음 단계
 
 ### 단계 1: 기본 테스트 ✅
+
 - [x] 플로팅 버튼 표시 확인
 - [x] 채팅 창 열기/닫기
 - [x] 질문 전송 및 응답 확인
 
 ### 단계 2: 고급 기능 구현 (선택)
+
 - [ ] 음성 입력/출력 (Web Speech API)
 - [ ] 파일 업로드 (이미지, 문서)
 - [ ] 대화 히스토리 저장 (LocalStorage)
 - [ ] 다크 모드 지원
 
 ### 단계 3: 프로덕션 배포
+
 - [ ] 환경 변수 설정
 - [ ] 빌드 최적화
 - [ ] SEO 최적화
@@ -787,6 +815,7 @@ async function sendMessage(question) {
 ## 요약
 
 ✅ **구현 완료:**
+
 1. ✅ ChatService (API 통신)
 2. ✅ ChatStore (상태 관리)
 3. ✅ ChatWindow (메인 UI)
@@ -797,6 +826,7 @@ async function sendMessage(question) {
 8. ✅ App.vue 통합
 
 ✅ **주요 기능:**
+
 - 자연어 질문-답변
 - Convention별 컨텍스트
 - 멀티턴 대화
@@ -805,6 +835,7 @@ async function sendMessage(question) {
 - 반응형 디자인
 
 ✅ **사용 방법:**
+
 ```bash
 # 프론트엔드 실행
 cd ClientApp
@@ -825,6 +856,7 @@ http://localhost:3000
 ## 문의 및 지원
 
 문제가 발생하면:
+
 1. 브라우저 콘솔 (F12) 확인
 2. 백엔드 로그 확인
 3. Swagger UI로 API 테스트

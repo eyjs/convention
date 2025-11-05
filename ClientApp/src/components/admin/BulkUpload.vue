@@ -13,7 +13,7 @@
             'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
             activeTab === tab.id
               ? 'border-primary-500 text-primary-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
           ]"
         >
           {{ tab.name }}
@@ -36,12 +36,19 @@
       </div>
 
       <div class="mb-4 p-4 bg-blue-50 rounded-md">
-        <h3 class="font-medium text-blue-900 mb-2">📋 엑셀 형식 (참석자 업로드)</h3>
+        <h3 class="font-medium text-blue-900 mb-2">
+          📋 엑셀 형식 (참석자 업로드)
+        </h3>
         <div class="text-sm text-blue-700 space-y-1">
-          <p><strong>컬럼 순서:</strong> 소속 | 부서 | 이름 | 사번(주민번호) | 전화번호 | 그룹</p>
+          <p>
+            <strong>컬럼 순서:</strong> 소속 | 부서 | 이름 | 사번(주민번호) |
+            전화번호 | 그룹
+          </p>
           <p><strong>필수:</strong> 이름, 전화번호, 그룹</p>
           <p><strong>선택:</strong> 소속, 부서, 사번(주민번호)</p>
-          <p class="mt-2 text-blue-600">※ 이름 + (전화번호 OR 주민번호) 매칭으로 중복 시 업데이트</p>
+          <p class="mt-2 text-blue-600">
+            ※ 이름 + (전화번호 OR 주민번호) 매칭으로 중복 시 업데이트
+          </p>
         </div>
       </div>
 
@@ -82,13 +89,19 @@
       </div>
 
       <div class="mb-4 p-4 bg-purple-50 rounded-md">
-        <h3 class="font-medium text-purple-900 mb-2">📋 엑셀 형식 (일정 업로드)</h3>
+        <h3 class="font-medium text-purple-900 mb-2">
+          📋 엑셀 형식 (일정 업로드)
+        </h3>
         <div class="text-sm text-purple-700 space-y-1">
           <p><strong>A열:</strong> 일정헤더 (예: 11/03(일)_조식_07:30)</p>
           <p class="ml-4 text-xs">형식: 월/일(요일)_일정명_시:분</p>
           <p><strong>B열:</strong> 상세 내용 (엑셀 내부 줄바꿈 지원)</p>
-          <p class="mt-2 text-purple-600">※ 업로드할 때마다 새로운 템플릿 생성 (SCHEDULE_0001, 0002, ...)</p>
-          <p class="text-purple-600">※ 과거 템플릿은 웹에서 확인 후 삭제 가능</p>
+          <p class="mt-2 text-purple-600">
+            ※ 업로드할 때마다 새로운 템플릿 생성 (SCHEDULE_0001, 0002, ...)
+          </p>
+          <p class="text-purple-600">
+            ※ 과거 템플릿은 웹에서 확인 후 삭제 가능
+          </p>
         </div>
       </div>
 
@@ -100,7 +113,11 @@
         {{ uploadingSchedules ? '업로드 중...' : '일정 업로드' }}
       </button>
 
-      <UploadResult v-if="resultSchedules" :result="resultSchedules" type="schedules" />
+      <UploadResult
+        v-if="resultSchedules"
+        :result="resultSchedules"
+        type="schedules"
+      />
 
       <div class="mt-6 pt-6 border-t">
         <h3 class="font-semibold mb-3">샘플 파일</h3>
@@ -129,13 +146,17 @@
       </div>
 
       <div class="mb-4 p-4 bg-green-50 rounded-md">
-        <h3 class="font-medium text-green-900 mb-2">📋 엑셀 형식 (속성 업로드)</h3>
+        <h3 class="font-medium text-green-900 mb-2">
+          📋 엑셀 형식 (속성 업로드)
+        </h3>
         <div class="text-sm text-green-700 space-y-1">
           <p><strong>A열:</strong> 이름 (필수)</p>
           <p><strong>B열:</strong> 전화번호 (필수)</p>
           <p><strong>C열 이후:</strong> 동적 속성 (헤더: 속성명, 값: 속성값)</p>
           <p class="mt-2">예시: 나이 | 성별 | 직급 | 선호음식 | ...</p>
-          <p class="mt-2 text-green-600">※ 참석자에게 메타정보를 추가로 붙입니다</p>
+          <p class="mt-2 text-green-600">
+            ※ 참석자에게 메타정보를 추가로 붙입니다
+          </p>
           <p class="text-green-600">※ 통계 정보가 생성됩니다 (속성별 분포)</p>
         </div>
       </div>
@@ -148,7 +169,11 @@
         {{ uploadingAttributes ? '업로드 중...' : '속성 업로드' }}
       </button>
 
-      <UploadResult v-if="resultAttributes" :result="resultAttributes" type="attributes" />
+      <UploadResult
+        v-if="resultAttributes"
+        :result="resultAttributes"
+        type="attributes"
+      />
 
       <div class="mt-6 pt-6 border-t">
         <h3 class="font-semibold mb-3">파일 다운로드</h3>
@@ -178,14 +203,14 @@ import apiClient from '@/services/api'
 import UploadResult from './UploadResult.vue'
 
 const props = defineProps({
-  conventionId: { type: Number, required: true }
+  conventionId: { type: Number, required: true },
 })
 
 // 탭 정의
 const tabs = [
   { id: 'guests', name: '참석자 업로드' },
   { id: 'schedules', name: '일정 업로드' },
-  { id: 'attributes', name: '속성 업로드' }
+  { id: 'attributes', name: '속성 업로드' },
 ]
 
 const activeTab = ref('guests')
@@ -232,9 +257,13 @@ const uploadGuests = async () => {
   formData.append('file', fileGuests.value)
 
   try {
-    const response = await apiClient.post(`/upload/conventions/${props.conventionId}/guests`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    const response = await apiClient.post(
+      `/upload/conventions/${props.conventionId}/guests`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      },
+    )
 
     resultGuests.value = {
       success: response.data.success,
@@ -242,16 +271,20 @@ const uploadGuests = async () => {
       data: {
         created: response.data.usersCreated,
         updated: response.data.usersUpdated,
-        total: response.data.totalProcessed
+        total: response.data.totalProcessed,
       },
       errors: response.data.errors || [],
-      warnings: response.data.warnings || []
+      warnings: response.data.warnings || [],
     }
   } catch (error) {
     resultGuests.value = {
       success: false,
       message: '업로드 실패',
-      errors: [error.response?.data?.error || error.response?.data?.message || error.message]
+      errors: [
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          error.message,
+      ],
     }
   } finally {
     uploadingGuests.value = false
@@ -269,25 +302,33 @@ const uploadSchedules = async () => {
   formData.append('file', fileSchedules.value)
 
   try {
-    const response = await apiClient.post(`/upload/conventions/${props.conventionId}/schedule-templates`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    const response = await apiClient.post(
+      `/upload/conventions/${props.conventionId}/schedule-templates`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      },
+    )
 
     resultSchedules.value = {
       success: response.data.success,
       message: `${response.data.templatesCreated}개 일정 템플릿 생성됨`,
       data: {
         templates: response.data.templatesCreated,
-        actions: response.data.createdActions || []
+        actions: response.data.createdActions || [],
       },
       errors: response.data.errors || [],
-      warnings: response.data.warnings || []
+      warnings: response.data.warnings || [],
     }
   } catch (error) {
     resultSchedules.value = {
       success: false,
       message: '업로드 실패',
-      errors: [error.response?.data?.error || error.response?.data?.message || error.message]
+      errors: [
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          error.message,
+      ],
     }
   } finally {
     uploadingSchedules.value = false
@@ -297,13 +338,16 @@ const uploadSchedules = async () => {
 // 참석자 속성 다운로드
 const downloadGuests = async () => {
   try {
-    const response = await apiClient.get(`/admin/conventions/${props.conventionId}/guests/download`, {
-      responseType: 'blob'
-    })
+    const response = await apiClient.get(
+      `/admin/conventions/${props.conventionId}/guests/download`,
+      {
+        responseType: 'blob',
+      },
+    )
 
     // 파일 다운로드
     const blob = new Blob([response.data], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -313,7 +357,9 @@ const downloadGuests = async () => {
     const contentDisposition = response.headers['content-disposition']
     let fileName = '참석자속성.xlsx'
     if (contentDisposition) {
-      const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      const fileNameMatch = contentDisposition.match(
+        /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/,
+      )
       if (fileNameMatch && fileNameMatch[1]) {
         fileName = fileNameMatch[1].replace(/['"]/g, '')
       }
@@ -341,9 +387,13 @@ const uploadAttributes = async () => {
   formData.append('file', fileAttributes.value)
 
   try {
-    const response = await apiClient.post(`/upload/conventions/${props.conventionId}/attributes`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    const response = await apiClient.post(
+      `/upload/conventions/${props.conventionId}/attributes`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      },
+    )
 
     resultAttributes.value = {
       success: response.data.success,
@@ -352,16 +402,20 @@ const uploadAttributes = async () => {
         usersProcessed: response.data.usersProcessed,
         attributesCreated: response.data.attributesCreated,
         attributesUpdated: response.data.attributesUpdated,
-        statistics: response.data.statistics || {}
+        statistics: response.data.statistics || {},
       },
       errors: response.data.errors || [],
-      warnings: response.data.warnings || []
+      warnings: response.data.warnings || [],
     }
   } catch (error) {
     resultAttributes.value = {
       success: false,
       message: '업로드 실패',
-      errors: [error.response?.data?.error || error.response?.data?.message || error.message]
+      errors: [
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          error.message,
+      ],
     }
   } finally {
     uploadingAttributes.value = false

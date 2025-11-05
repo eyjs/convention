@@ -10,9 +10,9 @@ export const dynamicFeatureRoutes = [
       title: '기능',
       layout: 'FeatureLayout',
       requiresAuth: true,
-      showNav: false
-    }
-  }
+      showNav: false,
+    },
+  },
 ]
 
 export default dynamicFeatureRoutes

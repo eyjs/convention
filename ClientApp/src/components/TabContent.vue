@@ -1,24 +1,16 @@
 <template>
   <div class="px-4 py-2">
     <!-- 나의일정 탭 -->
-    <MyScheduleTab 
-      v-if="activeTab === '나의일정'" 
-    />
-    
+    <MyScheduleTab v-if="activeTab === '나의일정'" />
+
     <!-- 공지사항 탭 -->
-    <NoticeTab 
-      v-else-if="activeTab === '공지사항'" 
-    />
-    
+    <NoticeTab v-else-if="activeTab === '공지사항'" />
+
     <!-- 투어정보 탭 -->
-    <TourInfoTab 
-      v-else-if="activeTab === '투어정보'" 
-    />
-    
+    <TourInfoTab v-else-if="activeTab === '투어정보'" />
+
     <!-- 사진첩 탭 -->
-    <PhotoTab 
-      v-else-if="activeTab === '사진첩'" 
-    />
+    <PhotoTab v-else-if="activeTab === '사진첩'" />
   </div>
 </template>
 

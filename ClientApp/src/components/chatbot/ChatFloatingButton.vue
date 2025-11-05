@@ -4,33 +4,43 @@
     :class="[
       'fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full shadow-float transition-all duration-200 flex items-center justify-center',
       'hover:scale-110 active:scale-95',
-      chatStore.isOpen 
-        ? 'bg-dark-900 hover:bg-dark-800' 
-        : 'bg-gradient-to-br from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700'
+      chatStore.isOpen
+        ? 'bg-dark-900 hover:bg-dark-800'
+        : 'bg-gradient-to-br from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700',
     ]"
     :title="chatStore.isOpen ? '채팅 닫기' : 'AI 챗봇'"
   >
     <transition name="icon-fade" mode="out-in">
-      <svg 
+      <svg
         v-if="chatStore.isOpen"
         key="close"
         class="w-6 h-6 text-white"
-        fill="none" 
-        stroke="currentColor" 
+        fill="none"
+        stroke="currentColor"
         viewBox="0 0 24 24"
       >
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"
+        />
       </svg>
 
-      <svg 
+      <svg
         v-else
         key="chat"
         class="w-6 h-6 text-white"
-        fill="none" 
-        stroke="currentColor" 
+        fill="none"
+        stroke="currentColor"
         viewBox="0 0 24 24"
       >
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+        />
       </svg>
     </transition>
 
@@ -57,8 +67,8 @@ import { useChatStore } from '@/stores/chat'
 const props = defineProps({
   showBadge: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 const chatStore = useChatStore()
@@ -75,7 +85,9 @@ function toggleChat() {
 <style scoped>
 .icon-fade-enter-active,
 .icon-fade-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .icon-fade-enter-from {
@@ -89,7 +101,8 @@ function toggleChat() {
 }
 
 @keyframes ping {
-  75%, 100% {
+  75%,
+  100% {
     transform: scale(1.2);
     opacity: 0;
   }

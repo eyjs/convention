@@ -21,7 +21,7 @@ CREATE TABLE Features (
     IconUrl NVARCHAR(500) NOT NULL DEFAULT '',
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
     UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    CONSTRAINT FK_Features_Conventions FOREIGN KEY (ConventionId) 
+    CONSTRAINT FK_Features_Conventions FOREIGN KEY (ConventionId)
         REFERENCES Conventions(Id) ON DELETE CASCADE,
     CONSTRAINT UQ_Features_ConventionUrl UNIQUE (ConventionId, MenuUrl)
 );
@@ -59,6 +59,7 @@ npm run dev
 ## 5. 확인 사항
 
 ### ✅ 정상 동작 시:
+
 - `/features` 페이지에 "테스트 기능" 카드 표시
 - 카드에 📦 아이콘 표시
 - 클릭 시 `/feature/test`로 이동
@@ -69,11 +70,13 @@ npm run dev
 ### ❌ 문제 발생 시:
 
 #### 기능 목록이 비어있음
+
 - 브라우저 콘솔 확인
 - Network 탭에서 `/api/conventions/{id}/features` 호출 확인
 - 응답 데이터 확인
 
 #### "기능을 불러올 수 없습니다" 에러
+
 - URL이 정확한지 확인: `/feature/test`
 - 파일 경로 확인: `ClientApp/src/dynamic-features/TestFeature/views/TestPage.vue`
 - 파일명이 `TestPage.vue`인지 확인
@@ -131,12 +134,14 @@ curl -X PATCH http://localhost:5000/api/conventions/1/features/1/status \
 ## 9. 문제 해결
 
 ### 포트 충돌
+
 ```bash
 # 백엔드: appsettings.json에서 포트 변경
 # 프론트엔드: vite.config.js에서 포트 변경
 ```
 
 ### CORS 에러
+
 ```csharp
 // Program.cs의 CORS 설정 확인
 builder.Services.AddCors(options => {
@@ -149,12 +154,14 @@ builder.Services.AddCors(options => {
 ```
 
 ### 라우팅 에러
+
 - `router/index.js`에 `MoreFeaturesView` import 확인
 - `/features` 라우트 등록 확인
 
 ## 10. 다음 단계
 
 ✅ 기본 구조 테스트 완료 후:
+
 1. 실제 설문조사 기능 구현
 2. 기존 views 파일들을 features 폴더로 이동
 3. 관리자 페이지에서 기능 CRUD 구현

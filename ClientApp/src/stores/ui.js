@@ -1,19 +1,19 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
 
 export const useUIStore = defineStore('ui', () => {
-  const isChatOpen = ref(false);
+  const isChatOpen = ref(false)
 
   function toggleChat() {
-    isChatOpen.value = !isChatOpen.value;
+    isChatOpen.value = !isChatOpen.value
   }
 
   function openChat() {
-    isChatOpen.value = true;
+    isChatOpen.value = true
   }
 
   function closeChat() {
-    isChatOpen.value = false;
+    isChatOpen.value = false
   }
 
   return {
@@ -21,5 +21,5 @@ export const useUIStore = defineStore('ui', () => {
     toggleChat,
     openChat,
     closeChat,
-  };
-});
+  }
+})

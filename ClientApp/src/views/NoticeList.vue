@@ -4,7 +4,9 @@
     <div class="bg-white border-b">
       <div class="max-w-7xl mx-auto px-4 py-6">
         <h1 class="text-3xl font-bold text-gray-900">공지사항</h1>
-        <p class="mt-2 text-gray-600">행사에 관한 중요한 공지사항을 확인하세요</p>
+        <p class="mt-2 text-gray-600">
+          행사에 관한 중요한 공지사항을 확인하세요
+        </p>
       </div>
     </div>
 
@@ -52,7 +54,9 @@
 
       <!-- 로딩 상태 -->
       <div v-if="loading" class="text-center py-12">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div
+          class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+        ></div>
         <p class="mt-4 text-gray-600">로딩 중...</p>
       </div>
 
@@ -80,19 +84,33 @@
           >
             <div class="grid grid-cols-12 gap-4 items-center">
               <div class="col-span-1 text-center">
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                <span
+                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800"
+                >
                   📌 공지
                 </span>
               </div>
               <div class="col-span-6">
                 <div class="flex items-center gap-2">
-                  <span class="font-semibold text-gray-900">{{ notice.title }}</span>
-                  <span v-if="isNew(notice.createdAt)" class="px-2 py-0.5 bg-red-500 text-white text-xs rounded">NEW</span>
+                  <span class="font-semibold text-gray-900">{{
+                    notice.title
+                  }}</span>
+                  <span
+                    v-if="isNew(notice.createdAt)"
+                    class="px-2 py-0.5 bg-red-500 text-white text-xs rounded"
+                    >NEW</span
+                  >
                 </div>
               </div>
-              <div class="col-span-2 text-center text-gray-600">{{ notice.authorName }}</div>
-              <div class="col-span-2 text-center text-gray-600">{{ formatDate(notice.createdAt) }}</div>
-              <div class="col-span-1 text-center text-gray-600">{{ notice.viewCount }}</div>
+              <div class="col-span-2 text-center text-gray-600">
+                {{ notice.authorName }}
+              </div>
+              <div class="col-span-2 text-center text-gray-600">
+                {{ formatDate(notice.createdAt) }}
+              </div>
+              <div class="col-span-1 text-center text-gray-600">
+                {{ notice.viewCount }}
+              </div>
             </div>
           </div>
 
@@ -104,17 +122,31 @@
             class="border-b px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
           >
             <div class="grid grid-cols-12 gap-4 items-center">
-              <div class="col-span-1 text-center text-gray-600">{{ notice.displayNumber }}</div>
+              <div class="col-span-1 text-center text-gray-600">
+                {{ notice.displayNumber }}
+              </div>
               <div class="col-span-6">
                 <div class="flex items-center gap-2">
                   <span class="text-gray-900">{{ notice.title }}</span>
-                  <span v-if="isNew(notice.createdAt)" class="px-2 py-0.5 bg-red-500 text-white text-xs rounded">NEW</span>
-                  <span v-if="notice.hasAttachment" class="text-gray-400">📎</span>
+                  <span
+                    v-if="isNew(notice.createdAt)"
+                    class="px-2 py-0.5 bg-red-500 text-white text-xs rounded"
+                    >NEW</span
+                  >
+                  <span v-if="notice.hasAttachment" class="text-gray-400"
+                    >📎</span
+                  >
                 </div>
               </div>
-              <div class="col-span-2 text-center text-gray-600">{{ notice.authorName }}</div>
-              <div class="col-span-2 text-center text-gray-600">{{ formatDate(notice.createdAt) }}</div>
-              <div class="col-span-1 text-center text-gray-600">{{ notice.viewCount }}</div>
+              <div class="col-span-2 text-center text-gray-600">
+                {{ notice.authorName }}
+              </div>
+              <div class="col-span-2 text-center text-gray-600">
+                {{ formatDate(notice.createdAt) }}
+              </div>
+              <div class="col-span-1 text-center text-gray-600">
+                {{ notice.viewCount }}
+              </div>
             </div>
           </div>
         </div>
@@ -144,7 +176,7 @@
               'px-4 py-2 rounded-lg border',
               currentPage === page
                 ? 'bg-blue-600 text-white border-blue-600'
-                : 'hover:bg-gray-50'
+                : 'hover:bg-gray-50',
             ]"
           >
             {{ page }}
@@ -195,12 +227,12 @@ export default {
   name: 'NoticeList',
   components: {
     NoticeFormModal,
-    NoticeDetailModal
+    NoticeDetailModal,
   },
   setup() {
     const conventionStore = useConventionStore()
     const authStore = useAuthStore()
-    
+
     // 상태
     const loading = ref(false)
     const notices = ref([])
@@ -216,25 +248,31 @@ export default {
     const categories = ref([])
 
     // 계산된 속성
-    const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value))
-    
-    const pinnedNotices = computed(() => notices.value.filter(n => n.isPinned))
-    const regularNotices = computed(() => notices.value.filter(n => !n.isPinned))
-    
+    const totalPages = computed(() =>
+      Math.ceil(totalCount.value / pageSize.value),
+    )
+
+    const pinnedNotices = computed(() =>
+      notices.value.filter((n) => n.isPinned),
+    )
+    const regularNotices = computed(() =>
+      notices.value.filter((n) => !n.isPinned),
+    )
+
     const visiblePages = computed(() => {
       const pages = []
       const maxVisible = 5
       let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2))
       let end = Math.min(totalPages.value, start + maxVisible - 1)
-      
+
       if (end - start + 1 < maxVisible) {
         start = Math.max(1, end - maxVisible + 1)
       }
-      
+
       for (let i = start; i <= end; i++) {
         pages.push(i)
       }
-      
+
       return pages
     })
 
@@ -256,7 +294,9 @@ export default {
       try {
         const conventionId = conventionStore.currentConvention?.id
         if (!conventionId) {
-          alert('현재 행사 정보를 찾을 수 없습니다. 홈으로 돌아가 다시 시도해주세요.')
+          alert(
+            '현재 행사 정보를 찾을 수 없습니다. 홈으로 돌아가 다시 시도해주세요.',
+          )
           loading.value = false
           return
         }
@@ -266,12 +306,13 @@ export default {
           page: currentPage.value,
           pageSize: pageSize.value,
           searchType: searchKeyword.value ? searchType.value : undefined,
-          searchKeyword: searchKeyword.value || undefined
+          searchKeyword: searchKeyword.value || undefined,
         })
 
         notices.value = response.data.items.map((item, index) => ({
           ...item,
-          displayNumber: totalCount.value - ((currentPage.value - 1) * pageSize.value) - index
+          displayNumber:
+            totalCount.value - (currentPage.value - 1) * pageSize.value - index,
         }))
         totalCount.value = response.data.totalCount
       } catch (error) {
@@ -364,8 +405,8 @@ export default {
       isNew,
       openCreateModal,
       closeModal,
-      handleSaved
+      handleSaved,
     }
-  }
+  },
 }
 </script>

@@ -11,7 +11,7 @@ export const guestAPI = {
    */
   getParticipants: (params = {}) => {
     return apiClient.get('/guest/participants', { params })
-  }
+  },
 }
 
 export default guestAPI

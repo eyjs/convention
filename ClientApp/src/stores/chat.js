@@ -17,18 +17,24 @@ export const useChatStore = defineStore('chat', () => {
   // convention.js 스토어에서 직접 conventionId를 가져오는 computed 속성
   const conventionId = computed(() => conventionStore.currentConvention?.id)
 
-  const lastMessage = computed(() => messages.value.length > 0 ? messages.value[messages.value.length - 1] : null)
+  const lastMessage = computed(() =>
+    messages.value.length > 0
+      ? messages.value[messages.value.length - 1]
+      : null,
+  )
 
   function getUserContext() {
     const user = authStore.user
     if (!user) {
-      console.warn("getUserContext: User is not logged in, context will be null.")
+      console.warn(
+        'getUserContext: User is not logged in, context will be null.',
+      )
       return null
     }
     return {
       role: user.role,
       guestId: user.guestId || user.id,
-      memberId: user.memberId
+      memberId: user.memberId,
     }
   }
 
@@ -38,7 +44,7 @@ export const useChatStore = defineStore('chat', () => {
     error.value = null
     suggestedQuestions.value = []
     isOpen.value = false
-    console.log("Chat store has been successfully reset.");
+    console.log('Chat store has been successfully reset.')
   }
 
   async function sendMessage(question) {
@@ -48,7 +54,7 @@ export const useChatStore = defineStore('chat', () => {
       id: Date.now(),
       role: 'user',
       content: question,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }
     messages.value.push(userMessage)
     loading.value = true
@@ -56,15 +62,22 @@ export const useChatStore = defineStore('chat', () => {
 
     try {
       const historyLimit = 10
-      const recentMessages = messages.value.slice(-historyLimit - 1, -1).map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }))
+      const recentMessages = messages.value
+        .slice(-historyLimit - 1, -1)
+        .map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        }))
       const userContext = getUserContext()
 
       // 스토어의 conventionId computed 값을 사용
-        const response = await chatBotService.ask(question, recentMessages, conventionId.value, userContext)
-      const data = response.data;
+      const response = await chatBotService.ask(
+        question,
+        recentMessages,
+        conventionId.value,
+        userContext,
+      )
+      const data = response.data
 
       const assistantMessage = {
         id: Date.now() + 1,
@@ -72,10 +85,9 @@ export const useChatStore = defineStore('chat', () => {
         content: data?.answer || '답변을 생성할 수 없습니다.',
         sources: data?.sources || [],
         llmProvider: data?.llmProvider,
-        timestamp: data?.timestamp || new Date().toISOString()
+        timestamp: data?.timestamp || new Date().toISOString(),
       }
       messages.value.push(assistantMessage)
-
     } catch (err) {
       console.error('Failed to send message:', err)
       const errorMessage = {
@@ -83,7 +95,7 @@ export const useChatStore = defineStore('chat', () => {
         role: 'assistant',
         content: '죄송합니다. 답변을 생성하는 중 문제가 발생했습니다.',
         isError: true,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
       messages.value.push(errorMessage)
     } finally {
@@ -103,28 +115,30 @@ export const useChatStore = defineStore('chat', () => {
     }
   } */
   function toggleChat() {
-    isOpen.value = !isOpen.value;
+    isOpen.value = !isOpen.value
   }
 
   function openChat() {
-    isOpen.value = true;
+    isOpen.value = true
   }
 
   function closeChat() {
-    isOpen.value = false;
+    isOpen.value = false
   }
 
   function addWelcomeMessage(conventionTitle = null) {
-    const welcomeText = conventionTitle ? `안녕하세요! "${conventionTitle}" 행사에 대해 궁금하신 점을 물어보세요.` : '안녕하세요! 무엇을 도와드릴까요?';
+    const welcomeText = conventionTitle
+      ? `안녕하세요! "${conventionTitle}" 행사에 대해 궁금하신 점을 물어보세요.`
+      : '안녕하세요! 무엇을 도와드릴까요?'
     const welcomeMessage = {
       id: Date.now(),
       role: 'assistant',
       content: welcomeText,
       timestamp: new Date().toISOString(),
-      isWelcome: true
-    };
+      isWelcome: true,
+    }
     if (messages.value.length === 0) {
-      messages.value.push(welcomeMessage);
+      messages.value.push(welcomeMessage)
     }
   }
 
@@ -142,6 +156,6 @@ export const useChatStore = defineStore('chat', () => {
     openChat,
     closeChat,
     addWelcomeMessage,
-    resetChatState
+    resetChatState,
   }
 })

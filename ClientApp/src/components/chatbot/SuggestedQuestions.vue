@@ -1,6 +1,6 @@
 <template>
-  <div 
-    v-if="questions.length > 0" 
+  <div
+    v-if="questions.length > 0"
     class="px-6 py-6 bg-white border-b border-gray-200"
   >
     <div class="max-w-3xl mx-auto space-y-3">
@@ -14,13 +14,18 @@
           <span class="text-sm text-gray-700 flex-1">
             {{ question }}
           </span>
-          <svg 
-            class="w-4 h-4 text-gray-400 group-hover:text-gray-600 flex-shrink-0 ml-3 transition-transform group-hover:translate-x-0.5" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            class="w-4 h-4 text-gray-400 group-hover:text-gray-600 flex-shrink-0 ml-3 transition-transform group-hover:translate-x-0.5"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </div>
       </button>
@@ -42,12 +47,12 @@ import { ref, computed } from 'vue'
 const props = defineProps({
   questions: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   maxVisible: {
     type: Number,
-    default: 4
-  }
+    default: 4,
+  },
 })
 
 const emit = defineEmits(['select'])

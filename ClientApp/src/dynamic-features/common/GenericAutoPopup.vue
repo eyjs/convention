@@ -22,7 +22,9 @@
         @click.self="handleBackdropClick"
       >
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+        <div
+          class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+        ></div>
 
         <!-- Popup Container -->
         <div
@@ -38,7 +40,12 @@
             class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
             aria-label="닫기"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -49,7 +56,10 @@
           </button>
 
           <!-- Image (optional) -->
-          <div v-if="config.imageUrl" class="w-full overflow-hidden rounded-t-2xl">
+          <div
+            v-if="config.imageUrl"
+            class="w-full overflow-hidden rounded-t-2xl"
+          >
             <img
               :src="config.imageUrl"
               :alt="feature.title"
@@ -90,7 +100,10 @@
             </div>
 
             <!-- Don't show again checkbox -->
-            <div v-if="config.showOnce" class="flex items-center mt-4 pt-4 border-t border-gray-200">
+            <div
+              v-if="config.showOnce"
+              class="flex items-center mt-4 pt-4 border-t border-gray-200"
+            >
               <input
                 id="dont-show-again"
                 v-model="dontShowAgain"
@@ -225,7 +238,8 @@ const handleButtonClick = (button) => {
 
 // Get button classes based on style
 const getButtonClasses = (style = 'primary') => {
-  const baseClasses = 'flex-1 px-6 py-3 rounded-lg font-medium transition-all duration-200'
+  const baseClasses =
+    'flex-1 px-6 py-3 rounded-lg font-medium transition-all duration-200'
 
   const styleClasses = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800',
@@ -270,7 +284,9 @@ onUnmounted(() => {
 
 .popup-fade-enter-active .relative,
 .popup-fade-leave-active .relative {
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .popup-fade-enter-from .relative {

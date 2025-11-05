@@ -1,6 +1,10 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+  <div
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+  >
+    <div
+      class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+    >
       <!-- 헤더 -->
       <div class="px-6 py-4 border-b flex items-center justify-between">
         <h2 class="text-2xl font-bold text-gray-900">
@@ -19,14 +23,22 @@
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <!-- 카테고리 -->
           <div>
-            <label for="category" class="block text-sm font-semibold text-gray-700 mb-2">카테고리</label>
+            <label
+              for="category"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+              >카테고리</label
+            >
             <select
               id="category"
               v-model="form.noticeCategoryId"
               class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option :value="null">카테고리 선택</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
+              <option
+                v-for="category in categories"
+                :key="category.id"
+                :value="category.id"
+              >
                 {{ category.name }}
               </option>
             </select>
@@ -54,7 +66,10 @@
               id="isPinned"
               class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
             />
-            <label for="isPinned" class="text-sm font-medium text-gray-700 cursor-pointer">
+            <label
+              for="isPinned"
+              class="text-sm font-medium text-gray-700 cursor-pointer"
+            >
               이 공지사항을 상단에 고정
             </label>
           </div>
@@ -72,7 +87,7 @@
                 :toolbar="editorToolbar"
                 theme="snow"
                 placeholder="공지사항 내용을 입력하세요"
-                style="min-height: 400px;"
+                style="min-height: 400px"
               />
             </div>
           </div>
@@ -134,7 +149,9 @@
             <!-- 파일 업로드 진행 상태 -->
             <div v-if="uploading" class="mt-4">
               <div class="flex items-center gap-2 text-sm text-gray-600">
-                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <div
+                  class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"
+                ></div>
                 <span>파일 업로드 중... {{ uploadProgress }}%</span>
               </div>
             </div>
@@ -156,8 +173,11 @@
           :disabled="saving || !isFormValid"
           class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          <span v-if="saving" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-          <span>{{ saving ? '저장 중...' : (isEdit ? '수정' : '등록') }}</span>
+          <span
+            v-if="saving"
+            class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+          ></span>
+          <span>{{ saving ? '저장 중...' : isEdit ? '수정' : '등록' }}</span>
         </button>
       </div>
     </div>
@@ -170,30 +190,36 @@ import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import { noticeAPI } from '@/services/noticeService'
 import { useAuthStore } from '@/stores/auth'
-import { uploadFile, validateFileExtension, validateFileSize, formatFileSize, handleQuillImageUpload } from '@/utils/fileUpload'
+import {
+  uploadFile,
+  validateFileExtension,
+  validateFileSize,
+  formatFileSize,
+  handleQuillImageUpload,
+} from '@/utils/fileUpload'
 
 export default {
   name: 'NoticeFormModal',
   components: {
-    QuillEditor
+    QuillEditor,
   },
   props: {
     notice: {
       type: Object,
-      default: null
+      default: null,
     },
     categories: {
       type: Array,
-      required: true
+      required: true,
     },
     defaultCategoryId: {
       type: Number,
-      default: null
+      default: null,
     },
     conventionId: {
       type: Number,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: ['close', 'saved'],
   setup(props, { emit }) {
@@ -210,7 +236,7 @@ export default {
       content: '',
       isPinned: false,
       attachments: [],
-      noticeCategoryId: null
+      noticeCategoryId: null,
     })
 
     // Quill 에디터 툴바 설정
@@ -222,7 +248,7 @@ export default {
       [{ list: 'ordered' }, { list: 'bullet' }],
       ['blockquote', 'code-block'],
       ['link', 'image'],
-      ['clean']
+      ['clean'],
     ]
 
     // 계산된 속성
@@ -266,7 +292,7 @@ export default {
             id: result.id,
             url: result.url,
             originalName: result.originalName,
-            size: result.size
+            size: result.size,
           })
         }
 
@@ -295,7 +321,9 @@ export default {
           content: form.value.content.trim(),
           isPinned: form.value.isPinned,
           noticeCategoryId: form.value.noticeCategoryId,
-          attachmentIds: form.value.attachments.map(a => a.id).filter(Boolean)
+          attachmentIds: form.value.attachments
+            .map((a) => a.id)
+            .filter(Boolean),
         }
 
         if (isEdit.value) {
@@ -333,7 +361,7 @@ export default {
           content: props.notice.content || '',
           isPinned: props.notice.isPinned || false,
           attachments: props.notice.attachments || [],
-          noticeCategoryId: props.notice.noticeCategoryId || null
+          noticeCategoryId: props.notice.noticeCategoryId || null,
         }
       } else {
         form.value = {
@@ -341,7 +369,7 @@ export default {
           content: '',
           isPinned: false,
           attachments: [],
-          noticeCategoryId: props.defaultCategoryId || null
+          noticeCategoryId: props.defaultCategoryId || null,
         }
       }
     }
@@ -356,9 +384,12 @@ export default {
       }, 100)
     })
 
-    watch(() => props.notice, () => {
-      initializeForm()
-    })
+    watch(
+      () => props.notice,
+      () => {
+        initializeForm()
+      },
+    )
 
     return {
       authStore,
@@ -375,15 +406,14 @@ export default {
       handleFileSelect,
       removeFile,
       handleSubmit,
-      formatFileSize
+      formatFileSize,
     }
-  }
+  },
 }
 </script>
 
 <style scoped>
 /* Quill 에디터 커스텀 스타일 */
-
 
 :deep(.ql-editor) {
   min-height: 400px;

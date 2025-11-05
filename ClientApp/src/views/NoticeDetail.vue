@@ -1,9 +1,14 @@
 <template>
   <div class="min-h-screen min-h-dvh bg-gray-50">
     <!-- 로딩 상태 -->
-    <div v-if="loading" class="flex items-center justify-center min-h-screen min-h-dvh">
+    <div
+      v-if="loading"
+      class="flex items-center justify-center min-h-screen min-h-dvh"
+    >
       <div class="text-center">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div
+          class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+        ></div>
         <p class="mt-4 text-gray-600">로딩 중...</p>
       </div>
     </div>
@@ -32,7 +37,9 @@
             >
               📌 공지
             </span>
-            <h1 class="text-2xl font-bold text-gray-900 flex-1">{{ notice.title }}</h1>
+            <h1 class="text-2xl font-bold text-gray-900 flex-1">
+              {{ notice.title }}
+            </h1>
           </div>
 
           <div class="flex items-center justify-between text-sm text-gray-600">
@@ -55,14 +62,14 @@
 
         <!-- 본문 내용 (Quill 에디터 읽기 전용) -->
         <div class="px-8 py-8">
-          <div 
-            class="prose max-w-none"
-            v-html="notice.content"
-          ></div>
+          <div class="prose max-w-none" v-html="notice.content"></div>
         </div>
 
         <!-- 첨부파일 -->
-        <div v-if="notice.attachments && notice.attachments.length > 0" class="border-t px-8 py-6 bg-gray-50">
+        <div
+          v-if="notice.attachments && notice.attachments.length > 0"
+          class="border-t px-8 py-6 bg-gray-50"
+        >
           <h3 class="text-lg font-semibold mb-4 text-gray-900">첨부파일</h3>
           <div class="space-y-2">
             <a
@@ -75,7 +82,9 @@
               <span class="text-2xl">📎</span>
               <div class="flex-1">
                 <p class="font-medium text-gray-900">{{ file.originalName }}</p>
-                <p class="text-sm text-gray-500">{{ formatFileSize(file.size) }}</p>
+                <p class="text-sm text-gray-500">
+                  {{ formatFileSize(file.size) }}
+                </p>
               </div>
               <span class="text-blue-600 text-sm font-medium">다운로드</span>
             </a>
@@ -135,7 +144,7 @@ export default {
   setup() {
     const router = useRouter()
     const route = useRoute()
-    
+
     // 상태
     const loading = ref(false)
     const notice = ref({
@@ -146,11 +155,11 @@ export default {
       createdAt: '',
       viewCount: 0,
       isPinned: false,
-      attachments: []
+      attachments: [],
     })
     const navigation = ref({
       prev: null,
-      next: null
+      next: null,
     })
 
     // 메서드
@@ -158,14 +167,14 @@ export default {
       loading.value = true
       try {
         const id = route.params.id
-        
+
         // 조회수 증가
         await noticeAPI.incrementViewCount(id)
-        
+
         // 공지사항 상세 조회
         const response = await noticeAPI.getNotice(id)
         notice.value = response.data
-        
+
         // 이전글/다음글 정보가 있다면 설정
         if (response.data.navigation) {
           navigation.value = response.data.navigation
@@ -203,10 +212,8 @@ export default {
       goBack,
       goToNotice,
       formatDate,
-      formatFileSize
+      formatFileSize,
     }
-  }
+  },
 }
 </script>
-
-

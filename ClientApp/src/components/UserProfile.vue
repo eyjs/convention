@@ -10,20 +10,17 @@
             {{ currentConvention?.title || '컨벤션 정보를 불러오는 중...' }}
           </p>
         </div>
-        
-        <button 
+
+        <button
           class="text-sm text-ifa-green font-medium touch-feedback px-3 py-1 rounded"
           @click="showProfile"
         >
           로그아웃
         </button>
       </div>
-      
+
       <!-- 컨벤션 기간 정보 -->
-      <div 
-        v-if="currentConvention" 
-        class="mt-3 text-xs text-gray-400"
-      >
+      <div v-if="currentConvention" class="mt-3 text-xs text-gray-400">
         {{ formatConventionPeriod }}
       </div>
     </div>
@@ -41,15 +38,15 @@ const currentConvention = computed(() => conventionStore.getCurrentConvention)
 // 임시 사용자 정보 (실제로는 auth store에서 가져옴)
 const currentUser = computed(() => ({
   guestName: '정유진',
-  corpPart: '개발팀'
+  corpPart: '개발팀',
 }))
 
 const formatConventionPeriod = computed(() => {
   if (!currentConvention.value) return ''
-  
+
   const start = dayjs(currentConvention.value.startDate)
   const end = dayjs(currentConvention.value.endDate)
-  
+
   return `${start.format('YYYY.MM.DD')} - ${end.format('YYYY.MM.DD')}`
 })
 

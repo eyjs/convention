@@ -13,45 +13,45 @@ const routes = [
     path: '/setup',
     name: 'Setup',
     component: () => import('@/views/SetupView.vue'),
-    meta: { 
-      title: '초기 설정', 
+    meta: {
+      title: '초기 설정',
       requiresAuth: false,
       layout: null,
-      showNav: false
-    }
+      showNav: false,
+    },
   },
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/LoginView.vue'),
-    meta: { 
-      title: '로그인', 
+    meta: {
+      title: '로그인',
       requiresAuth: false,
       layout: null,
-      showNav: false
-    }
+      showNav: false,
+    },
   },
   {
     path: '/find-id',
     name: 'FindId',
     component: () => import('@/views/FindId.vue'),
-    meta: { 
-      title: '아이디 찾기', 
+    meta: {
+      title: '아이디 찾기',
       requiresAuth: false,
       layout: null,
-      showNav: false
-    }
+      showNav: false,
+    },
   },
   {
     path: '/find-password',
     name: 'FindPassword',
     component: () => import('@/views/FindPassword.vue'),
-    meta: { 
-      title: '비밀번호 찾기', 
+    meta: {
+      title: '비밀번호 찾기',
       requiresAuth: false,
       layout: null,
-      showNav: false
-    }
+      showNav: false,
+    },
   },
 
   // === Main Routes (Default Layout) ===
@@ -59,22 +59,22 @@ const routes = [
     path: '/my-conventions',
     name: 'MyConventions',
     component: () => import('@/views/MyConventionsView.vue'),
-    meta: { 
-      title: '행사 선택', 
+    meta: {
+      title: '행사 선택',
       requiresAuth: true,
       layout: null,
-      showNav: false
-    }
+      showNav: false,
+    },
   },
   {
     path: '/',
     name: 'Home',
     component: () => import('@/views/ConventionHome.vue'),
-    meta: { 
-      title: '행사 홈', 
+    meta: {
+      title: '행사 홈',
       requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
+      layout: 'DefaultLayout',
+    },
   },
 
   // === Admin Routes ===
@@ -82,25 +82,25 @@ const routes = [
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/ConventionListView.vue'),
-    meta: { 
-      title: '행사 관리', 
+    meta: {
+      title: '행사 관리',
       requiresAuth: true,
       requiresAdmin: true,
       layout: 'DefaultLayout',
-      showNav: false
-    }
+      showNav: false,
+    },
   },
   {
     path: '/admin/conventions/:id',
     name: 'AdminDashboard',
     component: () => import('@/views/AdminDashboard.vue'),
-    meta: { 
-      title: '행사 대시보드', 
+    meta: {
+      title: '행사 대시보드',
       requiresAuth: true,
       requiresAdmin: true,
       layout: 'DefaultLayout',
-      showNav: false
-    }
+      showNav: false,
+    },
   },
   {
     path: '/admin/chatbot',
@@ -111,8 +111,8 @@ const routes = [
       requiresAuth: true,
       requiresAdmin: true,
       layout: 'DefaultLayout',
-      showNav: false
-    }
+      showNav: false,
+    },
   },
 
   // === Convention Features ===
@@ -120,11 +120,11 @@ const routes = [
     path: '/my-schedule',
     name: 'MySchedule',
     component: () => import('@/views/MySchedule.vue'),
-    meta: { 
+    meta: {
       title: '나의일정',
       requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
+      layout: 'DefaultLayout',
+    },
   },
 
   {
@@ -135,8 +135,8 @@ const routes = [
       title: '여행 서류 제출',
       requiresAuth: true,
       layout: 'DefaultLayout',
-      showNav: false
-    }
+      showNav: false,
+    },
   },
   {
     path: '/feature/survey/:actionType',
@@ -146,28 +146,28 @@ const routes = [
       title: 'Survey',
       requiresAuth: true,
       layout: 'DefaultLayout',
-      showNav: false
-    }
+      showNav: false,
+    },
   },
   {
     path: '/participants',
     name: 'Participants',
     component: () => import('@/views/Participants.vue'),
-    meta: { 
+    meta: {
       title: '주체국',
       requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
+      layout: 'DefaultLayout',
+    },
   },
   {
     path: '/group-schedule',
     name: 'GroupSchedule',
     component: () => import('@/views/GroupSchedule.vue'),
-    meta: { 
+    meta: {
       title: '합창국',
       requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
+      layout: 'DefaultLayout',
+    },
   },
 
   // === Location Features ===
@@ -175,31 +175,31 @@ const routes = [
     path: '/location',
     name: 'LocationInfo',
     component: () => import('@/views/LocationInfo.vue'),
-    meta: { 
+    meta: {
       title: '로마 정보',
       requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
+      layout: 'DefaultLayout',
+    },
   },
   {
     path: '/hotspot',
     name: 'HotSpot',
     component: () => import('@/views/HotSpot.vue'),
-    meta: { 
+    meta: {
       title: '핫스팟',
       requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
+      layout: 'DefaultLayout',
+    },
   },
   {
     path: '/tastespot',
     name: 'TasteSpot',
     component: () => import('@/views/TasteSpot.vue'),
-    meta: { 
+    meta: {
       title: '맛스팟',
       requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
+      layout: 'DefaultLayout',
+    },
   },
 
   // === Media Features ===
@@ -207,11 +207,11 @@ const routes = [
     path: '/event-place',
     name: 'EventPlace',
     component: () => import('@/views/EventPlace.vue'),
-    meta: { 
+    meta: {
       title: '사진첩',
       requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
+      layout: 'DefaultLayout',
+    },
   },
 
   // === Notice Features ===
@@ -219,21 +219,21 @@ const routes = [
     path: '/notices',
     name: 'Board',
     component: () => import('@/views/Board.vue'),
-    meta: { 
-      title: '공지사항', 
+    meta: {
+      title: '공지사항',
       requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
+      layout: 'DefaultLayout',
+    },
   },
   {
     path: '/notices/:id',
     name: 'NoticeDetail',
     component: () => import('@/views/NoticeDetail.vue'),
-    meta: { 
-      title: '공지사항 상세', 
+    meta: {
+      title: '공지사항 상세',
       requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
+      layout: 'DefaultLayout',
+    },
   },
 
   // === Dynamic Features ===
@@ -244,16 +244,16 @@ const routes = [
     meta: {
       title: '추가 기능',
       requiresAuth: true,
-      layout: 'DefaultLayout'
-    }
+      layout: 'DefaultLayout',
+    },
   },
   {
     path: '/feature',
     children: dynamicFeatureRoutes,
     meta: {
-      requiresAuth: true
-    }
-  }
+      requiresAuth: true,
+    },
+  },
 ]
 
 const router = createRouter({
@@ -265,12 +265,12 @@ const router = createRouter({
     } else {
       return { top: 0 }
     }
-  }
+  },
 })
 
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title || 'iFA Convention'
-  
+
   const authStore = useAuthStore()
   const requiresAuth = to.meta.requiresAuth !== false
   const requiresAdmin = to.meta.requiresAdmin || false
@@ -301,7 +301,12 @@ router.beforeEach((to, from, next) => {
   }
 
   // 4. 일반 유저의 행사 선택 체크 (어드민은 제외)
-  if (authStore.isAuthenticated && !authStore.isAdmin && !selectedConventionId && to.path !== '/my-conventions') {
+  if (
+    authStore.isAuthenticated &&
+    !authStore.isAdmin &&
+    !selectedConventionId &&
+    to.path !== '/my-conventions'
+  ) {
     next('/my-conventions')
     return
   }

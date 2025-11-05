@@ -11,7 +11,10 @@
     </div>
 
     <div class="bg-white rounded-lg shadow">
-      <div v-if="templates.length === 0" class="text-center py-12 text-gray-500">
+      <div
+        v-if="templates.length === 0"
+        class="text-center py-12 text-gray-500"
+      >
         등록된 속성 템플릿이 없습니다.
       </div>
       <div v-else class="divide-y">
@@ -22,7 +25,10 @@
         >
           <div class="flex-1">
             <h3 class="font-semibold text-lg">{{ template.attributeKey }}</h3>
-            <div v-if="template.attributeValues" class="mt-2 flex flex-wrap gap-2">
+            <div
+              v-if="template.attributeValues"
+              class="mt-2 flex flex-wrap gap-2"
+            >
               <span
                 v-for="(value, idx) in parseValues(template.attributeValues)"
                 :key="idx"
@@ -31,7 +37,9 @@
                 {{ value }}
               </span>
             </div>
-            <p v-else class="text-sm text-gray-500 mt-1">선택 값 없음 (수기 입력)</p>
+            <p v-else class="text-sm text-gray-500 mt-1">
+              선택 값 없음 (수기 입력)
+            </p>
           </div>
           <div class="flex gap-2">
             <button
@@ -52,13 +60,17 @@
     </div>
 
     <!-- 속성 템플릿 생성/수정 모달 -->
-    <div v-if="showCreateModal || editingTemplate" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeModal">
+    <div
+      v-if="showCreateModal || editingTemplate"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click.self="closeModal"
+    >
       <div class="bg-white rounded-lg w-full max-w-lg">
         <div class="p-6">
           <h2 class="text-xl font-semibold mb-4">
             {{ editingTemplate ? '속성 템플릿 수정' : '속성 템플릿 추가' }}
           </h2>
-          
+
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium mb-1">속성명 *</label>
@@ -69,9 +81,11 @@
                 placeholder="예: 티셔츠 사이즈, 호차, 방 번호"
               />
             </div>
-            
+
             <div>
-              <label class="block text-sm font-medium mb-2">선택 값 (쉼표로 구분)</label>
+              <label class="block text-sm font-medium mb-2"
+                >선택 값 (쉼표로 구분)</label
+              >
               <textarea
                 v-model="form.attributeValuesText"
                 class="w-full px-3 py-2 border rounded-lg"
@@ -79,7 +93,8 @@
                 placeholder="예: 95, 100, 105, 110, 115&#10;비워두면 참석자 등록 시 수기 입력"
               ></textarea>
               <p class="text-xs text-gray-500 mt-1">
-                쉼표(,)로 구분하여 입력하세요. 빈 값으로 두면 참석자가 직접 입력합니다.
+                쉼표(,)로 구분하여 입력하세요. 빈 값으로 두면 참석자가 직접
+                입력합니다.
               </p>
             </div>
           </div>
@@ -103,7 +118,13 @@
     </div>
 
     <!-- 토스트 알림 -->
-    <div v-if="toast.show" :class="['fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all', toast.type === 'success' ? 'bg-green-600' : 'bg-red-600']">
+    <div
+      v-if="toast.show"
+      :class="[
+        'fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all',
+        toast.type === 'success' ? 'bg-green-600' : 'bg-red-600',
+      ]"
+    >
       <p class="text-white font-medium">{{ toast.message }}</p>
     </div>
   </div>
@@ -114,7 +135,7 @@ import { ref, onMounted } from 'vue'
 import apiClient from '@/services/api'
 
 const props = defineProps({
-  conventionId: { type: Number, required: true }
+  conventionId: { type: Number, required: true },
 })
 
 const templates = ref([])
@@ -123,13 +144,13 @@ const editingTemplate = ref(null)
 
 const form = ref({
   attributeKey: '',
-  attributeValuesText: ''
+  attributeValuesText: '',
 })
 
 const toast = ref({
   show: false,
   message: '',
-  type: 'success'
+  type: 'success',
 })
 
 const parseValues = (valuesStr) => {
@@ -143,7 +164,9 @@ const parseValues = (valuesStr) => {
 
 const loadTemplates = async () => {
   try {
-    const response = await apiClient.get(`/attributetemplate/conventions/${props.conventionId}`)
+    const response = await apiClient.get(
+      `/attributetemplate/conventions/${props.conventionId}`,
+    )
     templates.value = response.data
   } catch (error) {
     console.error('Failed to load attribute templates:', error)
@@ -154,9 +177,9 @@ const editTemplate = (template) => {
   editingTemplate.value = template
   form.value = {
     attributeKey: template.attributeKey,
-    attributeValuesText: template.attributeValues 
+    attributeValuesText: template.attributeValues
       ? parseValues(template.attributeValues).join(', ')
-      : ''
+      : '',
   }
 }
 
@@ -165,7 +188,7 @@ const closeModal = () => {
   editingTemplate.value = null
   form.value = {
     attributeKey: '',
-    attributeValuesText: ''
+    attributeValuesText: '',
   }
 }
 
@@ -181,21 +204,27 @@ const saveTemplate = async () => {
     if (form.value.attributeValuesText.trim()) {
       const values = form.value.attributeValuesText
         .split(',')
-        .map(v => v.trim())
-        .filter(v => v)
+        .map((v) => v.trim())
+        .filter((v) => v)
       attributeValues = JSON.stringify(values)
     }
 
     const data = {
       attributeKey: form.value.attributeKey.trim(),
       attributeValues: attributeValues,
-      orderNum: templates.value.length
+      orderNum: templates.value.length,
     }
 
     if (editingTemplate.value) {
-      await apiClient.put(`/attributetemplate/${editingTemplate.value.id}`, data)
+      await apiClient.put(
+        `/attributetemplate/${editingTemplate.value.id}`,
+        data,
+      )
     } else {
-      await apiClient.post(`/attributetemplate/conventions/${props.conventionId}`, data)
+      await apiClient.post(
+        `/attributetemplate/conventions/${props.conventionId}`,
+        data,
+      )
     }
 
     await loadTemplates()
@@ -203,7 +232,10 @@ const saveTemplate = async () => {
     showToast('저장되었습니다', 'success')
   } catch (error) {
     console.error('Failed to save template:', error)
-    showToast('저장 실패: ' + (error.response?.data?.message || error.message), 'error')
+    showToast(
+      '저장 실패: ' + (error.response?.data?.message || error.message),
+      'error',
+    )
   }
 }
 

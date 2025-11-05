@@ -10,8 +10,8 @@ import { useQuillEditor } from '@/composables/useQuillEditor'
 const props = defineProps({
   content: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 })
 
 const emit = defineEmits(['image-clicked'])
@@ -21,25 +21,28 @@ const { editorRef, setContent } = useQuillEditor({
   theme: 'bubble',
   placeholder: '',
   modules: {
-    blotFormatter: false
-  }
+    blotFormatter: false,
+  },
 })
 
 // Use watch to set content when the ref is available and content is passed.
-watch(() => [editorRef.value, props.content], ([newEl, newContent]) => {
-  if (newEl) {
-    // Set content
-    setContent(newContent)
+watch(
+  () => [editorRef.value, props.content],
+  ([newEl, newContent]) => {
+    if (newEl) {
+      // Set content
+      setContent(newContent)
 
-    // Add click listener for images
-    newEl.addEventListener('click', (event) => {
-      if (event.target.tagName === 'IMG') {
-        emit('image-clicked', event.target.src)
-      }
-    })
-  }
-}, { immediate: true, deep: true })
-
+      // Add click listener for images
+      newEl.addEventListener('click', (event) => {
+        if (event.target.tagName === 'IMG') {
+          emit('image-clicked', event.target.src)
+        }
+      })
+    }
+  },
+  { immediate: true, deep: true },
+)
 </script>
 
 <style>
@@ -47,8 +50,8 @@ watch(() => [editorRef.value, props.content], ([newEl, newContent]) => {
   all: revert;
 }
 .ql-bubble .ql-editor {
-    border: none;
-    padding: 0;
+  border: none;
+  padding: 0;
 }
 
 .ql-viewer :deep(.ql-editor ol),

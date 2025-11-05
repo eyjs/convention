@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-screen min-h-dvh flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
+  <div
+    class="min-h-screen min-h-dvh flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8"
+  >
     <div class="max-w-md w-full">
       <!-- 로고/제목 -->
       <div class="text-center mb-8">
@@ -13,7 +15,9 @@
         <div v-if="step === 1">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">아이디</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >아이디</label
+              >
               <input
                 v-model="form.loginId"
                 type="text"
@@ -23,7 +27,9 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">이름</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >이름</label
+              >
               <input
                 v-model="form.name"
                 type="text"
@@ -33,7 +39,9 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >전화번호</label
+              >
               <input
                 v-model="form.phoneNumber"
                 type="tel"
@@ -46,7 +54,9 @@
 
           <button
             @click="sendCode"
-            :disabled="loading || !form.loginId || !form.name || !form.phoneNumber"
+            :disabled="
+              loading || !form.loginId || !form.name || !form.phoneNumber
+            "
             class="w-full mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
           >
             {{ loading ? '전송 중...' : '인증번호 발송' }}
@@ -57,14 +67,17 @@
         <div v-if="step === 2">
           <div class="mb-6 p-4 bg-blue-50 rounded-lg">
             <p class="text-sm text-blue-900">
-              <strong>{{ form.phoneNumber }}</strong>로 인증번호를 발송했습니다.
+              <strong>{{ form.phoneNumber }}</strong
+              >로 인증번호를 발송했습니다.
             </p>
             <p class="text-xs text-blue-700 mt-1">5분 내에 입력해주세요.</p>
           </div>
 
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">인증번호</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >인증번호</label
+              >
               <input
                 v-model="form.code"
                 type="text"
@@ -75,7 +88,9 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">새 비밀번호</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >새 비밀번호</label
+              >
               <input
                 v-model="form.newPassword"
                 type="password"
@@ -85,7 +100,9 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">새 비밀번호 확인</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >새 비밀번호 확인</label
+              >
               <input
                 v-model="form.confirmPassword"
                 type="password"
@@ -95,7 +112,14 @@
             </div>
           </div>
 
-          <div v-if="form.newPassword && form.confirmPassword && form.newPassword !== form.confirmPassword" class="mt-2 text-sm text-red-600">
+          <div
+            v-if="
+              form.newPassword &&
+              form.confirmPassword &&
+              form.newPassword !== form.confirmPassword
+            "
+            class="mt-2 text-sm text-red-600"
+          >
             비밀번호가 일치하지 않습니다.
           </div>
 
@@ -108,7 +132,12 @@
             </button>
             <button
               @click="verifyAndReset"
-              :disabled="loading || form.code.length !== 6 || !form.newPassword || form.newPassword !== form.confirmPassword"
+              :disabled="
+                loading ||
+                form.code.length !== 6 ||
+                !form.newPassword ||
+                form.newPassword !== form.confirmPassword
+              "
               class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
             >
               {{ loading ? '처리 중...' : '비밀번호 재설정' }}
@@ -119,12 +148,26 @@
         <!-- Step 3: 완료 -->
         <div v-if="step === 3">
           <div class="text-center mb-6">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-              <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            <div
+              class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4"
+            >
+              <svg
+                class="w-8 h-8 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">비밀번호가 재설정되었습니다</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">
+              비밀번호가 재설정되었습니다
+            </h3>
             <p class="text-gray-600">새로운 비밀번호로 로그인해주세요.</p>
           </div>
 
@@ -144,11 +187,17 @@
 
       <!-- 하단 링크 -->
       <div class="mt-6 text-center space-y-2">
-        <router-link to="/login" class="text-sm text-gray-600 hover:text-gray-900">
+        <router-link
+          to="/login"
+          class="text-sm text-gray-600 hover:text-gray-900"
+        >
           로그인으로 돌아가기
         </router-link>
         <span class="text-gray-400 mx-2">|</span>
-        <router-link to="/find-id" class="text-sm text-gray-600 hover:text-gray-900">
+        <router-link
+          to="/find-id"
+          class="text-sm text-gray-600 hover:text-gray-900"
+        >
           아이디 찾기
         </router-link>
       </div>
@@ -173,20 +222,20 @@ const form = ref({
   phoneNumber: '',
   code: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
 const sendCode = async () => {
   loading.value = true
   error.value = ''
-  
+
   try {
     await apiClient.post('/accountrecovery/reset-password/send-code', {
       loginId: form.value.loginId,
       name: form.value.name,
-      phoneNumber: form.value.phoneNumber
+      phoneNumber: form.value.phoneNumber,
     })
-    
+
     step.value = 2
   } catch (err) {
     error.value = err.response?.data?.message || '인증번호 발송에 실패했습니다.'
@@ -208,19 +257,20 @@ const verifyAndReset = async () => {
 
   loading.value = true
   error.value = ''
-  
+
   try {
     await apiClient.post('/accountrecovery/reset-password/verify', {
       loginId: form.value.loginId,
       name: form.value.name,
       phoneNumber: form.value.phoneNumber,
       code: form.value.code,
-      newPassword: form.value.newPassword
+      newPassword: form.value.newPassword,
     })
-    
+
     step.value = 3
   } catch (err) {
-    error.value = err.response?.data?.message || '비밀번호 재설정에 실패했습니다.'
+    error.value =
+      err.response?.data?.message || '비밀번호 재설정에 실패했습니다.'
   } finally {
     loading.value = false
   }

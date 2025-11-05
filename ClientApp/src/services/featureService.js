@@ -8,7 +8,7 @@ class FeatureService {
   async getFeaturesByConvention(conventionId) {
     try {
       const response = await axios.get(
-        `${this.baseURL}/conventions/${conventionId}/features`
+        `${this.baseURL}/conventions/${conventionId}/features`,
       )
       return response
     } catch (error) {
@@ -19,9 +19,7 @@ class FeatureService {
 
   async getFeatureById(featureId) {
     try {
-      const response = await axios.get(
-        `${this.baseURL}/features/${featureId}`
-      )
+      const response = await axios.get(`${this.baseURL}/features/${featureId}`)
       return response
     } catch (error) {
       console.error('Error fetching feature details:', error)
@@ -33,7 +31,7 @@ class FeatureService {
     try {
       const response = await axios.patch(
         `${this.baseURL}/features/${featureId}/status`,
-        { isActive }
+        { isActive },
       )
       return response
     } catch (error) {
@@ -44,10 +42,7 @@ class FeatureService {
 
   async createFeature(featureData) {
     try {
-      const response = await axios.post(
-        `${this.baseURL}/features`,
-        featureData
-      )
+      const response = await axios.post(`${this.baseURL}/features`, featureData)
       return response
     } catch (error) {
       console.error('Error creating feature:', error)
@@ -59,7 +54,7 @@ class FeatureService {
     try {
       const response = await axios.put(
         `${this.baseURL}/features/${featureId}`,
-        featureData
+        featureData,
       )
       return response
     } catch (error) {
@@ -71,7 +66,7 @@ class FeatureService {
   async deleteFeature(featureId) {
     try {
       const response = await axios.delete(
-        `${this.baseURL}/features/${featureId}`
+        `${this.baseURL}/features/${featureId}`,
       )
       return response
     } catch (error) {

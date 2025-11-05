@@ -1,58 +1,56 @@
 import apiClient from './api'
 
 export const authService = {
-    async login({ role, conventionId, identifier, password }) {
-        let endpoint = ''
-        let payload = {}
+  async login({ role, conventionId, identifier, password }) {
+    let endpoint = ''
+    let payload = {}
 
-        if (role === 'admin') {
-            endpoint = '/auth/login/admin'
-            payload = {
-                memberId: identifier,
-                password: password
-            }
-        } else if (role === 'guest') {
-            endpoint = '/auth/login/guest'
-            payload = {
-                telephone: identifier,
-                conventionId: parseInt(conventionId),
-                password: password
-            }
-        } else if (role === 'companion') {
-            endpoint = '/auth/login/companion'
-            payload = {
-                telephone: identifier,
-                guestId: parseInt(conventionId),
-                password: password
-            }
-        }
-
-        const response = await apiClient.post(endpoint, payload)
-        return response.user
-    },
-
-    async getConventions() {
-        return await apiClient.get('/auth/conventions')
-    },
-
-    
-    getCurrentUser() {
-        const userStr = localStorage.getItem('user')
-        // localStorage¿¡ °ªÀÌ ¾ø°Å³ª, 'undefined' ¹®ÀÚ¿­ÀÌ°Å³ª, ºñ¾îÀÖÀ» °æ¿ì nullÀ» ¹ÝÈ¯ÇÕ´Ï´Ù.
-        if (!userStr || userStr === 'undefined') {
-            return null
-        }
-        try {
-            // ¾ÈÀüÇÏ°Ô JSON ÆÄ½ÌÀ» ½ÃµµÇÕ´Ï´Ù.
-            return JSON.parse(userStr)
-        } catch (e) {
-            console.error("Failed to parse user from localStorage:", e)
-            return null // ÆÄ½Ì ½ÇÆÐ ½Ã null ¹ÝÈ¯
-        }
-    },
-    
-
-    logout() {
-        localStorage.removeItem('user')
+    if (role === 'admin') {
+      endpoint = '/auth/login/admin'
+      payload = {
+        memberId: identifier,
+        password: password,
+      }
+    } else if (role === 'guest') {
+      endpoint = '/auth/login/guest'
+      payload = {
+        telephone: identifier,
+        conventionId: parseInt(conventionId),
+        password: password,
+      }
+    } else if (role === 'companion') {
+      endpoint = '/auth/login/companion'
+      payload = {
+        telephone: identifier,
+        guestId: parseInt(conventionId),
+        password: password,
+      }
     }
+
+    const response = await apiClient.post(endpoint, payload)
+    return response.user
+  },
+
+  async getConventions() {
+    return await apiClient.get('/auth/conventions')
+  },
+
+  getCurrentUser() {
+    const userStr = localStorage.getItem('user')
+    // localStorageï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Å³ï¿½, 'undefined' ï¿½ï¿½ï¿½Ú¿ï¿½ï¿½Ì°Å³ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ nullï¿½ï¿½ ï¿½ï¿½È¯ï¿½Õ´Ï´ï¿½.
+    if (!userStr || userStr === 'undefined') {
+      return null
+    }
+    try {
+      // ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ JSON ï¿½Ä½ï¿½ï¿½ï¿½ ï¿½Ãµï¿½ï¿½Õ´Ï´ï¿½.
+      return JSON.parse(userStr)
+    } catch (e) {
+      console.error('Failed to parse user from localStorage:', e)
+      return null // ï¿½Ä½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ null ï¿½ï¿½È¯
+    }
+  },
+
+  logout() {
+    localStorage.removeItem('user')
+  },
 }

@@ -20,20 +20,18 @@ import BlotFormatter from 'quill-blot-formatter'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import apiClient from '@/services/api'
 
-
-
 const editorModules = [
   {
     name: 'blotFormatter',
     module: BlotFormatter,
     options: {},
   },
-];
+]
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
   height: { type: String, default: '400px' },
-  placeholder: { type: String, default: '내용을 입력하세요...' }
+  placeholder: { type: String, default: '내용을 입력하세요...' },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -45,14 +43,14 @@ const editorHeight = ref(props.height)
 const toolbarOptions = [
   ['bold', 'italic', 'underline', 'strike'],
   ['blockquote', 'code-block'],
-  [{ 'header': 1 }, { 'header': 2 }],
-  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-  [{ 'indent': '-1'}, { 'indent': '+1' }],
-  [{ 'size': ['small', false, 'large', 'huge'] }],
-  [{ 'color': [] }, { 'background': [] }],
-  [{ 'align': [] }],
+  [{ header: 1 }, { header: 2 }],
+  [{ list: 'ordered' }, { list: 'bullet' }],
+  [{ indent: '-1' }, { indent: '+1' }],
+  [{ size: ['small', false, 'large', 'huge'] }],
+  [{ color: [] }, { background: [] }],
+  [{ align: [] }],
   ['link', 'image'],
-  ['clean']
+  ['clean'],
 ]
 
 function onEditorReady(quill) {
@@ -67,7 +65,7 @@ async function imageHandler() {
   input.setAttribute('type', 'file')
   input.setAttribute('accept', 'image/*')
   input.setAttribute('multiple', 'multiple')
-  
+
   input.onchange = async () => {
     const files = Array.from(input.files)
     if (!files.length) return
@@ -100,7 +98,7 @@ async function uploadImage(file) {
   formData.append('file', file)
 
   const response = await apiClient.post('/file/upload/image', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: { 'Content-Type': 'multipart/form-data' },
   })
 
   return response.data.url
@@ -114,7 +112,7 @@ function handlePaste(quill) {
     for (const item of items) {
       if (item.type.indexOf('image') !== -1) {
         e.preventDefault()
-        
+
         const file = item.getAsFile()
         const range = quill.getSelection()
 
@@ -133,9 +131,9 @@ function handlePaste(quill) {
 function handleDrop(quill) {
   quill.root.addEventListener('drop', async (e) => {
     e.preventDefault()
-    
-    const files = Array.from(e.dataTransfer.files).filter(file => 
-      file.type.startsWith('image/')
+
+    const files = Array.from(e.dataTransfer.files).filter((file) =>
+      file.type.startsWith('image/'),
     )
 
     if (!files.length) return
@@ -158,12 +156,14 @@ function handleDrop(quill) {
 
 async function convertBase64ToFile(quill) {
   const imgTags = quill.root.querySelectorAll('img[src^="data:image"]')
-  
+
   for (const img of imgTags) {
     try {
       const base64Data = img.src
-      const blob = await fetch(base64Data).then(r => r.blob())
-      const file = new File([blob], `paste-${Date.now()}.png`, { type: blob.type })
+      const blob = await fetch(base64Data).then((r) => r.blob())
+      const file = new File([blob], `paste-${Date.now()}.png`, {
+        type: blob.type,
+      })
 
       const imageUrl = await uploadImage(file)
       img.src = imageUrl
@@ -177,11 +177,14 @@ watch(content, (newValue) => {
   emit('update:modelValue', newValue)
 })
 
-watch(() => props.modelValue, (newValue) => {
-  if (newValue !== content.value) {
-    content.value = newValue
-  }
-})
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    if (newValue !== content.value) {
+      content.value = newValue
+    }
+  },
+)
 
 defineExpose({
   async beforeSave() {
@@ -190,7 +193,7 @@ defineExpose({
       await convertBase64ToFile(quill)
     }
     return content.value
-  }
+  },
 })
 </script>
 

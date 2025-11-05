@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./index.html",
-    "./src/**/*.{vue,js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -32,7 +29,7 @@ module.exports = {
           700: '#334155',
           800: '#1e293b',
           900: '#0f172a',
-        }
+        },
       },
       fontFamily: {
         sans: [
@@ -51,9 +48,9 @@ module.exports = {
         ],
       },
       boxShadow: {
-        'card': '0 2px 8px rgba(0, 0, 0, 0.08)',
+        card: '0 2px 8px rgba(0, 0, 0, 0.08)',
         'card-hover': '0 4px 12px rgba(0, 0, 0, 0.12)',
-        'float': '0 8px 24px rgba(0, 0, 0, 0.15)',
+        float: '0 8px 24px rgba(0, 0, 0, 0.15)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',

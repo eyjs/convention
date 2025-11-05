@@ -16,42 +16,48 @@ export const TARGET_LOCATIONS = [
   {
     key: 'GLOBAL_ROOT_POPUP',
     displayName: 'App Global (Popup)',
-    description: 'Spans the entire app over any page. Used mainly for auto-opening popups after login.',
+    description:
+      'Spans the entire app over any page. Used mainly for auto-opening popups after login.',
     page: 'App.vue (Global)',
     allowedCategories: ['AUTO_POPUP'],
   },
   {
     key: 'HOME_SUB_HEADER',
     displayName: 'Home: Below Main Title',
-    description: 'Adds features directly below the main banner on the Home screen.',
+    description:
+      'Adds features directly below the main banner on the Home screen.',
     page: 'ConventionHome.vue',
     allowedCategories: ['BUTTON', 'BANNER', 'CARD'],
   },
   {
     key: 'HOME_CONTENT_TOP',
     displayName: 'Home: Top of Content Area',
-    description: 'Adds features at the top of the main content section, before the checklist.',
+    description:
+      'Adds features at the top of the main content section, before the checklist.',
     page: 'ConventionHome.vue',
     allowedCategories: ['BUTTON', 'BANNER', 'CARD'],
   },
   {
     key: 'SCHEDULE_CONTENT_TOP',
     displayName: 'My Schedule: Below Date Filter',
-    description: 'Adds features below the horizontal date-selector strip on the "My Schedule" page.',
+    description:
+      'Adds features below the horizontal date-selector strip on the "My Schedule" page.',
     page: 'MySchedule.vue',
     allowedCategories: ['BUTTON', 'BANNER', 'CARD'],
   },
   {
     key: 'BOARD_CONTENT_TOP',
     displayName: 'Notice Board: Below Category Filter',
-    description: 'Adds features below the category filter tabs on the "Notice Board" page.',
+    description:
+      'Adds features below the category filter tabs on the "Notice Board" page.',
     page: 'Board.vue',
     allowedCategories: ['BUTTON', 'BANNER'],
   },
   {
     key: 'MORE_FEATURES_GRID',
     displayName: 'More Features: Menu Grid',
-    description: 'Adds new menu items to the main grid on the "More Features" screen.',
+    description:
+      'Adds new menu items to the main grid on the "More Features" screen.',
     page: 'MoreFeaturesView.vue',
     allowedCategories: ['MENU'],
   },
@@ -62,7 +68,7 @@ export const TARGET_LOCATIONS = [
     page: 'Participants.vue',
     allowedCategories: ['BUTTON', 'BANNER'],
   },
-];
+]
 
 /**
  * Helper function to get target location by key
@@ -70,7 +76,7 @@ export const TARGET_LOCATIONS = [
  * @returns {TargetLocation|undefined}
  */
 export function getTargetLocation(key) {
-  return TARGET_LOCATIONS.find(location => location.key === key);
+  return TARGET_LOCATIONS.find((location) => location.key === key)
 }
 
 /**
@@ -78,7 +84,7 @@ export function getTargetLocation(key) {
  * @returns {string[]}
  */
 export function getTargetLocationKeys() {
-  return TARGET_LOCATIONS.map(location => location.key);
+  return TARGET_LOCATIONS.map((location) => location.key)
 }
 
 /**
@@ -86,12 +92,12 @@ export function getTargetLocationKeys() {
  * @returns {Array<{value: string, label: string, description: string, page: string}>}
  */
 export function getTargetLocationOptions() {
-  return TARGET_LOCATIONS.map(location => ({
+  return TARGET_LOCATIONS.map((location) => ({
     value: location.key,
     label: location.displayName,
     description: location.description,
     page: location.page,
-  }));
+  }))
 }
 
 /**
@@ -100,9 +106,9 @@ export function getTargetLocationOptions() {
  * @returns {TargetLocation[]}
  */
 export function getAllowedLocationsForCategory(categoryKey) {
-  return TARGET_LOCATIONS.filter(location =>
-    location.allowedCategories.includes(categoryKey)
-  );
+  return TARGET_LOCATIONS.filter((location) =>
+    location.allowedCategories.includes(categoryKey),
+  )
 }
 
 /**
@@ -112,8 +118,8 @@ export function getAllowedLocationsForCategory(categoryKey) {
  * @returns {boolean}
  */
 export function isCategoryAllowedAtLocation(categoryKey, locationKey) {
-  const location = getTargetLocation(locationKey);
-  return location ? location.allowedCategories.includes(categoryKey) : false;
+  const location = getTargetLocation(locationKey)
+  return location ? location.allowedCategories.includes(categoryKey) : false
 }
 
 /**
@@ -121,12 +127,12 @@ export function isCategoryAllowedAtLocation(categoryKey, locationKey) {
  * @returns {Object<string, TargetLocation[]>}
  */
 export function getLocationsByPage() {
-  const grouped = {};
-  TARGET_LOCATIONS.forEach(location => {
+  const grouped = {}
+  TARGET_LOCATIONS.forEach((location) => {
     if (!grouped[location.page]) {
-      grouped[location.page] = [];
+      grouped[location.page] = []
     }
-    grouped[location.page].push(location);
-  });
-  return grouped;
+    grouped[location.page].push(location)
+  })
+  return grouped
 }
