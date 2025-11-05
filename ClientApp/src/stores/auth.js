@@ -133,6 +133,43 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+      function incrementUnreadCount(conventionId) {
+        if (!user.value) return
+  
+        if (user.value.conventions && Array.isArray(user.value.conventions)) {
+          user.value.conventions = user.value.conventions.map(c => {
+            if (c.id === conventionId) {
+              return { ...c, unreadCount: (c.unreadCount || 0) + 1 };
+            }
+            return c;
+          });
+        }
+        else if (user.value.conventionId === conventionId) {
+          user.value = {
+              ...user.value,
+              unreadCount: (user.value.unreadCount || 0) + 1
+          };
+        }
+      }
+  
+      function resetUnreadCount(conventionId) {
+        if (!user.value) return
+  
+        if (user.value.conventions && Array.isArray(user.value.conventions)) {
+          user.value.conventions = user.value.conventions.map(c => {
+            if (c.id === conventionId) {
+              return { ...c, unreadCount: 0 };
+            }
+            return c;
+          });
+        }
+        else if (user.value.conventionId === conventionId) {
+          user.value = {
+              ...user.value,
+              unreadCount: 0
+          };
+        }
+      }
   return {
     user,
     accessToken,
@@ -149,5 +186,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     fetchCurrentUser,
+    incrementUnreadCount,
+    resetUnreadCount,
   }
 })

@@ -146,6 +146,11 @@
       <div v-if="activeTab === 'upload'">
         <BulkUpload :convention-id="conventionId" />
       </div>
+
+      <!-- 데이터베이스 -->
+      <div v-if="activeTab === 'database'">
+        <DatabaseMigration />
+      </div>
     </div>
   </div>
 </template>
@@ -157,6 +162,7 @@ import { useAuthStore } from '@/stores/auth'
 import { conventionAPI } from '@/services/api'
 import DashboardOverview from '@/components/admin/DashboardOverview.vue'
 import GuestManagement from '@/components/admin/GuestManagement.vue'
+import DatabaseMigration from '@/components/admin/DatabaseMigration.vue'
 import ScheduleManagement from '@/components/admin/ScheduleManagement.vue'
 import ActionManagement from '@/components/admin/ActionManagement.vue'
 import BulkUpload from '@/components/admin/BulkUpload.vue'
@@ -192,6 +198,7 @@ const tabs = [
   { id: 'attributes', name: '속성 템플릿', shortName: '속성' },
   { id: 'board', name: '게시판 관리', shortName: '게시판' },
   { id: 'upload', name: '엑셀 업로드', shortName: '업로드' },
+  { id: 'database', name: 'DB 관리', shortName: 'DB' },
 ]
 
 onMounted(async () => {

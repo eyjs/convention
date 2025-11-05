@@ -59,7 +59,7 @@ class ConventionChatService {
       this.connection &&
       this.connection.state === signalR.HubConnectionState.Connected
     ) {
-      return this.connection.invoke('SendMessage', message)
+      return this.connection.invoke('SendMessage', message, this.conventionId)
     }
     return Promise.reject('SignalR connection not established.')
   }

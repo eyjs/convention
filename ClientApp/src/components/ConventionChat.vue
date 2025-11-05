@@ -148,6 +148,10 @@ onMounted(async () => {
   // Mark chat as read
   chatAPI
     .markAsRead(props.conventionId)
+    .then(() => {
+      // 읽음 처리 성공 시 로컬 unread count도 초기화
+      authStore.resetUnreadCount(props.conventionId)
+    })
     .catch((err) => console.error('Failed to mark chat as read:', err))
 
   if (props.conventionId && props.token) {

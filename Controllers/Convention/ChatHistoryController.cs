@@ -38,21 +38,26 @@ namespace LocalRAG.Controllers.Convention
             }
             try
             {
-                var messagesFromDb = await _context.ConventionChatMessages
+                var messages = await _context.ConventionChatMessages
                     .Where(m => m.ConventionId == conventionId)
                     .OrderBy(m => m.CreatedAt)
+                    .Join( // Join with the Users table
+                        _context.Users,
+                        chatMessage => chatMessage.UserId, // Key from ConventionChatMessages
+                        user => user.Id,                   // Key from Users
+                        (chatMessage, user) => new ChatHistoryMessageDto // Project into the DTO
+                        {
+                            userId = chatMessage.UserId,
+                            userName = chatMessage.IsAdmin
+                                ? $"[관리자] {user.Name}"
+                                : user.Name,
+                            message = chatMessage.Message,
+                            createdAt = chatMessage.CreatedAt.ToString("o"),
+                            isAdmin = chatMessage.IsAdmin
+                        })
                     .ToListAsync();
-                var result = messagesFromDb.Select(m => new ChatHistoryMessageDto
-                {
-                    userId = m.UserId,
-                    userName = m.IsAdmin
-                        ? $"[관리자] {m.UserName ?? "Unknown User"}"
-                        : m.UserName ?? "Unknown User",
-                    message = m.Message,
-                    createdAt = m.CreatedAt.ToString("o"),
-                    isAdmin = m.IsAdmin
-                });
-                return Ok(result);
+
+                return Ok(messages);
             }
             catch (Exception ex)
             {

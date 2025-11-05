@@ -10,7 +10,8 @@
       "Bash(chmod:*)",
       "Bash(dir:*)",
       "Bash(Test-Path \"models/all-MiniLM-L6-v2.onnx\")",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

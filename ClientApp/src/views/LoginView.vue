@@ -122,307 +122,56 @@
           </form>
 
           <!-- 회원가입 폼 -->
-
-          <form
-            v-if="activeTab === 'register'"
-            @submit.prevent="handleRegister"
-            class="space-y-4"
-          >
+          <form v-if="activeTab === 'register'" @submit.prevent="handleRegister" class="space-y-4">
             <div class="text-left">
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >아이디 *</label
-              >
-
-              <input
-                v-model="registerForm.loginId"
-                @blur="validation.loginId.touched = true"
-                type="text"
-                required
-                class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800"
-                :class="{
-                  'border-red-500 focus:border-red-500 focus:ring-red-200':
-                    validation.loginId.touched && !validation.loginId.isValid,
-                  'border-green-500 focus:border-green-500 focus:ring-green-200':
-                    validation.loginId.touched && validation.loginId.isValid,
-                }"
-                placeholder="2자 이상"
-              />
-
-              <div
-                v-if="validation.loginId.touched && validation.loginId.message"
-                class="mt-1 text-xs flex items-center"
-                :class="
-                  validation.loginId.isValid ? 'text-green-600' : 'text-red-600'
-                "
-              >
-                <svg
-                  v-if="validation.loginId.isValid"
-                  class="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  ></path>
-                </svg>
-
+              <label class="block text-sm font-medium text-gray-700 mb-1">아이디 *</label>
+              <input v-model="registerForm.loginId" @blur="validation.loginId.touched = true" type="text" required class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800" :class="{'border-red-500 focus:border-red-500 focus:ring-red-200': validation.loginId.touched && !validation.loginId.isValid, 'border-green-500 focus:border-green-500 focus:ring-green-200': validation.loginId.touched && validation.loginId.isValid}" placeholder="2자 이상" />
+              <div v-if="validation.loginId.touched && validation.loginId.message" class="mt-1 text-xs flex items-center" :class="validation.loginId.isValid ? 'text-green-600' : 'text-red-600'">
+                <svg v-if="validation.loginId.isValid" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 <span>{{ validation.loginId.message }}</span>
               </div>
             </div>
-
             <div class="text-left">
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >비밀번호 *</label
-              >
-
-              <input
-                v-model="registerForm.password"
-                @blur="validation.password.touched = true"
-                type="password"
-                required
-                minlength="6"
-                class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800"
-                :class="{
-                  'border-red-500 focus:border-red-500 focus:ring-red-200':
-                    validation.password.touched && !validation.password.isValid,
-                  'border-green-500 focus:border-green-500 focus:ring-green-200':
-                    validation.password.touched && validation.password.isValid,
-                }"
-                placeholder="6자 이상"
-              />
-
-              <div
-                v-if="
-                  validation.password.touched && validation.password.message
-                "
-                class="mt-1 text-xs flex items-center"
-                :class="
-                  validation.password.isValid
-                    ? 'text-green-600'
-                    : 'text-red-600'
-                "
-              >
-                <svg
-                  v-if="validation.password.isValid"
-                  class="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  ></path>
-                </svg>
-
+              <label class="block text-sm font-medium text-gray-700 mb-1">비밀번호 *</label>
+              <input v-model="registerForm.password" @blur="validation.password.touched = true" type="password" required minlength="6" class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800" :class="{'border-red-500 focus:border-red-500 focus:ring-red-200': validation.password.touched && !validation.password.isValid, 'border-green-500 focus:border-green-500 focus:ring-green-200': validation.password.touched && validation.password.isValid}" placeholder="6자 이상" />
+              <div v-if="validation.password.touched && validation.password.message" class="mt-1 text-xs flex items-center" :class="validation.password.isValid ? 'text-green-600' : 'text-red-600'">
+                <svg v-if="validation.password.isValid" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 <span>{{ validation.password.message }}</span>
               </div>
             </div>
-
             <div class="text-left">
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >비밀번호 확인 *</label
-              >
-
-              <input
-                v-model="registerForm.passwordConfirm"
-                @blur="validation.passwordConfirm.touched = true"
-                type="password"
-                required
-                class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800"
-                :class="{
-                  'border-red-500 focus:border-red-500 focus:ring-red-200':
-                    validation.passwordConfirm.touched &&
-                    !validation.passwordConfirm.isValid,
-                  'border-green-500 focus:border-green-500 focus:ring-green-200':
-                    validation.passwordConfirm.touched &&
-                    validation.passwordConfirm.isValid,
-                }"
-                placeholder="비밀번호 재입력"
-              />
-
-              <div
-                v-if="
-                  validation.passwordConfirm.touched &&
-                  validation.passwordConfirm.message
-                "
-                class="mt-1 text-xs flex items-center"
-                :class="
-                  validation.passwordConfirm.isValid
-                    ? 'text-green-600'
-                    : 'text-red-600'
-                "
-              >
-                <svg
-                  v-if="validation.passwordConfirm.isValid"
-                  class="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  ></path>
-                </svg>
-
+              <label class="block text-sm font-medium text-gray-700 mb-1">비밀번호 확인 *</label>
+              <input v-model="registerForm.passwordConfirm" @blur="validation.passwordConfirm.touched = true" type="password" required class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800" :class="{'border-red-500 focus:border-red-500 focus:ring-red-200': validation.passwordConfirm.touched && !validation.passwordConfirm.isValid, 'border-green-500 focus:border-green-500 focus:ring-green-200': validation.passwordConfirm.touched && validation.passwordConfirm.isValid}" placeholder="비밀번호 재입력" />
+              <div v-if="validation.passwordConfirm.touched && validation.passwordConfirm.message" class="mt-1 text-xs flex items-center" :class="validation.passwordConfirm.isValid ? 'text-green-600' : 'text-red-600'">
+                <svg v-if="validation.passwordConfirm.isValid" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 <span>{{ validation.passwordConfirm.message }}</span>
               </div>
             </div>
-
             <div class="text-left">
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >이름 *</label
-              >
-
-              <input
-                v-model="registerForm.name"
-                @blur="validation.name.touched = true"
-                type="text"
-                required
-                class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800"
-                :class="{
-                  'border-red-500 focus:border-red-500 focus:ring-red-200':
-                    validation.name.touched && !validation.name.isValid,
-                  'border-green-500 focus:border-green-500 focus:ring-green-200':
-                    validation.name.touched && validation.name.isValid,
-                }"
-                placeholder="이름"
-              />
-
-              <div
-                v-if="validation.name.touched && validation.name.message"
-                class="mt-1 text-xs flex items-center"
-                :class="
-                  validation.name.isValid ? 'text-green-600' : 'text-red-600'
-                "
-              >
-                <svg
-                  v-if="validation.name.isValid"
-                  class="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  ></path>
-                </svg>
-
+              <label class="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
+              <input v-model="registerForm.name" @blur="validation.name.touched = true" type="text" required class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800" :class="{'border-red-500 focus:border-red-500 focus:ring-red-200': validation.name.touched && !validation.name.isValid, 'border-green-500 focus:border-green-500 focus:ring-green-200': validation.name.touched && validation.name.isValid}" placeholder="이름" />
+              <div v-if="validation.name.touched && validation.name.message" class="mt-1 text-xs flex items-center" :class="validation.name.isValid ? 'text-green-600' : 'text-red-600'">
+                <svg v-if="validation.name.isValid" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 <span>{{ validation.name.message }}</span>
               </div>
             </div>
-
             <div class="text-left">
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >이메일</label
-              >
-
-              <input
-                v-model="registerForm.email"
-                @blur="validation.email.touched = true"
-                type="email"
-                class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800"
-                :class="{
-                  'border-red-500 focus:border-red-500 focus:ring-red-200':
-                    validation.email.touched && !validation.email.isValid,
-                  'border-green-500 focus:border-green-500 focus:ring-green-200':
-                    validation.email.touched &&
-                    validation.email.isValid &&
-                    registerForm.email,
-                }"
-                placeholder="example@email.com"
-              />
-
-              <div
-                v-if="validation.email.touched && validation.email.message"
-                class="mt-1 text-xs flex items-center"
-                :class="
-                  validation.email.isValid ? 'text-green-600' : 'text-red-600'
-                "
-              >
-                <svg
-                  v-if="validation.email.isValid && registerForm.email"
-                  class="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  ></path>
-                </svg>
-
+              <label class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+              <input v-model="registerForm.email" @blur="validation.email.touched = true" type="email" class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800" :class="{'border-red-500 focus:border-red-500 focus:ring-red-200': validation.email.touched && !validation.email.isValid, 'border-green-500 focus:border-green-500 focus:ring-green-200': validation.email.touched && validation.email.isValid && registerForm.email}" placeholder="example@email.com" />
+              <div v-if="validation.email.touched && validation.email.message" class="mt-1 text-xs flex items-center" :class="validation.email.isValid ? 'text-green-600' : 'text-red-600'">
+                <svg v-if="validation.email.isValid && registerForm.email" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 <span>{{ validation.email.message }}</span>
               </div>
             </div>
-
             <div class="text-left">
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >전화번호</label
-              >
-
-              <input
-                v-model="registerForm.phone"
-                @blur="validation.phone.touched = true"
-                type="tel"
-                class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800"
-                :class="{
-                  'border-red-500 focus:border-red-500 focus:ring-red-200':
-                    validation.phone.touched && !validation.phone.isValid,
-                  'border-green-500 focus:border-green-500 focus:ring-green-200':
-                    validation.phone.touched &&
-                    validation.phone.isValid &&
-                    registerForm.phone,
-                }"
-                placeholder="전화번호 (- 없이 입력 가능)"
-              />
-
-              <div
-                v-if="validation.phone.touched && validation.phone.message"
-                class="mt-1 text-xs flex items-center"
-                :class="
-                  validation.phone.isValid ? 'text-green-600' : 'text-red-600'
-                "
-              >
-                <svg
-                  v-if="validation.phone.isValid && registerForm.phone"
-                  class="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  ></path>
-                </svg>
-
+              <label class="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+              <input v-model="registerForm.phone" @blur="validation.phone.touched = true" type="tel" class="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none transition-all text-gray-800" :class="{'border-red-500 focus:border-red-500 focus:ring-red-200': validation.phone.touched && !validation.phone.isValid, 'border-green-500 focus:border-green-500 focus:ring-green-200': validation.phone.touched && validation.phone.isValid && registerForm.phone}" placeholder="전화번호 (- 없이 입력 가능)" />
+              <div v-if="validation.phone.touched && validation.phone.message" class="mt-1 text-xs flex items-center" :class="validation.phone.isValid ? 'text-green-600' : 'text-red-600'">
+                <svg v-if="validation.phone.isValid && registerForm.phone" class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 <span>{{ validation.phone.message }}</span>
               </div>
             </div>
-
-            <button
-              type="submit"
-              :disabled="authStore.loading || !isRegistrationFormValid"
-              class="w-full py-3 bg-[#17B185] text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
+            <button type="submit" :disabled="authStore.loading || !isRegistrationFormValid" class="w-full py-3 bg-[#17B185] text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed">
               {{ authStore.loading ? '처리 중...' : '회원가입' }}
             </button>
           </form>

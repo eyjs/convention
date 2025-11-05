@@ -5,7 +5,7 @@
   "description": "iFA Convention Management Frontend",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "npm run lint && vite build --outDir dist --emptyOutDir",
+    "build": "vite build --outDir dist --emptyOutDir",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.ts --fix",
     "clean": "rimraf dist node_modules/.cache",

@@ -171,6 +171,9 @@ builder.Services.AddScoped<IScheduleTemplateUploadService, LocalRAG.Services.Upl
 builder.Services.AddScoped<IAttributeUploadService, LocalRAG.Services.Upload.AttributeUploadService>();
 builder.Services.AddScoped<IGroupScheduleMappingService, LocalRAG.Services.Upload.GroupScheduleMappingService>();
 
+// --- Admin 서비스 등록 ---
+builder.Services.AddScoped<LocalRAG.Services.Admin.MigrationAnalyzer>();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

@@ -1,63 +1,63 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
+using System.Security.Claims;
 using LocalRAG.Data;
 using LocalRAG.Entities;
 
-using System.Security.Claims;
-using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
+namespace LocalRAG.Hubs;
 
-namespace LocalRAG.Hubs
+public class ParticipantInfo
 {
-    public class ParticipantInfo
+    public string Name { get; set; } = string.Empty;
+    public string Affiliation { get; set; } = string.Empty;
+    public string CorpPart { get; set; } = string.Empty;
+}
+
+public class ChatHub : Hub
+{
+    private readonly ConventionDbContext _context;
+    private readonly ILogger<ChatHub> _logger;
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, ParticipantInfo>> _rooms = new();
+
+    public ChatHub(ConventionDbContext context, ILogger<ChatHub> logger)
     {
-        public required string Name { get; set; }
-        public required string Affiliation { get; set; }
-        public string? CorpPart { get; set; }
+        _context = context;
+        _logger = logger;
     }
 
-    [Authorize]
-    public class ChatHub : Hub
-    {
-        private readonly ConventionDbContext _context;
-        private readonly ILogger<ChatHub> _logger;
-        // RoomName -> (ConnectionId -> ParticipantInfo)
-        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, ParticipantInfo>> _rooms = new ConcurrentDictionary<string, ConcurrentDictionary<string, ParticipantInfo>>();
+    private string GetRoomName(string conventionId) => $"convention-{conventionId}";
 
-        public ChatHub(ConventionDbContext context, ILogger<ChatHub> logger)
+    public override async Task OnConnectedAsync()
+    {
+        var httpContext = Context.GetHttpContext();
+        if (httpContext == null) { Context.Abort(); return; }
+
+        var userIdStr = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
         {
-            _context = context;
-            _logger = logger;
+            _logger.LogWarning("Connection aborted: User ID is missing or invalid.");
+            Context.Abort();
+            return;
         }
 
-        public override async Task OnConnectedAsync()
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
         {
-            var httpContext = Context.GetHttpContext();
-            if (httpContext == null) { Context.Abort(); return; }
+            _logger.LogWarning($"Connection aborted: User with ID {userId} not found.");
+            Context.Abort();
+            return;
+        }
 
-            var conventionIdStr = httpContext.Request.Query["conventionId"].ToString();
-            if (string.IsNullOrEmpty(conventionIdStr) || !int.TryParse(conventionIdStr, out var conventionId)) 
-            { 
-                Context.Abort(); 
-                return; 
-            }
+        // 1. 개인 그룹에 자동 가입 (Unread count 알림용)
+        var userGroup = $"user-{userId}";
+        await Groups.AddToGroupAsync(Context.ConnectionId, userGroup);
+        _logger.LogInformation($"Client {Context.ConnectionId} ({user.Name}) joined personal group {userGroup}.");
 
-            var userIdStr = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
-            {
-                Context.Abort();
-                return;
-            }
-
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null)
-            {
-                Context.Abort();
-                return;
-            }
-
+        // 2. Convention 채팅방 그룹 가입 (conventionId가 있는 경우에만)
+        var conventionIdStr = httpContext.Request.Query["conventionId"].ToString();
+        if (!string.IsNullOrEmpty(conventionIdStr) && int.TryParse(conventionIdStr, out var conventionId))
+        {
             var roomName = GetRoomName(conventionIdStr);
             var room = _rooms.GetOrAdd(roomName, new ConcurrentDictionary<string, ParticipantInfo>());
 
@@ -76,69 +76,89 @@ namespace LocalRAG.Hubs
 
             await Clients.Group(roomName).SendAsync("UpdateParticipantCount", room.Count);
             await Clients.Group(roomName).SendAsync("UpdateParticipantList", room.Values.ToList());
-            
-            await base.OnConnectedAsync();
         }
 
-        public async Task SendMessage(string message)
-        {
-            var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier);
-            var userNameClaim = Context.User?.FindFirst(ClaimTypes.Name);
-            var isAdminClaim = Context.User?.FindFirst(ClaimTypes.Role)?.Value == "Admin";
+        await base.OnConnectedAsync();
+    }
+    
+    public async Task JoinUserGroup(int userId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"user-{userId}");
+        _logger.LogInformation($"Client {Context.ConnectionId} explicitly joined user group: user-{userId}");
+    }
 
-            if (userIdClaim == null || userNameClaim == null || !Context.Items.TryGetValue("ConventionId", out var conventionIdObj) || conventionIdObj is not int conventionId)
+    public async Task SendMessage(string message, int conventionId)
+    {
+        var userIdStr = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+        {
+            _logger.LogWarning("SendMessage aborted: User ID is missing or invalid.");
+            return;
+        }
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return;
+
+        var chatMessage = new ConventionChatMessage
+        {
+            ConventionId = conventionId,
+            UserId = userId,
+            Message = message,
+            CreatedAt = DateTime.UtcNow,
+            IsAdmin = user.Role == "Admin"
+        };
+
+        _context.ConventionChatMessages.Add(chatMessage);
+        await _context.SaveChangesAsync();
+
+        var roomName = GetRoomName(conventionId.ToString());
+
+        // 1. 채팅방에 있는 모든 클라이언트에게 메시지 전송
+        await Clients.Group(roomName).SendAsync("ReceiveMessage", new
+        {
+            userId = chatMessage.UserId,
+            userName = user.Name,
+            message = chatMessage.Message,
+            createdAt = chatMessage.CreatedAt.ToString("o"), // ISO 8601 format
+            isAdmin = chatMessage.IsAdmin
+        });
+
+        // 2. 실시간 unread count 업데이트: 해당 convention 참가자들에게 알림
+        var participantUserIds = await _context.UserConventions
+            .Where(uc => uc.ConventionId == conventionId)
+            .Select(uc => uc.UserId)
+            .Distinct()
+            .ToListAsync();
+
+        // 각 참가자에게 개인 알림 전송 (본인 제외)
+        foreach (var participantId in participantUserIds)
+        {
+            if (participantId != userId) // 메시지 보낸 사람 제외
             {
-                _logger.LogWarning($"SendMessage aborted: Missing claims or ConventionId from context for user {Context.UserIdentifier}.");
-                return;
+                var userGroup = $"user-{participantId}";
+                await Clients.Group(userGroup).SendAsync("UnreadCountIncrement", new
+                {
+                    conventionId = conventionId
+                });
             }
-
-            var userId = int.Parse(userIdClaim.Value);
-            var userName = userNameClaim.Value;
-
-            var chatMessage = new ConventionChatMessage
-            {
-                ConventionId = conventionId,
-                UserId = userId,
-                UserName = userName,
-                Message = message,
-                IsAdmin = isAdminClaim,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.ConventionChatMessages.Add(chatMessage);
-            await _context.SaveChangesAsync();
-
-            var displayName = isAdminClaim ? $"[관리자] {userName}" : userName;
-            var roomName = GetRoomName(conventionId.ToString());
-
-            await Clients.Group(roomName).SendAsync("ReceiveMessage", new
-            {
-                userId = chatMessage.UserId,
-                userName = displayName,
-                message = chatMessage.Message,
-                createdAt = chatMessage.CreatedAt.ToString("o"), // ISO 8601 format
-                isAdmin = chatMessage.IsAdmin
-            });
         }
+    }
 
-        public override async Task OnDisconnectedAsync(Exception? exception)
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        if (Context.Items.TryGetValue("ConventionId", out var conventionIdObj) && conventionIdObj is int conventionId)
         {
-            var roomPair = _rooms.FirstOrDefault(p => p.Value.ContainsKey(Context.ConnectionId));
-            if (!roomPair.Equals(default(KeyValuePair<string, ConcurrentDictionary<string, ParticipantInfo>>)))
+            var roomName = GetRoomName(conventionId.ToString());
+            if (_rooms.TryGetValue(roomName, out var room))
             {
-                var roomName = roomPair.Key;
-                var room = roomPair.Value;
                 if (room.TryRemove(Context.ConnectionId, out _))
                 {
-                    _logger.LogInformation($"Client {Context.ConnectionId} disconnected from room {roomName}.");
                     await Clients.Group(roomName).SendAsync("UpdateParticipantCount", room.Count);
                     await Clients.Group(roomName).SendAsync("UpdateParticipantList", room.Values.ToList());
+                    _logger.LogInformation($"Client {Context.ConnectionId} disconnected from room {roomName}.");
                 }
             }
-
-            await base.OnDisconnectedAsync(exception);
         }
-
-        private string GetRoomName(string conventionId) => $"convention-{conventionId}";
+        await base.OnDisconnectedAsync(exception);
     }
 }

@@ -639,8 +639,8 @@
           <div class="flex justify-end mt-6">
             <button
               @click="
-                showCopyScheduleModal = false
-                searchQuery = ''
+                showCopyScheduleModal = false;
+                searchQuery = '';
               "
               class="px-4 py-2 border rounded-lg hover:bg-gray-50"
             >
