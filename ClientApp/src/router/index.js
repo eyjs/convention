@@ -139,7 +139,7 @@ const routes = [
     },
   },
   {
-    path: '/feature/survey/:actionType',
+      path: '/feature/surveys/:id',
     name: 'Survey',
     component: () => import('@/views/feature/Survey.vue'),
     meta: {

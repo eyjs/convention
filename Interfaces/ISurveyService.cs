@@ -1,12 +1,16 @@
-using System.Threading.Tasks;
 using LocalRAG.DTOs.SurveyModels;
-using LocalRAG.Entities;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace LocalRAG.Interfaces
 {
     public interface ISurveyService
     {
-        Task<int> SaveSurveyResponse(string actionType, int guestId, SurveyResponseDto responseDto);
-        Task<SurveyResponse?> GetSurveyResponse(string actionType, int guestId);
+        Task<IEnumerable<SurveyDto>> GetAllSurveysAsync();
+        Task<SurveyDto> GetSurveyAsync(int id);
+        Task<SurveyDto> CreateSurveyAsync(SurveyCreateDto createDto);
+        Task<SurveyDto> UpdateSurveyAsync(int id, SurveyCreateDto updateDto);
+        Task SubmitSurveyAsync(int surveyId, SurveySubmissionDto submissionDto, string userId);
+        Task<SurveyStatsDto> GetSurveyStatsAsync(int id);
     }
 }

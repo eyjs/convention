@@ -43,8 +43,11 @@ public class ConventionDbContext : DbContext
     public DbSet<VectorDataEntry> VectorDataEntries { get; set; } //  DbSet 추가
     
     public DbSet<LlmSetting> LlmSettings { get; set; }
+    public DbSet<Survey> Surveys { get; set; }
+    public DbSet<SurveyQuestion> SurveyQuestions { get; set; }
+    public DbSet<QuestionOption> QuestionOptions { get; set; }
     public DbSet<SurveyResponse> SurveyResponses { get; set; }
-    public DbSet<SurveyResponseAnswer> SurveyResponseAnswers { get; set; }
+    public DbSet<ResponseDetail> ResponseDetails { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -451,33 +454,50 @@ public class ConventionDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<SurveyResponse>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.SubmittedAt).HasDefaultValueSql("getdate()");
+        // Survey
+        modelBuilder.Entity<Survey>()
+            .HasMany(s => s.Questions)
+            .WithOne(q => q.Survey)
+            .HasForeignKey(q => q.SurveyId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasIndex(e => e.UserId).HasDatabaseName("IX_SurveyResponse_UserId");
-            entity.HasIndex(e => e.ConventionActionId).HasDatabaseName("IX_SurveyResponse_ConventionActionId");
+        modelBuilder.Entity<Survey>()
+            .HasMany(s => s.Responses)
+            .WithOne(r => r.Survey)
+            .HasForeignKey(r => r.SurveyId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(e => e.ConventionAction)
-                .WithMany()
-                .HasForeignKey(e => e.ConventionActionId)
-                .OnDelete(DeleteBehavior.Cascade);
+        // SurveyQuestion
+        modelBuilder.Entity<SurveyQuestion>()
+            .HasMany(q => q.Options)
+            .WithOne(o => o.Question)
+            .HasForeignKey(o => o.QuestionId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(e => e.User)
-                .WithMany()
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.NoAction);
-        });
+        // SurveyResponse
+        modelBuilder.Entity<SurveyResponse>()
+            .HasMany(r => r.Details)
+            .WithOne(d => d.Response)
+            .HasForeignKey(d => d.ResponseId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<SurveyResponseAnswer>(entity =>
-        {
-            entity.HasKey(e => e.Id);
+        modelBuilder.Entity<SurveyResponse>()
+            .HasOne(sr => sr.User)
+            .WithMany()
+            .HasForeignKey(sr => sr.UserId)
+            .OnDelete(DeleteBehavior.NoAction); // Prevent circular dependency
 
-            entity.HasOne(e => e.SurveyResponse)
-                .WithMany(r => r.Answers)
-                .HasForeignKey(e => e.SurveyResponseId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
+        // ResponseDetail
+        modelBuilder.Entity<ResponseDetail>()
+            .HasOne(rd => rd.Question)
+            .WithMany() // Assuming SurveyQuestion entity does not have a collection of ResponseDetails
+            .HasForeignKey(rd => rd.QuestionId)
+            .OnDelete(DeleteBehavior.NoAction); // Prevent circular dependency
+
+        modelBuilder.Entity<ResponseDetail>()
+            .HasOne(rd => rd.SelectedOption)
+            .WithMany() // Assuming QuestionOption entity does not have a collection of ResponseDetails
+            .HasForeignKey(rd => rd.SelectedOptionId)
+            .OnDelete(DeleteBehavior.NoAction); // Prevent circular dependency
     }
 }

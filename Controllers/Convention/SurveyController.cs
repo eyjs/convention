@@ -1,9 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using LocalRAG.DTOs.SurveyModels;
 using LocalRAG.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
 namespace LocalRAG.Controllers.Convention
 {
@@ -19,48 +19,102 @@ namespace LocalRAG.Controllers.Convention
             _surveyService = surveyService;
         }
 
-        [HttpPost("{actionType}")]
-        public async Task<IActionResult> SubmitSurvey(string actionType, [FromBody] SurveyResponseDto responseDto)
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllSurveys()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            var surveys = await _surveyService.GetAllSurveysAsync();
+            return Ok(surveys);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetSurvey(int id)
+        {
+            var survey = await _surveyService.GetSurveyAsync(id);
+            if (survey == null)
             {
-                return Unauthorized("사용자 정보를 확인할 수 없습니다.");
+                return NotFound();
+            }
+            return Ok(survey);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateSurvey([FromBody] SurveyCreateDto createDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var createdSurvey = await _surveyService.CreateSurveyAsync(createDto);
+            return CreatedAtAction(nameof(GetSurvey), new { id = createdSurvey.Id }, createdSurvey);
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateSurvey(int id, [FromBody] SurveyCreateDto updateDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
             }
 
             try
             {
-                var responseId = await _surveyService.SaveSurveyResponse(actionType, userId, responseDto);
-                return Ok(new { message = "Survey submitted successfully.", surveyResponseId = responseId });
+                var updatedSurvey = await _surveyService.UpdateSurveyAsync(id, updateDto);
+                return Ok(updatedSurvey);
             }
-            catch (KeyNotFoundException ex)
+            catch (global::System.Collections.Generic.KeyNotFoundException ex)
             {
                 return NotFound(new { message = ex.Message });
+            }
+            catch (global::System.Exception ex)
+            {
+                return StatusCode(500, new { message = "An internal error occurred.", details = ex.Message });
             }
         }
 
-        [HttpGet("{actionType}")]
-        public async Task<IActionResult> GetSurveyResponse(string actionType)
+        [HttpPost("{id}/submit")]
+        public async Task<IActionResult> SubmitSurvey(int id, [FromBody] SurveySubmissionDto submissionDto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            if (id != submissionDto.SurveyId)
             {
-                return Unauthorized("사용자 정보를 확인할 수 없습니다.");
+                return BadRequest("Survey ID mismatch.");
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
             }
 
             try
             {
-                var response = await _surveyService.GetSurveyResponse(actionType, userId);
-                if (response == null)
-                {
-                    return NotFound("Response not found.");
-                }
-                return Ok(response);
+                await _surveyService.SubmitSurveyAsync(id, submissionDto, userId);
+                return Ok(new { message = "Survey submitted successfully." });
             }
-            catch (KeyNotFoundException ex)
+            catch (global::System.Collections.Generic.KeyNotFoundException ex)
             {
                 return NotFound(new { message = ex.Message });
             }
+            catch (global::System.Exception ex)
+            {
+                // Log the exception (e.g., using ILogger)
+                return StatusCode(500, new { message = "An internal error occurred.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}/stats")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetSurveyStats(int id)
+        {
+            var stats = await _surveyService.GetSurveyStatsAsync(id);
+            if (stats == null)
+            {
+                return NotFound();
+            }
+            return Ok(stats);
         }
     }
 }

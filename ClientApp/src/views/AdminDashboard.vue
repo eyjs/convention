@@ -142,6 +142,11 @@
         <BoardManagement :convention-id="conventionId" />
       </div>
 
+      <!-- 설문 관리 -->
+      <div v-if="activeTab === 'surveys'">
+        <SurveyManagement :convention-id="conventionId" />
+      </div>
+
       <!-- 업로드 -->
       <div v-if="activeTab === 'upload'">
         <BulkUpload :convention-id="conventionId" />
@@ -168,6 +173,7 @@ import ActionManagement from '@/components/admin/ActionManagement.vue'
 import BulkUpload from '@/components/admin/BulkUpload.vue'
 import AttributeTemplateManagement from '@/components/admin/AttributeTemplateManagement.vue'
 import BoardManagement from '@/components/admin/BoardManagement.vue'
+import SurveyManagement from '@/components/admin/SurveyManagement.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -195,6 +201,7 @@ const tabs = [
   { id: 'guests', name: '참석자 관리', shortName: '참석자' },
   { id: 'schedules', name: '일정 관리', shortName: '일정' },
   { id: 'actions', name: '액션 관리', shortName: '액션' },
+  { id: 'surveys', name: '설문 관리', shortName: '설문' },
   { id: 'attributes', name: '속성 템플릿', shortName: '속성' },
   { id: 'board', name: '게시판 관리', shortName: '게시판' },
   { id: 'upload', name: '엑셀 업로드', shortName: '업로드' },

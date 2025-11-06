@@ -63,6 +63,7 @@ async function loadFeatureModule() {
   error.value = null
   featureComponent.value = null
 
+
   try {
     console.log('Loading feature:', props.featureName)
 

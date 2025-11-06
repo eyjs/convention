@@ -22,7 +22,6 @@
     "lucide-vue-next": "^0.279.0",
     "pinia": "^2.1.6",
     "quill": "^2.0.2",
-    "quill-blot-formatter": "^1.0.5",
     "v-viewer": "^3.0.22",
     "viewerjs": "^1.11.7",
     "vue": "^3.3.4",
