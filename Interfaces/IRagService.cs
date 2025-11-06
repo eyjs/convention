@@ -11,6 +11,7 @@ public interface IRagService
     Task<RagResponse> QueryAsync(string question, int topK = 5, Dictionary<string, object>? filter = null);
     Task<bool> DeleteDocumentAsync(string documentId);
     Task DeleteDocumentsByMetadataAsync(string key, object value);
+    Task DeleteDocumentsByConventionIdAsync(int conventionId);
     Task<RagStats> GetStatsAsync();
 }
 

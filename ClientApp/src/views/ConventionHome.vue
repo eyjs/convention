@@ -384,6 +384,11 @@ function navigateTo(route) {
   router.push(route)
 }
 
+const handleLogout = () => {
+  authStore.logout();
+  router.push('/login'); 
+};
+
 function openNotice(notice) {
   // 공지사항 목록 페이지로 이동하면서 noticeId를 state로 전달
   router.push({

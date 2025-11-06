@@ -1,7 +1,8 @@
 <template>
   <div
     class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-    @click.self="$emit('close')"
+    @mousedown.self="onMouseDown"
+    @mouseup.self="onMouseUp"
   >
     <div
       class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
@@ -234,4 +235,18 @@ const handleSubmit = async () => {
     saving.value = false
   }
 }
+
+const startPos = ref({ x: 0, y: 0 });
+
+const onMouseDown = (e) => {
+  startPos.value = { x: e.clientX, y: e.clientY };
+};
+
+const onMouseUp = (e) => {
+  const dx = Math.abs(e.clientX - startPos.value.x);
+  const dy = Math.abs(e.clientY - startPos.value.y);
+  if (dx < 5 && dy < 5) {
+    emit('close');
+  }
+};
 </script>

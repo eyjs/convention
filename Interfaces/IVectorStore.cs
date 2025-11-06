@@ -13,6 +13,7 @@ public interface IVectorStore
     Task<List<VectorSearchResult>> SearchAsync(float[] queryEmbedding, int topK = 5, Dictionary<string, object>? filter = null);
     Task<bool> DeleteDocumentAsync(string documentId);
     Task DeleteDocumentsByMetadataAsync(string key, object value);
+    Task DeleteDocumentsByConventionIdAsync(int conventionId);
     Task<int> GetDocumentCountAsync();
     Task<int> GetDocumentCountAsync(int conventionId);
 }

@@ -3,7 +3,8 @@
     <div
       v-if="isOpen"
       class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
-      @click.self="close"
+      @mousedown.self="onMouseDown"
+      @mouseup.self="onMouseUp"
     >
       <div
         class="bg-white max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl w-full max-w-3xl p-6 md:p-8 text-gray-700 relative"
@@ -109,7 +110,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits, ref } from 'vue'
 
 defineProps({
   isOpen: Boolean,
@@ -117,6 +118,20 @@ defineProps({
 
 const emit = defineEmits(['close'])
 const close = () => emit('close')
+
+const startPos = ref({ x: 0, y: 0 });
+
+const onMouseDown = (e) => {
+  startPos.value = { x: e.clientX, y: e.clientY };
+};
+
+const onMouseUp = (e) => {
+  const dx = Math.abs(e.clientX - startPos.value.x);
+  const dy = Math.abs(e.clientY - startPos.value.y);
+  if (dx < 5 && dy < 5) {
+    close();
+  }
+};
 </script>
 
 <style scoped>

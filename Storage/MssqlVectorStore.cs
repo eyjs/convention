@@ -344,4 +344,24 @@ public class MssqlVectorStore : IVectorStore
         return await dbContext.VectorDataEntries
                .CountAsync(v => v.ConventionId == conventionId);
     }
+
+    public async Task DeleteDocumentsByConventionIdAsync(int conventionId)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        _logger.LogInformation("Deleting documents for Convention ID: {ConventionId}", conventionId);
+
+        try
+        {
+            int deletedCount = await dbContext.VectorDataEntries
+                .Where(v => v.ConventionId == conventionId)
+                .ExecuteDeleteAsync(); // EF Core 7+ required
+
+            _logger.LogInformation("Successfully deleted {Count} documents for Convention ID: {ConventionId}", deletedCount, conventionId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting documents for Convention ID: {ConventionId}", conventionId);
+            throw;
+        }
+    }
 }

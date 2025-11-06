@@ -74,7 +74,7 @@ public class IndexingService
     /// </summary>
     public async Task<int> IndexConventionAsync(int conventionId)
     {
-        await _ragService.DeleteDocumentsByMetadataAsync("convention_id", conventionId);
+        await _ragService.DeleteDocumentsByConventionIdAsync(conventionId);
 
         // 1.색인에 필요한 모든 '공용' 데이터를 여기서 한번에 조회합니다.
         var convention = await _context.Conventions

@@ -58,6 +58,11 @@ public class RagService : IRagService
         await _vectorStore.DeleteDocumentsByMetadataAsync(key, value);
     }
 
+    public async Task DeleteDocumentsByConventionIdAsync(int conventionId)
+    {
+        await _vectorStore.DeleteDocumentsByConventionIdAsync(conventionId);
+    }
+
     public async Task<RagStats> GetStatsAsync()
     {
         var llmProvider = await _providerManager.GetActiveProviderAsync();

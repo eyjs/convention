@@ -384,7 +384,8 @@
     <!-- 게시글 작성/수정 모달 -->
     <div
       v-if="showCreateModal || editingNotice"
-      @click.self="closeModal"
+      @mousedown.self="onMouseDown"
+      @mouseup.self="onPostModalMouseUp"
       class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
     >
       <div
@@ -489,6 +490,8 @@
     <div
       v-if="showCategoryModal || editingCategory"
       class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      @mousedown.self="onMouseDown"
+      @mouseup.self="onCategoryModalMouseUp"
     >
       <div class="bg-white rounded-lg w-full max-w-md">
         <div class="border-b px-6 py-4 flex items-center justify-between">
@@ -576,7 +579,8 @@
     <!-- 상세보기 모달 -->
     <div
       v-if="viewingNotice"
-      @click.self="closeViewModal"
+      @mousedown.self="onMouseDown"
+      @mouseup.self="onViewModalMouseUp"
       class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
     >
       <div
@@ -687,6 +691,24 @@ const categoryForm = ref({
   description: '',
   displayOrder: 0,
 })
+
+const startPos = ref({ x: 0, y: 0 });
+
+const onMouseDown = (e) => {
+  startPos.value = { x: e.clientX, y: e.clientY };
+};
+
+const createMouseUpHandler = (closeFn) => (e) => {
+  const dx = Math.abs(e.clientX - startPos.value.x);
+  const dy = Math.abs(e.clientY - startPos.value.y);
+  if (dx < 5 && dy < 5) {
+    closeFn();
+  }
+};
+
+const onPostModalMouseUp = createMouseUpHandler(() => closeModal());
+const onCategoryModalMouseUp = createMouseUpHandler(() => closeCategoryModal());
+const onViewModalMouseUp = createMouseUpHandler(() => closeViewModal());
 
 const totalCount = computed(() => notices.value.length)
 const pinnedCount = computed(

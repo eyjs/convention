@@ -203,7 +203,8 @@
     <div
       v-if="showCreateModal || editingGuest"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="closeGuestModal"
+      @mousedown.self="onMouseDown"
+      @mouseup.self="onGuestModalMouseUp"
     >
       <div
         class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto"
@@ -448,7 +449,8 @@
     <div
       v-if="showDetailModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="closeDetailModal"
+      @mousedown.self="onMouseDown"
+      @mouseup.self="onDetailModalMouseUp"
     >
       <div
         class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto"
@@ -579,12 +581,8 @@
     <div
       v-if="showCopyScheduleModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="
-        () => {
-          showCopyScheduleModal = false
-          searchQuery = ''
-        }
-      "
+      @mousedown.self="onMouseDown"
+      @mouseup.self="onCopyScheduleModalMouseUp"
     >
       <div class="bg-white rounded-lg w-full max-w-lg">
         <div class="p-6">
@@ -655,7 +653,8 @@
     <div
       v-if="showBulkAssignModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="closeBulkAssignModal"
+      @mousedown.self="onMouseDown"
+      @mouseup.self="onBulkAssignModalMouseUp"
     >
       <div class="bg-white rounded-lg w-full max-w-2xl">
         <div class="p-6">
@@ -753,7 +752,8 @@
     <div
       v-if="showBulkAttributeModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="closeBulkAttributeModal"
+      @mousedown.self="onMouseDown"
+      @mouseup.self="onBulkAttributeModalMouseUp"
     >
       <div
         class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto"
@@ -899,6 +899,29 @@ const guestForm = ref({
   templateAttributes: {},
   customAttributes: [],
 })
+
+const startPos = ref({ x: 0, y: 0 });
+
+const onMouseDown = (e) => {
+  startPos.value = { x: e.clientX, y: e.clientY };
+};
+
+const createMouseUpHandler = (closeFn) => (e) => {
+  const dx = Math.abs(e.clientX - startPos.value.x);
+  const dy = Math.abs(e.clientY - startPos.value.y);
+  if (dx < 5 && dy < 5) {
+    closeFn();
+  }
+};
+
+const onGuestModalMouseUp = createMouseUpHandler(() => closeGuestModal());
+const onDetailModalMouseUp = createMouseUpHandler(() => closeDetailModal());
+const onCopyScheduleModalMouseUp = createMouseUpHandler(() => {
+  showCopyScheduleModal.value = false;
+  searchQuery.value = '';
+});
+const onBulkAssignModalMouseUp = createMouseUpHandler(() => closeBulkAssignModal());
+const onBulkAttributeModalMouseUp = createMouseUpHandler(() => closeBulkAttributeModal());
 
 const filteredGuestsForCopy = computed(() => {
   if (!searchQuery.value) return guests.value

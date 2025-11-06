@@ -124,6 +124,23 @@ public class InMemoryVectorStore : IVectorStore
         return Task.FromResult(count);
     }
 
+    public Task DeleteDocumentsByConventionIdAsync(int conventionId)
+    {
+        var keysToRemove = _documents.Where(kvp =>
+            kvp.Value.doc.Metadata != null &&
+            kvp.Value.doc.Metadata.TryGetValue("convention_id", out var idObj) &&
+            idObj is int id && id == conventionId)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var k in keysToRemove)
+        {
+            _documents.TryRemove(k, out _);
+        }
+
+        return Task.CompletedTask;
+    }
+
     private static float CalculateCosineSimilarity(float[] vectorA, float[] vectorB)
     {
         if (vectorA.Length != vectorB.Length)

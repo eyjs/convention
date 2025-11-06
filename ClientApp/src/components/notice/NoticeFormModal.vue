@@ -1,6 +1,8 @@
 <template>
   <div
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    @mousedown.self="onMouseDown"
+    @mouseup.self="onMouseUp"
   >
     <div
       class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
@@ -374,6 +376,20 @@ export default {
       }
     }
 
+    const startPos = ref({ x: 0, y: 0 });
+
+    const onMouseDown = (e) => {
+      startPos.value = { x: e.clientX, y: e.clientY };
+    };
+
+    const onMouseUp = (e) => {
+      const dx = Math.abs(e.clientX - startPos.value.x);
+      const dy = Math.abs(e.clientY - startPos.value.y);
+      if (dx < 5 && dy < 5) {
+        closeModal();
+      }
+    };
+
     // 생명주기
     onMounted(() => {
       initializeForm()
@@ -407,6 +423,8 @@ export default {
       removeFile,
       handleSubmit,
       formatFileSize,
+      onMouseDown,
+      onMouseUp,
     }
   },
 }

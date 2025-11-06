@@ -63,7 +63,8 @@
     <div
       v-if="showCreateModal || editingTemplate"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="closeModal"
+      @mousedown.self="onMouseDown"
+      @mouseup.self="onMouseUp"
     >
       <div class="bg-white rounded-lg w-full max-w-lg">
         <div class="p-6">
@@ -152,6 +153,20 @@ const toast = ref({
   message: '',
   type: 'success',
 })
+
+const startPos = ref({ x: 0, y: 0 });
+
+const onMouseDown = (e) => {
+  startPos.value = { x: e.clientX, y: e.clientY };
+};
+
+const onMouseUp = (e) => {
+  const dx = Math.abs(e.clientX - startPos.value.x);
+  const dy = Math.abs(e.clientY - startPos.value.y);
+  if (dx < 5 && dy < 5) {
+    closeModal();
+  }
+};
 
 const parseValues = (valuesStr) => {
   if (!valuesStr) return []
