@@ -345,186 +345,161 @@
     </div>
 
     <!-- 참석자 목록 모달 -->
-    <ParticipantList
-      v-if="showParticipantsModal"
-      :participants="participants"
-      :title="selectedGroupName"
-      :brand-color="brandColor"
-      :show-phone="isAdmin"
-      :search-placeholder="
-        isAdmin ? '이름, 소속, 연락처로 검색...' : '이름, 소속으로 검색...'
-      "
+    <SlideUpModal
+      :is-open="showParticipantsModal"
       z-index-class="z-[60]"
       @close="closeParticipantsModal"
-    />
+    >
+      <template #header-title>{{ selectedGroupName }}</template>
+      <template #body>
+        <ParticipantList
+          :participants="participants"
+          :show-phone="isAdmin"
+          :search-placeholder="
+            isAdmin
+              ? '이름, 소속, 연락처로 검색...'
+              : '이름, 소속으로 검색...'
+          "
+        />
+      </template>
+    </SlideUpModal>
 
     <!-- 일정 상세 모달 -->
-    <Transition name="modal-slide">
-      <div
-        v-if="selectedSchedule"
-        @click="closeScheduleDetail"
-        class="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
-      >
-        <div
-          @click.stop
-          class="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto"
-        >
-          <!-- 모달 헤더 -->
-          <div
-            class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between"
-          >
-            <h2 class="text-lg font-bold text-gray-900">일정 상세</h2>
-            <button
-              @click="closeScheduleDetail"
-              class="p-2 hover:bg-gray-100 rounded-lg"
+    <SlideUpModal
+      :is-open="!!selectedSchedule"
+      @close="closeScheduleDetail"
+    >
+      <template #header-title>일정 상세</template>
+      <template #body>
+        <div class="space-y-4">
+          <!-- 카테고리 & 시간 -->
+          <div class="flex items-center justify-between">
+            <span
+              v-if="selectedSchedule.category"
+              class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+              {{ selectedSchedule.category }}
+            </span>
+            <span
+              class="px-3 py-1 rounded-full text-sm font-medium text-white"
+              :style="{ backgroundColor: brandColor }"
+            >
+              {{ selectedSchedule.startTime }} ~
+              {{ selectedSchedule.endTime || '' }}
+            </span>
           </div>
 
-          <!-- 모달 내용 -->
-          <div class="p-6 space-y-4">
-            <!-- 카테고리 & 시간 -->
-            <div class="flex items-center justify-between">
-              <span
-                v-if="selectedSchedule.category"
-                class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
-              >
-                {{ selectedSchedule.category }}
-              </span>
-              <span
-                class="px-3 py-1 rounded-full text-sm font-medium text-white"
+          <!-- 타이틀 -->
+          <h3 class="text-2xl font-bold text-gray-900">
+            {{ selectedSchedule.title }}
+          </h3>
+
+          <!-- 날짜 정보 -->
+          <div class="flex items-center space-x-2 text-sm text-gray-600">
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <span>{{ formatDate(selectedSchedule.date) }}</span>
+          </div>
+
+          <!-- 장소 정보 -->
+          <div
+            v-if="selectedSchedule.location"
+            class="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl"
+          >
+            <svg
+              class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            <div>
+              <div class="font-semibold text-gray-900">장소</div>
+              <div class="text-gray-600">{{ selectedSchedule.location }}</div>
+            </div>
+          </div>
+
+          <!-- 상세 설명 (메인 컨텐츠) -->
+          <div v-if="selectedSchedule.description" class="py-4">
+            <h4 class="text-lg font-bold text-gray-900 mb-3">상세 설명</h4>
+            <p
+              class="text-gray-700 whitespace-pre-wrap leading-relaxed text-base"
+            >
+              {{ selectedSchedule.description }}
+            </p>
+          </div>
+
+          <!-- 참여 그룹 & 참석자 보기 (편의 옵션) -->
+          <div v-if="selectedSchedule.group" class="pt-4 border-t mt-6">
+            <div class="p-4 bg-gray-50 rounded-xl">
+              <div class="flex items-center space-x-2 mb-3">
+                <svg
+                  class="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                <span class="text-sm font-medium text-gray-700">{{
+                  selectedSchedule.group
+                }}</span>
+                <span class="text-sm text-gray-500"
+                  >({{ selectedSchedule.participants }}명)</span
+                >
+              </div>
+              <button
+                @click="
+                  loadParticipants(
+                    selectedSchedule.scheduleTemplateId,
+                    selectedSchedule.group,
+                  )
+                "
+                class="w-full px-4 py-2.5 rounded-lg text-white font-medium transition-all hover:opacity-90 flex items-center justify-center space-x-2"
                 :style="{ backgroundColor: brandColor }"
               >
-                {{ selectedSchedule.startTime }} ~
-                {{ selectedSchedule.endTime || '' }}
-              </span>
-            </div>
-
-            <!-- 타이틀 -->
-            <h3 class="text-2xl font-bold text-gray-900">
-              {{ selectedSchedule.title }}
-            </h3>
-
-            <!-- 날짜 정보 -->
-            <div class="flex items-center space-x-2 text-sm text-gray-600">
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              <span>{{ formatDate(selectedSchedule.date) }}</span>
-            </div>
-
-            <!-- 장소 정보 -->
-            <div
-              v-if="selectedSchedule.location"
-              class="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl"
-            >
-              <svg
-                class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              <div>
-                <div class="font-semibold text-gray-900">장소</div>
-                <div class="text-gray-600">{{ selectedSchedule.location }}</div>
-              </div>
-            </div>
-
-            <!-- 상세 설명 (메인 컨텐츠) -->
-            <div v-if="selectedSchedule.description" class="py-4">
-              <h4 class="text-lg font-bold text-gray-900 mb-3">상세 설명</h4>
-              <p
-                class="text-gray-700 whitespace-pre-wrap leading-relaxed text-base"
-              >
-                {{ selectedSchedule.description }}
-              </p>
-            </div>
-
-            <!-- 참여 그룹 & 참석자 보기 (편의 옵션) -->
-            <div v-if="selectedSchedule.group" class="pt-4 border-t mt-6">
-              <div class="p-4 bg-gray-50 rounded-xl">
-                <div class="flex items-center space-x-2 mb-3">
-                  <svg
-                    class="w-5 h-5 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                  <span class="text-sm font-medium text-gray-700">{{
-                    selectedSchedule.group
-                  }}</span>
-                  <span class="text-sm text-gray-500"
-                    >({{ selectedSchedule.participants }}명)</span
-                  >
-                </div>
-                <button
-                  @click="
-                    loadParticipants(
-                      selectedSchedule.scheduleTemplateId,
-                      selectedSchedule.group,
-                    )
-                  "
-                  class="w-full px-4 py-2.5 rounded-lg text-white font-medium transition-all hover:opacity-90 flex items-center justify-center space-x-2"
-                  :style="{ backgroundColor: brandColor }"
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <svg
-                    class="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                  <span>참석자 보기</span>
-                </button>
-              </div>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                <span>참석자 보기</span>
+              </button>
             </div>
           </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </SlideUpModal>
   </div>
 </template>
 
@@ -536,6 +511,7 @@ import apiClient from '@/services/api'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 import MainHeader from '@/components/common/MainHeader.vue'
 import ParticipantList from '@/components/ParticipantList.vue'
+import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import dayjs from 'dayjs'
 
 const authStore = useAuthStore()
@@ -725,6 +701,7 @@ function openScheduleDetail(schedule) {
 
 function closeScheduleDetail() {
   selectedSchedule.value = null
+  closeParticipantsModal() // 자식 모달도 함께 닫기
 }
 
 // 참석자 목록 조회
@@ -882,34 +859,5 @@ onMounted(async () => {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-.modal-slide-enter-active,
-.modal-slide-leave-active {
-  transition: all 0.3s ease-in-out;
-}
-.modal-slide-enter-active .bg-white,
-.modal-slide-leave-active .bg-white {
-  transition: all 0.3s ease-in-out;
-}
-
-.modal-slide-enter-from,
-.modal-slide-leave-to {
-  background-color: rgba(0, 0, 0, 0);
-}
-
-@media (max-width: 639px) {
-  .modal-slide-enter-from .bg-white,
-  .modal-slide-leave-to .bg-white {
-    transform: translateY(100%);
-  }
-}
-
-@media (min-width: 640px) {
-  .modal-slide-enter-from .bg-white,
-  .modal-slide-leave-to .bg-white {
-    transform: scale(0.95);
-    opacity: 0;
-  }
 }
 </style>

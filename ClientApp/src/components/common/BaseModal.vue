@@ -13,7 +13,7 @@
         <!-- Header -->
         <header v-if="$slots.header" class="px-6 py-4 border-b flex items-center justify-between">
           <slot name="header"></slot>
-          <button @click="close" class="p-2 hover:bg-gray-100 rounded-lg">
+          <button @click="close" class="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>

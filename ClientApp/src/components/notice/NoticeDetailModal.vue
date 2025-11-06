@@ -1,10 +1,6 @@
 <template>
-  <BaseModal :is-open="true" @close="closeModal" max-width="5xl">
-    <template #header>
-      <h2 class="text-lg md:text-xl font-bold text-gray-900">
-        공지사항 상세보기
-      </h2>
-    </template>
+  <SlideUpModal :is-open="true" @close="closeModal">
+    <template #header-title>공지사항 상세보기</template>
     <template #body>
       <!-- 로딩 상태 -->
       <div v-if="loading" class="flex-1 flex items-center justify-center py-12">
@@ -104,12 +100,12 @@
       <button
         type="button"
         @click="closeModal"
-        class="px-4 md:px-6 py-2 text-sm md:text-base bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+        class="w-full px-4 md:px-6 py-3 text-sm md:text-base bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
       >
         닫기
       </button>
     </template>
-  </BaseModal>
+  </SlideUpModal>
 </template>
 
 <script>
@@ -117,7 +113,7 @@ import { ref, onMounted } from 'vue'
 import { noticeAPI } from '@/services/noticeService'
 import { formatFileSize } from '@/utils/fileUpload'
 import dayjs from 'dayjs'
-import BaseModal from '@/components/common/BaseModal.vue'
+import SlideUpModal from '@/components/common/SlideUpModal.vue'
 
 // Quill 스타일 import (읽기 전용)
 import 'quill/dist/quill.snow.css'
@@ -125,7 +121,7 @@ import 'quill/dist/quill.snow.css'
 export default {
   name: 'NoticeDetailModal',
   components: {
-    BaseModal,
+    SlideUpModal,
   },
   props: {
     noticeId: {

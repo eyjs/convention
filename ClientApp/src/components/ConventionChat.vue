@@ -90,13 +90,18 @@
       </form>
     </div>
 
-    <Transition name="modal-fade">
-      <ParticipantList
-        v-if="showParticipantList"
-        :participants="participantList"
-        @close="showParticipantList = false"
-      />
-    </Transition>
+    <SlideUpModal
+      :is-open="showParticipantList"
+      z-index-class="z-[60]"
+      @close="showParticipantList = false"
+    >
+      <template #header-title
+        >참여자 목록 ({{ participantCount }}명)</template
+      >
+      <template #body>
+        <ParticipantList :participants="participantList" />
+      </template>
+    </SlideUpModal>
   </div>
 </template>
 
@@ -107,6 +112,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import { useUIStore } from '@/stores/ui'
 import ParticipantList from './ParticipantList.vue'
+import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import { chatAPI } from '@/services/api'
 
 const props = defineProps({
@@ -294,22 +300,5 @@ const formatTime = (isoString) => {
   padding: 1rem;
   border-top: 1px solid #e2e8f0;
   background-color: #ffffff;
-}
-
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: all 0.3s ease-in-out;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-.modal-fade-enter-active .bg-white,
-.modal-fade-leave-active .bg-white {
-  transition: all 0.3s ease-in-out;
-}
-.modal-fade-enter-from .bg-white,
-.modal-fade-leave-to .bg-white {
-  transform: scale(0.95);
 }
 </style>

@@ -1,12 +1,8 @@
 <template>
-  <BaseModal :is-open="isOpen" @close="close" max-width="3xl">
-    <template #header>
-      <h2 class="text-2xl font-bold text-center w-full text-gray-900">
-        개인정보처리방침
-      </h2>
-    </template>
+  <SlideUpModal :is-open="isOpen" @close="close">
+    <template #header-title>개인정보처리방침</template>
     <template #body>
-      <div class="space-y-4 leading-relaxed text-sm md:text-base">
+      <div class="space-y-4 leading-relaxed text-sm md:text-base text-black">
         <p>
           본 개인정보처리방침은 아이에프에이(주)(이하 ‘당사’) 여행 대상자의
           개인정보를 보호하는 것을 주된 목적으로 합니다.
@@ -88,12 +84,21 @@
         </p>
       </div>
     </template>
-  </BaseModal>
+    <template #footer>
+      <button
+        type="button"
+        @click="close"
+        class="w-full px-4 py-2.5 text-sm font-medium bg-[#17B185] text-white rounded-lg hover:bg-[#149B75] transition-colors"
+      >
+        닫기
+      </button>
+    </template>
+  </SlideUpModal>
 </template>
 
 <script setup>
 import { defineProps, defineEmits } from 'vue'
-import BaseModal from '@/components/common/BaseModal.vue'
+import SlideUpModal from '@/components/common/SlideUpModal.vue'
 
 defineProps({
   isOpen: Boolean,
