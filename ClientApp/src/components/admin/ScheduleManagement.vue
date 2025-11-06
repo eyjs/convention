@@ -189,352 +189,287 @@
     </div>
 
     <!-- 템플릿 생성/수정 모달 -->
-    <div
-      v-if="showCreateModal || editingTemplate"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="isTouchDevice && closeTemplateModal()"
+    <BaseModal
+      :is-open="showCreateModal || !!editingTemplate"
+      @close="closeTemplateModal"
+      max-width="md"
     >
-      <div class="bg-white rounded-lg w-full max-w-md">
-        <div class="p-6">
-          <h2 class="text-xl font-semibold mb-4">
-            {{ editingTemplate ? '일정 코스 수정' : '일정 코스 추가' }}
-          </h2>
-
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium mb-1">코스명 *</label>
-              <input
-                v-model="templateForm.courseName"
-                type="text"
-                class="w-full px-3 py-2 border rounded-lg"
-                placeholder="예: A코스"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium mb-1">설명</label>
-              <textarea
-                v-model="templateForm.description"
-                class="w-full px-3 py-2 border rounded-lg"
-                rows="2"
-                placeholder="이 일정 코스에 대한 설명"
-              ></textarea>
-            </div>
+      <template #header>
+        <h2 class="text-xl font-semibold">
+          {{ editingTemplate ? '일정 코스 수정' : '일정 코스 추가' }}
+        </h2>
+      </template>
+      <template #body>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">코스명 *</label>
+            <input
+              v-model="templateForm.courseName"
+              type="text"
+              class="w-full px-3 py-2 border rounded-lg"
+              placeholder="예: A코스"
+            />
           </div>
 
-          <div class="flex justify-end space-x-3 mt-6">
-            <button
-              @click="closeTemplateModal"
-              class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-            >
-              취소
-            </button>
-            <button
-              @click="saveTemplate"
-              class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-            >
-              저장
-            </button>
+          <div>
+            <label class="block text-sm font-medium mb-1">설명</label>
+            <textarea
+              v-model="templateForm.description"
+              class="w-full px-3 py-2 border rounded-lg"
+              rows="2"
+              placeholder="이 일정 코스에 대한 설명"
+            ></textarea>
           </div>
         </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <button
+          @click="closeTemplateModal"
+          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+        >
+          취소
+        </button>
+        <button
+          @click="saveTemplate"
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+        >
+          저장
+        </button>
+      </template>
+    </BaseModal>
 
     <!-- 일정 항목 생성/수정 모달 -->
-    <div
-      v-if="showItemModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="isTouchDevice && closeItemModal()"
-    >
-      <div
-        class="bg-white rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto"
-      >
-        <div class="p-6">
-          <h2 class="text-xl font-semibold mb-4">
-            {{ editingItem ? '일정 수정' : '일정 추가' }}
-          </h2>
-
-          <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-sm font-medium mb-1">날짜 *</label>
-                <input
-                  v-model="itemForm.scheduleDate"
-                  type="date"
-                  class="w-full px-3 py-2 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium mb-1"
-                  >시작 시간 *</label
-                >
-                <input
-                  v-model="itemForm.startTime"
-                  type="time"
-                  class="w-full px-3 py-2 border rounded-lg"
-                />
-              </div>
-            </div>
-
+    <BaseModal :is-open="showItemModal" @close="closeItemModal" max-width="lg">
+      <template #header>
+        <h2 class="text-xl font-semibold">
+          {{ editingItem ? '일정 수정' : '일정 추가' }}
+        </h2>
+      </template>
+      <template #body>
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-medium mb-1">일정명 *</label>
+              <label class="block text-sm font-medium mb-1">날짜 *</label>
               <input
-                v-model="itemForm.title"
-                type="text"
+                v-model="itemForm.scheduleDate"
+                type="date"
                 class="w-full px-3 py-2 border rounded-lg"
-                placeholder="예: 객실에 집결"
               />
             </div>
-
             <div>
-              <label class="block text-sm font-medium mb-1">장소</label>
+              <label class="block text-sm font-medium mb-1">시작 시간 *</label>
               <input
-                v-model="itemForm.location"
-                type="text"
+                v-model="itemForm.startTime"
+                type="time"
                 class="w-full px-3 py-2 border rounded-lg"
-                placeholder="예: 호텔 로비"
               />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium mb-1">상세 내용</label>
-              <textarea
-                v-model="itemForm.content"
-                class="w-full px-3 py-2 border rounded-lg"
-                rows="5"
-                placeholder="일정에 대한 상세 설명을 입력하세요"
-              ></textarea>
             </div>
           </div>
 
-          <div class="flex justify-end space-x-3 mt-6">
-            <button
-              @click="closeItemModal"
-              class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-            >
-              취소
-            </button>
-            <button
-              @click="saveScheduleItem"
-              class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-            >
-              저장
-            </button>
+          <div>
+            <label class="block text-sm font-medium mb-1">일정명 *</label>
+            <input
+              v-model="itemForm.title"
+              type="text"
+              class="w-full px-3 py-2 border rounded-lg"
+              placeholder="예: 객실에 집결"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">장소</label>
+            <input
+              v-model="itemForm.location"
+              type="text"
+              class="w-full px-3 py-2 border rounded-lg"
+              placeholder="예: 호텔 로비"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">상세 내용</label>
+            <textarea
+              v-model="itemForm.content"
+              class="w-full px-3 py-2 border rounded-lg"
+              rows="5"
+              placeholder="일정에 대한 상세 설명을 입력하세요"
+            ></textarea>
           </div>
         </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <button
+          @click="closeItemModal"
+          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+        >
+          취소
+        </button>
+        <button
+          @click="saveScheduleItem"
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+        >
+          저장
+        </button>
+      </template>
+    </BaseModal>
 
     <!-- 할당된 참석자 목록 모달 -->
-    <div
-      v-if="showGuestsModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="isTouchDevice && closeGuestsModal()"
+    <BaseModal
+      :is-open="showGuestsModal"
+      @close="closeGuestsModal"
+      max-width="2xl"
     >
-      <div
-        class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-      >
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold">
-              {{ selectedTemplate?.courseName }} - 할당된 참석자
-            </h2>
-            <button
-              @click="closeGuestsModal"
-              class="p-2 hover:bg-gray-100 rounded"
-            >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+      <template #header>
+        <h2 class="text-xl font-semibold">
+          {{ selectedTemplate?.courseName }} - 할당된 참석자
+        </h2>
+      </template>
+      <template #body>
+        <div
+          v-if="assignedGuests.length === 0"
+          class="text-center py-8 text-gray-500"
+        >
+          이 일정에 할당된 참석자가 없습니다.
+        </div>
 
+        <div v-else class="space-y-2">
           <div
-            v-if="assignedGuests.length === 0"
-            class="text-center py-8 text-gray-500"
+            v-for="guest in assignedGuests"
+            :key="guest.id"
+            class="p-4 border rounded-lg hover:bg-gray-50"
           >
-            이 일정에 할당된 참석자가 없습니다.
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-medium">{{ guest.name }}</p>
+                <p class="text-sm text-gray-600">{{ guest.telephone }}</p>
+                <p v-if="guest.corpPart" class="text-sm text-gray-500">
+                  {{ guest.corpPart }}
+                </p>
+              </div>
+              <button
+                @click="removeGuestFromSchedule(guest.id)"
+                class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
+              >
+                제거
+              </button>
+            </div>
           </div>
+        </div>
+      </template>
+    </BaseModal>
 
-          <div v-else class="space-y-2">
-            <div
-              v-for="guest in assignedGuests"
-              :key="guest.id"
-              class="p-4 border rounded-lg hover:bg-gray-50"
-            >
-              <div class="flex justify-between items-start">
+    <!-- 기존 일정 복사 모달 -->
+    <BaseModal :is-open="showCopyModal" @close="closeCopyModal" max-width="4xl">
+      <template #header>
+        <h2 class="text-xl font-semibold">
+          {{ targetTemplate?.courseName }} - 기존 일정 복사
+        </h2>
+      </template>
+      <template #body>
+        <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+          <p class="text-sm text-blue-900">
+            다른 템플릿의 일정을 선택하면 현재 템플릿에 복사됩니다.
+          </p>
+          <p class="text-xs text-blue-700 mt-1">
+            복사 후 개별적으로 수정할 수 있습니다.
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <div
+            v-for="template in otherTemplates"
+            :key="template.id"
+            class="border rounded-lg overflow-hidden"
+          >
+            <div class="p-4 bg-gray-50 border-b">
+              <div class="flex justify-between items-center">
                 <div>
-                  <p class="font-medium">{{ guest.guestName }}</p>
-                  <p class="text-sm text-gray-600">{{ guest.telephone }}</p>
-                  <p v-if="guest.corpPart" class="text-sm text-gray-500">
-                    {{ guest.corpPart }}
+                  <h3 class="font-semibold">{{ template.courseName }}</h3>
+                  <p class="text-sm text-gray-600">
+                    {{ template.description }}
+                  </p>
+                  <p class="text-xs text-gray-500 mt-1">
+                    일정 {{ template.scheduleItems.length }}개
                   </p>
                 </div>
                 <button
-                  @click="removeGuestFromSchedule(guest.id)"
-                  class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
+                  @click="copyAllItemsFromTemplate(template)"
+                  class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                 >
-                  제거
+                  전체 복사
                 </button>
+              </div>
+            </div>
+
+            <div class="p-4">
+              <div class="space-y-2">
+                <div
+                  v-for="item in template.scheduleItems"
+                  :key="item.id"
+                  class="flex items-start gap-3 p-3 bg-white border rounded-lg hover:bg-gray-50"
+                >
+                  <div class="flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      :value="item.id"
+                      v-model="selectedItemsToCopy"
+                      class="rounded mt-1"
+                    />
+                  </div>
+                  <div class="flex-shrink-0 w-24 text-sm">
+                    <div class="font-medium text-gray-600">
+                      {{ formatDate(item.scheduleDate) }}
+                    </div>
+                    <div class="text-primary-600">{{ item.startTime }}</div>
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-medium">{{ item.title }}</p>
+                    <p v-if="item.location" class="text-sm text-gray-500">
+                      📍 {{ item.location }}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- 기존 일정 복사 모달 -->
-    <div
-      v-if="showCopyModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="isTouchDevice && closeCopyModal()"
-    >
-      <div
-        class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto"
-      >
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold">
-              {{ targetTemplate?.courseName }} - 기존 일정 복사
-            </h2>
+      </template>
+      <template #footer>
+        <div
+          v-if="selectedItemsToCopy.length > 0"
+          class="w-full flex justify-between items-center"
+        >
+          <span class="text-sm font-medium"
+            >선택: {{ selectedItemsToCopy.length }}개 일정</span
+          >
+          <div class="flex gap-2">
             <button
-              @click="closeCopyModal"
-              class="p-2 hover:bg-gray-100 rounded"
+              @click="selectedItemsToCopy = []"
+              class="px-4 py-2 border rounded-lg hover:bg-gray-50"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              선택 취소
+            </button>
+            <button
+              @click="copySelectedItems"
+              class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            >
+              선택한 일정 복사
             </button>
           </div>
-
-          <div class="mb-4 p-4 bg-blue-50 rounded-lg">
-            <p class="text-sm text-blue-900">
-              다른 템플릿의 일정을 선택하면 현재 템플릿에 복사됩니다.
-            </p>
-            <p class="text-xs text-blue-700 mt-1">
-              복사 후 개별적으로 수정할 수 있습니다.
-            </p>
-          </div>
-
-          <div class="space-y-4">
-            <div
-              v-for="template in otherTemplates"
-              :key="template.id"
-              class="border rounded-lg overflow-hidden"
-            >
-              <div class="p-4 bg-gray-50 border-b">
-                <div class="flex justify-between items-center">
-                  <div>
-                    <h3 class="font-semibold">{{ template.courseName }}</h3>
-                    <p class="text-sm text-gray-600">
-                      {{ template.description }}
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1">
-                      일정 {{ template.scheduleItems.length }}개
-                    </p>
-                  </div>
-                  <button
-                    @click="copyAllItemsFromTemplate(template)"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                  >
-                    전체 복사
-                  </button>
-                </div>
-              </div>
-
-              <div class="p-4">
-                <div class="space-y-2">
-                  <div
-                    v-for="item in template.scheduleItems"
-                    :key="item.id"
-                    class="flex items-start gap-3 p-3 bg-white border rounded-lg hover:bg-gray-50"
-                  >
-                    <div class="flex-shrink-0">
-                      <input
-                        type="checkbox"
-                        :value="item.id"
-                        v-model="selectedItemsToCopy"
-                        class="rounded mt-1"
-                      />
-                    </div>
-                    <div class="flex-shrink-0 w-24 text-sm">
-                      <div class="font-medium text-gray-600">
-                        {{ formatDate(item.scheduleDate) }}
-                      </div>
-                      <div class="text-primary-600">{{ item.startTime }}</div>
-                    </div>
-                    <div class="flex-1">
-                      <p class="font-medium">{{ item.title }}</p>
-                      <p v-if="item.location" class="text-sm text-gray-500">
-                        📍 {{ item.location }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            v-if="selectedItemsToCopy.length > 0"
-            class="sticky bottom-0 mt-4 p-4 bg-white border-t"
-          >
-            <div class="flex justify-between items-center">
-              <span class="text-sm font-medium"
-                >선택: {{ selectedItemsToCopy.length }}개 일정</span
-              >
-              <div class="flex gap-2">
-                <button
-                  @click="selectedItemsToCopy = []"
-                  class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-                >
-                  선택 취소
-                </button>
-                <button
-                  @click="copySelectedItems"
-                  class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-                >
-                  선택한 일정 복사
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import apiClient from '@/services/api'
-import { useDevice } from '@/composables/useDevice'
+import BaseModal from '@/components/common/BaseModal.vue'
 
 const props = defineProps({
   conventionId: { type: Number, required: true },
 })
-
-const { isTouchDevice } = useDevice()
 
 const selectedTemplateId = ref('all')
 
@@ -600,6 +535,7 @@ const editTemplate = (template) => {
     courseName: template.courseName,
     description: template.description,
   }
+  showCreateModal.value = true
 }
 
 const closeTemplateModal = () => {

@@ -382,39 +382,18 @@
     </div>
 
     <!-- 게시글 작성/수정 모달 -->
-    <div
-      v-if="showCreateModal || editingNotice"
-      @mousedown.self="onMouseDown"
-      @mouseup.self="onPostModalMouseUp"
-      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+    <BaseModal
+      :is-open="showCreateModal || !!editingNotice"
+      @close="closeModal"
+      max-width="3xl"
     >
-      <div
-        class="bg-white rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto"
-      >
-        <div
-          class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between"
-        >
-          <h2 class="text-lg font-bold">
-            {{ editingNotice ? '게시글 수정' : '게시글 작성' }}
-          </h2>
-          <button @click="closeModal" class="p-2 hover:bg-gray-100 rounded-lg">
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <div class="p-6 space-y-4">
+      <template #header>
+        <h2 class="text-lg font-bold">
+          {{ editingNotice ? '게시글 수정' : '게시글 작성' }}
+        </h2>
+      </template>
+      <template #body>
+        <div class="space-y-4">
           <div class="flex items-center">
             <label class="flex items-center space-x-2">
               <input
@@ -466,59 +445,38 @@
             >
             <RichTextEditor v-model="noticeForm.content" />
           </div>
-
-          <div class="flex justify-end space-x-3 pt-4">
-            <button
-              @click="closeModal"
-              class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-            >
-              취소
-            </button>
-            <button
-              @click="saveNotice"
-              :disabled="!noticeForm.title || !noticeForm.content ? true : null"
-              class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300"
-            >
-              {{ editingNotice ? '수정' : '등록' }}
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <button
+          @click="closeModal"
+          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+        >
+          취소
+        </button>
+        <button
+          @click="saveNotice"
+          :disabled="!noticeForm.title || !noticeForm.content ? true : null"
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300"
+        >
+          {{ editingNotice ? '수정' : '등록' }}
+        </button>
+      </template>
+    </BaseModal>
 
     <!-- 카테고리 생성/수정 모달 -->
-    <div
-      v-if="showCategoryModal || editingCategory"
-      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      @mousedown.self="onMouseDown"
-      @mouseup.self="onCategoryModalMouseUp"
+    <BaseModal
+      :is-open="showCategoryModal || !!editingCategory"
+      @close="closeCategoryModal"
+      max-width="md"
     >
-      <div class="bg-white rounded-lg w-full max-w-md">
-        <div class="border-b px-6 py-4 flex items-center justify-between">
-          <h2 class="text-lg font-bold">
-            {{ editingCategory ? '카테고리 수정' : '카테고리 추가' }}
-          </h2>
-          <button
-            @click="closeCategoryModal"
-            class="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <div class="p-6 space-y-4">
+      <template #header>
+        <h2 class="text-lg font-bold">
+          {{ editingCategory ? '카테고리 수정' : '카테고리 추가' }}
+        </h2>
+      </template>
+      <template #body>
+        <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2"
               >카테고리명 *</label
@@ -556,60 +514,31 @@
               class="w-full px-3 py-2 border rounded-lg"
             />
           </div>
-
-          <div class="flex justify-end space-x-3 pt-4">
-            <button
-              @click="closeCategoryModal"
-              class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-            >
-              취소
-            </button>
-            <button
-              @click="saveCategory"
-              :disabled="!categoryForm.name ? true : null"
-              class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300"
-            >
-              {{ editingCategory ? '수정' : '추가' }}
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <button
+          @click="closeCategoryModal"
+          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+        >
+          취소
+        </button>
+        <button
+          @click="saveCategory"
+          :disabled="!categoryForm.name ? true : null"
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300"
+        >
+          {{ editingCategory ? '수정' : '추가' }}
+        </button>
+      </template>
+    </BaseModal>
 
     <!-- 상세보기 모달 -->
-    <div
-      v-if="viewingNotice"
-      @mousedown.self="onMouseDown"
-      @mouseup.self="onViewModalMouseUp"
-      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-    >
-      <div
-        class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto"
-      >
-        <div
-          class="sticky top-0 bg-white border-b px-4 md:px-6 py-4 flex items-center justify-between"
-        >
-          <h2 class="text-base md:text-lg font-bold">게시글 상세</h2>
-          <button
-            @click="closeViewModal"
-            class="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
+    <BaseModal :is-open="!!viewingNotice" @close="closeViewModal" max-width="4xl">
+      <template #header>
+        <h2 class="text-base md:text-lg font-bold">게시글 상세</h2>
+      </template>
+      <template #body>
         <div class="px-4 md:px-6 py-5">
           <div class="flex flex-wrap items-center gap-2 mb-3">
             <span
@@ -643,17 +572,17 @@
           <div class="prose prose-sm md:prose-base max-w-none mb-6">
             <div v-html="viewingNotice.content"></div>
           </div>
-          <div class="flex justify-end gap-2 md:gap-3 pt-6 border-t">
-            <button @click="editNotice(viewingNotice); closeViewModal()" class="px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg hover:bg-gray-50">
-              수정
-            </button>
-            <button @click="deleteNotice(viewingNotice.id); closeViewModal()" class="px-3 md:px-4 py-2 text-sm md:text-base bg-red-600 text-white rounded-lg hover:bg-red-700">
-              삭제
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <button @click="editNotice(viewingNotice); closeViewModal()" class="px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg hover:bg-gray-50">
+          수정
+        </button>
+        <button @click="deleteNotice(viewingNotice.id); closeViewModal()" class="px-3 md:px-4 py-2 text-sm md:text-base bg-red-600 text-white rounded-lg hover:bg-red-700">
+          삭제
+        </button>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -661,6 +590,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import apiClient from '@/services/api'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
+import BaseModal from '@/components/common/BaseModal.vue'
 import 'quill/dist/quill.snow.css'
 
 const props = defineProps({
@@ -691,24 +621,6 @@ const categoryForm = ref({
   description: '',
   displayOrder: 0,
 })
-
-const startPos = ref({ x: 0, y: 0 });
-
-const onMouseDown = (e) => {
-  startPos.value = { x: e.clientX, y: e.clientY };
-};
-
-const createMouseUpHandler = (closeFn) => (e) => {
-  const dx = Math.abs(e.clientX - startPos.value.x);
-  const dy = Math.abs(e.clientY - startPos.value.y);
-  if (dx < 5 && dy < 5) {
-    closeFn();
-  }
-};
-
-const onPostModalMouseUp = createMouseUpHandler(() => closeModal());
-const onCategoryModalMouseUp = createMouseUpHandler(() => closeCategoryModal());
-const onViewModalMouseUp = createMouseUpHandler(() => closeViewModal());
 
 const totalCount = computed(() => notices.value.length)
 const pinnedCount = computed(
@@ -879,7 +791,8 @@ async function saveCategory() {
         `/admin/conventions/${props.conventionId}/notice-categories/${editingCategory.value.id}`,
         payload,
       )
-    } else {
+    }
+    else {
       await apiClient.post(
         `/admin/conventions/${props.conventionId}/notice-categories`,
         payload,

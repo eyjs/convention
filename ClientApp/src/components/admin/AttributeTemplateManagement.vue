@@ -60,63 +60,59 @@
     </div>
 
     <!-- 속성 템플릿 생성/수정 모달 -->
-    <div
-      v-if="showCreateModal || editingTemplate"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @mousedown.self="onMouseDown"
-      @mouseup.self="onMouseUp"
+    <BaseModal
+      :is-open="showCreateModal || !!editingTemplate"
+      @close="closeModal"
+      max-width="lg"
     >
-      <div class="bg-white rounded-lg w-full max-w-lg">
-        <div class="p-6">
-          <h2 class="text-xl font-semibold mb-4">
-            {{ editingTemplate ? '속성 템플릿 수정' : '속성 템플릿 추가' }}
-          </h2>
-
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium mb-1">속성명 *</label>
-              <input
-                v-model="form.attributeKey"
-                type="text"
-                class="w-full px-3 py-2 border rounded-lg"
-                placeholder="예: 티셔츠 사이즈, 호차, 방 번호"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium mb-2"
-                >선택 값 (쉼표로 구분)</label
-              >
-              <textarea
-                v-model="form.attributeValuesText"
-                class="w-full px-3 py-2 border rounded-lg"
-                rows="4"
-                placeholder="예: 95, 100, 105, 110, 115&#10;비워두면 참석자 등록 시 수기 입력"
-              ></textarea>
-              <p class="text-xs text-gray-500 mt-1">
-                쉼표(,)로 구분하여 입력하세요. 빈 값으로 두면 참석자가 직접
-                입력합니다.
-              </p>
-            </div>
+      <template #header>
+        <h2 class="text-xl font-semibold">
+          {{ editingTemplate ? '속성 템플릿 수정' : '속성 템플릿 추가' }}
+        </h2>
+      </template>
+      <template #body>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">속성명 *</label>
+            <input
+              v-model="form.attributeKey"
+              type="text"
+              class="w-full px-3 py-2 border rounded-lg"
+              placeholder="예: 티셔츠 사이즈, 호차, 방 번호"
+            />
           </div>
-
-          <div class="flex justify-end space-x-3 mt-6">
-            <button
-              @click="closeModal"
-              class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+          <div>
+            <label class="block text-sm font-medium mb-2"
+              >선택 값 (쉼표로 구분)</label
             >
-              취소
-            </button>
-            <button
-              @click="saveTemplate"
-              class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-            >
-              저장
-            </button>
+            <textarea
+              v-model="form.attributeValuesText"
+              class="w-full px-3 py-2 border rounded-lg"
+              rows="4"
+              placeholder="예: 95, 100, 105, 110, 115&#10;비워두면 참석자 등록 시 수기 입력"
+            ></textarea>
+            <p class="text-xs text-gray-500 mt-1">
+              쉼표(,)로 구분하여 입력하세요. 빈 값으로 두면 참석자가 직접
+              입력합니다.
+            </p>
           </div>
         </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <button
+          @click="closeModal"
+          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+        >
+          취소
+        </button>
+        <button
+          @click="saveTemplate"
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+        >
+          저장
+        </button>
+      </template>
+    </BaseModal>
 
     <!-- 토스트 알림 -->
     <div
@@ -134,6 +130,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import apiClient from '@/services/api'
+import BaseModal from '@/components/common/BaseModal.vue'
 
 const props = defineProps({
   conventionId: { type: Number, required: true },
@@ -153,20 +150,6 @@ const toast = ref({
   message: '',
   type: 'success',
 })
-
-const startPos = ref({ x: 0, y: 0 });
-
-const onMouseDown = (e) => {
-  startPos.value = { x: e.clientX, y: e.clientY };
-};
-
-const onMouseUp = (e) => {
-  const dx = Math.abs(e.clientX - startPos.value.x);
-  const dy = Math.abs(e.clientY - startPos.value.y);
-  if (dx < 5 && dy < 5) {
-    closeModal();
-  }
-};
 
 const parseValues = (valuesStr) => {
   if (!valuesStr) return []

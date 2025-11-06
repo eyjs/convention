@@ -1,33 +1,6 @@
 <template>
   <div class="min-h-screen min-h-dvh bg-gray-50">
-    <!-- 헤더 -->
-    <div class="sticky top-0 z-40 bg-white shadow-sm">
-      <div class="px-4 py-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <button
-              @click="$router.back()"
-              class="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-            <h1 class="text-xl font-bold text-gray-900">추가 메뉴</h1>
-          </div>
-        </div>
-      </div>
-    </div>
+    <MainHeader title="추가 메뉴" :show-back="true" />
 
     <!-- 로딩 -->
     <div v-if="isLoading" class="flex items-center justify-center py-12">
@@ -136,6 +109,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/services/api'
+import MainHeader from '@/components/common/MainHeader.vue'
 
 const router = useRouter()
 const allActions = ref([])

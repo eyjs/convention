@@ -1,189 +1,170 @@
 <template>
-  <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-    @mousedown.self="onMouseDown"
-    @mouseup.self="onMouseUp"
-  >
-    <div
-      class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-    >
-      <!-- 헤더 -->
-      <div class="px-6 py-4 border-b flex items-center justify-between">
-        <h2 class="text-2xl font-bold text-gray-900">
-          {{ isEdit ? '공지사항 수정' : '새 공지사항 작성' }}
-        </h2>
-        <button
-          @click="closeModal"
-          class="text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <span class="text-2xl">×</span>
-        </button>
-      </div>
-
-      <!-- 본문 -->
-      <div class="flex-1 overflow-y-auto p-6">
-        <form @submit.prevent="handleSubmit" class="space-y-6">
-          <!-- 카테고리 -->
-          <div>
-            <label
-              for="category"
-              class="block text-sm font-semibold text-gray-700 mb-2"
-              >카테고리</label
+  <BaseModal :is-open="true" @close="closeModal" max-width="5xl">
+    <template #header>
+      <h2 class="text-2xl font-bold text-gray-900">
+        {{ isEdit ? '공지사항 수정' : '새 공지사항 작성' }}
+      </h2>
+    </template>
+    <template #body>
+      <form @submit.prevent="handleSubmit" class="space-y-6">
+        <!-- 카테고리 -->
+        <div>
+          <label
+            for="category"
+            class="block text-sm font-semibold text-gray-700 mb-2"
+            >카테고리</label
+          >
+          <select
+            id="category"
+            v-model="form.noticeCategoryId"
+            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option :value="null">카테고리 선택</option>
+            <option
+              v-for="category in categories"
+              :key="category.id"
+              :value="category.id"
             >
-            <select
-              id="category"
-              v-model="form.noticeCategoryId"
-              class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option :value="null">카테고리 선택</option>
-              <option
-                v-for="category in categories"
-                :key="category.id"
-                :value="category.id"
-              >
-                {{ category.name }}
-              </option>
-            </select>
-          </div>
+              {{ category.name }}
+            </option>
+          </select>
+        </div>
 
-          <!-- 제목 -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              제목 <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="form.title"
-              type="text"
-              placeholder="공지사항 제목을 입력하세요"
-              class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+        <!-- 제목 -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            제목 <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="form.title"
+            type="text"
+            placeholder="공지사항 제목을 입력하세요"
+            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <!-- 고정 여부 (관리자만) -->
+        <div v-if="authStore.isAdmin" class="flex items-center gap-2">
+          <input
+            v-model="form.isPinned"
+            type="checkbox"
+            id="isPinned"
+            class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+          />
+          <label
+            for="isPinned"
+            class="text-sm font-medium text-gray-700 cursor-pointer"
+          >
+            이 공지사항을 상단에 고정
+          </label>
+        </div>
+
+        <!-- 내용 (Quill 에디터) -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            내용 <span class="text-red-500">*</span>
+          </label>
+          <div class="border rounded-lg overflow-hidden text-lg">
+            <QuillEditor
+              ref="quillEditor"
+              v-model:content="form.content"
+              content-type="html"
+              :toolbar="editorToolbar"
+              theme="snow"
+              placeholder="공지사항 내용을 입력하세요"
+              style="min-height: 400px"
             />
           </div>
+        </div>
 
-          <!-- 고정 여부 (관리자만) -->
-          <div v-if="authStore.isAdmin" class="flex items-center gap-2">
+        <!-- 첨부파일 -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            첨부파일
+          </label>
+
+          <!-- 파일 업로드 버튼 -->
+          <div class="mb-4">
             <input
-              v-model="form.isPinned"
-              type="checkbox"
-              id="isPinned"
-              class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              ref="fileInput"
+              type="file"
+              multiple
+              @change="handleFileSelect"
+              class="hidden"
             />
-            <label
-              for="isPinned"
-              class="text-sm font-medium text-gray-700 cursor-pointer"
+            <button
+              type="button"
+              @click="$refs.fileInput.click()"
+              class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
             >
-              이 공지사항을 상단에 고정
-            </label>
+              <span>📎</span>
+              <span>파일 선택</span>
+            </button>
+            <p class="mt-2 text-xs text-gray-500">
+              * 최대 10MB, 이미지/문서 파일만 업로드 가능합니다
+            </p>
           </div>
 
-          <!-- 내용 (Quill 에디터) -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              내용 <span class="text-red-500">*</span>
-            </label>
-            <div class="border rounded-lg overflow-hidden text-lg">
-              <QuillEditor
-                ref="quillEditor"
-                v-model:content="form.content"
-                content-type="html"
-                :toolbar="editorToolbar"
-                theme="snow"
-                placeholder="공지사항 내용을 입력하세요"
-                style="min-height: 400px"
-              />
-            </div>
-          </div>
-
-          <!-- 첨부파일 -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
-              첨부파일
-            </label>
-
-            <!-- 파일 업로드 버튼 -->
-            <div class="mb-4">
-              <input
-                ref="fileInput"
-                type="file"
-                multiple
-                @change="handleFileSelect"
-                class="hidden"
-              />
+          <!-- 업로드된 파일 목록 -->
+          <div v-if="form.attachments.length > 0" class="space-y-2">
+            <div
+              v-for="(file, index) in form.attachments"
+              :key="index"
+              class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+            >
+              <span class="text-xl">📎</span>
+              <div class="flex-1">
+                <p class="font-medium text-gray-900 text-sm">
+                  {{ file.originalName || file.name }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ formatFileSize(file.size) }}
+                </p>
+              </div>
               <button
                 type="button"
-                @click="$refs.fileInput.click()"
-                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+                @click="removeFile(index)"
+                class="text-red-600 hover:text-red-800 transition-colors"
               >
-                <span>📎</span>
-                <span>파일 선택</span>
+                <span class="text-xl">×</span>
               </button>
-              <p class="mt-2 text-xs text-gray-500">
-                * 최대 10MB, 이미지/문서 파일만 업로드 가능합니다
-              </p>
-            </div>
-
-            <!-- 업로드된 파일 목록 -->
-            <div v-if="form.attachments.length > 0" class="space-y-2">
-              <div
-                v-for="(file, index) in form.attachments"
-                :key="index"
-                class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
-              >
-                <span class="text-xl">📎</span>
-                <div class="flex-1">
-                  <p class="font-medium text-gray-900 text-sm">
-                    {{ file.originalName || file.name }}
-                  </p>
-                  <p class="text-xs text-gray-500">
-                    {{ formatFileSize(file.size) }}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  @click="removeFile(index)"
-                  class="text-red-600 hover:text-red-800 transition-colors"
-                >
-                  <span class="text-xl">×</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- 파일 업로드 진행 상태 -->
-            <div v-if="uploading" class="mt-4">
-              <div class="flex items-center gap-2 text-sm text-gray-600">
-                <div
-                  class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"
-                ></div>
-                <span>파일 업로드 중... {{ uploadProgress }}%</span>
-              </div>
             </div>
           </div>
-        </form>
-      </div>
 
-      <!-- 푸터 -->
-      <div class="px-6 py-4 border-t flex items-center justify-end gap-3">
-        <button
-          type="button"
-          @click="closeModal"
-          class="px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          취소
-        </button>
-        <button
-          @click="handleSubmit"
-          :disabled="saving || !isFormValid"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          <span
-            v-if="saving"
-            class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
-          ></span>
-          <span>{{ saving ? '저장 중...' : isEdit ? '수정' : '등록' }}</span>
-        </button>
-      </div>
-    </div>
-  </div>
+          <!-- 파일 업로드 진행 상태 -->
+          <div v-if="uploading" class="mt-4">
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <div
+                class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"
+              ></div>
+              <span>파일 업로드 중... {{ uploadProgress }}%</span>
+            </div>
+          </div>
+        </div>
+      </form>
+    </template>
+    <template #footer>
+      <button
+        type="button"
+        @click="closeModal"
+        class="px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors"
+      >
+        취소
+      </button>
+      <button
+        @click="handleSubmit"
+        :disabled="saving || !isFormValid"
+        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      >
+        <span
+          v-if="saving"
+          class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+        ></span>
+        <span>{{ saving ? '저장 중...' : isEdit ? '수정' : '등록' }}</span>
+      </button>
+    </template>
+  </BaseModal>
 </template>
 
 <script>
@@ -199,11 +180,13 @@ import {
   formatFileSize,
   handleQuillImageUpload,
 } from '@/utils/fileUpload'
+import BaseModal from '@/components/common/BaseModal.vue'
 
 export default {
   name: 'NoticeFormModal',
   components: {
     QuillEditor,
+    BaseModal,
   },
   props: {
     notice: {
@@ -376,20 +359,6 @@ export default {
       }
     }
 
-    const startPos = ref({ x: 0, y: 0 });
-
-    const onMouseDown = (e) => {
-      startPos.value = { x: e.clientX, y: e.clientY };
-    };
-
-    const onMouseUp = (e) => {
-      const dx = Math.abs(e.clientX - startPos.value.x);
-      const dy = Math.abs(e.clientY - startPos.value.y);
-      if (dx < 5 && dy < 5) {
-        closeModal();
-      }
-    };
-
     // 생명주기
     onMounted(() => {
       initializeForm()
@@ -423,8 +392,6 @@ export default {
       removeFile,
       handleSubmit,
       formatFileSize,
-      onMouseDown,
-      onMouseUp,
     }
   },
 }

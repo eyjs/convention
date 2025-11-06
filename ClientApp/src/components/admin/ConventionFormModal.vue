@@ -1,41 +1,12 @@
 <template>
-  <div
-    class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-    @mousedown.self="onMouseDown"
-    @mouseup.self="onMouseUp"
-  >
-    <div
-      class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-    >
-      <!-- 헤더 -->
-      <div class="sticky top-0 bg-white border-b px-6 py-4">
-        <div class="flex justify-between items-center">
-          <h2 class="text-xl font-bold">
-            {{ convention ? '행사 수정' : '새 행사 만들기' }}
-          </h2>
-          <button
-            @click="$emit('close')"
-            class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- 폼 -->
-      <form @submit.prevent="handleSubmit" class="p-6 space-y-6">
+  <BaseModal :is-open="true" @close="$emit('close')" max-width="2xl">
+    <template #header>
+      <h2 class="text-xl font-bold">
+        {{ convention ? '행사 수정' : '새 행사 만들기' }}
+      </h2>
+    </template>
+    <template #body>
+      <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- 행사명 -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -143,53 +114,52 @@
             행사의 메인 컬러를 설정합니다
           </p>
         </div>
-
-        <!-- 버튼 -->
-        <div class="flex justify-end space-x-3 pt-4 border-t">
-          <button
-            type="button"
-            @click="$emit('close')"
-            class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            :disabled="saving"
-            class="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white rounded-lg transition-colors flex items-center space-x-2"
-          >
-            <svg
-              v-if="saving"
-              class="animate-spin w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              ></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            <span>{{
-              saving ? '저장 중...' : convention ? '수정' : '생성'
-            }}</span>
-          </button>
-        </div>
       </form>
-    </div>
-  </div>
+    </template>
+    <template #footer>
+      <button
+        type="button"
+        @click="$emit('close')"
+        class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+      >
+        취소
+      </button>
+      <button
+        @click="handleSubmit"
+        :disabled="saving"
+        class="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white rounded-lg transition-colors flex items-center space-x-2"
+      >
+        <svg
+          v-if="saving"
+          class="animate-spin w-4 h-4"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        <span>{{
+          saving ? '저장 중...' : convention ? '수정' : '생성'
+        }}</span>
+      </button>
+    </template>
+  </BaseModal>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
+import BaseModal from '@/components/common/BaseModal.vue'
 
 const props = defineProps({
   convention: Object,
@@ -235,18 +205,4 @@ const handleSubmit = async () => {
     saving.value = false
   }
 }
-
-const startPos = ref({ x: 0, y: 0 });
-
-const onMouseDown = (e) => {
-  startPos.value = { x: e.clientX, y: e.clientY };
-};
-
-const onMouseUp = (e) => {
-  const dx = Math.abs(e.clientX - startPos.value.x);
-  const dy = Math.abs(e.clientY - startPos.value.y);
-  if (dx < 5 && dy < 5) {
-    emit('close');
-  }
-};
 </script>

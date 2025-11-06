@@ -1,27 +1,11 @@
 <template>
-  <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-    @mousedown.self="onMouseDown"
-    @mouseup.self="onMouseUp"
-  >
-    <div
-      class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-    >
-      <!-- 헤더 -->
-      <div
-        class="px-4 md:px-6 py-4 border-b flex items-center justify-between bg-gray-50"
-      >
-        <h2 class="text-lg md:text-xl font-bold text-gray-900">
-          공지사항 상세보기
-        </h2>
-        <button
-          @click="closeModal"
-          class="text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <span class="text-2xl">×</span>
-        </button>
-      </div>
-
+  <BaseModal :is-open="true" @close="closeModal" max-width="5xl">
+    <template #header>
+      <h2 class="text-lg md:text-xl font-bold text-gray-900">
+        공지사항 상세보기
+      </h2>
+    </template>
+    <template #body>
       <!-- 로딩 상태 -->
       <div v-if="loading" class="flex-1 flex items-center justify-center py-12">
         <div class="text-center">
@@ -115,21 +99,17 @@
           </div>
         </div>
       </div>
-
-      <!-- 푸터 -->
-      <div
-        class="px-4 md:px-6 py-3 md:py-4 border-t flex items-center justify-end gap-2 md:gap-3 bg-gray-50"
+    </template>
+    <template #footer>
+      <button
+        type="button"
+        @click="closeModal"
+        class="px-4 md:px-6 py-2 text-sm md:text-base bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
       >
-        <button
-          type="button"
-          @click="closeModal"
-          class="px-4 md:px-6 py-2 text-sm md:text-base bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          닫기
-        </button>
-      </div>
-    </div>
-  </div>
+        닫기
+      </button>
+    </template>
+  </BaseModal>
 </template>
 
 <script>
@@ -137,12 +117,16 @@ import { ref, onMounted } from 'vue'
 import { noticeAPI } from '@/services/noticeService'
 import { formatFileSize } from '@/utils/fileUpload'
 import dayjs from 'dayjs'
+import BaseModal from '@/components/common/BaseModal.vue'
 
 // Quill 스타일 import (읽기 전용)
 import 'quill/dist/quill.snow.css'
 
 export default {
   name: 'NoticeDetailModal',
+  components: {
+    BaseModal,
+  },
   props: {
     noticeId: {
       type: Number,
@@ -208,20 +192,6 @@ export default {
       return dayjs(dateString).format('YYYY년 MM월 DD일 HH:mm')
     }
 
-    const startPos = ref({ x: 0, y: 0 });
-
-    const onMouseDown = (e) => {
-      startPos.value = { x: e.clientX, y: e.clientY };
-    };
-
-    const onMouseUp = (e) => {
-      const dx = Math.abs(e.clientX - startPos.value.x);
-      const dy = Math.abs(e.clientY - startPos.value.y);
-      if (dx < 5 && dy < 5) {
-        closeModal();
-      }
-    };
-
     // 생명주기
     onMounted(() => {
       console.log('[NoticeDetailModal] onMounted 호출됨')
@@ -236,8 +206,6 @@ export default {
       closeModal,
       formatDate,
       formatFileSize,
-      onMouseDown,
-      onMouseUp,
     }
   },
 }
