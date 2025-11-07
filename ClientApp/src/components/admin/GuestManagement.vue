@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div class="flex items-center gap-4">
         <h2 class="text-xl font-semibold">참석자 관리</h2>
         <!-- 선택된 참석자 수 표시 -->
@@ -11,7 +11,7 @@
           {{ selectedGuests.length }}명 선택됨
         </span>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <!-- 대량 작업 버튼 -->
         <button
           v-if="selectedGuests.length > 0"

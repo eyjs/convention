@@ -179,7 +179,7 @@ public class UserActionController : ControllerBase
 
     [Authorize]
     [HttpPost("{actionId:int}/complete")]
-    public async Task<IActionResult> CompleteAction(int conventionId, int actionId, [FromBody] ActionResponseDto responseDto)
+    public async Task<IActionResult> CompleteAction(int conventionId, int actionId, [FromBody] ActionResponseDto? responseDto = null)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
@@ -207,12 +207,56 @@ public class UserActionController : ControllerBase
 
         status.IsComplete = true;
         status.CompletedAt = DateTime.UtcNow;
-        status.ResponseDataJson = responseDto.ResponseDataJson;
+        status.ResponseDataJson = responseDto?.ResponseDataJson;
         status.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "액션이 완료되었습니다." });
+    }
+
+    /// <summary>
+    /// 액션 상태 토글 (완료 ↔ 미완료)
+    /// </summary>
+    [Authorize]
+    [HttpPost("{actionId:int}/toggle")]
+    public async Task<IActionResult> ToggleAction(int conventionId, int actionId, [FromBody] ToggleActionDto dto)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized("사용자 정보를 확인할 수 없습니다.");
+        }
+
+        var action = await _context.ConventionActions.FirstOrDefaultAsync(a => a.Id == actionId && a.ConventionId == conventionId);
+        if (action == null)
+        {
+            return NotFound(new { message = "액션을 찾을 수 없습니다." });
+        }
+
+        var status = await _context.UserActionStatuses.FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
+        if (status == null)
+        {
+            status = new UserActionStatus
+            {
+                UserId = userId,
+                ConventionActionId = action.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.UserActionStatuses.Add(status);
+        }
+
+        status.IsComplete = dto.IsComplete;
+        status.CompletedAt = dto.IsComplete ? DateTime.UtcNow : null;
+        status.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = dto.IsComplete ? "액션이 완료되었습니다." : "완료가 취소되었습니다.",
+            isComplete = status.IsComplete
+        });
     }
 
     /// <summary>

@@ -7,13 +7,13 @@
       @mouseup.self="onMouseUp"
     >
       <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-h-[90vh] flex flex-col"
+        class="bg-white rounded-2xl shadow-2xl w-full max-h-[90vh] flex flex-col overflow-hidden"
         :class="maxWidthClass"
       >
         <!-- Header -->
-        <header v-if="$slots.header" class="px-6 py-4 border-b flex items-center justify-between">
+        <header v-if="$slots.header" class="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
           <slot name="header"></slot>
-          <button @click="close" class="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+          <button @click="close" class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 flex-shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -21,12 +21,12 @@
         </header>
 
         <!-- Body -->
-        <main class="p-6 overflow-y-auto">
+        <main class="p-6 overflow-y-auto overflow-x-hidden flex-1 min-h-0">
           <slot name="body"></slot>
         </main>
 
         <!-- Footer -->
-        <footer v-if="$slots.footer" class="px-6 py-4 border-t flex justify-end gap-3">
+        <footer v-if="$slots.footer" class="px-6 py-4 border-t flex justify-end gap-3 flex-shrink-0">
           <slot name="footer"></slot>
         </footer>
       </div>
@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue';
 
 const props = defineProps({
   isOpen: Boolean,
@@ -76,6 +76,34 @@ const maxWidthClass = computed(() => {
     '4xl': 'max-w-4xl',
     '5xl': 'max-w-5xl',
   }[props.maxWidth];
+});
+
+// 모달이 열릴 때 body 스크롤 막기
+watch(() => props.isOpen, (isOpen) => {
+  if (isOpen) {
+    // 현재 스크롤 위치 저장
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflowY = 'scroll';
+  } else {
+    // 스크롤 위치 복원
+    const scrollY = document.body.style.top;
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.body.style.overflowY = '';
+    window.scrollTo(0, parseInt(scrollY || '0') * -1);
+  }
+});
+
+// 컴포넌트 unmount 시 body 스타일 복원
+onUnmounted(() => {
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.width = '';
+  document.body.style.overflowY = '';
 });
 </script>
 

@@ -144,13 +144,7 @@ export const ACTION_CATEGORIES = [
       title: 'Checklist Card: 추가 설정 가이드',
       content:
         '체크리스트 카드에 표시될 내용을 설정합니다. ConfigJson은 사용되지 않으며, 액션의 기본 제목과 마감일이 자동으로 표시됩니다.',
-      example: JSON.stringify(
-        {
-          "info": "이 카테고리는 ConfigJson을 사용하지 않습니다."
-        },
-        null,
-        2,
-      ),
+      example: '',
     },
   },
 ]

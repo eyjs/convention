@@ -1,36 +1,56 @@
 <template>
   <div
-    class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 transition-all duration-200"
-    :class="{ 'opacity-60 bg-gray-50': isCompleted }"
+    @click="toggleAction"
+    class="bg-white rounded-lg p-4 flex items-center gap-3 cursor-pointer transition-all duration-200 hover:shadow-md border border-gray-200"
+    :class="{ 'opacity-60': isCompleted }"
   >
-    <div class="p-5 flex items-center justify-between gap-4">
-      <div class="flex-1 min-w-0">
-        <h3
-          class="text-base font-bold text-gray-900 transition-colors"
-          :class="{ 'line-through text-gray-500': isCompleted }"
-        >
-          {{ feature.title }}
-        </h3>
-        <p v-if="feature.deadline" class="text-xs text-gray-500 mt-1">
-          마감: {{ new Date(feature.deadline).toLocaleDateString() }}
-        </p>
-      </div>
+    <!-- 체크박스 -->
+    <div
+      class="flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-all duration-200"
+      :class="[
+        isCompleted
+          ? 'bg-[#17B185] border-[#17B185]'
+          : 'border-gray-300 hover:border-[#17B185]',
+      ]"
+    >
+      <svg
+        v-if="isCompleted"
+        class="w-4 h-4 text-white"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="3"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+    </div>
 
-      <div class="flex-shrink-0">
-        <button
-          @click="completeAction"
-          :disabled="isCompleted"
-          class="px-4 py-2 text-sm font-bold rounded-lg transition-transform transform active:scale-95"
-          :class="[
-            isCompleted
-              ? 'bg-green-100 text-green-700 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700',
-          ]"
-        >
-          <span v-if="isCompleted">✓ 완료됨</span>
-          <span v-else>완료하기</span>
-        </button>
-      </div>
+    <!-- 텍스트 영역 -->
+    <div class="flex-1 min-w-0">
+      <h3
+        class="text-base font-medium transition-colors"
+        :class="[
+          isCompleted
+            ? 'line-through text-gray-400'
+            : 'text-gray-900',
+        ]"
+      >
+        {{ feature.title }}
+      </h3>
+      <p v-if="feature.deadline && !isCompleted" class="text-xs text-gray-500 mt-0.5">
+        마감: {{ new Date(feature.deadline).toLocaleDateString() }}
+      </p>
+    </div>
+
+    <!-- 완료 뱃지 (옵션) -->
+    <div v-if="isCompleted" class="flex-shrink-0">
+      <span class="px-2 py-1 bg-[#17B185]/10 text-[#17B185] text-xs font-medium rounded">
+        완료
+      </span>
     </div>
   </div>
 </template>
@@ -50,25 +70,35 @@ const props = defineProps({
 const conventionStore = useConventionStore()
 const isCompleted = ref(props.feature.isComplete || false)
 
-async function completeAction() {
-  if (isCompleted.value) return
-
+async function toggleAction() {
   try {
     const conventionId = conventionStore.currentConvention?.id
     if (!conventionId) {
       throw new Error('Convention ID not found')
     }
 
+    // 토글: 완료 상태를 반대로 전환
+    const newStatus = !isCompleted.value
+
     await apiClient.post(
-      `/conventions/${conventionId}/actions/${props.feature.id}/complete`,
+      `/conventions/${conventionId}/actions/${props.feature.id}/toggle`,
+      { isComplete: newStatus }
     )
 
-    isCompleted.value = true
+    isCompleted.value = newStatus
+
+    // 성공 시 간단한 피드백
+    if (newStatus) {
+      console.log('항목이 완료되었습니다.')
+    } else {
+      console.log('완료가 취소되었습니다.')
+    }
+
     // Optionally, emit an event to notify the parent component
-    // emit('actionCompleted', props.feature.id)
+    // emit('actionToggled', props.feature.id, newStatus)
   } catch (error) {
-    console.error('Failed to complete action:', error)
-    alert('액션 완료 처리에 실패했습니다.')
+    console.error('Failed to toggle action:', error)
+    alert('상태 변경에 실패했습니다.')
   }
 }
 </script>

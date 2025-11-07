@@ -35,13 +35,14 @@
         :key="item.actionId"
         :to="item.navigateTo"
         class="flex items-start justify-between p-4 rounded-xl border-2 transition-all group"
-        :class="[
-          item.isComplete
-            ? 'border-green-200 bg-green-50'
-            : isExpired(item.deadline)
-              ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
-              : 'border-gray-200 hover:shadow-sm hover:border-primary-500 hover:bg-primary-50',
-        ]"
+                                        :class="[
+                                          item.isComplete
+                                            ? 'border-[#17B185]'
+                                            : isExpired(item.deadline)
+                                              ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                                              : 'border-gray-200 hover:shadow-sm hover:border-primary-500 hover:bg-primary-50',
+                                        ]"
+                                        :style="item.isComplete ? { backgroundColor: 'rgba(23, 177, 133, 0.1)' } : {}"
         @click.prevent="
           isExpired(item.deadline) ? null : $router.push(item.navigateTo)
         "
@@ -52,7 +53,7 @@
             class="w-6 h-6 rounded-full flex items-center justify-center transition-colors flex-shrink-0 mt-0.5"
             :class="
               item.isComplete
-                ? 'bg-green-500'
+                ? 'bg-[#17B185]'
                 : 'bg-gray-200 group-hover:bg-primary-200'
             "
           >
@@ -93,7 +94,7 @@
                 class="font-medium transition-colors"
                 :class="[
                   item.isComplete
-                    ? 'text-green-700'
+                    ? 'text-[#17B185]'
                     : isExpired(item.deadline)
                       ? 'text-gray-400 line-through'
                       : 'text-gray-900 group-hover:text-primary-600',
@@ -124,7 +125,7 @@
             <!-- 마감일 및 카운트다운 -->
             <div v-if="item.deadline" class="mt-2">
               <!-- 완료된 경우 -->
-              <div v-if="item.isComplete" class="text-xs text-green-600">
+              <div v-if="item.isComplete" class="text-xs text-[#17B185]">
                 <svg
                   class="w-3 h-3 inline mr-1"
                   fill="none"
@@ -214,9 +215,9 @@
     <!-- 완료 메시지 -->
     <div
       v-if="checklist.progressPercentage === 100"
-      class="mt-6 p-4 bg-green-50 border border-green-200 rounded-xl"
+            class="mt-6 p-4 rounded-xl bg-[#17B185]/10 border-2 border-[#17B185]/20"
     >
-      <div class="flex items-center space-x-2 text-green-700">
+      <div class="flex items-center space-x-2 text-[#17B185]">
         <svg
           class="w-5 h-5"
           fill="none"
@@ -243,6 +244,10 @@ const props = defineProps({
   checklist: {
     type: Object,
     required: true,
+  },
+  brandColor: {
+    type: String,
+    default: '#10b981', // Default to primary-600 green if not provided
   },
 })
 
@@ -333,5 +338,13 @@ function getUrgencyClass(deadline) {
   if (level === 'urgent') return 'bg-orange-100 text-orange-700'
   if (level === 'warning') return 'bg-yellow-100 text-yellow-700'
   return ''
+}
+
+// Helper function to convert hex to rgba
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 </script>

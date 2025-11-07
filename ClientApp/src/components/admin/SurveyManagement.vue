@@ -4,7 +4,7 @@
     <div v-if="currentView === 'list'" class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">설문 관리</h2>
-        <button @click="openCreateModal" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 text-sm font-medium">
+        <button @click="openCreateModal" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium">
           새 설문 생성
         </button>
       </div>

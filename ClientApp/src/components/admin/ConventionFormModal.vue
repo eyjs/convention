@@ -97,19 +97,29 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">
             브랜드 컬러
           </label>
-          <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-4 mb-2">
             <input
               v-model="form.brandColor"
               type="color"
               class="w-16 h-10 rounded cursor-pointer"
+              :disabled="useDefaultColor"
             />
             <input
               v-model="form.brandColor"
               type="text"
               class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="#6366f1"
+              :disabled="useDefaultColor"
             />
           </div>
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              v-model="useDefaultColor"
+              type="checkbox"
+              class="w-4 h-4 text-[#17B185] border-gray-300 rounded focus:ring-[#17B185]"
+            />
+            <span class="text-sm text-gray-700">기본색상 사용 (#17B185)</span>
+          </label>
           <p class="text-sm text-gray-500 mt-1">
             행사의 메인 컬러를 설정합니다
           </p>
@@ -168,6 +178,9 @@ const props = defineProps({
 const emit = defineEmits(['close', 'save'])
 
 const saving = ref(false)
+const useDefaultColor = ref(false)
+const DEFAULT_BRAND_COLOR = '#17B185'
+
 const form = ref({
   title: '',
   conventionType: 'DOMESTIC',
@@ -178,20 +191,30 @@ const form = ref({
   themePreset: 'default',
 })
 
+// 기본색상 체크박스 변경 시 브랜드 컬러 자동 설정
+watch(useDefaultColor, (isDefault) => {
+  if (isDefault) {
+    form.value.brandColor = DEFAULT_BRAND_COLOR
+  }
+})
+
 // 수정 모드일 때 기존 데이터 로드
 watch(
   () => props.convention,
   (newVal) => {
     if (newVal) {
+      const brandColor = newVal.brandColor || '#6366f1'
       form.value = {
         title: newVal.title,
         conventionType: newVal.conventionType,
         startDate: newVal.startDate ? newVal.startDate.split('T')[0] : '',
         endDate: newVal.endDate ? newVal.endDate.split('T')[0] : '',
-        brandColor: newVal.brandColor || '#6366f1',
+        brandColor: brandColor,
         renderType: newVal.renderType || 'STANDARD',
         themePreset: newVal.themePreset || 'default',
       }
+      // 기본색상이면 체크박스 체크
+      useDefaultColor.value = brandColor === DEFAULT_BRAND_COLOR
     }
   },
   { immediate: true },

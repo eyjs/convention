@@ -165,7 +165,7 @@
               @click="$emit('show-guest', guest.id)"
             >
               <div class="flex-1 min-w-0">
-                <p class="font-medium truncate">{{ guest.guestName }}</p>
+                <p class="font-medium truncate">{{ guest.name }}</p>
                 <p class="text-sm text-gray-500 truncate">
                   {{ guest.corpPart || '부서 미지정' }}
                 </p>

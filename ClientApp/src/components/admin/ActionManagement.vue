@@ -1,73 +1,60 @@
 <template>
-  <div class="space-y-6">
+  <div>
     <!-- 헤더 -->
-    <div class="flex items-center justify-between">
+    <div class="flex justify-between items-center mb-6">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900">참여자 액션 관리</h2>
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900">참여자 액션 관리</h2>
         <p class="text-sm text-gray-600 mt-1">
           참석자가 완료해야 하는 필수 액션을 관리합니다
         </p>
       </div>
       <button
         @click="openCreateModal"
-        class="flex items-center space-x-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+        class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
       >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4"
-          />
-        </svg>
-        <span>액션 추가</span>
+        액션 추가
       </button>
     </div>
 
     <!-- 로딩 -->
-    <div v-if="loading" class="text-center py-12">
+    <div v-if="loading" class="text-center py-12 mt-6">
       <div
         class="inline-block w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"
       ></div>
     </div>
 
     <!-- 액션 목록 -->
-    <div v-else-if="actions.length > 0" class="grid gap-4">
+    <div v-else-if="actions.length > 0" class="grid gap-4 mt-6">
       <div
         v-for="action in actions"
         :key="action.id"
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
+        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-shadow overflow-hidden"
       >
-        <div class="flex items-start justify-between">
-          <div class="flex-1">
-            <div class="flex items-center space-x-3 mb-2">
-              <h3 class="text-lg font-bold text-gray-900">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2 mb-2">
+              <h3 class="text-base sm:text-lg font-bold text-gray-900 break-words">
                 {{ action.title }}
               </h3>
 
               <!-- 템플릿/전용 배지 -->
               <span
                 v-if="action.templateName"
-                class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded"
+                class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded flex-shrink-0"
                 title="공통 템플릿 액션"
               >
                 공통 템플릿
               </span>
               <span
                 v-else
-                class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded"
+                class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded flex-shrink-0"
                 title="이 행사 전용 액션"
               >
                 이 행사 전용
               </span>
 
               <span
-                class="px-2 py-1 text-xs font-medium rounded-full"
+                class="px-2 py-1 text-xs font-medium rounded-full flex-shrink-0"
                 :class="
                   action.isActive
                     ? 'bg-green-100 text-green-700'
@@ -77,16 +64,16 @@
                 {{ action.isActive ? '활성' : '비활성' }}
               </span>
               <span
-                class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full"
+                class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full flex-shrink-0"
               >
                 순서: {{ action.orderNum }}
               </span>
             </div>
 
             <div class="space-y-2 text-sm">
-              <div class="flex items-center text-gray-600">
+              <div class="flex items-center text-gray-600 flex-wrap gap-2">
                 <svg
-                  class="w-4 h-4 mr-2"
+                  class="w-4 h-4 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -103,9 +90,9 @@
                 }}</span>
               </div>
 
-              <div class="flex items-center text-gray-600">
+              <div class="flex items-center text-gray-600 flex-wrap gap-2">
                 <svg
-                  class="w-4 h-4 mr-2"
+                  class="w-4 h-4 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -117,15 +104,15 @@
                     d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <span>{{ action.mapsTo }}</span>
+                <span class="break-all min-w-0 overflow-wrap-anywhere">{{ action.mapsTo }}</span>
               </div>
 
               <div
                 v-if="action.deadline"
-                class="flex items-center text-gray-600"
+                class="flex items-center text-gray-600 flex-wrap gap-2"
               >
                 <svg
-                  class="w-4 h-4 mr-2"
+                  class="w-4 h-4 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -142,10 +129,10 @@
 
               <div
                 v-if="action.configJson"
-                class="flex items-start text-gray-600"
+                class="flex items-start text-gray-600 min-w-0"
               >
                 <svg
-                  class="w-4 h-4 mr-2 mt-0.5"
+                  class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -164,7 +151,7 @@
                   />
                 </svg>
                 <pre
-                  class="text-xs bg-gray-100 p-2 rounded overflow-auto max-w-md"
+                  class="text-xs bg-gray-100 p-2 rounded overflow-x-auto break-all whitespace-pre-wrap flex-1 min-w-0"
                   >{{ action.configJson }}</pre
                 >
               </div>
@@ -172,11 +159,11 @@
           </div>
 
           <!-- 액션 버튼 -->
-          <div class="flex items-center space-x-2 ml-4">
+          <div class="flex items-center gap-2 flex-shrink-0">
             <button
               @click="toggleAction(action)"
               :title="action.isActive ? '비활성화' : '활성화'"
-              class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              class="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
             >
               <svg
                 v-if="action.isActive"
@@ -210,7 +197,7 @@
 
             <button
               @click="openEditModal(action)"
-              class="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
+              class="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors flex-shrink-0"
               title="수정"
             >
               <svg
@@ -230,7 +217,7 @@
 
             <button
               @click="deleteAction(action)"
-              class="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+              class="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors flex-shrink-0"
               title="삭제"
             >
               <svg
@@ -255,7 +242,7 @@
     <!-- 빈 상태 -->
     <div
       v-else
-      class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300"
+      class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300 mt-6"
     >
       <svg
         class="w-16 h-16 mx-auto text-gray-400 mb-4"
@@ -282,41 +269,16 @@
       </button>
     </div>
 
-    <!-- 액션 생성/수정 모달 -->
-    <div
-      v-if="showModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-    >
-      <div
-        class="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-      >
-        <div
-          class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between"
-        >
-          <h3 class="text-lg font-bold text-gray-900">
-            {{ editingAction ? '액션 수정' : '새 액션 추가' }}
-          </h3>
-          <button
-            @click="closeModal"
-            class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <svg
-              class="w-5 h-5 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
+    <!-- 액션 생성/수정 모달 (BaseModal 사용) -->
+    <BaseModal :is-open="showModal" @close="closeModal" max-width="lg">
+      <template #header>
+        <h3 class="text-lg font-bold text-gray-900">
+          {{ editingAction ? '액션 수정' : '새 액션 추가' }}
+        </h3>
+      </template>
 
-        <form @submit.prevent="saveAction" class="p-6 space-y-4">
+      <template #body>
+        <div class="space-y-4">
           <!-- 이 행사 전용 체크박스 -->
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div class="flex items-start gap-3">
@@ -350,12 +312,12 @@
             </label>
             <select
               v-model="form.behaviorType"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             >
-              <option value="StatusOnly">StatusOnly - 단순 완료 처리 (기존 방식)</option>
-              <option value="GenericForm">GenericForm - 범용 폼 데이터 수집</option>
-              <option value="ModuleLink">ModuleLink - 공통 모듈 연동</option>
-              <option value="Link">Link - 외부/내부 링크</option>
+              <option value="StatusOnly">StatusOnly (단순 완료)</option>
+              <option value="GenericForm">GenericForm (폼 수집)</option>
+              <option value="ModuleLink">ModuleLink (모듈 연동)</option>
+              <option value="Link">Link (링크)</option>
             </select>
             <p class="text-xs text-gray-500 mt-1">
               액션 클릭 시 어떻게 동작할지 선택하세요
@@ -367,7 +329,7 @@
             <label class="block text-sm font-semibold text-gray-700 mb-2">
               액션 카테고리 *
             </label>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               <div
                 v-for="category in actionCategories"
                 :key="category.key"
@@ -401,7 +363,7 @@
               <button
                 type="button"
                 @click="copyGuideExample"
-                class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 flex-shrink-0"
               >
                 예시 복사
               </button>
@@ -410,7 +372,7 @@
               {{ selectedCategoryGuide.content }}
             </p>
             <pre
-              class="bg-white p-3 rounded border border-blue-200 text-xs overflow-x-auto"
+              class="bg-white p-3 rounded border border-blue-200 text-xs overflow-x-auto break-all whitespace-pre-wrap"
               >{{ selectedCategoryGuide.example }}</pre
             >
           </div>
@@ -495,7 +457,7 @@
             <p class="text-xs text-blue-700 mb-2">
               ConfigJson에 폼 필드를 정의하세요. 예시:
             </p>
-            <pre class="bg-white p-2 rounded text-xs overflow-x-auto">
+            <pre class="bg-white p-2 rounded text-xs overflow-x-auto break-all whitespace-pre-wrap">
 {
   "fields": [
     {
@@ -537,7 +499,7 @@
             </label>
             <div class="flex items-center">
               <span
-                class="px-3 py-2 bg-gray-100 text-gray-700 border border-r-0 border-gray-300 rounded-l-lg font-mono text-sm"
+                class="px-2 sm:px-3 py-2 bg-gray-100 text-gray-700 border border-r-0 border-gray-300 rounded-l-lg font-mono text-xs sm:text-sm whitespace-nowrap"
               >
                 /Feature
               </span>
@@ -546,7 +508,7 @@
                 type="text"
                 required
                 placeholder="travel-info"
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                class="flex-1 min-w-0 px-3 sm:px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
               />
             </div>
             <p class="text-xs text-gray-500 mt-1">
@@ -615,33 +577,33 @@
           >
             {{ errorMessage }}
           </div>
+        </div>
+      </template>
 
-          <!-- 버튼 -->
-          <div class="flex space-x-3 pt-4">
-            <button
-              type="button"
-              @click="closeModal"
-              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              :disabled="submitting"
-              class="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors disabled:opacity-50"
-            >
-              {{ submitting ? '저장 중...' : '저장' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      <template #footer>
+        <button
+          type="button"
+          @click="closeModal"
+          class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          취소
+        </button>
+        <button
+          @click="saveAction"
+          :disabled="submitting"
+          class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors disabled:opacity-50"
+        >
+          {{ submitting ? '저장 중...' : '저장' }}
+        </button>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import apiClient from '@/services/api'
+import BaseModal from '@/components/common/BaseModal.vue'
 import {
   ACTION_CATEGORIES,
   getActionCategory,
@@ -816,7 +778,6 @@ function closeModal() {
 }
 
 async function saveAction() {
-  console.log('hi')
   errorMessage.value = ''
   submitting.value = true
 

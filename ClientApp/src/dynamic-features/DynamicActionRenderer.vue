@@ -13,8 +13,45 @@
 
 <template>
   <div v-if="features && features.length > 0" class="dynamic-actions-container">
+    <!-- CHECKLIST_CARD 그룹 처리 -->
+    <div v-if="checklistItems.length > 0" class="bg-white rounded-2xl shadow-lg p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-gray-900">필수 제출 사항</h2>
+        <button
+          v-if="checklistItems.length > 3"
+          @click="isChecklistExpanded = !isChecklistExpanded"
+          class="text-sm text-[#17B185] font-medium flex items-center hover:underline"
+        >
+          {{ isChecklistExpanded ? '접기' : `더보기 (${checklistItems.length - 3})` }}
+          <svg
+            class="w-4 h-4 ml-0.5 transition-transform"
+            :class="{ 'rotate-180': isChecklistExpanded }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+      </div>
+      <div class="space-y-3">
+        <component
+          v-for="(feature, index) in displayedChecklistItems"
+          :key="feature.id"
+          :is="resolveComponent('CHECKLIST_CARD')"
+          :feature="feature"
+        />
+      </div>
+    </div>
+
+    <!-- 다른 액션 카테고리 렌더링 -->
     <template
-      v-for="feature in features"
+      v-for="feature in nonChecklistFeatures"
       :key="feature.id || feature.actionType"
     >
       <component
@@ -33,7 +70,7 @@
 </template>
 
 <script setup>
-import { defineAsyncComponent } from 'vue'
+import { defineAsyncComponent, ref, computed } from 'vue'
 
 const props = defineProps({
   features: {
@@ -41,6 +78,25 @@ const props = defineProps({
     required: true,
     default: () => [],
   },
+})
+
+const isChecklistExpanded = ref(false)
+
+// CHECKLIST_CARD와 다른 카테고리 분리
+const checklistItems = computed(() =>
+  props.features.filter(f => f.actionCategory === 'CHECKLIST_CARD')
+)
+
+const nonChecklistFeatures = computed(() =>
+  props.features.filter(f => f.actionCategory !== 'CHECKLIST_CARD')
+)
+
+// 표시할 체크리스트 아이템 (펼침 상태에 따라 다름)
+const displayedChecklistItems = computed(() => {
+  if (isChecklistExpanded.value || checklistItems.value.length <= 3) {
+    return checklistItems.value
+  }
+  return checklistItems.value.slice(0, 3)
 })
 
 /**

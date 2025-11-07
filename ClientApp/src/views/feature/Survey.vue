@@ -40,9 +40,12 @@
           </div>
         </div>
         
-        <div class="mt-10">
-          <button type="submit" :disabled="isSubmitting" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed font-semibold">
-            {{ isSubmitting ? 'Submitting...' : 'Submit Survey' }}
+        <div class="mt-10 flex justify-between space-x-4">
+          <button type="button" @click="router.back()" class="w-1/2 bg-gray-300 text-gray-800 py-3 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 font-semibold">
+            뒤로가기
+          </button>
+          <button type="submit" :disabled="isSubmitting" class="w-1/2 bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed font-semibold">
+            {{ isSubmitting ? '제출 중...' : '제출' }}
           </button>
         </div>
       </form>

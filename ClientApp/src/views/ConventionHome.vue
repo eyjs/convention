@@ -109,6 +109,7 @@
       <ChecklistProgress
         v-if="checklistStatus && checklistStatus.totalItems > 0"
         :checklist="checklistStatus"
+        :brandColor="brandColor"
       />
 
       <!-- 공지사항 -->
@@ -118,22 +119,8 @@
           <button
             @click="navigateTo('/notices')"
             class="text-sm font-medium flex items-center"
-            :style="{ color: brandColor }"
           >
             더보기
-            <svg
-              class="w-4 h-4 ml-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
           </button>
         </div>
 
@@ -509,17 +496,28 @@ async function loadDynamicActions() {
     const conventionId = conventionStore.currentConvention?.id
     if (!conventionId) return
 
-    const response = await apiClient.get(
-      `/conventions/${conventionId}/actions/all`,
-      {
+    // 액션 목록과 상태 정보를 병렬로 가져오기
+    const [actionsResponse, statusesResponse] = await Promise.all([
+      apiClient.get(`/conventions/${conventionId}/actions/all`, {
         params: {
           targetLocation: 'HOME_SUB_HEADER,HOME_CONTENT_TOP',
           isActive: true,
         },
-      },
-    )
+      }),
+      apiClient.get(`/conventions/${conventionId}/actions/statuses`),
+    ])
 
-    allActions.value = response.data || []
+    const actions = actionsResponse.data || []
+    const statuses = statusesResponse.data || []
+
+    // 상태 정보를 맵으로 변환
+    const statusMap = new Map(statuses.map((s) => [s.conventionActionId, s]))
+
+    // 액션에 isComplete 정보 추가
+    allActions.value = actions.map((action) => ({
+      ...action,
+      isComplete: statusMap.get(action.id)?.isComplete || false,
+    }))
   } catch (error) {
     console.error('Failed to load dynamic actions:', error)
     allActions.value = []

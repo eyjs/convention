@@ -15,7 +15,8 @@
       "Bash(dotnet ef migrations:*)",
       "Bash(nul)",
       "Bash(findstr:*)",
-      "Bash(dotnet ef database update:*)"
+      "Bash(dotnet ef database update:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
