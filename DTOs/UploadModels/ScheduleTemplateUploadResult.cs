@@ -16,7 +16,6 @@ public class ScheduleTemplateUploadResult
 public class ConventionActionInfo
 {
     public int Id { get; set; }
-    public string ActionType { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public DateTime? ScheduleDateTime { get; set; }
 }

@@ -55,6 +55,7 @@ const componentMap = {
   ),
   BANNER: defineAsyncComponent(() => import('./common/GenericBanner.vue')),
   CARD: defineAsyncComponent(() => import('./common/GenericCard.vue')),
+  CHECKLIST_CARD: defineAsyncComponent(() => import('./common/ChecklistCard.vue')),
 }
 
 /**

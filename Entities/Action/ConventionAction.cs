@@ -1,6 +1,32 @@
 namespace LocalRAG.Entities.Action;
 
 /// <summary>
+/// 액션의 실행 방식을 정의하는 Enum
+/// </summary>
+public enum ActionBehaviorType
+{
+    /// <summary>
+    /// (기본값) 단순 완료 처리 - 기존 방식
+    /// </summary>
+    StatusOnly = 0,
+
+    /// <summary>
+    /// 범용 폼을 통한 JSON 데이터 수집
+    /// </summary>
+    GenericForm = 1,
+
+    /// <summary>
+    /// 공통 모듈 연동 (예: 설문조사, 퀴즈)
+    /// </summary>
+    ModuleLink = 2,
+
+    /// <summary>
+    /// 외부/내부 링크로 이동
+    /// </summary>
+    Link = 3
+}
+
+/// <summary>
 /// 행사별 참여자 액션 템플릿
 /// 어드민이 동적으로 액션을 추가하고 관리할 수 있음
 /// </summary>
@@ -15,11 +41,6 @@ public class ConventionAction
     /// 연관된 행사 ID
     /// </summary>
     public int ConventionId { get; set; }
-
-    /// <summary>
-    /// 프로그램적 키 (예: "PROFILE_OVERSEAS", "SCHEDULE_CHOICE", "SURVEY_POST_EVENT")
-    /// </summary>
-    public string ActionType { get; set; } = string.Empty;
 
     /// <summary>
     /// 체크리스트에 표시될 제목 (예: "여행 서류 제출")
@@ -97,6 +118,17 @@ public class ConventionAction
     /// ActionCategory가 있을 때만 의미 있음
     /// </summary>
     public string? TargetLocation { get; set; }
+
+    /// <summary>
+    /// 액션 실행 방식 (StatusOnly, GenericForm, ModuleLink, Link)
+    /// 기본값: StatusOnly (기존 방식 유지)
+    /// </summary>
+    public ActionBehaviorType BehaviorType { get; set; } = ActionBehaviorType.StatusOnly;
+
+    /// <summary>
+    /// ModuleLink 타입일 경우, 대상 모듈의 PK ID (예: SurveyId)
+    /// </summary>
+    public int? TargetModuleId { get; set; }
 
     // Navigation Property
     public Convention? Convention { get; set; }

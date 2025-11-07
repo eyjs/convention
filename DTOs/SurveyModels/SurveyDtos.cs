@@ -1,15 +1,21 @@
+using System;
 using System.Collections.Generic;
 
 namespace LocalRAG.DTOs.SurveyModels
 {
     public class SurveyResponseDto
     {
-        public List<SurveyResponseAnswerDto> Answers { get; set; } = new List<SurveyResponseAnswerDto>();
+        public int Id { get; set; }
+        public int SurveyId { get; set; }
+        public int UserId { get; set; }
+        public DateTime SubmittedAt { get; set; }
+        public List<SurveyResponseDetailDto> Answers { get; set; } = new List<SurveyResponseDetailDto>();
     }
 
-    public class SurveyResponseAnswerDto
+    public class SurveyResponseDetailDto
     {
-        public string Question { get; set; } = string.Empty;
-        public string Answer { get; set; } = string.Empty;
+        public int QuestionId { get; set; }
+        public int? SelectedOptionId { get; set; }
+        public string? AnswerText { get; set; }
     }
 }

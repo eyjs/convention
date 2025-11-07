@@ -181,19 +181,17 @@ public class ActionTemplateController : ControllerBase
         if (convention == null)
             return NotFound("Convention not found");
 
-        // 이미 같은 ActionType이 있는지 확인
-        var actionType = dto.ActionType ?? template.TemplateType;
+        // 이미 같은 템플릿이 적용되어 있는지 확인
         var exists = await _context.ConventionActions
-            .AnyAsync(a => a.ConventionId == conventionId && a.ActionType == actionType);
+            .AnyAsync(a => a.ConventionId == conventionId && a.TemplateId == templateId);
 
         if (exists)
-            return BadRequest("이미 동일한 ActionType이 존재합니다.");
+            return BadRequest("이미 동일한 템플릿이 적용되어 있습니다.");
 
         var action = new ConventionAction
         {
             ConventionId = conventionId,
             TemplateId = templateId,
-            ActionType = actionType,
             Title = dto.Title ?? template.TemplateName,
             Deadline = dto.Deadline,
             MapsTo = dto.MapsTo ?? template.DefaultRoute,

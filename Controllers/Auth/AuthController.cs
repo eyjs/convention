@@ -366,7 +366,6 @@ public class AuthController : ControllerBase
             items.Add(new
             {
                 actionId = action.Id,
-                actionType = action.ActionType,
                 title = action.Title,
                 isComplete = isComplete,
                 deadline = action.Deadline,

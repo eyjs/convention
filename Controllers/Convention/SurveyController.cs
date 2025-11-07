@@ -83,10 +83,10 @@ namespace LocalRAG.Controllers.Convention
                 return BadRequest("Survey ID mismatch.");
             }
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
-                return Unauthorized();
+                return Unauthorized("Invalid user credentials.");
             }
 
             try
@@ -103,6 +103,26 @@ namespace LocalRAG.Controllers.Convention
                 // Log the exception (e.g., using ILogger)
                 return StatusCode(500, new { message = "An internal error occurred.", details = ex.Message });
             }
+        }
+
+        [HttpGet("{surveyId}/responses/me")]
+        [Authorize]
+        public async Task<ActionResult<SurveyResponseDto>> GetUserSurveyResponse(int surveyId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return Unauthorized("User ID not found in token.");
+            }
+
+            var response = await _surveyService.GetUserSurveyResponseAsync(surveyId, userId);
+
+            if (response == null)
+            {
+                return NotFound("User response not found for this survey.");
+            }
+
+            return Ok(response);
         }
 
         [HttpGet("{id}/stats")]

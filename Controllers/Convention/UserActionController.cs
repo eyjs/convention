@@ -3,8 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
 using LocalRAG.Entities;
-
+using LocalRAG.Entities.Action;
 using System.Security.Claims;
+using System.Text.Json;
 using LocalRAG.DTOs.ActionModels;
 
 namespace LocalRAG.Controllers.Convention;
@@ -44,7 +45,6 @@ public class UserActionController : ControllerBase
             .Select(a => new
             {
                 a.Id,
-                a.ActionType,
                 a.Title,
                 a.Deadline,
                 a.MapsTo,
@@ -52,6 +52,8 @@ public class UserActionController : ControllerBase
                 a.ActionCategory,
                 a.TargetLocation,
                 a.ConfigJson,
+                a.BehaviorType,
+                a.TargetModuleId,
                 IconClass = a.IconClass ?? (a.Template == null ? null : a.Template.IconClass),
                 Category = a.Category ?? (a.Template == null ? null : a.Template.Category)
             })
@@ -109,7 +111,6 @@ public class UserActionController : ControllerBase
             .Select(a => new
             {
                 a.Id,
-                a.ActionType,
                 a.Title,
                 a.Deadline,
                 a.MapsTo,
@@ -117,6 +118,8 @@ public class UserActionController : ControllerBase
                 a.ActionCategory,
                 a.TargetLocation,
                 a.ConfigJson,
+                a.BehaviorType,
+                a.TargetModuleId,
                 IconClass = a.IconClass ?? (a.Template == null ? null : a.Template.IconClass),
                 Category = a.Category ?? (a.Template == null ? null : a.Template.Category)
             })
@@ -160,7 +163,6 @@ public class UserActionController : ControllerBase
         return Ok(new
         {
             action.Id,
-            action.ActionType,
             action.Title,
             action.Deadline,
             action.MapsTo,
@@ -168,14 +170,16 @@ public class UserActionController : ControllerBase
             action.IsRequired,
             action.ActionCategory,
             action.TargetLocation,
+            action.BehaviorType,
+            action.TargetModuleId,
             IconClass = action.IconClass ?? action.Template?.IconClass,
             Category = action.Category ?? action.Template?.Category
         });
     }
 
     [Authorize]
-    [HttpPost("{actionType}/complete")]
-    public async Task<IActionResult> CompleteAction(int conventionId, string actionType, [FromBody] ActionResponseDto responseDto)
+    [HttpPost("{actionId:int}/complete")]
+    public async Task<IActionResult> CompleteAction(int conventionId, int actionId, [FromBody] ActionResponseDto responseDto)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
@@ -183,7 +187,7 @@ public class UserActionController : ControllerBase
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
         }
 
-        var action = await _context.ConventionActions.FirstOrDefaultAsync(a => a.ConventionId == conventionId && a.ActionType == actionType);
+        var action = await _context.ConventionActions.FirstOrDefaultAsync(a => a.Id == actionId && a.ConventionId == conventionId);
         if (action == null)
         {
             return NotFound(new { message = "액션을 찾을 수 없습니다." });
@@ -209,5 +213,148 @@ public class UserActionController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "액션이 완료되었습니다." });
+    }
+
+    /// <summary>
+    /// GenericForm 타입 액션의 데이터 제출 (Create/Update)
+    /// 마감기한이 있는 경우 자동으로 완료 처리하여 진척도 업데이트
+    /// </summary>
+    [Authorize]
+    [HttpPost("{actionId}/submit")]
+    public async Task<IActionResult> SubmitGenericActionData(int conventionId, int actionId, [FromBody] JsonElement payload)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized("사용자 정보를 확인할 수 없습니다.");
+        }
+
+        var action = await _context.ConventionActions
+            .FirstOrDefaultAsync(a => a.Id == actionId && a.ConventionId == conventionId);
+
+        if (action == null)
+        {
+            return NotFound(new { message = "액션을 찾을 수 없습니다." });
+        }
+
+        // 이 API는 GenericForm 타입만 처리
+        if (action.BehaviorType != ActionBehaviorType.GenericForm)
+        {
+            return BadRequest(new { message = "이 액션은 GenericForm 타입이 아닙니다." });
+        }
+
+        // ActionSubmission 조회/생성
+        var submission = await _context.ActionSubmissions
+            .FirstOrDefaultAsync(s => s.ConventionActionId == actionId && s.UserId == userId);
+
+        if (submission != null)
+        {
+            // Update
+            submission.SubmissionDataJson = payload.ToString();
+            submission.UpdatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            // Create
+            submission = new ActionSubmission
+            {
+                ConventionActionId = actionId,
+                UserId = userId,
+                SubmissionDataJson = payload.ToString(),
+                SubmittedAt = DateTime.UtcNow
+            };
+            _context.ActionSubmissions.Add(submission);
+        }
+
+        // 중요: 데이터 저장과 별개로, '완료' 상태도 함께 기록
+        // 마감기한이 있는 경우 진척도에 반영됨
+        var status = await _context.UserActionStatuses
+            .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == actionId);
+
+        if (status == null)
+        {
+            status = new UserActionStatus
+            {
+                UserId = userId,
+                ConventionActionId = actionId,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.UserActionStatuses.Add(status);
+        }
+
+        status.IsComplete = true;
+        status.CompletedAt = DateTime.UtcNow;
+        status.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "제출이 완료되었습니다." });
+    }
+
+    /// <summary>
+    /// GenericForm 타입 액션에 대해 내가 이전에 제출한 데이터 조회 (Read)
+    /// </summary>
+    [Authorize]
+    [HttpGet("{actionId}/submission")]
+    public async Task<IActionResult> GetMySubmission(int conventionId, int actionId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized("사용자 정보를 확인할 수 없습니다.");
+        }
+
+        var submission = await _context.ActionSubmissions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.ConventionActionId == actionId && s.UserId == userId);
+
+        if (submission == null)
+        {
+            return NotFound(new { message = "제출 데이터가 없습니다." });
+        }
+
+        // JSON 문자열을 객체로 파싱하여 반환
+        var jsonData = JsonDocument.Parse(submission.SubmissionDataJson);
+        return Ok(jsonData.RootElement);
+    }
+
+    /// <summary>
+    /// [관리자용] GenericForm 타입 액션의 모든 제출 현황 조회
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpGet("{actionId}/submissions/all")]
+    public async Task<IActionResult> GetAllSubmissions(int conventionId, int actionId)
+    {
+        var action = await _context.ConventionActions
+            .FirstOrDefaultAsync(a => a.Id == actionId && a.ConventionId == conventionId);
+
+        if (action == null)
+        {
+            return NotFound(new { message = "액션을 찾을 수 없습니다." });
+        }
+
+        if (action.BehaviorType != ActionBehaviorType.GenericForm)
+        {
+            return BadRequest(new { message = "이 액션은 GenericForm 타입이 아닙니다." });
+        }
+
+        var submissionsRaw = await _context.ActionSubmissions
+            .Include(s => s.User)
+            .Where(s => s.ConventionActionId == actionId)
+            .ToListAsync();
+
+        // JSON 파싱은 메모리에서 수행 (식 트리 제한 우회)
+        var submissions = submissionsRaw.Select(s => new
+        {
+            s.Id,
+            s.UserId,
+            UserName = s.User.Name,
+            UserEmail = s.User.Email,
+            SubmissionData = JsonDocument.Parse(s.SubmissionDataJson).RootElement,
+            s.SubmittedAt,
+            s.UpdatedAt
+        }).ToList();
+
+        return Ok(submissions);
     }
 }

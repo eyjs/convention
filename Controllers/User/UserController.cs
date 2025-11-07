@@ -337,11 +337,11 @@ public class UserController : ControllerBase // Changed from GuestController
             user.PassportNumber = dto.PassportNumber;
             user.PassportExpiryDate = dto.PassportExpiryDate;
 
-            // 2. PROFILE_OVERSEAS 액션 찾기
+            // 2. 여행 정보 액션 찾기 (MapsTo 경로로 식별)
             var action = await _context.ConventionActions
-                .FirstOrDefaultAsync(a => 
-                    a.ConventionId == conventionId && 
-                    a.ActionType == "PROFILE_OVERSEAS");
+                .FirstOrDefaultAsync(a =>
+                    a.ConventionId == conventionId &&
+                    a.MapsTo == "/feature/travel-info");
 
             if (action != null)
             {
@@ -454,7 +454,6 @@ public class UserController : ControllerBase // Changed from GuestController
             items.Add(new
             {
                 actionId = action.Id,
-                actionType = action.ActionType,
                 title = action.Title,
                 isComplete,
                 deadline = action.Deadline,

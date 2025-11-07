@@ -86,9 +86,12 @@ const router = useRouter()
 // Parse config
 const config = computed(() => {
   try {
+    if (typeof props.feature.configJson === 'string' && props.feature.configJson.trim() === '') {
+      return {}; // Return empty object for empty string
+    }
     return typeof props.feature.configJson === 'string'
       ? JSON.parse(props.feature.configJson)
-      : props.feature.configJson || {}
+      : props.feature.configJson || {};
   } catch (error) {
     console.error('Failed to parse menu item config:', error)
     return {}
@@ -128,16 +131,37 @@ const iconStyle = computed(() => {
 // Handle click
 function handleClick() {
   try {
-    // External URL
+    // Handle onClick object for navigation
+    if (config.value.onClick && config.value.onClick.type === 'NAVIGATE' && config.value.onClick.payload) {
+      if (config.value.onClick.payload.startsWith('http')) { // Check if it's an external URL
+        window.open(config.value.onClick.payload, '_blank', 'noopener,noreferrer');
+      } else {
+        router.push(config.value.onClick.payload);
+      }
+      return;
+    }
+
+    // Existing logic for direct url/externalUrl (fallback or alternative)
     if (config.value.externalUrl) {
-      window.open(config.value.externalUrl, '_blank', 'noopener,noreferrer')
-      return
+      window.open(config.value.externalUrl, '_blank', 'noopener,noreferrer');
+      return;
     }
 
     // Internal URL
     if (config.value.url) {
-      router.push(config.value.url)
-      return
+      router.push(config.value.url);
+      return;
+    }
+
+    // 3. Handle navigation from top-level feature.mapsTo (for ModuleLink, Link behavior types)
+    if (props.feature.mapsTo) {
+      // Assuming mapsTo can be internal or external, check for http prefix
+      if (props.feature.mapsTo.startsWith('http')) {
+        window.open(props.feature.mapsTo, '_blank', 'noopener,noreferrer');
+      } else {
+        router.push(props.feature.mapsTo);
+      }
+      return;
     }
 
     // Custom callback

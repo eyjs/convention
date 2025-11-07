@@ -229,8 +229,7 @@ namespace LocalRAG.Services.Shared.Builders
                 {
                     actionSb.AppendLine($"## {action.Title}");
 
-                    if (!string.IsNullOrEmpty(action.ActionType))
-                        actionSb.AppendLine($"- 유형: {action.ActionType}");
+                    actionSb.AppendLine($"- 유형: {action.BehaviorType}");
 
                     if (!string.IsNullOrEmpty(action.Description))
                         actionSb.AppendLine($"- 설명: {action.Description}");

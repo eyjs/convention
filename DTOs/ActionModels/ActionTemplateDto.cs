@@ -22,7 +22,6 @@ public class ActionTemplateDto
 /// </summary>
 public class ApplyTemplateDto
 {
-    public string? ActionType { get; set; }  // null이면 템플릿 기본값 사용
     public string? Title { get; set; }       // null이면 템플릿 기본값 사용
     public DateTime? Deadline { get; set; }
     public string? MapsTo { get; set; }      // null이면 템플릿 기본값 사용

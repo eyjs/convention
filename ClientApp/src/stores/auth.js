@@ -135,39 +135,55 @@ export const useAuthStore = defineStore('auth', () => {
 
       function incrementUnreadCount(conventionId) {
         if (!user.value) return
-  
+
         if (user.value.conventions && Array.isArray(user.value.conventions)) {
-          user.value.conventions = user.value.conventions.map(c => {
-            if (c.id === conventionId) {
-              return { ...c, unreadCount: (c.unreadCount || 0) + 1 };
-            }
-            return c;
-          });
+          // user.value 전체를 새 객체로 교체하여 reactivity 트리거
+          user.value = {
+            ...user.value,
+            conventions: user.value.conventions.map(c => {
+              if (c.id === conventionId) {
+                return { ...c, unreadCount: (c.unreadCount || 0) + 1 };
+              }
+              return c;
+            })
+          };
+          // localStorage 업데이트
+          localStorage.setItem('user', JSON.stringify(user.value))
         }
         else if (user.value.conventionId === conventionId) {
           user.value = {
               ...user.value,
               unreadCount: (user.value.unreadCount || 0) + 1
           };
+          // localStorage 업데이트
+          localStorage.setItem('user', JSON.stringify(user.value))
         }
       }
   
       function resetUnreadCount(conventionId) {
         if (!user.value) return
-  
+
         if (user.value.conventions && Array.isArray(user.value.conventions)) {
-          user.value.conventions = user.value.conventions.map(c => {
-            if (c.id === conventionId) {
-              return { ...c, unreadCount: 0 };
-            }
-            return c;
-          });
+          // user.value 전체를 새 객체로 교체하여 reactivity 트리거
+          user.value = {
+            ...user.value,
+            conventions: user.value.conventions.map(c => {
+              if (c.id === conventionId) {
+                return { ...c, unreadCount: 0 };
+              }
+              return c;
+            })
+          };
+          // localStorage 업데이트
+          localStorage.setItem('user', JSON.stringify(user.value))
         }
         else if (user.value.conventionId === conventionId) {
           user.value = {
               ...user.value,
               unreadCount: 0
           };
+          // localStorage 업데이트
+          localStorage.setItem('user', JSON.stringify(user.value))
         }
       }
   return {

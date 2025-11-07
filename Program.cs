@@ -32,7 +32,11 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // --- 2. 컨트롤러, CORS, Swagger 등 기본 서비스 등록 ---
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

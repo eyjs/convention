@@ -11,7 +11,11 @@
       "Bash(dir:*)",
       "Bash(Test-Path \"models/all-MiniLM-L6-v2.onnx\")",
       "Bash(dotnet build:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(dotnet ef migrations:*)",
+      "Bash(nul)",
+      "Bash(findstr:*)",
+      "Bash(dotnet ef database update:*)"
     ],
     "deny": [],
     "ask": []

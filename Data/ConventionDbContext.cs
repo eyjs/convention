@@ -35,6 +35,7 @@ public class ConventionDbContext : DbContext
     public DbSet<ConventionAction> ConventionActions { get; set; }
     public DbSet<UserActionStatus> UserActionStatuses { get; set; }
     public DbSet<ActionTemplate> ActionTemplates { get; set; }
+    public DbSet<ActionSubmission> ActionSubmissions { get; set; }
     public DbSet<FileAttachment> FileAttachments { get; set; }
     public DbSet<Gallery> Galleries { get; set; }
     public DbSet<GalleryImage> GalleryImages { get; set; }
@@ -47,7 +48,7 @@ public class ConventionDbContext : DbContext
     public DbSet<SurveyQuestion> SurveyQuestions { get; set; }
     public DbSet<QuestionOption> QuestionOptions { get; set; }
     public DbSet<SurveyResponse> SurveyResponses { get; set; }
-    public DbSet<ResponseDetail> ResponseDetails { get; set; }
+    public DbSet<SurveyResponseDetail> SurveyResponseDetails { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -386,7 +387,6 @@ public class ConventionDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.ActionType).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Description).HasMaxLength(4000); // 상세 설명 (HTML 지원)
             entity.Property(e => e.MapsTo).IsRequired().HasMaxLength(200);
@@ -399,10 +399,6 @@ public class ConventionDbContext : DbContext
             entity.Property(e => e.TargetLocation).HasMaxLength(100); // HOME_SUB_HEADER, SCHEDULE_CONTENT_TOP 등
 
             entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_ConventionAction_ConventionId");
-            entity.HasIndex(e => e.ActionType).HasDatabaseName("IX_ConventionAction_ActionType");
-            entity.HasIndex(e => new { e.ConventionId, e.ActionType })
-                  .IsUnique()
-                  .HasDatabaseName("UQ_ConventionAction_ConventionId_ActionType");
 
             entity.HasOne(e => e.Convention)
                   .WithMany()
@@ -432,6 +428,32 @@ public class ConventionDbContext : DbContext
 
             entity.HasOne(e => e.ConventionAction)
                   .WithMany(ca => ca.UserActionStatuses)
+                  .HasForeignKey(e => e.ConventionActionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ActionSubmission 설정 (GenericForm 응답 저장)
+        modelBuilder.Entity<ActionSubmission>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.SubmissionDataJson).HasColumnType("nvarchar(max)").IsRequired();
+            entity.Property(e => e.SubmittedAt).HasDefaultValueSql("getdate()");
+
+            entity.HasIndex(e => e.ConventionActionId).HasDatabaseName("IX_ActionSubmission_ConventionActionId");
+            entity.HasIndex(e => e.UserId).HasDatabaseName("IX_ActionSubmission_UserId");
+            entity.HasIndex(e => new { e.UserId, e.ConventionActionId })
+                  .IsUnique()
+                  .HasDatabaseName("UQ_ActionSubmission_UserId_ConventionActionId");
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.NoAction); // 순환 참조 방지
+
+            entity.HasOne(e => e.ConventionAction)
+                  .WithMany()
                   .HasForeignKey(e => e.ConventionActionId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
@@ -487,14 +509,14 @@ public class ConventionDbContext : DbContext
             .HasForeignKey(sr => sr.UserId)
             .OnDelete(DeleteBehavior.NoAction); // Prevent circular dependency
 
-        // ResponseDetail
-        modelBuilder.Entity<ResponseDetail>()
+        // SurveyResponseDetail
+        modelBuilder.Entity<SurveyResponseDetail>()
             .HasOne(rd => rd.Question)
             .WithMany() // Assuming SurveyQuestion entity does not have a collection of ResponseDetails
             .HasForeignKey(rd => rd.QuestionId)
             .OnDelete(DeleteBehavior.NoAction); // Prevent circular dependency
 
-        modelBuilder.Entity<ResponseDetail>()
+        modelBuilder.Entity<SurveyResponseDetail>()
             .HasOne(rd => rd.SelectedOption)
             .WithMany() // Assuming QuestionOption entity does not have a collection of ResponseDetails
             .HasForeignKey(rd => rd.SelectedOptionId)

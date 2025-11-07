@@ -42,11 +42,6 @@ public class ChecklistItemDto
     public int ActionId { get; set; }
 
     /// <summary>
-    /// 액션 타입 (프로그램적 키)
-    /// </summary>
-    public string ActionType { get; set; } = string.Empty;
-
-    /// <summary>
     /// 표시될 제목
     /// </summary>
     public string Title { get; set; } = string.Empty;

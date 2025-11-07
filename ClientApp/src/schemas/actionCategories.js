@@ -14,9 +14,9 @@
 export const ACTION_CATEGORIES = [
   {
     key: 'BUTTON',
-    displayName: 'General Button',
+    displayName: '버튼',
     description:
-      'Creates a clickable button in a designated area on a specific page.',
+      '특정 페이지의 지정된 영역에 클릭 가능한 버튼을 생성합니다.',
     component: 'GenericButton',
     guide: {
       title: 'Button: 추가 설정 가이드',
@@ -39,9 +39,9 @@ export const ACTION_CATEGORIES = [
   },
   {
     key: 'MENU',
-    displayName: 'Menu Item',
+    displayName: '추가메뉴',
     description:
-      'Adds a new item to a menu screen, such as the "More Features" page.',
+      '"더보기" 페이지와 같은 메뉴 화면에 새 항목을 추가합니다.',
     component: 'GenericMenuItem',
     guide: {
       title: 'Menu Item: 추가 설정 가이드',
@@ -63,9 +63,9 @@ export const ACTION_CATEGORIES = [
   },
   {
     key: 'AUTO_POPUP',
-    displayName: 'Auto-Triggered Popup',
+    displayName: '자동팝업',
     description:
-      'Displays a popup that appears automatically based on certain conditions, like user login.',
+      '사용자 로그인과 같은 특정 조건에 따라 자동으로 나타나는 팝업을 표시합니다.',
     component: 'GenericAutoPopup',
     guide: {
       title: 'Auto Popup: 추가 설정 가이드',
@@ -90,8 +90,8 @@ export const ACTION_CATEGORIES = [
   },
   {
     key: 'BANNER',
-    displayName: 'Banner',
-    description: 'Displays a banner image or message at the top of a page.',
+    displayName: '배너',
+    description: '페이지 상단에 배너 이미지 또는 메시지를 표시합니다.',
     component: 'GenericBanner',
     guide: {
       title: 'Banner: 추가 설정 가이드',
@@ -112,9 +112,9 @@ export const ACTION_CATEGORIES = [
   },
   {
     key: 'CARD',
-    displayName: 'Info Card',
+    displayName: '정보카드',
     description:
-      'Displays an informational card with title, description, and optional icon.',
+      '제목, 설명 및 선택적 아이콘이 있는 정보 카드를 표시합니다.',
     component: 'GenericCard',
     guide: {
       title: 'Info Card: 추가 설정 가이드',
@@ -128,6 +128,25 @@ export const ACTION_CATEGORIES = [
             type: 'OPEN_POPUP',
             payload: 'SOME_POPUP_ACTION_ID',
           },
+        },
+        null,
+        2,
+      ),
+    },
+  },
+  {
+    key: 'CHECKLIST_CARD',
+    displayName: '체크리스트',
+    description:
+      '사용자 체크리스트를 위해 완료 체크박스가 있는 카드를 생성합니다.',
+    component: 'ChecklistCard',
+    guide: {
+      title: 'Checklist Card: 추가 설정 가이드',
+      content:
+        '체크리스트 카드에 표시될 내용을 설정합니다. ConfigJson은 사용되지 않으며, 액션의 기본 제목과 마감일이 자동으로 표시됩니다.',
+      example: JSON.stringify(
+        {
+          "info": "이 카테고리는 ConfigJson을 사용하지 않습니다."
         },
         null,
         2,

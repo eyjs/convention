@@ -4,6 +4,7 @@ using LocalRAG.Data;
 using Microsoft.AspNetCore.Authorization;
 using LocalRAG.Entities.Action;
 using LocalRAG.DTOs.ActionModels;
+using System.Text.RegularExpressions;
 
 namespace LocalRAG.Controllers.Admin;
 
@@ -50,7 +51,6 @@ public class ActionManagementController : ControllerBase
             {
                 Id = a.Id,
                 ConventionId = a.ConventionId,
-                ActionType = a.ActionType,
                 Title = a.Title,
                 Deadline = a.Deadline,
                 MapsTo = a.MapsTo,
@@ -64,6 +64,8 @@ public class ActionManagementController : ControllerBase
                 TemplateType = a.Template != null ? a.Template.TemplateType : null,
                 ActionCategory = a.ActionCategory,
                 TargetLocation = a.TargetLocation,
+                BehaviorType = a.BehaviorType,
+                TargetModuleId = a.TargetModuleId,
                 CompletedCount = a.UserActionStatuses.Count(s => s.IsComplete),
                 TotalGuestCount = totalGuests
             })
@@ -156,8 +158,7 @@ public class ActionManagementController : ControllerBase
         {
             // 이미 존재하는지 확인
             var exists = await _context.ConventionActions
-                .AnyAsync(a => a.ConventionId == conventionId && 
-                         (a.TemplateId == template.Id || a.ActionType == template.TemplateType));
+                .AnyAsync(a => a.ConventionId == conventionId && a.TemplateId == template.Id);
 
             if (exists)
             {
@@ -169,7 +170,6 @@ public class ActionManagementController : ControllerBase
             {
                 ConventionId = conventionId,
                 TemplateId = template.Id,
-                ActionType = template.TemplateType,
                 Title = template.TemplateName,
                 MapsTo = template.DefaultRoute,
                 ConfigJson = template.DefaultConfigJson,
@@ -238,17 +238,9 @@ public class ActionManagementController : ControllerBase
     {
         try
         {
-            // 중복 체크 (같은 행사에서 같은 ActionType)
-            var exists = await _context.ConventionActions
-                .AnyAsync(a => a.ConventionId == request.ConventionId && a.ActionType == request.ActionType);
-
-            if (exists)
-                return BadRequest(new { message = "이미 동일한 액션 타입이 존재합니다." });
-
             var action = new ConventionAction
             {
                 ConventionId = request.ConventionId,
-                ActionType = request.ActionType,
                 Title = request.Title,
                 MapsTo = request.MapsTo,
                 Deadline = request.Deadline == DateTime.MinValue ? null : request.Deadline,
@@ -257,15 +249,23 @@ public class ActionManagementController : ControllerBase
                 IsActive = request.IsActive,
                 ActionCategory = request.ActionCategory,
                 TargetLocation = request.TargetLocation,
+                BehaviorType = request.BehaviorType,
+                // TargetModuleId is set below
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
             _context.ConventionActions.Add(action);
+
+            if (action.BehaviorType == ActionBehaviorType.ModuleLink)
+            {
+                action.TargetModuleId = ParseModuleIdFromPath(action.MapsTo);
+            }
+
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Created action {ActionType} for convention {ConventionId}", 
-                action.ActionType, action.ConventionId);
+            _logger.LogInformation("Created action {ActionId} for convention {ConventionId}",
+                action.Id, action.ConventionId);
 
             return Ok(new { id = action.Id, message = "액션이 생성되었습니다." });
         }
@@ -288,16 +288,6 @@ public class ActionManagementController : ControllerBase
             if (action == null)
                 return NotFound(new { message = "액션을 찾을 수 없습니다." });
 
-            // 중복 체크 (자기 자신 제외)
-            var exists = await _context.ConventionActions
-                .AnyAsync(a => a.Id != id && 
-                         a.ConventionId == request.ConventionId && 
-                         a.ActionType == request.ActionType);
-
-            if (exists)
-                return BadRequest(new { message = "이미 동일한 액션 타입이 존재합니다." });
-
-            action.ActionType = request.ActionType;
             action.Title = request.Title;
             action.MapsTo = request.MapsTo;
             action.Deadline = request.Deadline == DateTime.MinValue ? null : request.Deadline;
@@ -307,6 +297,15 @@ public class ActionManagementController : ControllerBase
             action.ActionCategory = request.ActionCategory;
             action.TargetLocation = request.TargetLocation;
             action.UpdatedAt = DateTime.UtcNow;
+
+            if (action.BehaviorType == ActionBehaviorType.ModuleLink)
+            {
+                action.TargetModuleId = ParseModuleIdFromPath(action.MapsTo);
+            }
+            else
+            {
+                action.TargetModuleId = null; // Ensure it's null if not a module link
+            }
 
             await _context.SaveChangesAsync();
 
@@ -379,6 +378,19 @@ public class ActionManagementController : ControllerBase
             _logger.LogError(ex, "Failed to delete action {ActionId}", id);
             return StatusCode(500, new { message = "액션 삭제에 실패했습니다.", details = ex.Message });
         }
+    }
+
+    private int? ParseModuleIdFromPath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return null;
+
+        var match = Regex.Match(path, @"\/(\d+)$");
+        if (match.Success && int.TryParse(match.Groups[1].Value, out int id))
+        {
+            return id;
+        }
+        return null;
     }
 }
 

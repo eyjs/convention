@@ -10,7 +10,6 @@ public class ConventionActionDto
 {
     public int? Id { get; set; }
     public int ConventionId { get; set; }
-    public string ActionType { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     [JsonConverter(typeof(EmptyStringToNullDateTimeConverter))]
     public DateTime? Deadline { get; set; }
@@ -29,6 +28,16 @@ public class ConventionActionDto
     /// 타겟 위치 (UI 렌더링 위치: HOME_SUB_HEADER, SCHEDULE_CONTENT_TOP 등)
     /// </summary>
     public string? TargetLocation { get; set; }
+
+    /// <summary>
+    /// 액션 실행 방식 (StatusOnly, GenericForm, ModuleLink, Link)
+    /// </summary>
+    public LocalRAG.Entities.Action.ActionBehaviorType BehaviorType { get; set; }
+
+    /// <summary>
+    /// ModuleLink 타입일 경우, 대상 모듈의 PK ID (예: SurveyId)
+    /// </summary>
+    public int? TargetModuleId { get; set; }
 }
 
 /// <summary>

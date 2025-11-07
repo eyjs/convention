@@ -12,65 +12,9 @@
       </div>
     </div>
 
-    <!-- 3x3 그리드 -->
+    <!-- 동적 액션 렌더러 -->
     <div v-else-if="allActions.length > 0" class="px-4 py-6">
-      <div class="grid grid-cols-3 gap-4">
-        <div
-          v-for="action in allActions"
-          :key="action.id"
-          @click="!isExpired(action.deadline) && navigateToAction(action)"
-          class="flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm transition-all p-4 border border-gray-100"
-          :class="[
-            isExpired(action.deadline)
-              ? 'opacity-50 cursor-not-allowed'
-              : 'hover:shadow-md cursor-pointer',
-          ]"
-        >
-          <!-- 아이콘 -->
-          <div
-            class="w-16 h-16 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mb-3"
-          >
-            <span class="text-3xl">{{ action.iconClass || '📌' }}</span>
-          </div>
-
-          <!-- 이름 -->
-          <h3
-            class="text-center font-semibold text-sm leading-tight"
-            :class="
-              isExpired(action.deadline)
-                ? 'text-gray-400 line-through'
-                : 'text-gray-900'
-            "
-          >
-            {{ action.title }}
-          </h3>
-
-          <!-- 마감기한 뱃지 (있는 경우만) -->
-          <div
-            v-if="action.deadline"
-            class="mt-2 px-2 py-1 text-xs font-medium rounded-full"
-            :class="
-              isExpired(action.deadline)
-                ? 'bg-gray-200 text-gray-600'
-                : 'bg-red-100 text-red-700'
-            "
-          >
-            {{
-              isExpired(action.deadline)
-                ? '마감완료'
-                : formatDeadlineShort(action.deadline)
-            }}
-          </div>
-
-          <!-- 필수 뱃지 -->
-          <div
-            v-if="action.isRequired"
-            class="mt-2 px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded-full"
-          >
-            필수
-          </div>
-        </div>
-      </div>
+      <DynamicActionRenderer :features="allActions" class="grid grid-cols-3 gap-4" />
     </div>
 
     <!-- 빈 상태 -->
@@ -110,6 +54,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/services/api'
 import MainHeader from '@/components/common/MainHeader.vue'
+import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 
 const router = useRouter()
 const allActions = ref([])
@@ -128,12 +73,14 @@ onMounted(async () => {
   isLoading.value = true
   try {
     const url = `/conventions/${conventionId}/actions/all`
-    console.log('Fetching actions from:', url)
-    const response = await apiClient.get(url)
-    console.log('Actions response:', response)
-    console.log('Actions data:', response.data)
-    allActions.value = response.data || []
-    console.log('All actions loaded:', allActions.value)
+    const response = await apiClient.get(url, {
+      params: {
+        targetLocation: 'MORE_FEATURES_GRID',
+        isActive: true,
+      },
+    })
+    // Only show MENU category actions in this view
+    allActions.value = response.data.filter(action => action.actionCategory === 'MENU') || []
   } catch (error) {
     console.error('Failed to load actions:', error)
     console.error('Error response:', error.response)

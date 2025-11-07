@@ -12,5 +12,5 @@ public class SurveyResponse
 
     public virtual Survey Survey { get; set; } = default!;
     public virtual User User { get; set; } = default!;
-    public virtual ICollection<ResponseDetail> Details { get; set; } = new List<ResponseDetail>();
+    public virtual ICollection<SurveyResponseDetail> Details { get; set; } = new List<SurveyResponseDetail>();
 }

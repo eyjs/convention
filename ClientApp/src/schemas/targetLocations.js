@@ -17,7 +17,7 @@ export const TARGET_LOCATIONS = [
     key: 'GLOBAL_ROOT_POPUP',
     displayName: 'App Global (Popup)',
     description:
-      'Spans the entire app over any page. Used mainly for auto-opening popups after login.',
+      '앱 전체의 모든 페이지에 걸쳐 표시됩니다. 주로 로그인 후 팝업을 자동으로 띄우는 데 사용됩니다.',
     page: 'App.vue (Global)',
     allowedCategories: ['AUTO_POPUP'],
   },
@@ -25,23 +25,23 @@ export const TARGET_LOCATIONS = [
     key: 'HOME_SUB_HEADER',
     displayName: 'Home: Below Main Title',
     description:
-      'Adds features directly below the main banner on the Home screen.',
+      '홈 화면의 메인 배너 바로 아래에 기능이 추가됩니다.',
     page: 'ConventionHome.vue',
-    allowedCategories: ['BUTTON', 'BANNER', 'CARD'],
+    allowedCategories: ['BUTTON', 'BANNER', 'CARD', 'CHECKLIST_CARD'],
   },
   {
     key: 'HOME_CONTENT_TOP',
     displayName: 'Home: Top of Content Area',
     description:
-      'Adds features at the top of the main content section, before the checklist.',
+      '메인 콘텐츠 섹션 상단, 체크리스트 앞에 기능이 추가됩니다.',
     page: 'ConventionHome.vue',
-    allowedCategories: ['BUTTON', 'BANNER', 'CARD'],
+    allowedCategories: ['BUTTON', 'BANNER', 'CARD', 'CHECKLIST_CARD'],
   },
   {
     key: 'SCHEDULE_CONTENT_TOP',
     displayName: 'My Schedule: Below Date Filter',
     description:
-      'Adds features below the horizontal date-selector strip on the "My Schedule" page.',
+      '"나의 일정" 페이지의 가로 날짜 선택기 아래에 기능이 추가됩니다.',
     page: 'MySchedule.vue',
     allowedCategories: ['BUTTON', 'BANNER', 'CARD'],
   },
@@ -49,7 +49,7 @@ export const TARGET_LOCATIONS = [
     key: 'BOARD_CONTENT_TOP',
     displayName: 'Notice Board: Below Category Filter',
     description:
-      'Adds features below the category filter tabs on the "Notice Board" page.',
+      '"게시판" 페이지의 카테고리 필터 탭 아래에 기능이 추가됩니다.',
     page: 'Board.vue',
     allowedCategories: ['BUTTON', 'BANNER'],
   },
@@ -57,7 +57,7 @@ export const TARGET_LOCATIONS = [
     key: 'MORE_FEATURES_GRID',
     displayName: 'More Features: Menu Grid',
     description:
-      'Adds new menu items to the main grid on the "More Features" screen.',
+      '"더보기" 화면의 메인 그리드에 새 메뉴 항목이 추가됩니다.',
     page: 'MoreFeaturesView.vue',
     allowedCategories: ['MENU'],
   },

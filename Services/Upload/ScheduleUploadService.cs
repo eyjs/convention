@@ -170,7 +170,6 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                     result.CreatedActions.Add(new ConventionActionInfo
                     {
                         Id = item.Id,
-                        ActionType = "SCHEDULE_ITEM",
                         Title = item.Title,
                         ScheduleDateTime = item.ScheduleDate.Add(TimeSpan.Parse(item.StartTime))
                     });

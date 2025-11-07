@@ -162,9 +162,12 @@ const router = useRouter()
 // Parse config
 const config = computed(() => {
   try {
+    if (typeof props.feature.configJson === 'string' && props.feature.configJson.trim() === '') {
+      return {}; // Return empty object for empty string
+    }
     return typeof props.feature.configJson === 'string'
       ? JSON.parse(props.feature.configJson)
-      : props.feature.configJson || {}
+      : props.feature.configJson || {};
   } catch (error) {
     console.error('Failed to parse card config:', error)
     return {}

@@ -74,12 +74,24 @@ onMounted(async () => {
   try {
     const response = await api.get(`/surveys/${surveyId}`);
     survey.value = response.data;
-    // Initialize responses object
+    // Initialize responses object and fetch previous response if exists
+    const userResponse = await api.get(`/surveys/${surveyId}/responses/me`).catch(() => null);
+
     survey.value.questions.forEach(q => {
+      const previousAnswerDetail = userResponse?.data?.answers?.find(a => a.questionId === q.id);
+
       if (q.type === 'MULTIPLE_CHOICE') {
-        responses[q.id] = [];
-      } else {
-        responses[q.id] = null;
+        const allSelectedOptionIds = userResponse?.data?.answers
+          .filter(a => a.questionId === q.id && a.selectedOptionId !== null)
+          .map(a => a.selectedOptionId) || [];
+        responses[q.id] = allSelectedOptionIds;
+        console.log(`Question ${q.id} (MULTIPLE_CHOICE): Options:`, q.options, `Previous selected:`, allSelectedOptionIds, `Assigned:`, responses[q.id]);
+      } else if (q.type === 'SINGLE_CHOICE') {
+        responses[q.id] = previousAnswerDetail?.selectedOptionId || null;
+        console.log(`Question ${q.id} (SINGLE_CHOICE): Options:`, q.options, `Previous selected:`, previousAnswerDetail?.selectedOptionId, `Assigned:`, responses[q.id]);
+      } else { // SHORT_TEXT or LONG_TEXT
+        responses[q.id] = previousAnswerDetail?.answerText || null;
+        console.log(`Question ${q.id} (TEXT): Previous answer:`, previousAnswerDetail?.answerText, `Assigned:`, responses[q.id]);
       }
     });
   } catch (err) {
@@ -106,25 +118,25 @@ async function submitSurvey() {
   }
 
   const submissionData = {
-    surveyId: survey.value.id,
-    answers: Object.keys(responses).map(questionId => {
+    SurveyId: survey.value.id, // PascalCase로 수정
+    Answers: Object.keys(responses).map(questionId => { // PascalCase로 수정
       const answer = responses[questionId];
       const question = survey.value.questions.find(q => q.id == questionId);
-      
+
       if (question.type === 'MULTIPLE_CHOICE') {
         return {
-          questionId: parseInt(questionId),
-          selectedOptionIds: answer
+          QuestionId: parseInt(questionId), // PascalCase로 수정
+          SelectedOptionIds: answer // PascalCase로 수정
         };
       } else if (question.type === 'SINGLE_CHOICE') {
         return {
-          questionId: parseInt(questionId),
-          selectedOptionIds: answer ? [answer] : []
+          QuestionId: parseInt(questionId), // PascalCase로 수정
+          SelectedOptionIds: answer ? [answer] : [] // PascalCase로 수정
         };
       } else {
         return {
-          questionId: parseInt(questionId),
-          answerText: answer
+          QuestionId: parseInt(questionId), // PascalCase로 수정
+          AnswerText: answer // PascalCase로 수정
         };
       }
     })

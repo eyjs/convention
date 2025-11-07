@@ -99,7 +99,7 @@
                   />
                 </svg>
                 <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{{
-                  action.actionType
+                  getBehaviorTypeName(action.behaviorType)
                 }}</span>
               </div>
 
@@ -343,21 +343,177 @@
             </div>
           </div>
 
-          <!-- 액션 타입 -->
+          <!-- BehaviorType 선택 -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
-              액션 타입 (프로그램 키) *
+              실행 방식 (BehaviorType) *
+            </label>
+            <select
+              v-model="form.behaviorType"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            >
+              <option value="StatusOnly">StatusOnly - 단순 완료 처리 (기존 방식)</option>
+              <option value="GenericForm">GenericForm - 범용 폼 데이터 수집</option>
+              <option value="ModuleLink">ModuleLink - 공통 모듈 연동</option>
+              <option value="Link">Link - 외부/내부 링크</option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">
+              액션 클릭 시 어떻게 동작할지 선택하세요
+            </p>
+          </div>
+
+          <!-- 액션 카테고리 -->
+          <div class="space-y-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              액션 카테고리 *
+            </label>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div
+                v-for="category in actionCategories"
+                :key="category.key"
+                @click="selectCategory(category)"
+                :class="[
+                  'p-4 border-2 rounded-lg cursor-pointer transition-all',
+                  form.actionCategory === category.key
+                    ? 'border-blue-600 bg-blue-50'
+                    : 'border-gray-200 hover:border-blue-300',
+                ]"
+              >
+                <div class="font-semibold text-sm">
+                  {{ category.displayName }}
+                </div>
+                <div class="text-xs text-gray-600 mt-1">
+                  {{ category.description }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 선택한 카테고리의 가이드 -->
+          <div
+            v-if="selectedCategoryGuide"
+            class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+          >
+            <div class="flex items-start justify-between mb-2">
+              <h4 class="font-semibold text-blue-900">
+                📘 {{ selectedCategoryGuide.title }}
+              </h4>
+              <button
+                type="button"
+                @click="copyGuideExample"
+                class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                예시 복사
+              </button>
+            </div>
+            <p class="text-sm text-blue-800 mb-3">
+              {{ selectedCategoryGuide.content }}
+            </p>
+            <pre
+              class="bg-white p-3 rounded border border-blue-200 text-xs overflow-x-auto"
+              >{{ selectedCategoryGuide.example }}</pre
+            >
+          </div>
+
+          <!-- 타겟 위치 -->
+          <div v-if="form.actionCategory">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              표시 위치 *
+              <button
+                type="button"
+                @click="showLocationGuide = !showLocationGuide"
+                class="ml-2 text-blue-600 hover:text-blue-700"
+              >
+                <svg
+                  class="w-4 h-4 inline"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
+            </label>
+
+            <!-- 위치 가이드 토글 -->
+            <div
+              v-if="showLocationGuide"
+              class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800"
+            >
+              선택한 액션 카테고리에 맞는 위치만 표시됩니다. 각 위치는 사용자
+              화면의 특정 영역에 액션을 배치합니다.
+            </div>
+
+            <select
+              v-model="form.targetLocation"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              <option value="">위치를 선택하세요</option>
+              <option
+                v-for="location in filteredLocations"
+                :key="location.key"
+                :value="location.key"
+              >
+                {{ location.displayName }} - {{ location.page }}
+              </option>
+            </select>
+
+            <p
+              v-if="form.targetLocation"
+              class="mt-2 text-sm text-gray-600"
+            >
+              {{ getLocationDescription(form.targetLocation) }}
+            </p>
+          </div>
+
+          <!-- TargetModuleId (ModuleLink 타입일 때만 표시) -->
+          <div v-if="form.behaviorType === 'ModuleLink'">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              연결할 모듈 ID (TargetModuleId) *
             </label>
             <input
-              v-model="form.actionType"
-              type="text"
+              v-model.number="form.targetModuleId"
+              type="number"
               required
-              placeholder="예: PROFILE_OVERSEAS, SURVEY_POST_EVENT"
+              placeholder="예: 설문조사 ID = 1"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
             <p class="text-xs text-gray-500 mt-1">
-              영문 대문자와 언더스코어만 사용 (중복 불가)
+              연결할 설문조사 또는 다른 모듈의 ID를 입력하세요
             </p>
+          </div>
+
+          <!-- ConfigJson (GenericForm 타입일 때 안내 강화) -->
+          <div v-if="form.behaviorType === 'GenericForm'" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 class="text-sm font-semibold text-blue-900 mb-2">
+              GenericForm 설정 가이드
+            </h4>
+            <p class="text-xs text-blue-700 mb-2">
+              ConfigJson에 폼 필드를 정의하세요. 예시:
+            </p>
+            <pre class="bg-white p-2 rounded text-xs overflow-x-auto">
+{
+  "fields": [
+    {
+      "key": "passportNo",
+      "label": "여권번호",
+      "type": "text",
+      "required": true,
+      "placeholder": "M12345678"
+    },
+    {
+      "key": "emergencyContact",
+      "label": "비상 연락처",
+      "type": "tel",
+      "required": true
+    }
+  ]
+}
+            </pre>
           </div>
 
           <!-- 제목 -->
@@ -375,7 +531,7 @@
           </div>
 
           <!-- Vue 라우터 경로 -->
-          <div>
+          <div v-if="form.behaviorType !== 'StatusOnly'">
             <label class="block text-sm font-semibold text-gray-700 mb-2">
               페이지 경로 (MapsTo) *
             </label>
@@ -484,8 +640,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import apiClient from '@/services/api'
+import {
+  ACTION_CATEGORIES,
+  getActionCategory,
+} from '@/schemas/actionCategories'
+import {
+  TARGET_LOCATIONS,
+  getAllowedLocationsForCategory,
+  getTargetLocation,
+} from '@/schemas/targetLocations'
 
 const props = defineProps({
   conventionId: {
@@ -500,17 +665,87 @@ const showModal = ref(false)
 const editingAction = ref(null)
 const submitting = ref(false)
 const errorMessage = ref('')
+const showLocationGuide = ref(false)
+const jsonValidationError = ref('')
+const jsonValidationSuccess = ref(false)
+
+// Schemas
+const actionCategories = ACTION_CATEGORIES
 
 const form = ref({
-  actionType: '',
   title: '',
+  actionCategory: '',
+  targetLocation: '',
   mapsTo: '',
   deadline: '',
   orderNum: 0,
   configJson: '',
   isActive: true,
   isCustom: false,
+  behaviorType: 'StatusOnly', // 기본값: StatusOnly
+  targetModuleId: null, // ModuleLink 타입일 때 사용
 })
+
+// 선택한 카테고리의 가이드
+const selectedCategoryGuide = computed(() => {
+  if (!form.value.actionCategory) return null
+  const category = getActionCategory(form.value.actionCategory)
+  return category?.guide || null
+})
+
+// 선택한 카테고리에 맞는 타겟 위치 필터링
+const filteredLocations = computed(() => {
+  if (!form.value.actionCategory) return []
+  return getAllowedLocationsForCategory(form.value.actionCategory)
+})
+
+function selectCategory(category) {
+  form.value.actionCategory = category.key
+  // 카테고리 변경 시 타겟 위치 초기화
+  form.value.targetLocation = ''
+  // JSON 가이드 예시를 자동으로 채워넣기 (선택사항)
+  if (!form.value.configJson && category.guide?.example) {
+    form.value.configJson = category.guide.example
+  }
+}
+
+function getLocationDescription(locationKey) {
+  const location = getTargetLocation(locationKey)
+  return location?.description || ''
+}
+
+function validateJson() {
+  jsonValidationError.value = ''
+  jsonValidationSuccess.value = false
+
+  if (!form.value.configJson) {
+    jsonValidationError.value = 'JSON을 입력해주세요'
+    return false
+  }
+
+  try {
+    JSON.parse(form.value.configJson)
+    jsonValidationSuccess.value = true
+    return true
+  } catch (error) {
+    jsonValidationError.value = `JSON 형식이 올바르지 않습니다: ${error.message}`
+    return false
+  }
+}
+
+async function copyGuideExample() {
+  if (!selectedCategoryGuide.value?.example) return
+
+  try {
+    await navigator.clipboard.writeText(selectedCategoryGuide.value.example)
+    alert('예시가 클립보드에 복사되었습니다!')
+  } catch (err) {
+    console.error('복사 실패:', err)
+    // 폴백: 수동으로 텍스트 영역에 복사
+    form.value.configJson = selectedCategoryGuide.value.example
+    alert('설정 JSON 필드에 예시를 붙여넣었습니다')
+  }
+}
 
 async function loadActions() {
   loading.value = true
@@ -535,14 +770,17 @@ async function loadActions() {
 function openCreateModal() {
   editingAction.value = null
   form.value = {
-    actionType: '',
     title: '',
+    actionCategory: '',
+    targetLocation: '',
     mapsTo: '',
     deadline: '',
     orderNum: actions.value.length,
     configJson: '',
     isActive: true,
     isCustom: false,
+    behaviorType: 'StatusOnly',
+    targetModuleId: null,
   }
   showModal.value = true
   errorMessage.value = ''
@@ -555,14 +793,17 @@ function openEditModal(action) {
     : action.mapsTo
 
   form.value = {
-    actionType: action.actionType,
     title: action.title,
+    actionCategory: action.actionCategory || '',
+    targetLocation: action.targetLocation || '',
     mapsTo: mapsToWithoutPrefix,
     deadline: action.deadline ? formatDateTimeForInput(action.deadline) : '',
     orderNum: action.orderNum,
     configJson: action.configJson || '',
     isActive: action.isActive,
     isCustom: !action.templateName, // 템플릿이 없으면 전용
+    behaviorType: action.behaviorType || 'StatusOnly',
+    targetModuleId: action.targetModuleId || null,
   }
   showModal.value = true
   errorMessage.value = ''
@@ -648,6 +889,16 @@ function formatDateTimeForInput(dateString) {
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
+function getBehaviorTypeName(type) {
+  switch (type) {
+    case 'StatusOnly': return '단순 완료';
+    case 'GenericForm': return '범용 폼';
+    case 'ModuleLink': return '모듈 연동';
+    case 'Link': return '링크';
+    default: return type;
+  }
 }
 
 onMounted(() => {

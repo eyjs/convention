@@ -4,6 +4,7 @@ using LocalRAG.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalRAG.Migrations
 {
     [DbContext(typeof(ConventionDbContext))]
-    partial class ConventionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251107052029_RemoveActionTypeRequired")]
+    partial class RemoveActionTypeRequired
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -223,6 +226,11 @@ namespace LocalRAG.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int>("BehaviorType")
                         .HasColumnType("int");
 
@@ -291,10 +299,17 @@ namespace LocalRAG.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ActionType")
+                        .HasDatabaseName("IX_ConventionAction_ActionType");
+
                     b.HasIndex("ConventionId")
                         .HasDatabaseName("IX_ConventionAction_ConventionId");
 
                     b.HasIndex("TemplateId");
+
+                    b.HasIndex("ConventionId", "ActionType")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_ConventionAction_ConventionId_ActionType");
 
                     b.ToTable("ConventionActions");
                 });
@@ -972,6 +987,37 @@ namespace LocalRAG.Migrations
                     b.ToTable("QuestionOptions");
                 });
 
+            modelBuilder.Entity("LocalRAG.Entities.ResponseDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AnswerText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ResponseId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SelectedOptionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("ResponseId");
+
+                    b.HasIndex("SelectedOptionId");
+
+                    b.ToTable("ResponseDetails");
+                });
+
             modelBuilder.Entity("LocalRAG.Entities.Schedule", b =>
                 {
                     b.Property<int>("Id")
@@ -1137,37 +1183,6 @@ namespace LocalRAG.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("SurveyResponses");
-                });
-
-            modelBuilder.Entity("LocalRAG.Entities.SurveyResponseDetail", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AnswerText")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("QuestionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ResponseId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SelectedOptionId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("QuestionId");
-
-                    b.HasIndex("ResponseId");
-
-                    b.HasIndex("SelectedOptionId");
-
-                    b.ToTable("SurveyResponseDetails");
                 });
 
             modelBuilder.Entity("LocalRAG.Entities.User", b =>
@@ -1696,6 +1711,32 @@ namespace LocalRAG.Migrations
                     b.Navigation("Question");
                 });
 
+            modelBuilder.Entity("LocalRAG.Entities.ResponseDetail", b =>
+                {
+                    b.HasOne("LocalRAG.Entities.SurveyQuestion", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("LocalRAG.Entities.SurveyResponse", "Response")
+                        .WithMany("Details")
+                        .HasForeignKey("ResponseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LocalRAG.Entities.QuestionOption", "SelectedOption")
+                        .WithMany()
+                        .HasForeignKey("SelectedOptionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Question");
+
+                    b.Navigation("Response");
+
+                    b.Navigation("SelectedOption");
+                });
+
             modelBuilder.Entity("LocalRAG.Entities.Schedule", b =>
                 {
                     b.HasOne("LocalRAG.Entities.Convention", null)
@@ -1753,32 +1794,6 @@ namespace LocalRAG.Migrations
                     b.Navigation("Survey");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("LocalRAG.Entities.SurveyResponseDetail", b =>
-                {
-                    b.HasOne("LocalRAG.Entities.SurveyQuestion", "Question")
-                        .WithMany()
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("LocalRAG.Entities.SurveyResponse", "Response")
-                        .WithMany("Details")
-                        .HasForeignKey("ResponseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LocalRAG.Entities.QuestionOption", "SelectedOption")
-                        .WithMany()
-                        .HasForeignKey("SelectedOptionId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("Question");
-
-                    b.Navigation("Response");
-
-                    b.Navigation("SelectedOption");
                 });
 
             modelBuilder.Entity("LocalRAG.Entities.UserActionStatus", b =>

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using LocalRAG.Interfaces;
 using LocalRAG.Entities.Action;
+using System.Text.Json;
 
 namespace LocalRAG.Services.Convention
 {
@@ -111,6 +112,25 @@ namespace LocalRAG.Services.Convention
             _context.Surveys.Add(survey);
             await _context.SaveChangesAsync();
 
+            // Automatically create a ConventionAction linked to this survey
+            if (survey.ConventionId.HasValue)
+            {
+                var conventionAction = new ConventionAction
+                {
+                    ConventionId = survey.ConventionId.Value,
+                    Title = survey.Title,
+                    Description = $"'{survey.Title}' 설문조사에 참여해주세요.",
+                    BehaviorType = ActionBehaviorType.ModuleLink,
+                    TargetModuleId = survey.Id,
+                    IsActive = survey.IsActive,
+                    MapsTo = $"/surveys/{survey.Id}", // A sensible default route
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.ConventionActions.Add(conventionAction);
+                await _context.SaveChangesAsync();
+            }
+
             return await GetSurveyAsync(survey.Id);
         }
 
@@ -200,179 +220,139 @@ namespace LocalRAG.Services.Convention
             return await GetSurveyAsync(survey.Id);
         }
 
-        public async Task SubmitSurveyAsync(int surveyId, SurveySubmissionDto submissionDto, string loginId)
-
+        public async Task SubmitSurveyAsync(int surveyId, SurveySubmissionDto submissionDto, int userId)
         {
-
             var survey = await _context.Surveys.FindAsync(surveyId);
-
             if (survey == null)
-
             {
-
                 throw new KeyNotFoundException("Survey not found.");
-
             }
 
-
-
-            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.LoginId == loginId);
-
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null)
-
             {
-
                 throw new KeyNotFoundException("User not found.");
-
             }
 
-            var userId = user.Id; // Use the integer PK
 
 
+            var strategy = _context.Database.CreateExecutionStrategy();
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
-
-
-            try
-
+            await strategy.ExecuteAsync(async () =>
             {
+                using var transaction = await _context.Database.BeginTransactionAsync();
 
-                var response = new SurveyResponse
-
+                try
                 {
+                    // 1. SurveyResponse를 찾거나 새로 생성 (Idempotent)
+                    var response = await _context.SurveyResponses
+                        .Include(r => r.Details)
+                        .FirstOrDefaultAsync(r => r.SurveyId == surveyId && r.UserId == userId);
 
-                    SurveyId = surveyId,
-
-                    UserId = userId, // Assign the integer PK
-
-                    SubmittedAt = DateTime.UtcNow
-
-                };
-
-
-
-                foreach (var answer in submissionDto.Answers)
-
-                {
-
-                    if (answer.SelectedOptionIds != null && answer.SelectedOptionIds.Any())
-
+                    if (response == null)
                     {
-
-                        foreach (var optionId in answer.SelectedOptionIds)
-
+                        response = new SurveyResponse
                         {
+                            SurveyId = surveyId,
+                            UserId = userId,
+                        };
+                        _context.SurveyResponses.Add(response);
+                    }
+                    else
+                    {
+                        // 기존 답변 삭제
+                        _context.SurveyResponseDetails.RemoveRange(response.Details);
+                    }
+                    
+                    response.SubmittedAt = DateTime.UtcNow; // 제출 시간 업데이트
 
-                            response.Details.Add(new ResponseDetail
-
+                    // 새로운 답변 추가
+                    foreach (var answer in submissionDto.Answers)
+                    {
+                        if (answer.SelectedOptionIds != null && answer.SelectedOptionIds.Any())
+                        {
+                            foreach (var optionId in answer.SelectedOptionIds)
                             {
-
+                                response.Details.Add(new SurveyResponseDetail
+                                {
+                                    QuestionId = answer.QuestionId,
+                                    SelectedOptionId = optionId
+                                });
+                            }
+                        }
+                        else if (!string.IsNullOrEmpty(answer.AnswerText))
+                        {
+                            response.Details.Add(new SurveyResponseDetail
+                            {
                                 QuestionId = answer.QuestionId,
-
-                                SelectedOptionId = optionId
-
+                                AnswerText = answer.AnswerText
                             });
+                        }
+                    }
 
+                    // 2. ConventionAction 연동 로직
+                    var action = await _context.ConventionActions
+                        .FirstOrDefaultAsync(a => a.ConventionId == survey.ConventionId &&
+                                                  a.BehaviorType == ActionBehaviorType.ModuleLink &&
+                                                  a.TargetModuleId == survey.Id);
+
+                    if (action != null)
+                    {
+                        // 2a. ActionSubmissions 테이블에 JSON 데이터 저장 (고도화된 방식)
+                        var submissionJson = JsonSerializer.Serialize(submissionDto);
+                        var actionSubmission = await _context.ActionSubmissions
+                            .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
+
+                        if (actionSubmission == null)
+                        {
+                            actionSubmission = new ActionSubmission
+                            {
+                                UserId = userId,
+                                ConventionActionId = action.Id,
+                                SubmissionDataJson = submissionJson,
+                                SubmittedAt = DateTime.UtcNow
+                            };
+                            _context.ActionSubmissions.Add(actionSubmission);
+                        }
+                        else
+                        {
+                            actionSubmission.SubmissionDataJson = submissionJson;
+                            actionSubmission.UpdatedAt = DateTime.UtcNow;
                         }
 
-                    }
+                        // 2b. UserActionStatus를 완료로 표시 (진척도 트래킹용)
+                        var userActionStatus = await _context.UserActionStatuses
+                            .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
 
-                    else if (!string.IsNullOrEmpty(answer.AnswerText))
-
-                    {
-
-                        response.Details.Add(new ResponseDetail
-
+                        if (userActionStatus == null)
                         {
-
-                            QuestionId = answer.QuestionId,
-
-                            AnswerText = answer.AnswerText
-
-                        });
-
-                    }
-
-                }
-
-
-
-                _context.SurveyResponses.Add(response);
-
-                await _context.SaveChangesAsync();
-
-
-
-                // Generic Action 연동
-
-                var surveyActions = await _context.ConventionActions
-
-                    .Where(a => a.ActionType == "SURVEY" && a.ConventionId == survey.ConventionId)
-
-                    .ToListAsync();
-
-
-
-                var action = surveyActions.FirstOrDefault(a => a.MapsTo.Equals(survey.Id.ToString()));
-
-
-
-                if (action != null)
-
-                {
-
-                    var userActionStatus = await _context.UserActionStatuses
-
-                        .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id); // Compare with integer PK
-
-
-
-                    if (userActionStatus == null)
-
-                    {
-
-                        userActionStatus = new UserActionStatus
-
+                            userActionStatus = new UserActionStatus
+                            {
+                                UserId = userId,
+                                ConventionActionId = action.Id,
+                                IsComplete = true,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            };
+                            _context.UserActionStatuses.Add(userActionStatus);
+                        }
+                        else
                         {
-
-                            UserId = userId, // Assign the integer PK
-
-                            ConventionActionId = action.Id,
-
-                            IsComplete = true,
-
-                            UpdatedAt = DateTime.UtcNow
-
-                        };
-
-                        _context.UserActionStatuses.Add(userActionStatus);
-
+                            userActionStatus.IsComplete = true;
+                            userActionStatus.UpdatedAt = DateTime.UtcNow;
+                        }
                     }
 
-                    else
-
-                    {
-
-                        userActionStatus.IsComplete = true;
-
-                        userActionStatus.UpdatedAt = DateTime.UtcNow;
-                    }
+                    // 3. 모든 변경사항을 한 번에 커밋
                     await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
                 }
-                await transaction.CommitAsync();
-
-            }
-
-            catch (Exception)
-
-            {
-
-                await transaction.RollbackAsync();
-
-                throw;
-
-            }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
 
         }
 
@@ -435,6 +415,32 @@ namespace LocalRAG.Services.Convention
             }
 
             return stats;
+        }
+
+        public async Task<SurveyResponseDto> GetUserSurveyResponseAsync(int surveyId, int userId)
+        {
+            var response = await _context.SurveyResponses
+                .Include(r => r.Details)
+                .FirstOrDefaultAsync(r => r.SurveyId == surveyId && r.UserId == userId);
+
+            if (response == null)
+            {
+                return null;
+            }
+
+            return new SurveyResponseDto
+            {
+                Id = response.Id,
+                SurveyId = response.SurveyId,
+                UserId = response.UserId,
+                SubmittedAt = response.SubmittedAt,
+                Answers = response.Details.Select(d => new SurveyResponseDetailDto
+                {
+                    QuestionId = d.QuestionId,
+                    SelectedOptionId = d.SelectedOptionId,
+                    AnswerText = d.AnswerText
+                }).ToList()
+            };
         }
     }
 }

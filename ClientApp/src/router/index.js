@@ -139,11 +139,22 @@ const routes = [
     },
   },
   {
-      path: '/feature/surveys/:id',
+    path: '/feature/surveys/:id',
     name: 'Survey',
     component: () => import('@/views/feature/Survey.vue'),
     meta: {
       title: 'Survey',
+      requiresAuth: true,
+      layout: 'DefaultLayout',
+      showNav: false,
+    },
+  },
+  {
+    path: '/feature/generic-form/:actionId',
+    name: 'GenericForm',
+    component: () => import('@/views/feature/GenericForm.vue'),
+    meta: {
+      title: '폼 작성',
       requiresAuth: true,
       layout: 'DefaultLayout',
       showNav: false,
