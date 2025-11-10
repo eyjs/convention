@@ -166,8 +166,6 @@ const authStore = useAuthStore()
 const conventionStore = useConventionStore()
 
 const formDefinitionId = computed(() => parseInt(route.params.formDefinitionId))
-// conventionId는 loadFormDefinition에서 직접 사용되지 않으므로 제거
-// const conventionId = computed(() => conventionStore.currentConvention?.id);
 
 const loading = ref(true)
 const error = ref(null)
@@ -205,7 +203,6 @@ function handleFileChange(event, key) {
 // 폼 정의 로드
 async function loadFormDefinition() {
   try {
-    // formBuilderService를 사용하여 올바른 API 경로로 호출 (conventionId 없이)
     const response = await formBuilderService.getFormDefinition(formDefinitionId.value)
     formDefinition.value = response.data
 
@@ -228,16 +225,18 @@ async function loadFormDefinition() {
 // 기존 제출 데이터 로드 (있는 경우)
 async function loadExistingSubmission() {
   try {
-    // apiClient를 직접 사용하되, 경로는 FormBuilderController에 맞게 유지
     const response = await apiClient.get(`/forms/submission/${formDefinitionId.value}`)
 
     if (response.data) {
-      // 기존 데이터로 폼 채우기
-      Object.assign(formData.value, response.data)
-      isEditing.value = true
+      // 기존 데이터로 폼 채우기 (폼 정의에 있는 필드만 할당)
+      formDefinition.value.fields.forEach(field => {
+        if (response.data[field.key] !== undefined) {
+          formData.value[field.key] = response.data[field.key];
+        }
+      });
+      isEditing.value = true;
     }
   } catch (err) {
-    // 404는 정상 (아직 제출 안 함)
     if (err.response?.status !== 404) {
       console.error('기존 데이터 로드 실패:', err)
     }
@@ -250,15 +249,46 @@ async function handleSubmit() {
   successMessage.value = ''
 
   try {
-    // apiClient를 직접 사용하되, 경로는 FormBuilderController에 맞게 유지
-    await apiClient.post(`/forms/${formDefinitionId.value}/submit`, formData.value)
+    const submitFormData = new FormData();
+    let hasFile = false;
+
+    // 일반 텍스트 필드와 파일 필드를 FormData에 추가
+    const plainFormData = {};
+    let fileKey = null; // 파일 필드의 키를 저장할 변수
+
+    // formDefinition의 필드 목록을 기반으로 plainFormData를 구성
+    for (const field of formDefinition.value.fields) {
+      const key = field.key;
+      const value = formData.value[key]; // 현재 폼 데이터에서 값 가져오기
+
+      if (value instanceof File) {
+        submitFormData.append('file', value, value.name); // 백엔드에서 'file'이라는 이름으로 받음
+        fileKey = key; // 파일 필드의 키를 저장
+        plainFormData[key] = null; // 파일 필드의 값은 null로 대체 (백엔드에서 URL로 채울 것임)
+      } else {
+        plainFormData[key] = value;
+      }
+    }
+
+    // 파일 필드의 키가 있다면, 백엔드에서 해당 키를 찾아 URL로 대체할 수 있도록 힌트를 제공
+    if (fileKey) {
+      submitFormData.append('fileFieldKey', fileKey);
+    }
+
+    // 일반 폼 데이터를 JSON 문자열로 변환하여 'formDataJson' 필드로 추가
+    submitFormData.append('formDataJson', JSON.stringify(plainFormData));
+
+    // FormData 내용 디버깅
+    for (const pair of submitFormData.entries()) {
+      console.log(pair[0]+ ', ' + pair[1]); 
+    }
+    
+    await apiClient.post(`/forms/${formDefinitionId.value}/submit`, submitFormData); // headers 객체 제거
 
     successMessage.value = '제출이 완료되었습니다!'
 
-    // 진척도 업데이트를 위해 사용자 정보 갱신
     await authStore.fetchCurrentUser()
 
-    // 2초 후 이전 페이지로 이동
     setTimeout(() => {
       router.back()
     }, 2000)
@@ -271,8 +301,6 @@ async function handleSubmit() {
 }
 
 onMounted(async () => {
-  // conventionId가 loadFormDefinition에 직접 필요하지 않으므로,
-  // 여기서 conventionStore 로직은 제거하거나 다른 용도로 사용
   if (!conventionStore.currentConvention) {
     const selectedConventionId = localStorage.getItem('selectedConventionId');
     if (selectedConventionId) {

@@ -94,21 +94,77 @@ public class FormBuilderController : ControllerBase
         return Ok(jsonData.RootElement);
     }
 
+// ... (기존 코드)
+
     /// <summary>
     /// 폼 데이터 제출 (Create/Update)
     /// </summary>
+    /// <param name="formDefinitionId">FormDefinition ID</param>
+    /// <param name="requestDto">제출할 폼 데이터, 파일 및 파일 필드 키</param>
     [HttpPost("{formDefinitionId}/submit")]
-    public async Task<IActionResult> SubmitFormData(int formDefinitionId, [FromBody] JsonElement payload)
+    public async Task<IActionResult> SubmitFormData(
+        int formDefinitionId,
+        [FromForm] FormSubmissionRequestDto requestDto)
     {
+        _logger.LogInformation("SubmitFormData called for FormDefinitionId: {FormDefinitionId}", formDefinitionId); // 로깅 추가
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
         }
 
+        // FormDefinition 존재 확인
         if (!await _context.FormDefinitions.AnyAsync(f => f.Id == formDefinitionId))
         {
             return BadRequest(new { message = "폼을 찾을 수 없습니다." });
+        }
+
+        // JSON 데이터 파싱
+        _logger.LogInformation("Received FormDataJson: {FormDataJson}", requestDto.FormDataJson); // 로깅 추가
+
+        if (string.IsNullOrWhiteSpace(requestDto.FormDataJson))
+        {
+            _logger.LogError("FormDataJson is null or whitespace.");
+            return BadRequest(new { message = "제출된 폼 데이터가 비어있습니다." });
+        }
+
+        var tempDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(requestDto.FormDataJson);
+        if (tempDict == null)
+        {
+            _logger.LogError("Failed to deserialize FormDataJson: {FormDataJson}", requestDto.FormDataJson); // 로깅 추가
+            return BadRequest(new { message = "제출된 폼 데이터가 유효하지 않습니다." });
+        }
+
+        // 파일 처리
+        if (requestDto.File != null && requestDto.File.Length > 0)
+        {
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            var uniqueFileName = Guid.NewGuid().ToString() + "_" + requestDto.File.FileName;
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await requestDto.File.CopyToAsync(stream);
+            }
+
+            var fileUrl = $"/uploads/{uniqueFileName}";
+            
+            // fileFieldKey가 제공되면 해당 키의 값을 파일 URL로 업데이트
+            if (!string.IsNullOrEmpty(requestDto.FileFieldKey) && tempDict.ContainsKey(requestDto.FileFieldKey))
+            {
+                tempDict[requestDto.FileFieldKey] = JsonDocument.Parse($"\"{fileUrl}\"").RootElement;
+            }
+            else
+            {
+                // fileFieldKey가 없거나 해당 키가 formDataJson에 없으면 새로운 속성으로 추가
+                tempDict.Add("uploadedFileUrl", JsonDocument.Parse($"\"{fileUrl}\"").RootElement);
+            }
+            requestDto.FormDataJson = JsonSerializer.Serialize(tempDict); // 수정된 JSON으로 업데이트
         }
 
         var submission = await _context.FormSubmissions
@@ -116,20 +172,23 @@ public class FormBuilderController : ControllerBase
 
         if (submission != null)
         {
-            submission.SubmissionDataJson = payload.ToString();
+            // Update
+            submission.SubmissionDataJson = requestDto.FormDataJson; // 수정된 formDataJson 사용
             submission.UpdatedAt = DateTime.UtcNow;
         }
         else
         {
+            // Create
             submission = new FormSubmission
             {
                 FormDefinitionId = formDefinitionId,
                 UserId = userId,
-                SubmissionDataJson = payload.ToString(),
+                SubmissionDataJson = requestDto.FormDataJson, // 수정된 formDataJson 사용
             };
             _context.FormSubmissions.Add(submission);
         }
 
+        // 연결된 ConventionAction의 상태 업데이트
         var action = await _context.ConventionActions
             .FirstOrDefaultAsync(a => a.TargetId == formDefinitionId &&
                                      a.BehaviorType == Entities.Action.ActionBehaviorType.FormBuilder);
