@@ -16,6 +16,65 @@
       </button>
     </div>
 
+    <!-- BehaviorType 필터 버튼 -->
+    <div class="mb-6 flex flex-wrap gap-2">
+      <button
+        @click="selectedBehaviorType = 'All'"
+        :class="[
+          'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+          selectedBehaviorType === 'All'
+            ? 'bg-primary-600 text-white'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
+        ]"
+      >
+        전체
+      </button>
+      <button
+        @click="selectedBehaviorType = 'StatusOnly'"
+        :class="[
+          'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+          selectedBehaviorType === 'StatusOnly'
+            ? 'bg-primary-600 text-white'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
+        ]"
+      >
+        단순 완료
+      </button>
+      <button
+        @click="selectedBehaviorType = 'GenericForm'"
+        :class="[
+          'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+          selectedBehaviorType === 'GenericForm'
+            ? 'bg-primary-600 text-white'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
+        ]"
+      >
+        범용 폼
+      </button>
+      <button
+        @click="selectedBehaviorType = 'ModuleLink'"
+        :class="[
+          'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+          selectedBehaviorType === 'ModuleLink'
+            ? 'bg-primary-600 text-white'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
+        ]"
+      >
+        모듈 연동
+      </button>
+      <button
+        @click="selectedBehaviorType = 'Link'"
+        :class="[
+          'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+          selectedBehaviorType === 'Link'
+            ? 'bg-primary-600 text-white'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
+        ]"
+      >
+        링크
+      </button>
+    </div>
+
     <!-- 로딩 -->
     <div v-if="loading" class="text-center py-12 mt-6">
       <div
@@ -24,9 +83,9 @@
     </div>
 
     <!-- 액션 목록 -->
-    <div v-else-if="actions.length > 0" class="grid gap-4 mt-6">
+    <div v-else-if="filteredActions.length > 0" class="grid gap-4 mt-6">
       <div
-        v-for="action in actions"
+        v-for="action in filteredActions"
         :key="action.id"
         class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-shadow overflow-hidden"
       >
@@ -241,7 +300,7 @@
 
     <!-- 빈 상태 -->
     <div
-      v-else
+      v-else-if="filteredActions.length === 0 && !loading"
       class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300 mt-6"
     >
       <svg
@@ -852,13 +911,29 @@ function formatDateTimeForInput(dateString) {
   return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
+const selectedBehaviorType = ref('All') // 'All'은 모든 타입을 의미
+
+const filteredActions = computed(() => {
+  if (selectedBehaviorType.value === 'All') {
+    return actions.value
+  }
+  return actions.value.filter(
+    (action) => action.behaviorType === selectedBehaviorType.value,
+  )
+})
+
 function getBehaviorTypeName(type) {
   switch (type) {
-    case 'StatusOnly': return '단순 완료';
-    case 'GenericForm': return '범용 폼';
-    case 'ModuleLink': return '모듈 연동';
-    case 'Link': return '링크';
-    default: return type;
+    case 'StatusOnly':
+      return '단순 완료'
+    case 'GenericForm':
+      return '범용 폼'
+    case 'ModuleLink':
+      return '모듈 연동'
+    case 'Link':
+      return '링크'
+    default:
+      return type
   }
 }
 
