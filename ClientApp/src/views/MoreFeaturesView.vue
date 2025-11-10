@@ -14,7 +14,13 @@
 
     <!-- 동적 액션 렌더러 -->
     <div v-else-if="allActions.length > 0" class="px-4 py-6">
-      <DynamicActionRenderer :features="allActions" class="grid grid-cols-3 gap-4" />
+      <div class="space-y-3">
+        <GenericMenuItem
+          v-for="action in allActions"
+          :key="action.id"
+          :feature="action"
+        />
+      </div>
     </div>
 
     <!-- 빈 상태 -->
@@ -54,7 +60,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/services/api'
 import MainHeader from '@/components/common/MainHeader.vue'
-import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
+import GenericMenuItem from '@/dynamic-features/common/GenericMenuItem.vue'
 
 const router = useRouter()
 const allActions = ref([])
@@ -72,50 +78,29 @@ onMounted(async () => {
 
   isLoading.value = true
   try {
-    const url = `/conventions/${conventionId}/actions/all`
-    const response = await apiClient.get(url, {
-      params: {
-        targetLocation: 'MORE_FEATURES_GRID',
-        isActive: true,
-      },
-    })
-    // Only show MENU category actions in this view
-    allActions.value = response.data.filter(action => action.actionCategory === 'MENU') || []
+    // 메뉴 액션과 상태 정보를 병렬로 가져오기
+    const [actionsResponse, statusesResponse] = await Promise.all([
+      apiClient.get(`/conventions/${conventionId}/actions/menu`),
+      apiClient.get(`/conventions/${conventionId}/actions/statuses`),
+    ])
+
+    const actions = actionsResponse.data || []
+    const statuses = statusesResponse.data || []
+
+    // 상태 정보를 맵으로 변환
+    const statusMap = new Map(statuses.map((s) => [s.conventionActionId, s]))
+
+    // 액션에 isComplete 정보 추가
+    allActions.value = actions.map((action) => ({
+      ...action,
+      isComplete: statusMap.get(action.id)?.isComplete || false,
+    }))
   } catch (error) {
-    console.error('Failed to load actions:', error)
+    console.error('Failed to load menu actions:', error)
     console.error('Error response:', error.response)
     allActions.value = []
   } finally {
     isLoading.value = false
   }
 })
-
-const navigateToAction = (action) => {
-  if (isExpired(action.deadline)) return
-  router.push(action.mapsTo)
-}
-
-const isExpired = (deadline) => {
-  if (!deadline) return false
-  const end = new Date(deadline).getTime()
-  const now = Date.now()
-  return end <= now
-}
-
-const formatDeadlineShort = (dateStr) => {
-  const deadline = new Date(dateStr)
-  const now = new Date()
-  const diff = deadline - now
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-
-  if (days > 0) {
-    return `D-${days}`
-  } else {
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    if (hours > 0) {
-      return `${hours}시간 남음`
-    }
-    return '마감임박'
-  }
-}
 </script>

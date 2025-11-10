@@ -401,4 +401,107 @@ public class UserActionController : ControllerBase
 
         return Ok(submissions);
     }
+
+    /// <summary>
+    /// 체크리스트 상태 조회 (Deadline이 있는 액션들)
+    /// </summary>
+    [Authorize]
+    [HttpGet("checklist-status")]
+    public async Task<IActionResult> GetChecklistStatus(int conventionId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized("사용자 정보를 확인할 수 없습니다.");
+        }
+
+        // 1. 해당 행사의 활성 액션 중 Deadline이 있는 것만 조회
+        var actions = await _context.ConventionActions
+            .Where(a => a.ConventionId == conventionId &&
+                       a.IsActive &&
+                       a.Deadline.HasValue)
+            .OrderBy(a => a.Deadline)
+            .ThenBy(a => a.OrderNum)
+            .ToListAsync();
+
+        if (actions.Count == 0)
+            return Ok(new { totalItems = 0, completedItems = 0, progressPercentage = 0, items = new List<object>() });
+
+        // 2. 해당 사용자의 액션 상태 조회
+        var statuses = await _context.UserActionStatuses
+            .Where(s => s.UserId == userId)
+            .ToListAsync();
+
+        var statusDict = statuses.ToDictionary(s => s.ConventionActionId, s => s);
+
+        // 3. 체크리스트 아이템 구축
+        var items = new List<object>();
+        int completedCount = 0;
+
+        foreach (var action in actions)
+        {
+            var status = statusDict.GetValueOrDefault(action.Id);
+            bool isComplete = status?.IsComplete ?? false;
+
+            if (isComplete)
+                completedCount++;
+
+            items.Add(new
+            {
+                actionId = action.Id,
+                title = action.Title,
+                isComplete = isComplete,
+                deadline = action.Deadline,
+                navigateTo = action.MapsTo,
+                orderNum = action.OrderNum
+            });
+        }
+
+        // 4. 가장 가까운 미완료 액션의 마감일 찾기
+        DateTime? overallDeadline = actions
+            .Where(a => {
+                var status = statusDict.GetValueOrDefault(a.Id);
+                return !(status?.IsComplete ?? false);
+            })
+            .OrderBy(a => a.Deadline)
+            .FirstOrDefault()?.Deadline;
+
+        // 5. 체크리스트 상태 반환
+        int totalItems = actions.Count;
+        int progressPercentage = totalItems > 0 ? (completedCount * 100 / totalItems) : 0;
+
+        return Ok(new
+        {
+            totalItems = totalItems,
+            completedItems = completedCount,
+            progressPercentage = progressPercentage,
+            overallDeadline = overallDeadline,
+            items = items
+        });
+    }
+
+    /// <summary>
+    /// 추가 메뉴 액션 조회 (ActionCategory = "MENU")
+    /// </summary>
+    [Authorize]
+    [HttpGet("menu")]
+    public async Task<IActionResult> GetMenuActions(int conventionId)
+    {
+        var actions = await _context.ConventionActions
+            .Where(a => a.ConventionId == conventionId &&
+                       a.IsActive &&
+                       a.ActionCategory == "MENU")
+            .OrderBy(a => a.OrderNum)
+            .ThenBy(a => a.CreatedAt)
+            .Select(a => new
+            {
+                a.Id,
+                a.Title,
+                a.MapsTo,
+                a.OrderNum
+            })
+            .ToListAsync();
+
+        return Ok(actions);
+    }
 }

@@ -16,7 +16,7 @@
     <!-- CHECKLIST_CARD 그룹 처리 -->
     <div v-if="checklistItems.length > 0" class="bg-white rounded-2xl shadow-lg p-5">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-bold text-gray-900">필수 제출 사항</h2>
+        <h2 class="text-lg font-bold text-gray-900">자가 체크리스트</h2>
         <button
           v-if="checklistItems.length > 3"
           @click="isChecklistExpanded = !isChecklistExpanded"

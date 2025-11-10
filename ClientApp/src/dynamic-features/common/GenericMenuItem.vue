@@ -40,7 +40,21 @@
 
     <!-- Content -->
     <div class="menu-content">
-      <h3 class="menu-title">{{ feature.title }}</h3>
+      <div class="flex items-center gap-2 mb-1">
+        <h3 class="menu-title">{{ feature.title }}</h3>
+        <!-- 제출 상태 태그 -->
+        <span
+          v-if="feature.isComplete !== undefined"
+          :class="[
+            'px-2 py-0.5 text-xs font-medium rounded',
+            feature.isComplete
+              ? 'bg-[#17B185]/10 text-[#17B185]'
+              : 'bg-gray-100 text-gray-600'
+          ]"
+        >
+          {{ feature.isComplete ? '제출완료' : '미제출' }}
+        </span>
+      </div>
       <p v-if="config.description" class="menu-description">
         {{ config.description }}
       </p>
@@ -210,7 +224,6 @@ function handleClick() {
   font-size: 1rem;
   font-weight: 600;
   color: #111827;
-  margin-bottom: 0.25rem;
 }
 
 .menu-description {

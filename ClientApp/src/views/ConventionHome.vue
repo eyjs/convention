@@ -99,13 +99,13 @@
 
     <!-- 메인 컨텐츠 -->
     <div class="px-4 pt-10 space-y-6 -mt-8">
-      <!-- HOME_CONTENT_TOP 위치: 컨텐츠 영역 상단 -->
+      <!-- HOME_CONTENT_TOP 위치: 컨텐츠 영역 상단 (체크리스트 포함) -->
       <DynamicActionRenderer
         v-if="contentTopActions.length > 0"
         :features="contentTopActions"
       />
 
-      <!-- 체크리스트 -->
+      <!-- 필수 제출 사항 체크리스트 -->
       <ChecklistProgress
         v-if="checklistStatus && checklistStatus.totalItems > 0"
         :checklist="checklistStatus"
@@ -117,10 +117,44 @@
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-gray-900">공지사항</h2>
           <button
+            v-if="remainingNoticesCount > 0"
             @click="navigateTo('/notices')"
-            class="text-sm font-medium flex items-center"
+            class="text-sm text-primary-600 font-medium flex items-center"
           >
-            더보기
+            +{{ remainingNoticesCount }}개 더보기
+            <svg
+              class="w-4 h-4 ml-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+          <button
+            v-else-if="recentNotices.length > 0"
+            @click="navigateTo('/notices')"
+            class="text-sm text-primary-600 font-medium flex items-center"
+          >
+            전체보기
+            <svg
+              class="w-4 h-4 ml-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </button>
         </div>
 
@@ -318,8 +352,8 @@ const conventionStore = useConventionStore()
 
 const loading = ref(true)
 const convention = computed(() => conventionStore.currentConvention)
-const checklistStatus = ref(null) // authStore가 아니라 ref로 변경
 const allActions = ref([]) // 전체 동적 액션 저장
+const checklistStatus = ref(null)
 
 // 브랜드 컬러 가져오기
 const brandColor = computed(() => {
@@ -358,6 +392,7 @@ const contentTopActions = computed(() =>
 
 const upcomingSchedules = ref([])
 const recentNotices = ref([])
+const totalNoticesCount = ref(0)
 
 const dDay = computed(() => {
   if (!convention.value || !convention.value.startDate) return 0
@@ -365,6 +400,11 @@ const dDay = computed(() => {
   const start = new Date(convention.value.startDate)
   const diff = Math.ceil((start - today) / (1000 * 60 * 60 * 24))
   return diff > 0 ? diff : 0
+})
+
+const remainingNoticesCount = computed(() => {
+  const remaining = totalNoticesCount.value - recentNotices.value.length
+  return remaining > 0 ? remaining : 0
 })
 
 function navigateTo(route) {
@@ -486,8 +526,24 @@ async function loadRecentNotices() {
     })
 
     recentNotices.value = response.data.items || []
+    totalNoticesCount.value = response.data.total || response.data.totalCount || 0
   } catch (error) {
     console.error('Failed to load notices:', error)
+  }
+}
+
+async function loadChecklist() {
+  try {
+    const conventionId = conventionStore.currentConvention?.id
+    if (!conventionId) return
+
+    const response = await apiClient.get(
+      `/conventions/${conventionId}/actions/checklist-status`,
+    )
+    checklistStatus.value = response.data
+  } catch (error) {
+    console.error('Failed to load checklist:', error)
+    checklistStatus.value = null
   }
 }
 
@@ -542,55 +598,12 @@ onMounted(async () => {
   await Promise.all([
     loadTodaySchedules(), // ← 이제 userId, conventionId가 준비됨
     loadRecentNotices(),
+    loadChecklist(),
     loadDynamicActions(),
-    loadChecklist(), // 체크리스트도 함수로 분리
   ])
 
   loading.value = false
 })
-
-// 체크리스트 로드 함수 분리
-async function loadChecklist() {
-  try {
-    const conventionId = conventionStore.currentConvention?.id
-    if (!conventionId) {
-      console.warn('[loadChecklist] conventionId not available')
-      return
-    }
-
-    const actionsResponse = await apiClient.get(
-      `/conventions/${conventionId}/actions/urgent`,
-    )
-    const statusesResponse = await apiClient.get(
-      `/conventions/${conventionId}/actions/statuses`,
-    )
-    const actions = actionsResponse.data || []
-    const statuses = statusesResponse.data || []
-
-    if (actions.length > 0) {
-      const statusMap = new Map(statuses.map((s) => [s.conventionActionId, s]))
-      const completedCount = actions.filter(
-        (a) => statusMap.get(a.id)?.isComplete,
-      ).length
-
-      checklistStatus.value = {
-        totalItems: actions.length,
-        completedItems: completedCount,
-        progressPercentage: Math.round((completedCount / actions.length) * 100),
-        items: actions.map((action) => ({
-          actionId: action.id,
-          title: action.title,
-          deadline: action.deadline,
-          navigateTo: action.mapsTo,
-          isComplete: statusMap.get(action.id)?.isComplete || false,
-        })),
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load checklist:', error)
-    checklistStatus.value = null
-  }
-}
 </script>
 
 <style scoped>
