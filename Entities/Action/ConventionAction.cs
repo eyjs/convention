@@ -11,12 +11,12 @@ public enum ActionBehaviorType
     StatusOnly = 0,
 
     /// <summary>
-    /// 범용 폼을 통한 JSON 데이터 수집
+    /// 폼 빌더 시스템 연동 (GenericForm 대체)
     /// </summary>
-    GenericForm = 1,
+    FormBuilder = 1,
 
     /// <summary>
-    /// 공통 모듈 연동 (예: 설문조사, 퀴즈)
+    /// 전문 모듈 연동 (예: 설문조사, 좌석 배치)
     /// </summary>
     ModuleLink = 2,
 
@@ -59,12 +59,15 @@ public class ConventionAction
 
     /// <summary>
     /// Vue 라우터 경로 (예: "/feature/travel-info")
+    /// [Deprecated] ModuleLink 타입에서는 FrontendRoute + TargetId 조합 사용 권장
     /// </summary>
     public string MapsTo { get; set; } = string.Empty;
 
     /// <summary>
-    /// 복잡한 액션을 위한 JSON 설정 (예: 투어 옵션, 설문 문항)
+    /// [Deprecated] 복잡한 액션을 위한 JSON 설정
+    /// FormBuilder 시스템으로 대체됨. 기존 호환성을 위해 유지
     /// </summary>
+    [Obsolete("Use FormBuilder system instead")]
     public string? ConfigJson { get; set; }
 
     /// <summary>
@@ -120,15 +123,40 @@ public class ConventionAction
     public string? TargetLocation { get; set; }
 
     /// <summary>
-    /// 액션 실행 방식 (StatusOnly, GenericForm, ModuleLink, Link)
+    /// 액션 실행 방식 (StatusOnly, FormBuilder, ModuleLink, Link)
     /// 기본값: StatusOnly (기존 방식 유지)
     /// </summary>
     public ActionBehaviorType BehaviorType { get; set; } = ActionBehaviorType.StatusOnly;
 
     /// <summary>
-    /// ModuleLink 타입일 경우, 대상 모듈의 PK ID (예: SurveyId)
+    /// [신규] FormBuilder 또는 ModuleLink의 대상 ID
+    /// - BehaviorType=FormBuilder -> FormDefinition.Id
+    /// - BehaviorType=ModuleLink -> Survey.Id (또는 SeatMap.Id 등)
     /// </summary>
-    public int? TargetModuleId { get; set; }
+    public int? TargetId { get; set; }
+
+    /// <summary>
+    /// [Deprecated] ModuleLink 타입일 경우, 대상 모듈의 PK ID
+    /// TargetId로 대체됨. 기존 호환성을 위해 유지
+    /// </summary>
+    [Obsolete("Use TargetId instead")]
+    public int? TargetModuleId
+    {
+        get => TargetId;
+        set => TargetId = value;
+    }
+
+    /// <summary>
+    /// [신규] ModuleLink를 위한 모듈 식별자 (예: "Survey", "SeatMap")
+    /// 오케스트레이터가 이 값을 보고 API 경로를 결정함
+    /// </summary>
+    public string? ModuleIdentifier { get; set; }
+
+    /// <summary>
+    /// [신규] ModuleLink를 위한 프론트엔드 라우트 경로
+    /// 예: "/feature/survey/" (TargetId와 조합하여 /feature/survey/15 로 이동)
+    /// </summary>
+    public string? FrontendRoute { get; set; }
 
     // Navigation Property
     public Convention? Convention { get; set; }

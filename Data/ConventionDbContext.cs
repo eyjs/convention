@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using LocalRAG.Entities;
 using LocalRAG.Entities.Action;
+using LocalRAG.Entities.FormBuilder;
 using LocalRAG.DTOs.ScheduleModels;
 
 namespace LocalRAG.Data;
@@ -40,6 +41,11 @@ public class ConventionDbContext : DbContext
     public DbSet<Gallery> Galleries { get; set; }
     public DbSet<GalleryImage> GalleryImages { get; set; }
     public DbSet<ConventionChatMessage> ConventionChatMessages { get; set; }
+
+    // Form Builder System
+    public DbSet<FormDefinition> FormDefinitions { get; set; }
+    public DbSet<FormField> FormFields { get; set; }
+    public DbSet<FormSubmission> FormSubmissions { get; set; }
 
     public DbSet<VectorDataEntry> VectorDataEntries { get; set; } //  DbSet 추가
     

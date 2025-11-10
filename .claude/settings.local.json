@@ -16,7 +16,8 @@
       "Bash(nul)",
       "Bash(findstr:*)",
       "Bash(dotnet ef database update:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(Select-String \"error\")"
     ],
     "deny": [],
     "ask": []

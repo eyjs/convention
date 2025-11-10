@@ -7,6 +7,7 @@ using LocalRAG.Entities.Action;
 using System.Security.Claims;
 using System.Text.Json;
 using LocalRAG.DTOs.ActionModels;
+using LocalRAG.Interfaces;
 
 namespace LocalRAG.Controllers.Convention;
 
@@ -19,13 +20,16 @@ public class UserActionController : ControllerBase
 {
     private readonly ConventionDbContext _context;
     private readonly ILogger<UserActionController> _logger;
+    private readonly IActionOrchestrationService _orchestrationService;
 
     public UserActionController(
         ConventionDbContext context,
-        ILogger<UserActionController> logger)
+        ILogger<UserActionController> logger,
+        IActionOrchestrationService orchestrationService)
     {
         _context = context;
         _logger = logger;
+        _orchestrationService = orchestrationService;
     }
 
     /// <summary>
@@ -143,6 +147,32 @@ public class UserActionController : ControllerBase
             .ToListAsync();
 
         return Ok(statuses);
+    }
+
+    /// <summary>
+    /// [신규 오케스트레이터] 사용자별 통합 액션 체크리스트 조회
+    /// BehaviorType에 관계없이 일관된 형태로 모든 액션의 상태를 반환
+    /// </summary>
+    [Authorize]
+    [HttpGet("checklist")]
+    public async Task<ActionResult> GetUserChecklist(int conventionId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized("사용자 정보를 확인할 수 없습니다.");
+        }
+
+        try
+        {
+            var checklist = await _orchestrationService.GetUserActionsAsync(conventionId, userId);
+            return Ok(checklist);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "사용자 체크리스트 조회 중 오류 발생. ConventionId={ConventionId}, UserId={UserId}", conventionId, userId);
+            return StatusCode(500, new { message = "체크리스트 조회 중 오류가 발생했습니다." });
+        }
     }
 
     /// <summary>
@@ -281,10 +311,10 @@ public class UserActionController : ControllerBase
             return NotFound(new { message = "액션을 찾을 수 없습니다." });
         }
 
-        // 이 API는 GenericForm 타입만 처리
-        if (action.BehaviorType != ActionBehaviorType.GenericForm)
+        // 이 API는 FormBuilder 타입만 처리 (GenericForm은 deprecated)
+        if (action.BehaviorType != ActionBehaviorType.FormBuilder)
         {
-            return BadRequest(new { message = "이 액션은 GenericForm 타입이 아닙니다." });
+            return BadRequest(new { message = "이 액션은 FormBuilder 타입이 아닙니다." });
         }
 
         // ActionSubmission 조회/생성
@@ -377,9 +407,9 @@ public class UserActionController : ControllerBase
             return NotFound(new { message = "액션을 찾을 수 없습니다." });
         }
 
-        if (action.BehaviorType != ActionBehaviorType.GenericForm)
+        if (action.BehaviorType != ActionBehaviorType.FormBuilder)
         {
-            return BadRequest(new { message = "이 액션은 GenericForm 타입이 아닙니다." });
+            return BadRequest(new { message = "이 액션은 FormBuilder 타입이 아닙니다." });
         }
 
         var submissionsRaw = await _context.ActionSubmissions

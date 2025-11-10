@@ -136,5 +136,61 @@ namespace LocalRAG.Controllers.Convention
             }
             return Ok(stats);
         }
+
+        /// <summary>
+        /// [표준화 계약] 설문 완료 상태 조회 - 오케스트레이터용
+        /// </summary>
+        [HttpGet("{id}/status")]
+        [Authorize]
+        public async Task<IActionResult> GetSurveyStatus(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return Unauthorized("User ID not found in token.");
+            }
+
+            var response = await _surveyService.GetUserSurveyResponseAsync(id, userId);
+
+            string status = response != null ? "Completed" : "NotStarted";
+
+            return Ok(new { status = status });
+        }
+
+        /// <summary>
+        /// [표준화 계약] 설문 요약 정보 조회 - 오케스트레이터용
+        /// </summary>
+        [HttpGet("{id}/summary")]
+        [Authorize]
+        public async Task<IActionResult> GetSurveySummary(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return Unauthorized("User ID not found in token.");
+            }
+
+            var survey = await _surveyService.GetSurveyAsync(id);
+            if (survey == null)
+            {
+                return NotFound("Survey not found.");
+            }
+
+            var response = await _surveyService.GetUserSurveyResponseAsync(id, userId);
+
+            string summary;
+            if (response != null)
+            {
+                var totalQuestions = survey.Questions?.Count ?? 0;
+                var answeredQuestions = response.Answers?.Count ?? 0;
+                summary = $"{answeredQuestions}/{totalQuestions} 항목 응답 완료";
+            }
+            else
+            {
+                summary = "미응답";
+            }
+
+            return Ok(new { summary = summary });
+        }
     }
 }
