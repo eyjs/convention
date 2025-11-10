@@ -564,6 +564,7 @@ async function loadDynamicActions() {
     ])
 
     const actions = actionsResponse.data || []
+    console.log('Home Actions:', actions); // 홈 화면 액션 데이터 확인용 로그
     const statuses = statusesResponse.data || []
 
     // 상태 정보를 맵으로 변환

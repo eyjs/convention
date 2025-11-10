@@ -3,11 +3,7 @@
 
   Renders a menu card/item typically used in the "More Features" grid.
   Displays an icon, title, and optional description.
-
-  Props:
-    - feature: Action object containing configuration
-      - actionName: Menu item title
-      - config: { icon, iconColor, bgColor, description, url, externalUrl }
+  It delegates the click action to the useAction composable.
 -->
 
 <template>
@@ -86,7 +82,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useAction } from '@/composables/useAction'
 
 const props = defineProps({
   feature: {
@@ -95,13 +91,13 @@ const props = defineProps({
   },
 })
 
-const router = useRouter()
+const { executeAction } = useAction()
 
-// Parse config
+// Parse config from feature.configJson
 const config = computed(() => {
   try {
     if (typeof props.feature.configJson === 'string' && props.feature.configJson.trim() === '') {
-      return {}; // Return empty object for empty string
+      return {};
     }
     return typeof props.feature.configJson === 'string'
       ? JSON.parse(props.feature.configJson)
@@ -112,79 +108,37 @@ const config = computed(() => {
   }
 })
 
-// Menu item classes
-const menuItemClasses = computed(() => {
-  return [
-    'menu-item',
-    'bg-white',
-    'border',
-    'border-gray-200',
-    'rounded-lg',
-    'p-4',
-    'cursor-pointer',
-    'transition-all',
-    'duration-200',
-    'hover:shadow-md',
-    'hover:border-blue-300',
-    'active:scale-95',
-    'relative',
-  ].join(' ')
-})
+// Dynamic classes for the menu item
+const menuItemClasses = computed(() => [
+  'menu-item',
+  'bg-white',
+  'border',
+  'border-gray-200',
+  'rounded-lg',
+  'p-4',
+  'cursor-pointer',
+  'transition-all',
+  'duration-200',
+  'hover:shadow-md',
+  'hover:border-blue-300',
+  'active:scale-95',
+  'relative',
+].join(' '))
 
-// Icon style
+// Dynamic style for the icon
 const iconStyle = computed(() => {
   const bgColor = config.value.bgColor || '#3B82F6'
   const iconColor = config.value.iconColor || '#FFFFFF'
-
   return {
     backgroundColor: bgColor,
     color: iconColor,
   }
 })
 
-// Handle click
+// Handle click by delegating to the central action executor
 function handleClick() {
   try {
-    // Handle onClick object for navigation
-    if (config.value.onClick && config.value.onClick.type === 'NAVIGATE' && config.value.onClick.payload) {
-      if (config.value.onClick.payload.startsWith('http')) { // Check if it's an external URL
-        window.open(config.value.onClick.payload, '_blank', 'noopener,noreferrer');
-      } else {
-        router.push(config.value.onClick.payload);
-      }
-      return;
-    }
-
-    // Existing logic for direct url/externalUrl (fallback or alternative)
-    if (config.value.externalUrl) {
-      window.open(config.value.externalUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    // Internal URL
-    if (config.value.url) {
-      router.push(config.value.url);
-      return;
-    }
-
-    // 3. Handle navigation from top-level feature.mapsTo (for ModuleLink, Link behavior types)
-    if (props.feature.mapsTo) {
-      // Assuming mapsTo can be internal or external, check for http prefix
-      if (props.feature.mapsTo.startsWith('http')) {
-        window.open(props.feature.mapsTo, '_blank', 'noopener,noreferrer');
-      } else {
-        router.push(props.feature.mapsTo);
-      }
-      return;
-    }
-
-    // Custom callback
-    if (
-      config.value.onClick &&
-      typeof window[config.value.onClick] === 'function'
-    ) {
-      window[config.value.onClick](props.feature)
-    }
+    executeAction(props.feature)
   } catch (error) {
     console.error('Menu item click error:', error)
   }

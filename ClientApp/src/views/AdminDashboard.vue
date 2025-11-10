@@ -106,6 +106,19 @@
             <span class="hidden sm:inline">{{ tab.name }}</span>
             <span class="sm:hidden">{{ tab.shortName || tab.name }}</span>
           </button>
+          <!-- Form Builder Tab -->
+          <button
+            @click="activeTab = 'formbuilder'"
+            :class="[
+              'pb-3 px-3 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors',
+              activeTab === 'formbuilder'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+            ]"
+          >
+            <span class="hidden sm:inline">폼 빌더</span>
+            <span class="sm:hidden">폼 빌더</span>
+          </button>
         </nav>
       </div>
 
@@ -147,6 +160,11 @@
         <SurveyManagement :convention-id="conventionId" />
       </div>
 
+      <!-- 폼 빌더 -->
+      <div v-if="activeTab === 'formbuilder'">
+        <FormBuilderManagement :convention-id="conventionId" />
+      </div>
+
       <!-- 업로드 -->
       <div v-if="activeTab === 'upload'">
         <BulkUpload :convention-id="conventionId" />
@@ -174,6 +192,7 @@ import BulkUpload from '@/components/admin/BulkUpload.vue'
 import AttributeTemplateManagement from '@/components/admin/AttributeTemplateManagement.vue'
 import BoardManagement from '@/components/admin/BoardManagement.vue'
 import SurveyManagement from '@/components/admin/SurveyManagement.vue'
+import FormBuilderManagement from '@/components/admin/FormBuilderManagement.vue'
 
 const router = useRouter()
 const route = useRoute()

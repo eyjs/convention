@@ -1,12 +1,13 @@
 <template>
   <div
-    @click="toggleAction"
+    @click.prevent="handleCardClick"
     class="bg-white rounded-lg p-4 flex items-center gap-3 cursor-pointer transition-all duration-200 hover:shadow-md border border-gray-200"
     :class="{ 'opacity-60': isCompleted }"
   >
-    <!-- 체크박스 -->
+    <!-- 체크박스 (이벤트 전파 중지) -->
     <div
-      class="flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-all duration-200"
+      @click.stop="toggleStatus"
+      class="flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-all duration-200 z-10"
       :class="[
         isCompleted
           ? 'bg-[#17B185] border-[#17B185]'
@@ -59,6 +60,7 @@
 import { ref } from 'vue'
 import apiClient from '@/services/api'
 import { useConventionStore } from '@/stores/convention'
+import { useAction } from '@/composables/useAction'
 
 const props = defineProps({
   feature: {
@@ -67,17 +69,32 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['statusToggled'])
+
 const conventionStore = useConventionStore()
+const { executeAction } = useAction()
 const isCompleted = ref(props.feature.isComplete || false)
 
-async function toggleAction() {
+// 카드 전체를 클릭했을 때의 동작
+function handleCardClick() {
+  console.log('ChecklistCard clicked:', props.feature); // 디버깅 로그 추가
+  // StatusOnly 타입은 상태 토글만 수행
+  if (props.feature.behaviorType === 'StatusOnly') {
+    toggleStatus()
+  } else {
+    // 그 외 모든 타입은 useAction에 위임
+    executeAction(props.feature)
+  }
+}
+
+// 체크박스만 클릭했을 때의 동작
+async function toggleStatus() {
   try {
     const conventionId = conventionStore.currentConvention?.id
     if (!conventionId) {
       throw new Error('Convention ID not found')
     }
 
-    // 토글: 완료 상태를 반대로 전환
     const newStatus = !isCompleted.value
 
     await apiClient.post(
@@ -86,18 +103,10 @@ async function toggleAction() {
     )
 
     isCompleted.value = newStatus
+    emit('statusToggled', { actionId: props.feature.id, isComplete: newStatus });
 
-    // 성공 시 간단한 피드백
-    if (newStatus) {
-      console.log('항목이 완료되었습니다.')
-    } else {
-      console.log('완료가 취소되었습니다.')
-    }
-
-    // Optionally, emit an event to notify the parent component
-    // emit('actionToggled', props.feature.id, newStatus)
   } catch (error) {
-    console.error('Failed to toggle action:', error)
+    console.error('Failed to toggle action status:', error)
     alert('상태 변경에 실패했습니다.')
   }
 }

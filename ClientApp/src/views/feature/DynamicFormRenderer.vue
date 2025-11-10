@@ -156,13 +156,18 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
+import formBuilderService from '@/services/formBuilderService'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const conventionStore = useConventionStore()
 
 const formDefinitionId = computed(() => parseInt(route.params.formDefinitionId))
+// conventionId는 loadFormDefinition에서 직접 사용되지 않으므로 제거
+// const conventionId = computed(() => conventionStore.currentConvention?.id);
 
 const loading = ref(true)
 const error = ref(null)
@@ -200,7 +205,8 @@ function handleFileChange(event, key) {
 // 폼 정의 로드
 async function loadFormDefinition() {
   try {
-    const response = await apiClient.get(`/forms/${formDefinitionId.value}/definition`)
+    // formBuilderService를 사용하여 올바른 API 경로로 호출 (conventionId 없이)
+    const response = await formBuilderService.getFormDefinition(formDefinitionId.value)
     formDefinition.value = response.data
 
     // 폼 데이터 초기화
@@ -222,6 +228,7 @@ async function loadFormDefinition() {
 // 기존 제출 데이터 로드 (있는 경우)
 async function loadExistingSubmission() {
   try {
+    // apiClient를 직접 사용하되, 경로는 FormBuilderController에 맞게 유지
     const response = await apiClient.get(`/forms/submission/${formDefinitionId.value}`)
 
     if (response.data) {
@@ -243,6 +250,7 @@ async function handleSubmit() {
   successMessage.value = ''
 
   try {
+    // apiClient를 직접 사용하되, 경로는 FormBuilderController에 맞게 유지
     await apiClient.post(`/forms/${formDefinitionId.value}/submit`, formData.value)
 
     successMessage.value = '제출이 완료되었습니다!'
@@ -263,6 +271,15 @@ async function handleSubmit() {
 }
 
 onMounted(async () => {
+  // conventionId가 loadFormDefinition에 직접 필요하지 않으므로,
+  // 여기서 conventionStore 로직은 제거하거나 다른 용도로 사용
+  if (!conventionStore.currentConvention) {
+    const selectedConventionId = localStorage.getItem('selectedConventionId');
+    if (selectedConventionId) {
+      await conventionStore.setCurrentConvention(parseInt(selectedConventionId));
+    }
+  }
+
   await loadFormDefinition()
   if (!error.value) {
     await loadExistingSubmission()

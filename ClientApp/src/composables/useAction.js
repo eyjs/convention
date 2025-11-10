@@ -10,27 +10,25 @@ export function useAction() {
   const router = useRouter()
   const conventionId = computed(() => conventionStore.currentConvention?.id)
 
-  async function submitAction(actionId, responseData) {
+  async function fetchChecklist() {
     if (!conventionId.value) {
-      throw new Error('Convention not selected.')
+      console.error('fetchChecklist: Convention ID is not available.')
+      return null
     }
-
-    const payload = {
-      ResponseDataJson: JSON.stringify(responseData),
+    try {
+      const response = await apiClient.get(
+        `/api/conventions/${conventionId.value}/actions/checklist`,
+      )
+      return response.data
+    } catch (error) {
+      console.error('Failed to fetch action checklist:', error)
+      return null
     }
-
-    await apiClient.post(
-      `/conventions/${conventionId.value}/actions/${actionId}/complete`,
-      payload,
-    )
-
-    // Refresh user data to update checklist status
-    await authStore.fetchCurrentUser()
   }
 
   /**
    * BehaviorType에 따라 액션을 실행하는 하이브리드 라우터
-   * @param {Object} action - 액션 객체 (behaviorType, id, targetModuleId, mapsTo 등)
+   * @param {Object} action - 체크리스트에서 가져온 액션 객체
    */
   async function executeAction(action) {
     if (!action) {
@@ -38,51 +36,43 @@ export function useAction() {
       return
     }
 
-    // BehaviorType 기본값 처리 (없으면 StatusOnly로 간주)
-    const behaviorType = action.behaviorType || 'StatusOnly'
+    const { behaviorType, targetId, targetModuleId, mapsTo, route } = action
 
     switch (behaviorType) {
       case 'StatusOnly':
-        // 기존 방식: 단순 완료 처리 또는 MapsTo 경로로 이동
-        if (action.mapsTo) {
-          router.push(action.mapsTo)
+        console.log(`Executing StatusOnly action: ${action.id}`)
+        break
+
+      case 'GenericForm': // Deprecated, fallback to FormBuilder
+        console.warn('Deprecated BehaviorType "GenericForm" used, falling back to "FormBuilder".')
+        // Fall-through
+      case 'FormBuilder':
+        console.log('Executing FormBuilder action:', action);
+        console.log('Target ID:', targetId);
+        if (targetId) {
+          router.push({
+            name: 'DynamicFormRenderer',
+            params: { formDefinitionId: targetId },
+          })
         } else {
-          console.log(`Executing StatusOnly action: ${action.id}`)
-          // 필요시 바로 완료 API 호출
-          // await submitAction(action.actionType, {})
+          console.warn('FormBuilder action without targetId (FormDefinitionId):', action)
         }
         break
 
-      case 'GenericForm':
-        // 범용 폼: GenericForm 뷰로 라우팅
-        router.push({
-          name: 'GenericForm',
-          params: { actionId: action.id }
-        })
-        break
-
       case 'ModuleLink':
-        // 모듈 연동 (예: 설문조사)
-        if (action.targetModuleId) {
-          // 설문조사 모듈로 이동
-          router.push({
-            name: 'Survey',
-            params: { id: action.targetModuleId }
-          })
+        if (mapsTo) {
+          router.push(mapsTo)
         } else {
-          console.warn('ModuleLink action without targetModuleId:', action)
+          console.warn('ModuleLink action without mapsTo path:', action)
         }
         break
 
       case 'Link':
-        // 링크 처리 (외부/내부)
-        if (action.mapsTo) {
-          if (action.mapsTo.startsWith('http://') || action.mapsTo.startsWith('https://')) {
-            // 외부 링크
-            window.open(action.mapsTo, '_blank')
+        if (mapsTo) {
+          if (mapsTo.startsWith('http://') || mapsTo.startsWith('https://')) {
+            window.open(mapsTo, '_blank', 'noopener,noreferrer')
           } else {
-            // 내부 링크
-            router.push(action.mapsTo)
+            router.push(mapsTo)
           }
         }
         break
@@ -93,7 +83,7 @@ export function useAction() {
   }
 
   return {
-    submitAction,
+    fetchChecklist,
     executeAction,
   }
 }

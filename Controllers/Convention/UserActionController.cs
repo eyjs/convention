@@ -57,7 +57,7 @@ public class UserActionController : ControllerBase
                 a.TargetLocation,
                 a.ConfigJson,
                 a.BehaviorType,
-                a.TargetModuleId,
+                a.TargetId,
                 IconClass = a.IconClass ?? (a.Template == null ? null : a.Template.IconClass),
                 Category = a.Category ?? (a.Template == null ? null : a.Template.Category)
             })
@@ -81,17 +81,15 @@ public class UserActionController : ControllerBase
             .Include(a => a.Template)
             .Where(a => a.ConventionId == conventionId);
 
-        // isActive 필터 (기본값: true - 활성 액션만)
         if (isActive.HasValue)
         {
             query = query.Where(a => a.IsActive == isActive.Value);
         }
         else
         {
-            query = query.Where(a => a.IsActive); // 기본: 활성만
+            query = query.Where(a => a.IsActive);
         }
 
-        // targetLocation 필터 (콤마로 여러 위치 지원)
         if (!string.IsNullOrEmpty(targetLocation))
         {
             var locations = targetLocation.Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -103,7 +101,6 @@ public class UserActionController : ControllerBase
             }
         }
 
-        // actionCategory 필터
         if (!string.IsNullOrEmpty(actionCategory))
         {
             query = query.Where(a => a.ActionCategory == actionCategory);
@@ -123,7 +120,7 @@ public class UserActionController : ControllerBase
                 a.TargetLocation,
                 a.ConfigJson,
                 a.BehaviorType,
-                a.TargetModuleId,
+                a.TargetId,
                 IconClass = a.IconClass ?? (a.Template == null ? null : a.Template.IconClass),
                 Category = a.Category ?? (a.Template == null ? null : a.Template.Category)
             })
@@ -149,10 +146,6 @@ public class UserActionController : ControllerBase
         return Ok(statuses);
     }
 
-    /// <summary>
-    /// [신규 오케스트레이터] 사용자별 통합 액션 체크리스트 조회
-    /// BehaviorType에 관계없이 일관된 형태로 모든 액션의 상태를 반환
-    /// </summary>
     [Authorize]
     [HttpGet("checklist")]
     public async Task<ActionResult> GetUserChecklist(int conventionId)
@@ -175,9 +168,6 @@ public class UserActionController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 특정 액션의 상세 정보 조회
-    /// </summary>
     [HttpGet("{actionId}")]
     public async Task<ActionResult> GetActionDetail(int conventionId, int actionId)
     {
@@ -201,7 +191,7 @@ public class UserActionController : ControllerBase
             action.ActionCategory,
             action.TargetLocation,
             action.BehaviorType,
-            action.TargetModuleId,
+            action.TargetId,
             IconClass = action.IconClass ?? action.Template?.IconClass,
             Category = action.Category ?? action.Template?.Category
         });
@@ -245,9 +235,6 @@ public class UserActionController : ControllerBase
         return Ok(new { message = "액션이 완료되었습니다." });
     }
 
-    /// <summary>
-    /// 액션 상태 토글 (완료 ↔ 미완료)
-    /// </summary>
     [Authorize]
     [HttpPost("{actionId:int}/toggle")]
     public async Task<IActionResult> ToggleAction(int conventionId, int actionId, [FromBody] ToggleActionDto dto)
@@ -289,10 +276,6 @@ public class UserActionController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// GenericForm 타입 액션의 데이터 제출 (Create/Update)
-    /// 마감기한이 있는 경우 자동으로 완료 처리하여 진척도 업데이트
-    /// </summary>
     [Authorize]
     [HttpPost("{actionId}/submit")]
     public async Task<IActionResult> SubmitGenericActionData(int conventionId, int actionId, [FromBody] JsonElement payload)
@@ -311,25 +294,21 @@ public class UserActionController : ControllerBase
             return NotFound(new { message = "액션을 찾을 수 없습니다." });
         }
 
-        // 이 API는 FormBuilder 타입만 처리 (GenericForm은 deprecated)
         if (action.BehaviorType != ActionBehaviorType.FormBuilder)
         {
             return BadRequest(new { message = "이 액션은 FormBuilder 타입이 아닙니다." });
         }
 
-        // ActionSubmission 조회/생성
         var submission = await _context.ActionSubmissions
             .FirstOrDefaultAsync(s => s.ConventionActionId == actionId && s.UserId == userId);
 
         if (submission != null)
         {
-            // Update
             submission.SubmissionDataJson = payload.ToString();
             submission.UpdatedAt = DateTime.UtcNow;
         }
         else
         {
-            // Create
             submission = new ActionSubmission
             {
                 ConventionActionId = actionId,
@@ -340,8 +319,6 @@ public class UserActionController : ControllerBase
             _context.ActionSubmissions.Add(submission);
         }
 
-        // 중요: 데이터 저장과 별개로, '완료' 상태도 함께 기록
-        // 마감기한이 있는 경우 진척도에 반영됨
         var status = await _context.UserActionStatuses
             .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == actionId);
 
@@ -365,9 +342,6 @@ public class UserActionController : ControllerBase
         return Ok(new { message = "제출이 완료되었습니다." });
     }
 
-    /// <summary>
-    /// GenericForm 타입 액션에 대해 내가 이전에 제출한 데이터 조회 (Read)
-    /// </summary>
     [Authorize]
     [HttpGet("{actionId}/submission")]
     public async Task<IActionResult> GetMySubmission(int conventionId, int actionId)
@@ -387,14 +361,10 @@ public class UserActionController : ControllerBase
             return NotFound(new { message = "제출 데이터가 없습니다." });
         }
 
-        // JSON 문자열을 객체로 파싱하여 반환
         var jsonData = JsonDocument.Parse(submission.SubmissionDataJson);
         return Ok(jsonData.RootElement);
     }
 
-    /// <summary>
-    /// [관리자용] GenericForm 타입 액션의 모든 제출 현황 조회
-    /// </summary>
     [Authorize(Roles = "Admin")]
     [HttpGet("{actionId}/submissions/all")]
     public async Task<IActionResult> GetAllSubmissions(int conventionId, int actionId)
@@ -417,7 +387,6 @@ public class UserActionController : ControllerBase
             .Where(s => s.ConventionActionId == actionId)
             .ToListAsync();
 
-        // JSON 파싱은 메모리에서 수행 (식 트리 제한 우회)
         var submissions = submissionsRaw.Select(s => new
         {
             s.Id,
@@ -432,9 +401,6 @@ public class UserActionController : ControllerBase
         return Ok(submissions);
     }
 
-    /// <summary>
-    /// 체크리스트 상태 조회 (Deadline이 있는 액션들)
-    /// </summary>
     [Authorize]
     [HttpGet("checklist-status")]
     public async Task<IActionResult> GetChecklistStatus(int conventionId)
@@ -445,7 +411,6 @@ public class UserActionController : ControllerBase
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
         }
 
-        // 1. 해당 행사의 활성 액션 중 Deadline이 있는 것만 조회
         var actions = await _context.ConventionActions
             .Where(a => a.ConventionId == conventionId &&
                        a.IsActive &&
@@ -457,14 +422,12 @@ public class UserActionController : ControllerBase
         if (actions.Count == 0)
             return Ok(new { totalItems = 0, completedItems = 0, progressPercentage = 0, items = new List<object>() });
 
-        // 2. 해당 사용자의 액션 상태 조회
         var statuses = await _context.UserActionStatuses
             .Where(s => s.UserId == userId)
             .ToListAsync();
 
         var statusDict = statuses.ToDictionary(s => s.ConventionActionId, s => s);
 
-        // 3. 체크리스트 아이템 구축
         var items = new List<object>();
         int completedCount = 0;
 
@@ -483,11 +446,12 @@ public class UserActionController : ControllerBase
                 isComplete = isComplete,
                 deadline = action.Deadline,
                 navigateTo = action.MapsTo,
-                orderNum = action.OrderNum
+                orderNum = action.OrderNum,
+                behaviorType = action.BehaviorType,
+                targetId = action.TargetId
             });
         }
 
-        // 4. 가장 가까운 미완료 액션의 마감일 찾기
         DateTime? overallDeadline = actions
             .Where(a => {
                 var status = statusDict.GetValueOrDefault(a.Id);
@@ -496,7 +460,6 @@ public class UserActionController : ControllerBase
             .OrderBy(a => a.Deadline)
             .FirstOrDefault()?.Deadline;
 
-        // 5. 체크리스트 상태 반환
         int totalItems = actions.Count;
         int progressPercentage = totalItems > 0 ? (completedCount * 100 / totalItems) : 0;
 
@@ -510,9 +473,6 @@ public class UserActionController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// 추가 메뉴 액션 조회 (ActionCategory = "MENU")
-    /// </summary>
     [Authorize]
     [HttpGet("menu")]
     public async Task<IActionResult> GetMenuActions(int conventionId)
@@ -528,7 +488,10 @@ public class UserActionController : ControllerBase
                 a.Id,
                 a.Title,
                 a.MapsTo,
-                a.OrderNum
+                a.OrderNum,
+                a.BehaviorType,
+                a.TargetId,
+                a.ConfigJson
             })
             .ToListAsync();
 

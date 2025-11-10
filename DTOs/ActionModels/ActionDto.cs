@@ -17,27 +17,19 @@ public class ConventionActionDto
     public string? ConfigJson { get; set; }
     public bool IsActive { get; set; } = true;
     public int OrderNum { get; set; }
-
-    /// <summary>
-    /// 액션 카테고리 (UI 렌더링 타입: BUTTON, MENU, AUTO_POPUP, BANNER, CARD)
-    /// null이면 체크리스트 전용 액션
-    /// </summary>
     public string? ActionCategory { get; set; }
-
-    /// <summary>
-    /// 타겟 위치 (UI 렌더링 위치: HOME_SUB_HEADER, SCHEDULE_CONTENT_TOP 등)
-    /// </summary>
     public string? TargetLocation { get; set; }
-
-    /// <summary>
-    /// 액션 실행 방식 (StatusOnly, GenericForm, ModuleLink, Link)
-    /// </summary>
     public LocalRAG.Entities.Action.ActionBehaviorType BehaviorType { get; set; }
 
     /// <summary>
-    /// ModuleLink 타입일 경우, 대상 모듈의 PK ID (예: SurveyId)
+    /// BehaviorType=ModuleLink일 경우, 대상 모듈의 ID (예: Survey.Id)
     /// </summary>
     public int? TargetModuleId { get; set; }
+
+    /// <summary>
+    /// BehaviorType=FormBuilder일 경우, 대상 FormDefinition의 ID
+    /// </summary>
+    public int? TargetId { get; set; }
 }
 
 /// <summary>

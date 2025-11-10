@@ -2,16 +2,10 @@
   Generic Button Component
 
   Renders a customizable button based on action configuration.
-  Supports different styles, sizes, and click actions.
-
-  Props:
-    - feature: Action object containing configuration
-      - actionName: Button label
-      - config: { style, size, icon, url, externalUrl }
+  Delegates click actions to the useAction composable.
 -->
-
 <template>
-  <button :class="buttonClasses" @click="handleClick" :disabled="isLoading">
+  <button :class="buttonClasses" @click.prevent="handleClick" :disabled="isLoading">
     <!-- Icon (optional) -->
     <span v-if="config.icon" class="button-icon" v-html="config.icon"></span>
 
@@ -23,28 +17,12 @@
       v-if="isLoading"
       class="ml-2 inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"
     ></span>
-
-    <!-- Arrow Icon (for links) -->
-    <svg
-      v-if="hasUrl && !isLoading"
-      class="w-4 h-4 ml-2"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M9 5l7 7-7 7"
-      />
-    </svg>
   </button>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useAction } from '@/composables/useAction'
 
 const props = defineProps({
   feature: {
@@ -53,12 +31,15 @@ const props = defineProps({
   },
 })
 
-const router = useRouter()
 const isLoading = ref(false)
+const { executeAction } = useAction()
 
 // Parse config (stored as JSON string in DB)
 const config = computed(() => {
   try {
+    if (typeof props.feature.configJson === 'string' && props.feature.configJson.trim() === '') {
+      return {};
+    }
     return typeof props.feature.configJson === 'string'
       ? JSON.parse(props.feature.configJson)
       : props.feature.configJson || {}
@@ -66,11 +47,6 @@ const config = computed(() => {
     console.error('Failed to parse button config:', error)
     return {}
   }
-})
-
-// Check if button has URL
-const hasUrl = computed(() => {
-  return !!(config.value.url || config.value.externalUrl)
 })
 
 // Compute button classes based on style and size
@@ -105,31 +81,13 @@ const buttonClasses = computed(() => {
   ].join(' ')
 })
 
-// Handle button click
+// Handle button click by delegating to the central action executor
 async function handleClick() {
   if (isLoading.value) return
 
+  isLoading.value = true
   try {
-    // External URL (opens in new tab)
-    if (config.value.externalUrl) {
-      window.open(config.value.externalUrl, '_blank', 'noopener,noreferrer')
-      return
-    }
-
-    // Internal URL (Vue Router navigation)
-    if (config.value.url) {
-      isLoading.value = true
-      await router.push(config.value.url)
-      return
-    }
-
-    // Custom callback (if provided in config)
-    if (
-      config.value.onClick &&
-      typeof window[config.value.onClick] === 'function'
-    ) {
-      window[config.value.onClick](props.feature)
-    }
+    await executeAction(props.feature)
   } catch (error) {
     console.error('Button click error:', error)
     alert('작업을 수행할 수 없습니다.')

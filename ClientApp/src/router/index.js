@@ -114,6 +114,30 @@ const routes = [
       showNav: false,
     },
   },
+  {
+    path: '/admin/form-builder',
+    name: 'FormBuilderList',
+    component: () => import('@/views/admin/FormBuilderListView.vue'),
+    meta: {
+      title: '폼 빌더',
+      requiresAuth: true,
+      requiresAdmin: true,
+      layout: 'DefaultLayout',
+      showNav: false,
+    },
+  },
+  {
+    path: '/admin/form-builder/:id',
+    name: 'FormBuilderEdit',
+    component: () => import('@/views/admin/FormBuilderEditView.vue'),
+    meta: {
+      title: '폼 편집',
+      requiresAuth: true,
+      requiresAdmin: true,
+      layout: 'DefaultLayout',
+      showNav: false,
+    },
+  },
 
   // === Convention Features ===
   {
@@ -155,6 +179,17 @@ const routes = [
     component: () => import('@/views/feature/GenericForm.vue'),
     meta: {
       title: '폼 작성',
+      requiresAuth: true,
+      layout: 'DefaultLayout',
+      showNav: false,
+    },
+  },
+  {
+    path: '/feature/form/:formDefinitionId',
+    name: 'DynamicFormRenderer',
+    component: () => import('@/views/feature/DynamicFormRenderer.vue'),
+    meta: {
+      title: '양식 작성',
       requiresAuth: true,
       layout: 'DefaultLayout',
       showNav: false,
