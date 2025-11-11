@@ -4,6 +4,7 @@ using LocalRAG.Data;
 using Microsoft.AspNetCore.Authorization;
 using LocalRAG.Entities.Action;
 using LocalRAG.DTOs.ActionModels;
+using System.Text.RegularExpressions;
 
 namespace LocalRAG.Controllers.Admin;
 
