@@ -56,18 +56,38 @@ public class ActionManagementController : ControllerBase
         {
             ConventionId = request.ConventionId,
             Title = request.Title,
-            MapsTo = request.MapsTo,
+            MapsTo = request.MapsTo ?? string.Empty,
             Deadline = request.Deadline,
             OrderNum = request.OrderNum,
             ConfigJson = request.ConfigJson,
             IsActive = request.IsActive,
             ActionCategory = request.ActionCategory,
             TargetLocation = request.TargetLocation,
-            BehaviorType = request.BehaviorType,
-            TargetId = request.BehaviorType == ActionBehaviorType.FormBuilder ? request.TargetId : null,
-            TargetModuleId = request.BehaviorType == ActionBehaviorType.ModuleLink ? request.TargetModuleId : null,
+            BehaviorType = Enum.Parse<BehaviorType>(request.BehaviorType),
+            TargetId = request.BehaviorType == BehaviorType.FormBuilder.ToString() ? request.TargetId : null,
+            TargetModuleId = request.BehaviorType == BehaviorType.ModuleLink.ToString() ? request.TargetModuleId : null,
             CreatedAt = DateTime.UtcNow
         };
+
+        // BehaviorType이 ModuleLink인 경우 MapsTo 필드에 대한 유효성 검사 및 정규화
+        if (action.BehaviorType == BehaviorType.ModuleLink)
+        {
+            action.MapsTo = action.MapsTo.Trim(); // 앞뒤 공백 제거
+
+            // /feature/ 접두어 강제
+            if (!action.MapsTo.StartsWith("/feature/", StringComparison.OrdinalIgnoreCase))
+            {
+                action.MapsTo = "/feature/" + action.MapsTo.TrimStart('/');
+            }
+            // 중복 슬래시 제거 (예: /feature//path -> /feature/path)
+            action.MapsTo = System.Text.RegularExpressions.Regex.Replace(action.MapsTo, "(?<!:)/{2,}", "/");
+
+            // 유효성 검사: /feature/로 시작해야 함
+            if (!action.MapsTo.StartsWith("/feature/", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("ModuleLink의 MapsTo는 '/feature/'로 시작해야 합니다.");
+            }
+        }
         _context.ConventionActions.Add(action);
         await _context.SaveChangesAsync();
         return Ok(new { id = action.Id });
@@ -76,24 +96,66 @@ public class ActionManagementController : ControllerBase
     [HttpPut("actions/{id}")]
     public async Task<ActionResult> UpdateAction(int id, [FromBody] ConventionActionDto request)
     {
+        _logger.LogInformation("UpdateAction called for ID: {Id}", id);
+        _logger.LogInformation("Request DTO: {@Request}", request);
+
         var action = await _context.ConventionActions.FindAsync(id);
-        if (action == null) return NotFound();
+        if (action == null)
+        {
+            _logger.LogWarning("Action with ID {Id} not found.", id);
+            return NotFound();
+        }
+        _logger.LogInformation("Existing Action: {@Action}", action);
 
         action.Title = request.Title;
-        action.MapsTo = request.MapsTo;
+        action.MapsTo = request.MapsTo ?? string.Empty;
         action.Deadline = request.Deadline;
         action.OrderNum = request.OrderNum;
         action.ConfigJson = request.ConfigJson;
         action.IsActive = request.IsActive;
         action.ActionCategory = request.ActionCategory;
         action.TargetLocation = request.TargetLocation;
-        action.BehaviorType = request.BehaviorType;
-        action.TargetId = request.BehaviorType == ActionBehaviorType.FormBuilder ? request.TargetId : null;
-        action.TargetModuleId = request.BehaviorType == ActionBehaviorType.ModuleLink ? request.TargetModuleId : null;
+        action.BehaviorType = Enum.Parse<BehaviorType>(request.BehaviorType);
+        action.TargetId = request.BehaviorType == BehaviorType.FormBuilder.ToString() ? request.TargetId : null;
+        action.TargetModuleId = request.BehaviorType == BehaviorType.ModuleLink.ToString() ? request.TargetModuleId : null;
         action.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
-        return Ok();
+        // BehaviorType이 ModuleLink인 경우 MapsTo 필드에 대한 유효성 검사 및 정규화
+        if (action.BehaviorType == BehaviorType.ModuleLink)
+        {
+            action.MapsTo = action.MapsTo.Trim(); // 앞뒤 공백 제거
+
+            // /feature/ 접두어 강제
+            if (!action.MapsTo.StartsWith("/feature/", StringComparison.OrdinalIgnoreCase))
+            {
+                action.MapsTo = "/feature/" + action.MapsTo.TrimStart('/');
+            }
+            // 중복 슬래시 제거 (예: /feature//path -> /feature/path)
+            action.MapsTo = System.Text.RegularExpressions.Regex.Replace(action.MapsTo, "(?<!:)/{2,}", "/");
+
+            // 유효성 검사: /feature/로 시작해야 함
+            if (!action.MapsTo.StartsWith("/feature/", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("ModuleLink의 MapsTo는 '/feature/'로 시작해야 합니다.");
+            }
+        }
+
+        try
+        {
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Action with ID {Id} updated successfully.", id);
+            return Ok();
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Error updating action with ID {Id}. Request: {@Request}", id, request);
+            return StatusCode(500, new { message = "액션 업데이트 중 데이터베이스 오류가 발생했습니다." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An unexpected error occurred while updating action with ID {Id}. Request: {@Request}", id, request);
+            return StatusCode(500, new { message = "액션 업데이트 중 알 수 없는 오류가 발생했습니다." });
+        }
     }
     
     [HttpPut("actions/{id}/toggle")]
