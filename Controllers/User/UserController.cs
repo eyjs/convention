@@ -652,4 +652,37 @@ public class UserController : ControllerBase // Changed from GuestController
             return StatusCode(500, new { message = "프로필 사진 업로드 중 오류가 발생했습니다." });
         }
     }
+
+    /// <summary>
+    /// 내가 참여 중인 행사 목록 조회
+    /// </summary>
+    [HttpGet("conventions")]
+    public async Task<IActionResult> GetMyConventions()
+    {
+        try
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            var conventions = await _context.UserConventions
+                .Where(uc => uc.UserId == userId)
+                .Select(uc => new
+                {
+                    id = uc.Convention.Id,
+                    title = uc.Convention.Title,
+                    startDate = uc.Convention.StartDate,
+                    endDate = uc.Convention.EndDate,
+                    conventionType = uc.Convention.ConventionType,
+                    conventionImg = uc.Convention.ConventionImg
+                })
+                .OrderByDescending(c => c.startDate)
+                .ToListAsync();
+
+            return Ok(conventions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "행사 목록 조회 실패");
+            return StatusCode(500, new { message = "행사 목록 조회 중 오류가 발생했습니다." });
+        }
+    }
 }

@@ -1,0 +1,24 @@
+using LocalRAG.DTOs.PersonalTrip;
+
+namespace LocalRAG.Interfaces
+{
+    public interface IPersonalTripService
+    {
+        // PersonalTrip CRUD
+        Task<List<PersonalTripDto>> GetUserTripsAsync(int userId);
+        Task<PersonalTripDto?> GetTripByIdAsync(int tripId, int userId);
+        Task<PersonalTripDto> CreateTripAsync(CreatePersonalTripDto dto, int userId);
+        Task<PersonalTripDto?> UpdateTripAsync(int tripId, UpdatePersonalTripDto dto, int userId);
+        Task<bool> DeleteTripAsync(int tripId, int userId);
+
+        // Flight CRUD
+        Task<FlightDto> AddFlightAsync(int tripId, CreateFlightDto dto, int userId);
+        Task<FlightDto?> UpdateFlightAsync(int flightId, CreateFlightDto dto, int userId);
+        Task<bool> DeleteFlightAsync(int flightId, int userId);
+
+        // Accommodation CRUD
+        Task<AccommodationDto> AddAccommodationAsync(int tripId, CreateAccommodationDto dto, int userId);
+        Task<AccommodationDto?> UpdateAccommodationAsync(int accommodationId, CreateAccommodationDto dto, int userId);
+        Task<bool> DeleteAccommodationAsync(int accommodationId, int userId);
+    }
+}

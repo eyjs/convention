@@ -56,17 +56,6 @@ const routes = [
 
   // === Main Routes (Default Layout) ===
   {
-    path: '/my-conventions',
-    name: 'MyConventions',
-    component: () => import('@/views/MyConventionsView.vue'),
-    meta: {
-      title: '행사 선택',
-      requiresAuth: true,
-      layout: null,
-      showNav: false,
-    },
-  },
-  {
     path: '/my-profile',
     name: 'MyProfile',
     component: () => import('@/views/user/MyProfile.vue'),
@@ -77,6 +66,55 @@ const routes = [
       showNav: false,
     },
   },
+
+  // === Main Home ===
+  {
+    path: '/home',
+    name: 'MainHome',
+    component: () => import('@/views/MainHome.vue'),
+    meta: {
+      title: '홈',
+      requiresAuth: true,
+      layout: null,
+      showNav: false,
+    },
+  },
+
+  // === Personal Trip Routes ===
+  {
+    path: '/trips',
+    name: 'TripList',
+    component: () => import('@/views/trip/TripList.vue'),
+    meta: {
+      title: '내 여행',
+      requiresAuth: true,
+      layout: null,
+      showNav: false,
+    },
+  },
+  {
+    path: '/trips/create',
+    name: 'CreateTrip',
+    component: () => import('@/views/trip/TripDetail.vue'),
+    meta: {
+      title: '새 여행',
+      requiresAuth: true,
+      layout: null,
+      showNav: false,
+    },
+  },
+  {
+    path: '/trips/:id',
+    name: 'TripDetail',
+    component: () => import('@/views/trip/TripDetail.vue'),
+    meta: {
+      title: '여행 상세',
+      requiresAuth: true,
+      layout: null,
+      showNav: false,
+    },
+  },
+
   {
     path: '/',
     name: 'Home',
@@ -340,8 +378,8 @@ router.beforeEach((to, from, next) => {
       next('/admin')
       return
     }
-    // 일반 유저는 행사 선택 또는 홈으로
-    next(selectedConventionId ? '/' : '/my-conventions')
+    // 일반 유저는 홈으로
+    next('/home')
     return
   }
 
@@ -358,13 +396,17 @@ router.beforeEach((to, from, next) => {
   }
 
   // 4. 일반 유저의 행사 선택 체크 (어드민은 제외)
+  // 행사가 선택되지 않았을 때, 행사 관련 페이지만 접근 제한
+  const allowedWithoutConvention = ['/home', '/trips', '/my-profile']
+  const isAllowedPath = allowedWithoutConvention.some(path => to.path.startsWith(path))
+
   if (
     authStore.isAuthenticated &&
     !authStore.isAdmin &&
     !selectedConventionId &&
-    to.path !== '/my-conventions'
+    !isAllowedPath
   ) {
-    next('/my-conventions')
+    next('/home')
     return
   }
 

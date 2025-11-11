@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using LocalRAG.Entities;
 using LocalRAG.Entities.Action;
 using LocalRAG.Entities.FormBuilder;
+using LocalRAG.Entities.PersonalTrip;
 using LocalRAG.DTOs.ScheduleModels;
 
 namespace LocalRAG.Data;
@@ -55,6 +56,11 @@ public class ConventionDbContext : DbContext
     public DbSet<QuestionOption> QuestionOptions { get; set; }
     public DbSet<SurveyResponse> SurveyResponses { get; set; }
     public DbSet<SurveyResponseDetail> SurveyResponseDetails { get; set; }
+
+    // Personal Trip
+    public DbSet<PersonalTrip> PersonalTrips { get; set; }
+    public DbSet<Flight> Flights { get; set; }
+    public DbSet<Accommodation> Accommodations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -527,5 +533,55 @@ public class ConventionDbContext : DbContext
             .WithMany() // Assuming QuestionOption entity does not have a collection of ResponseDetails
             .HasForeignKey(rd => rd.SelectedOptionId)
             .OnDelete(DeleteBehavior.NoAction); // Prevent circular dependency
+
+        // PersonalTrip
+        modelBuilder.Entity<PersonalTrip>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+
+            entity.HasIndex(e => e.UserId).HasDatabaseName("IX_PersonalTrip_UserId");
+            entity.HasIndex(e => e.StartDate).HasDatabaseName("IX_PersonalTrip_StartDate");
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.Flights)
+                  .WithOne(f => f.PersonalTrip)
+                  .HasForeignKey(f => f.PersonalTripId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.Accommodations)
+                  .WithOne(a => a.PersonalTrip)
+                  .HasForeignKey(a => a.PersonalTripId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Flight
+        modelBuilder.Entity<Flight>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+
+            entity.HasIndex(e => e.PersonalTripId).HasDatabaseName("IX_Flight_PersonalTripId");
+            entity.HasIndex(e => e.DepartureTime).HasDatabaseName("IX_Flight_DepartureTime");
+        });
+
+        // Accommodation
+        modelBuilder.Entity<Accommodation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+
+            entity.HasIndex(e => e.PersonalTripId).HasDatabaseName("IX_Accommodation_PersonalTripId");
+            entity.HasIndex(e => e.CheckInTime).HasDatabaseName("IX_Accommodation_CheckInTime");
+        });
     }
 }

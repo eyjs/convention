@@ -615,7 +615,7 @@ async function handleLogin() {
     if (authStore.isAdmin) {
       router.push('/admin')
     } else {
-      router.push('/my-conventions')
+      router.push('/home')
     }
   } else {
     errorMessage.value = result.error
