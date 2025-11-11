@@ -162,6 +162,7 @@ builder.Services.AddScoped<INoticeService, NoticeService>();
 builder.Services.AddScoped<INoticeCategoryService, NoticeCategoryService>();
 builder.Services.AddScoped<ISurveyService, SurveyService>();
 builder.Services.AddScoped<IActionOrchestrationService, ActionOrchestrationService>();
+builder.Services.AddScoped<IFormBuilderService, LocalRAG.Services.FormBuilder.FormBuilderService>();
 builder.Services.AddSingleton<ISmsService, SmsService>();
 builder.Services.AddSingleton<IVerificationService, VerificationService>();
 

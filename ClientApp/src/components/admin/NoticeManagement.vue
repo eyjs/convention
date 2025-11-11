@@ -257,16 +257,6 @@
       @categories-updated="fetchNotices"
     />
 
-    <!-- 디버그 정보 (화면에 표시) -->
-    <div
-      v-if="true"
-      class="fixed bottom-4 right-4 bg-yellow-100 border-2 border-yellow-500 p-4 rounded shadow-lg z-50 text-xs"
-    >
-      <p><strong>디버그 정보:</strong></p>
-      <p>showDetailModal: {{ showDetailModal }}</p>
-      <p>selectedNoticeId: {{ selectedNoticeId }}</p>
-    </div>
-
     <!-- 공지사항 상세보기 모달 -->
     <NoticeDetailModal
       v-if="showDetailModal"
