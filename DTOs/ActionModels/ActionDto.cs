@@ -13,13 +13,13 @@ public class ConventionActionDto
     public string Title { get; set; } = string.Empty;
     [JsonConverter(typeof(EmptyStringToNullDateTimeConverter))]
     public DateTime? Deadline { get; set; }
-    public string MapsTo { get; set; } = string.Empty;
+    public string? MapsTo { get; set; }
     public string? ConfigJson { get; set; }
     public bool IsActive { get; set; } = true;
     public int OrderNum { get; set; }
     public string? ActionCategory { get; set; }
     public string? TargetLocation { get; set; }
-    public LocalRAG.Entities.Action.ActionBehaviorType BehaviorType { get; set; }
+    public string BehaviorType { get; set; }
 
     /// <summary>
     /// BehaviorType=ModuleLink일 경우, 대상 모듈의 ID (예: Survey.Id)

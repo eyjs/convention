@@ -3,13 +3,14 @@ namespace LocalRAG.Entities.Action;
 /// <summary>
 /// 액션의 실행 방식을 정의하는 Enum
 /// </summary>
-public enum ActionBehaviorType
-{
-    StatusOnly = 0,
-    FormBuilder = 1,
-    ModuleLink = 2,
-    Link = 3
-}
+    public enum BehaviorType
+    {
+        StatusOnly = 0,
+        ModuleLink = 1,
+        FormBuilder = 2,
+        Link = 3,
+        ShowComponentPopup = 4 // 새로운 BehaviorType 추가
+    }
 
 public class ConventionAction
 {
@@ -31,7 +32,7 @@ public class ConventionAction
     public string? Category { get; set; }
     public string? ActionCategory { get; set; }
     public string? TargetLocation { get; set; }
-    public ActionBehaviorType BehaviorType { get; set; } = ActionBehaviorType.StatusOnly;
+    public BehaviorType BehaviorType { get; set; } = BehaviorType.StatusOnly;
 
     /// <summary>
     /// BehaviorType=FormBuilder일 경우, 대상 FormDefinition의 ID

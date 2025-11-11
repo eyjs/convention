@@ -120,7 +120,7 @@ namespace LocalRAG.Services.Convention
                     ConventionId = survey.ConventionId.Value,
                     Title = survey.Title,
                     Description = $"'{survey.Title}' 설문조사에 참여해주세요.",
-                    BehaviorType = ActionBehaviorType.ModuleLink,
+                    BehaviorType = BehaviorType.ModuleLink,
                     TargetModuleId = survey.Id,
                     IsActive = survey.IsActive,
                     MapsTo = $"/surveys/{survey.Id}", // A sensible default route
@@ -293,7 +293,7 @@ namespace LocalRAG.Services.Convention
                     // 2. ConventionAction 연동 로직
                     var action = await _context.ConventionActions
                         .FirstOrDefaultAsync(a => a.ConventionId == survey.ConventionId &&
-                                                  a.BehaviorType == ActionBehaviorType.ModuleLink &&
+                                                  a.BehaviorType == BehaviorType.ModuleLink &&
                                                   a.TargetModuleId == survey.Id);
 
                     if (action != null)

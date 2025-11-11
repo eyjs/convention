@@ -81,7 +81,7 @@ public class ActionManagementController : ControllerBase
                 action.MapsTo = "/feature/" + action.MapsTo.TrimStart('/');
             }
             // 중복 슬래시 제거 (예: /feature//path -> /feature/path)
-            action.MapsTo = System.Text.RegularExpressions.Regex.Replace(action.MapsTo, "(?<!:)/{2,}", "/");
+            action.MapsTo = Regex.Replace(action.MapsTo, "(?<!:)/{2,}", "/");
 
             // 유효성 검사: /feature/로 시작해야 함
             if (!action.MapsTo.StartsWith("/feature/", StringComparison.OrdinalIgnoreCase))
@@ -132,7 +132,7 @@ public class ActionManagementController : ControllerBase
                 action.MapsTo = "/feature/" + action.MapsTo.TrimStart('/');
             }
             // 중복 슬래시 제거 (예: /feature//path -> /feature/path)
-            action.MapsTo = System.Text.RegularExpressions.Regex.Replace(action.MapsTo, "(?<!:)/{2,}", "/");
+            action.MapsTo = Regex.Replace(action.MapsTo, "(?<!:)/{2,}", "/");
 
             // 유효성 검사: /feature/로 시작해야 함
             if (!action.MapsTo.StartsWith("/feature/", StringComparison.OrdinalIgnoreCase))

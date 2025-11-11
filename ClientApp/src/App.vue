@@ -4,6 +4,7 @@
       <router-view />
     </component>
     <router-view v-else />
+    <GlobalPopup />
   </div>
 </template>
 
@@ -15,6 +16,7 @@ import { useUIStore } from '@/stores/ui'
 import { useConventionStore } from '@/stores/convention'
 import { useKeyboardAdjust } from '@/composables/useKeyboardAdjust'
 import globalChatNotificationService from '@/services/globalChatNotificationService'
+import GlobalPopup from '@/components/common/GlobalPopup.vue' // GlobalPopup 임포트
 
 const route = useRoute()
 const authStore = useAuthStore()

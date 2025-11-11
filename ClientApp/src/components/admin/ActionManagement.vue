@@ -127,9 +127,12 @@
           <div v-if="form.behaviorType === 'ModuleLink'" class="space-y-4 p-4 border border-gray-200 rounded-lg">
             <h4 class="font-medium text-gray-800">모듈 연동 설정</h4>
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">연결할 URL (MapsTo) *</label>
-              <input v-model="form.mapsTo" type="text" required placeholder="예: /feature/survey/15" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-              <p class="text-xs text-gray-500 mt-1">모듈의 프론트엔드 경로를 직접 입력합니다.</p>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">연결할 URL *</label>
+              <div class="flex items-center">
+                <span class="px-4 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-600 font-mono text-sm whitespace-nowrap">/feature/</span>
+                <input v-model="form.mapsTo" @input="stripFeaturePrefix" type="text" required placeholder="surveys/2" class="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+              </div>
+              <p class="text-xs text-gray-500 mt-1">모듈의 경로만 입력하세요. (예: surveys/2, board/3)</p>
             </div>
           </div>
 
@@ -138,6 +141,20 @@
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">연결할 URL (MapsTo) *</label>
               <input v-model="form.mapsTo" type="text" required placeholder="https://example.com 또는 /internal/path" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+            </div>
+          </div>
+
+          <div v-if="form.behaviorType === 'ShowComponentPopup'" class="space-y-4 p-4 border border-gray-200 rounded-lg">
+            <h4 class="font-medium text-gray-800">컴포넌트 팝업 설정</h4>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">팝업 컴포넌트 이름 (MapsTo) *</label>
+              <input v-model="form.mapsTo" type="text" required placeholder="예: MyInfoComponent" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              <p class="text-xs text-gray-500 mt-1">`ClientApp/src/popups/popupComponents.js`에 등록된 컴포넌트 이름</p>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">컴포넌트에 전달할 ID (TargetId)</label>
+              <input v-model.number="form.targetId" type="number" placeholder="예: 123 (선택 사항)" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              <p class="text-xs text-gray-500 mt-1">팝업 컴포넌트의 `props.id`로 전달됩니다.</p>
             </div>
           </div>
 
@@ -197,6 +214,7 @@ const behaviorTypes = [
   { value: 'FormBuilder', label: '폼 빌더' },
   { value: 'ModuleLink', label: '모듈 연동' },
   { value: 'Link', label: '링크' },
+  { value: 'ShowComponentPopup', label: '컴포넌트 팝업' }, // ShowComponentPopup 추가
 ]
 
 const getInitialFormState = () => ({
@@ -266,22 +284,34 @@ async function openEditModal(action) {
   }
 
   let formTargetId = null;
-  if (behaviorType === 'FormBuilder') {
-    // action.targetId가 유효한 값(0 포함)인지 확인
-    if (action.targetId !== null && action.targetId !== undefined) {
-      formTargetId = parseInt(action.targetId, 10);
-    } 
-    // 하위 호환성: GenericForm에서 마이그레이션 된 경우 targetModuleId를 사용
-    else if (action.targetModuleId !== null && action.targetModuleId !== undefined) {
-      formTargetId = parseInt(action.targetModuleId, 10);
+  // action.targetId가 null이 아니고 undefined가 아니면 parseInt 적용
+  if (action.targetId !== null && action.targetId !== undefined) {
+    formTargetId = parseInt(action.targetId, 10);
+    // parseInt 결과가 NaN이면 null로 처리 (예: 빈 문자열이 넘어온 경우)
+    if (isNaN(formTargetId)) {
+      formTargetId = null;
     }
+  }
+  // 하위 호환성: GenericForm에서 마이그레이션 된 경우 targetModuleId를 사용
+  // 이 로직은 FormBuilder 타입에만 적용되며, action.targetId가 null/undefined일 때만 실행
+  else if (behaviorType === 'FormBuilder' && action.targetModuleId !== null && action.targetModuleId !== undefined) {
+    formTargetId = parseInt(action.targetModuleId, 10);
+    if (isNaN(formTargetId)) {
+      formTargetId = null;
+    }
+  }
+
+  // mapsTo에서 /feature/ prefix 제거 (ModuleLink 타입인 경우)
+  let cleanedMapsTo = action.mapsTo || ''
+  if (behaviorType === 'ModuleLink' && cleanedMapsTo.startsWith('/feature/')) {
+    cleanedMapsTo = cleanedMapsTo.substring(9) // '/feature/' 제거
   }
 
   form.value = {
     title: action.title,
     actionCategory: action.actionCategory || '',
     targetLocation: action.targetLocation || '',
-    mapsTo: action.mapsTo || '',
+    mapsTo: cleanedMapsTo,
     deadline: action.deadline ? formatDateTimeForInput(action.deadline) : '',
     orderNum: action.orderNum,
     isActive: action.isActive,
@@ -293,6 +323,18 @@ async function openEditModal(action) {
   errorMessage.value = ''
 }
 
+function stripFeaturePrefix(event) {
+  const value = event.target.value
+  // /feature/, /feature, feature/ 등 다양한 형태 처리
+  if (value.startsWith('/feature/')) {
+    form.value.mapsTo = value.substring(9)
+  } else if (value.startsWith('feature/')) {
+    form.value.mapsTo = value.substring(8)
+  } else if (value.startsWith('/feature')) {
+    form.value.mapsTo = value.substring(8)
+  }
+}
+
 function closeModal() {
   showModal.value = false
   editingAction.value = null
@@ -301,6 +343,40 @@ function closeModal() {
 
 async function saveAction() {
   errorMessage.value = ''
+  
+  // 기본 유효성 검사
+  if (!form.value.title) {
+    errorMessage.value = '제목을 입력해주세요.'
+    return
+  }
+  if (!form.value.actionCategory) {
+    errorMessage.value = '액션 카테고리를 선택해주세요.'
+    return
+  }
+  if (!form.value.targetLocation) {
+    errorMessage.value = '표시 위치를 선택해주세요.'
+    return
+  }
+
+  // BehaviorType별 추가 유효성 검사
+  switch (form.value.behaviorType) {
+    case 'FormBuilder':
+      // targetId가 null이거나 undefined, 또는 NaN이면 유효하지 않음 (0은 유효)
+      if (form.value.targetId === null || form.value.targetId === undefined || isNaN(form.value.targetId)) {
+        errorMessage.value = '연결할 폼을 선택해주세요.'
+        return
+      }
+      break;
+    case 'ModuleLink':
+    case 'Link':
+    case 'ShowComponentPopup':
+      if (!form.value.mapsTo) {
+        errorMessage.value = '연결할 URL 또는 컴포넌트 이름을 입력해주세요.'
+        return
+      }
+      break;
+  }
+
   submitting.value = true
   try {
     const payload = {
@@ -312,8 +388,29 @@ async function saveAction() {
       orderNum: form.value.orderNum,
       isActive: form.value.isActive,
       behaviorType: form.value.behaviorType,
-      mapsTo: form.value.mapsTo,
-      targetId: form.value.behaviorType === 'FormBuilder' ? (form.value.targetId ? parseInt(form.value.targetId, 10) : null) : null,
+      mapsTo: null, // 기본값 null
+      targetId: null, // 기본값 null
+    }
+
+    // BehaviorType에 따라 mapsTo와 targetId 설정
+    switch (form.value.behaviorType) {
+      case 'FormBuilder':
+        // form.value.targetId가 0도 유효한 값으로 처리
+        payload.targetId = (form.value.targetId !== null && form.value.targetId !== undefined && !isNaN(form.value.targetId)) ? parseInt(form.value.targetId, 10) : null;
+        break;
+      case 'ModuleLink':
+        // ModuleLink는 /feature/ prefix를 추가
+        payload.mapsTo = '/feature/' + form.value.mapsTo;
+        break;
+      case 'Link':
+      case 'ShowComponentPopup': // ShowComponentPopup도 mapsTo를 사용
+        payload.mapsTo = form.value.mapsTo;
+        // ShowComponentPopup은 targetId도 사용
+        if (form.value.behaviorType === 'ShowComponentPopup') {
+          payload.targetId = (form.value.targetId !== null && form.value.targetId !== undefined && !isNaN(form.value.targetId)) ? parseInt(form.value.targetId, 10) : null;
+        }
+        break;
+      // StatusOnly는 mapsTo, targetId 필요 없음
     }
 
     if (editingAction.value) {
@@ -383,6 +480,7 @@ function getBehaviorTypeName(type) {
     case 'GenericForm': return '폼 빌더 (구)'
     case 'ModuleLink': return '모듈 연동'
     case 'Link': return '링크'
+    case 'ShowComponentPopup': return '컴포넌트 팝업' // ShowComponentPopup 추가
     default: return type
   }
 }

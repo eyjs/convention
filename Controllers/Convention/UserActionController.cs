@@ -294,7 +294,7 @@ public class UserActionController : ControllerBase
             return NotFound(new { message = "액션을 찾을 수 없습니다." });
         }
 
-        if (action.BehaviorType != ActionBehaviorType.FormBuilder)
+        if (action.BehaviorType != BehaviorType.FormBuilder)
         {
             return BadRequest(new { message = "이 액션은 FormBuilder 타입이 아닙니다." });
         }
@@ -377,7 +377,7 @@ public class UserActionController : ControllerBase
             return NotFound(new { message = "액션을 찾을 수 없습니다." });
         }
 
-        if (action.BehaviorType != ActionBehaviorType.FormBuilder)
+        if (action.BehaviorType != BehaviorType.FormBuilder)
         {
             return BadRequest(new { message = "이 액션은 FormBuilder 타입이 아닙니다." });
         }

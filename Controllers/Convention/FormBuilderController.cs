@@ -191,7 +191,7 @@ public class FormBuilderController : ControllerBase
         // 연결된 ConventionAction의 상태 업데이트
         var action = await _context.ConventionActions
             .FirstOrDefaultAsync(a => a.TargetId == formDefinitionId &&
-                                     a.BehaviorType == Entities.Action.ActionBehaviorType.FormBuilder);
+                                     a.BehaviorType == Entities.Action.BehaviorType.FormBuilder);
 
         if (action != null)
         {

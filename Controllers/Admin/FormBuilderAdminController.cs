@@ -289,7 +289,7 @@ public class FormBuilderAdminController : ControllerBase
 
             // 이 폼을 사용하는 액션이 있는지 확인
             var linkedActions = await _context.ConventionActions
-                .Where(a => a.BehaviorType == Entities.Action.ActionBehaviorType.FormBuilder
+                .Where(a => a.BehaviorType == Entities.Action.BehaviorType.FormBuilder
                          && a.TargetId == id)
                 .ToListAsync();
 
@@ -350,7 +350,7 @@ public class FormBuilderAdminController : ControllerBase
                 .CountAsync(s => s.FormDefinitionId == id);
 
             var linkedActionsCount = await _context.ConventionActions
-                .CountAsync(a => a.BehaviorType == Entities.Action.ActionBehaviorType.FormBuilder
+                .CountAsync(a => a.BehaviorType == Entities.Action.BehaviorType.FormBuilder
                               && a.TargetId == id);
 
             return Ok(new
