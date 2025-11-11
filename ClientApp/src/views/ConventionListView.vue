@@ -791,9 +791,7 @@
                 </p>
                 <p>
                   <span class="font-medium">기간:</span>
-                  {{
-                    formatDate(indexedItemsDetail.conventionInfo.startDate)
-                  }}
+                  {{ formatDate(indexedItemsDetail.conventionInfo.startDate) }}
                   ~ {{ formatDate(indexedItemsDetail.conventionInfo.endDate) }}
                 </p>
                 <p>

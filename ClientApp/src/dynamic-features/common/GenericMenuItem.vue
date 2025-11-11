@@ -45,7 +45,7 @@
             'px-2 py-0.5 text-xs font-medium rounded',
             feature.isComplete
               ? 'bg-[#17B185]/10 text-[#17B185]'
-              : 'bg-gray-100 text-gray-600'
+              : 'bg-gray-100 text-gray-600',
           ]"
         >
           {{ feature.isComplete ? '제출완료' : '미제출' }}
@@ -96,12 +96,15 @@ const { executeAction } = useAction()
 // Parse config from feature.configJson
 const config = computed(() => {
   try {
-    if (typeof props.feature.configJson === 'string' && props.feature.configJson.trim() === '') {
-      return {};
+    if (
+      typeof props.feature.configJson === 'string' &&
+      props.feature.configJson.trim() === ''
+    ) {
+      return {}
     }
     return typeof props.feature.configJson === 'string'
       ? JSON.parse(props.feature.configJson)
-      : props.feature.configJson || {};
+      : props.feature.configJson || {}
   } catch (error) {
     console.error('Failed to parse menu item config:', error)
     return {}
@@ -109,21 +112,23 @@ const config = computed(() => {
 })
 
 // Dynamic classes for the menu item
-const menuItemClasses = computed(() => [
-  'menu-item',
-  'bg-white',
-  'border',
-  'border-gray-200',
-  'rounded-lg',
-  'p-4',
-  'cursor-pointer',
-  'transition-all',
-  'duration-200',
-  'hover:shadow-md',
-  'hover:border-blue-300',
-  'active:scale-95',
-  'relative',
-].join(' '))
+const menuItemClasses = computed(() =>
+  [
+    'menu-item',
+    'bg-white',
+    'border',
+    'border-gray-200',
+    'rounded-lg',
+    'p-4',
+    'cursor-pointer',
+    'transition-all',
+    'duration-200',
+    'hover:shadow-md',
+    'hover:border-blue-300',
+    'active:scale-95',
+    'relative',
+  ].join(' '),
+)
 
 // Dynamic style for the icon
 const iconStyle = computed(() => {

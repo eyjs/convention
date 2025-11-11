@@ -40,7 +40,15 @@
         }"
       >
         <div class="message" :class="{ 'is-admin': msg.isAdmin }">
-          <div class="message-header">
+        <div class="message-header flex items-center">
+            <template v-if="msg.profileImageUrl">
+              <img :src="msg.profileImageUrl" :alt="msg.userName" class="w-6 h-6 rounded-full mr-2" />
+            </template>
+            <template v-else-if="!isMyMessage(msg)">
+              <div class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center mr-2">
+                <span class="text-xs text-gray-600">{{ msg.userName.charAt(0) }}</span>
+              </div>
+            </template>
             <span
               v-if="msg.isAdmin"
               class="mr-2 inline-flex items-center justify-center h-4 w-4 rounded-full bg-blue-600 text-white"
@@ -95,9 +103,7 @@
       z-index-class="z-[60]"
       @close="showParticipantList = false"
     >
-      <template #header-title
-        >참여자 목록 ({{ participantCount }}명)</template
-      >
+      <template #header-title>참여자 목록 ({{ participantCount }}명)</template>
       <template #body>
         <ParticipantList :participants="participantList" />
       </template>

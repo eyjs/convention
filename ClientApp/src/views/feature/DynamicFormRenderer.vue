@@ -3,14 +3,22 @@
     <div class="max-w-2xl mx-auto">
       <!-- 로딩 상태 -->
       <div v-if="loading" class="text-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
+        ></div>
         <p class="mt-4 text-gray-600">로딩 중...</p>
       </div>
 
       <!-- 에러 상태 -->
-      <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+      <div
+        v-else-if="error"
+        class="bg-red-50 border border-red-200 rounded-lg p-6 text-center"
+      >
         <p class="text-red-600">{{ error }}</p>
-        <button @click="router.back()" class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+        <button
+          @click="router.back()"
+          class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+        >
           돌아가기
         </button>
       </div>
@@ -19,21 +27,32 @@
       <div v-else-if="formDefinition" class="bg-white rounded-lg shadow-lg p-8">
         <!-- 헤더 -->
         <div class="mb-8">
-          <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ formDefinition.name }}</h1>
-          <p v-if="formDefinition.description" class="text-gray-600">{{ formDefinition.description }}</p>
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">
+            {{ formDefinition.name }}
+          </h1>
+          <p v-if="formDefinition.description" class="text-gray-600">
+            {{ formDefinition.description }}
+          </p>
         </div>
 
         <!-- 동적 폼 필드 -->
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <div v-for="field in sortedFields" :key="field.id" class="form-group">
-            <label :for="`field-${field.id}`" class="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              :for="`field-${field.id}`"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
               {{ field.label }}
               <span v-if="field.isRequired" class="text-red-500">*</span>
             </label>
 
             <!-- Text Input -->
             <input
-              v-if="field.fieldType === 'text' || field.fieldType === 'email' || field.fieldType === 'tel'"
+              v-if="
+                field.fieldType === 'text' ||
+                field.fieldType === 'email' ||
+                field.fieldType === 'tel'
+              "
               :id="`field-${field.id}`"
               v-model="formData[field.key]"
               :type="field.fieldType"
@@ -83,14 +102,22 @@
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">선택하세요</option>
-              <option v-for="option in parseOptions(field.optionsJson)" :key="option.value" :value="option.value">
+              <option
+                v-for="option in parseOptions(field.optionsJson)"
+                :key="option.value"
+                :value="option.value"
+              >
                 {{ option.label }}
               </option>
             </select>
 
             <!-- Radio -->
             <div v-else-if="field.fieldType === 'radio'" class="space-y-2">
-              <label v-for="option in parseOptions(field.optionsJson)" :key="option.value" class="flex items-center">
+              <label
+                v-for="option in parseOptions(field.optionsJson)"
+                :key="option.value"
+                class="flex items-center"
+              >
                 <input
                   type="radio"
                   :name="`field-${field.id}`"
@@ -104,7 +131,10 @@
             </div>
 
             <!-- Checkbox -->
-            <div v-else-if="field.fieldType === 'checkbox'" class="flex items-center">
+            <div
+              v-else-if="field.fieldType === 'checkbox'"
+              class="flex items-center"
+            >
               <input
                 :id="`field-${field.id}`"
                 type="checkbox"
@@ -126,15 +156,26 @@
 
               <!-- 새로 선택한 파일 정보 -->
               <p v-if="uploadedFiles[field.key]" class="text-sm text-green-600">
-                ✓ 선택된 파일: {{ uploadedFiles[field.key].name }} ({{ Math.round(uploadedFiles[field.key].size / 1024) }} KB)
+                ✓ 선택된 파일: {{ uploadedFiles[field.key].name }} ({{
+                  Math.round(uploadedFiles[field.key].size / 1024)
+                }}
+                KB)
               </p>
 
               <!-- 기존 업로드된 파일 미리보기 -->
-              <div v-if="existingFileUrls[field.key] && !uploadedFiles[field.key]" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <p class="text-sm font-medium text-gray-700 mb-2">업로드된 파일:</p>
+              <div
+                v-if="existingFileUrls[field.key] && !uploadedFiles[field.key]"
+                class="border border-gray-200 rounded-lg p-4 bg-gray-50"
+              >
+                <p class="text-sm font-medium text-gray-700 mb-2">
+                  업로드된 파일:
+                </p>
 
                 <!-- 이미지 파일인 경우 미리보기 -->
-                <div v-if="isImageFile(existingFileUrls[field.key])" class="space-y-2">
+                <div
+                  v-if="isImageFile(existingFileUrls[field.key])"
+                  class="space-y-2"
+                >
                   <img
                     :src="`http://localhost:5000${existingFileUrls[field.key]}`"
                     :alt="field.label"
@@ -160,9 +201,14 @@
                 </div>
 
                 <!-- PDF 파일인 경우 -->
-                <div v-else-if="isPdfFile(existingFileUrls[field.key])" class="space-y-2">
+                <div
+                  v-else-if="isPdfFile(existingFileUrls[field.key])"
+                  class="space-y-2"
+                >
                   <!-- PDF 썸네일 (첫 페이지 미리보기) -->
-                  <div class="border border-gray-300 rounded-lg overflow-hidden bg-white">
+                  <div
+                    class="border border-gray-300 rounded-lg overflow-hidden bg-white"
+                  >
                     <iframe
                       :src="`http://localhost:5000${existingFileUrls[field.key]}#toolbar=0&navpanes=0&scrollbar=0`"
                       class="w-full h-64 pointer-events-none"
@@ -189,7 +235,9 @@
 
                 <!-- 일반 파일인 경우 다운로드 버튼만 -->
                 <div v-else>
-                  <p class="text-sm text-gray-600 mb-2">📄 {{ getFileName(existingFileUrls[field.key]) }}</p>
+                  <p class="text-sm text-gray-600 mb-2">
+                    📄 {{ getFileName(existingFileUrls[field.key]) }}
+                  </p>
                   <button
                     type="button"
                     @click="downloadFile(existingFileUrls[field.key])"
@@ -216,13 +264,18 @@
               :disabled="submitting"
               class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {{ submitting ? '제출 중...' : (isEditing ? '수정 완료' : '제출하기') }}
+              {{
+                submitting ? '제출 중...' : isEditing ? '수정 완료' : '제출하기'
+              }}
             </button>
           </div>
         </form>
 
         <!-- 성공 메시지 -->
-        <div v-if="successMessage" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+        <div
+          v-if="successMessage"
+          class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700"
+        >
           {{ successMessage }}
         </div>
       </div>
@@ -246,14 +299,27 @@
           @click="downloadFile(imageViewerUrl)"
           class="fixed bottom-6 right-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-2xl z-[60] font-medium flex items-center gap-2"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
           </svg>
           다운로드
         </button>
 
         <!-- 이미지 (중앙 정렬) -->
-        <div class="w-full h-full flex items-center justify-center p-20" @click="closeImageViewer">
+        <div
+          class="w-full h-full flex items-center justify-center p-20"
+          @click="closeImageViewer"
+        >
           <img
             :src="`http://localhost:5000${imageViewerUrl}`"
             alt="Image Viewer"
@@ -269,12 +335,21 @@
         @click="closePdfViewer"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
       >
-        <div class="relative w-full max-w-6xl h-[90vh] bg-white rounded-lg shadow-2xl overflow-hidden" @click.stop>
+        <div
+          class="relative w-full max-w-6xl h-[90vh] bg-white rounded-lg shadow-2xl overflow-hidden"
+          @click.stop
+        >
           <!-- 헤더 -->
-          <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+          <div
+            class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50"
+          >
             <div class="flex items-center gap-3">
-              <span class="text-lg font-semibold text-gray-900">📄 PDF 문서</span>
-              <span class="text-sm text-gray-600">{{ getFileName(pdfViewerUrl) }}</span>
+              <span class="text-lg font-semibold text-gray-900"
+                >📄 PDF 문서</span
+              >
+              <span class="text-sm text-gray-600">{{
+                getFileName(pdfViewerUrl)
+              }}</span>
             </div>
             <div class="flex items-center gap-2">
               <button
@@ -282,8 +357,18 @@
                 @click="downloadFile(pdfViewerUrl)"
                 class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center gap-2"
               >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
                 </svg>
                 다운로드
               </button>
@@ -339,7 +424,9 @@ const pdfViewerUrl = ref(null) // PDF 뷰어용
 // 필드를 OrderIndex로 정렬
 const sortedFields = computed(() => {
   if (!formDefinition.value?.fields) return []
-  return [...formDefinition.value.fields].sort((a, b) => a.orderIndex - b.orderIndex)
+  return [...formDefinition.value.fields].sort(
+    (a, b) => a.orderIndex - b.orderIndex,
+  )
 })
 
 // Options JSON 파싱
@@ -368,9 +455,17 @@ function handleFileChange(event, key) {
 // 이미지 파일 여부 확인
 function isImageFile(url) {
   if (!url) return false
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
+  const imageExtensions = [
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.bmp',
+    '.webp',
+    '.svg',
+  ]
   const lowerUrl = url.toLowerCase()
-  return imageExtensions.some(ext => lowerUrl.endsWith(ext))
+  return imageExtensions.some((ext) => lowerUrl.endsWith(ext))
 }
 
 // PDF 파일 여부 확인
@@ -419,12 +514,14 @@ function downloadFile(url) {
 // 폼 정의 로드
 async function loadFormDefinition() {
   try {
-    const response = await formBuilderService.getFormDefinition(formDefinitionId.value)
+    const response = await formBuilderService.getFormDefinition(
+      formDefinitionId.value,
+    )
     formDefinition.value = response.data
 
     // 폼 데이터 초기화
     if (formDefinition.value.fields) {
-      formDefinition.value.fields.forEach(field => {
+      formDefinition.value.fields.forEach((field) => {
         if (field.fieldType === 'checkbox') {
           formData.value[field.key] = false
         } else {
@@ -441,23 +538,30 @@ async function loadFormDefinition() {
 // 기존 제출 데이터 로드 (있는 경우)
 async function loadExistingSubmission() {
   try {
-    const response = await apiClient.get(`/forms/submission/${formDefinitionId.value}`)
+    const response = await apiClient.get(
+      `/forms/submission/${formDefinitionId.value}`,
+    )
 
     if (response.data) {
       // 기존 데이터로 폼 채우기 (폼 정의에 있는 필드만 할당)
-      formDefinition.value.fields.forEach(field => {
-        const value = response.data[field.key];
+      formDefinition.value.fields.forEach((field) => {
+        const value = response.data[field.key]
         if (value !== undefined) {
           // 파일 필드인 경우 URL을 별도로 저장
-          if (field.fieldType === 'file' && value && typeof value === 'string' && value.startsWith('/')) {
-            existingFileUrls.value[field.key] = value;
-            formData.value[field.key] = ''; // input은 비워둠 (보안상 설정 불가)
+          if (
+            field.fieldType === 'file' &&
+            value &&
+            typeof value === 'string' &&
+            value.startsWith('/')
+          ) {
+            existingFileUrls.value[field.key] = value
+            formData.value[field.key] = '' // input은 비워둠 (보안상 설정 불가)
           } else {
-            formData.value[field.key] = value;
+            formData.value[field.key] = value
           }
         }
-      });
-      isEditing.value = true;
+      })
+      isEditing.value = true
     }
   } catch (err) {
     if (err.response?.status !== 404) {
@@ -472,65 +576,71 @@ async function handleSubmit() {
   successMessage.value = ''
 
   try {
-    const submitFormData = new FormData();
+    const submitFormData = new FormData()
 
     // 일반 텍스트 필드와 파일 필드를 FormData에 추가
-    const plainFormData = {};
-    let fileKey = null; // 파일 필드의 키를 저장할 변수
+    const plainFormData = {}
+    let fileKey = null // 파일 필드의 키를 저장할 변수
 
     // formDefinition의 필드 목록을 기반으로 plainFormData를 구성
     for (const field of formDefinition.value.fields) {
-      const key = field.key;
+      const key = field.key
 
       // 파일 필드인 경우
       if (field.fieldType === 'file') {
         // 새 파일을 선택한 경우
         if (uploadedFiles.value[key]) {
-          const file = uploadedFiles.value[key];
-          console.log('파일 추가 중:', key, file.name, file.size, 'bytes');
-          submitFormData.append('File', file, file.name);
-          fileKey = key;
-          plainFormData[key] = null; // 백엔드에서 새 URL로 채울 것임
+          const file = uploadedFiles.value[key]
+          console.log('파일 추가 중:', key, file.name, file.size, 'bytes')
+          submitFormData.append('File', file, file.name)
+          fileKey = key
+          plainFormData[key] = null // 백엔드에서 새 URL로 채울 것임
         }
         // 기존 파일이 있고 새 파일을 선택하지 않은 경우
         else if (existingFileUrls.value[key]) {
-          plainFormData[key] = existingFileUrls.value[key]; // 기존 URL 유지
+          plainFormData[key] = existingFileUrls.value[key] // 기존 URL 유지
         }
         // 파일이 없는 경우
         else {
-          plainFormData[key] = null;
+          plainFormData[key] = null
         }
       } else {
         // 일반 필드는 formData에서 가져오기
-        plainFormData[key] = formData.value[key];
+        plainFormData[key] = formData.value[key]
       }
     }
 
     // 파일 필드의 키가 있다면, 백엔드에서 해당 키를 찾아 URL로 대체할 수 있도록 힌트를 제공
     if (fileKey) {
-      submitFormData.append('FileFieldKey', fileKey); // 대문자로 시작하도록 수정
+      submitFormData.append('FileFieldKey', fileKey) // 대문자로 시작하도록 수정
     }
 
     // 일반 폼 데이터를 JSON 문자열로 변환하여 'FormDataJson' 필드로 추가 (백엔드 DTO와 일치)
-    submitFormData.append('FormDataJson', JSON.stringify(plainFormData));
+    submitFormData.append('FormDataJson', JSON.stringify(plainFormData))
 
     // FormData 내용 디버깅
-    console.log('=== FormData 내용 ===');
+    console.log('=== FormData 내용 ===')
     for (const pair of submitFormData.entries()) {
       if (pair[1] instanceof File) {
-        console.log(`${pair[0]}: [File] ${pair[1].name} (${pair[1].size} bytes, ${pair[1].type})`);
+        console.log(
+          `${pair[0]}: [File] ${pair[1].name} (${pair[1].size} bytes, ${pair[1].type})`,
+        )
       } else {
-        console.log(`${pair[0]}: ${pair[1]}`);
+        console.log(`${pair[0]}: ${pair[1]}`)
       }
     }
-    console.log('===================');
+    console.log('===================')
 
     // FormData 전송 시 Content-Type을 multipart/form-data로 명시
-    await apiClient.post(`/forms/${formDefinitionId.value}/submit`, submitFormData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
+    await apiClient.post(
+      `/forms/${formDefinitionId.value}/submit`,
+      submitFormData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       },
-    });
+    )
 
     successMessage.value = '제출이 완료되었습니다!'
 
@@ -549,9 +659,9 @@ async function handleSubmit() {
 
 onMounted(async () => {
   if (!conventionStore.currentConvention) {
-    const selectedConventionId = localStorage.getItem('selectedConventionId');
+    const selectedConventionId = localStorage.getItem('selectedConventionId')
     if (selectedConventionId) {
-      await conventionStore.setCurrentConvention(parseInt(selectedConventionId));
+      await conventionStore.setCurrentConvention(parseInt(selectedConventionId))
     }
   }
 

@@ -378,19 +378,19 @@ export default {
       }
     }
 
-    const startPos = ref({ x: 0, y: 0 });
+    const startPos = ref({ x: 0, y: 0 })
 
     const onMouseDown = (e) => {
-      startPos.value = { x: e.clientX, y: e.clientY };
-    };
+      startPos.value = { x: e.clientX, y: e.clientY }
+    }
 
     const onMouseUp = (e) => {
-      const dx = Math.abs(e.clientX - startPos.value.x);
-      const dy = Math.abs(e.clientY - startPos.value.y);
+      const dx = Math.abs(e.clientX - startPos.value.x)
+      const dy = Math.abs(e.clientY - startPos.value.y)
       if (dx < 5 && dy < 5) {
-        closeModal();
+        closeModal()
       }
-    };
+    }
 
     // 생명주기
     onMounted(() => {

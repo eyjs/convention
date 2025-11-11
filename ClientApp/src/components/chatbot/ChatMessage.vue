@@ -24,17 +24,21 @@
       </svg>
     </div>
 
-    <div
-      v-else
-      class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-sm"
-    >
-      <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-        <path
-          fill-rule="evenodd"
-          d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-          clip-rule="evenodd"
-        />
-      </svg>
+    <div v-else class="flex-shrink-0 w-8 h-8 rounded-full shadow-sm">
+      <template v-if="userProfileImageUrl">
+        <img :src="userProfileImageUrl" alt="User" class="w-full h-full rounded-full object-cover" />
+      </template>
+      <template v-else>
+        <div class="w-full h-full rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+      </template>
     </div>
 
     <div class="flex-1 max-w-3xl">
@@ -179,6 +183,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  userProfileImageUrl: {
+    type: String,
+    default: ''
+  }
 })
 
 const showSources = ref(false)

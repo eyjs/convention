@@ -78,12 +78,16 @@ onMounted(async () => {
 
   isLoading.value = true
   try {
-    const actionsResponse = await apiClient.get(`/conventions/${conventionId}/actions/menu`);
-    console.log('Response from /actions/menu:', actionsResponse.data); // 데이터 확인용 로그
-    const statusesResponse = await apiClient.get(`/conventions/${conventionId}/actions/statuses`);
+    const actionsResponse = await apiClient.get(
+      `/conventions/${conventionId}/actions/menu`,
+    )
+    console.log('Response from /actions/menu:', actionsResponse.data) // 데이터 확인용 로그
+    const statusesResponse = await apiClient.get(
+      `/conventions/${conventionId}/actions/statuses`,
+    )
 
-    const actions = actionsResponse.data || [];
-    const statuses = statusesResponse.data || []; // 누락된 할당 코드 추가
+    const actions = actionsResponse.data || []
+    const statuses = statusesResponse.data || [] // 누락된 할당 코드 추가
 
     // 상태 정보를 맵으로 변환
     const statusMap = new Map(statuses.map((s) => [s.conventionActionId, s]))

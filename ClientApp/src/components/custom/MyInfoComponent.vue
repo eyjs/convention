@@ -16,12 +16,16 @@
     </div>
 
     <div class="mt-4 p-3 bg-blue-50 rounded-lg">
-      <p class="font-semibold text-blue-800">현재 로그인 사용자 정보 (AuthStore에서 가져옴):</p>
+      <p class="font-semibold text-blue-800">
+        현재 로그인 사용자 정보 (AuthStore에서 가져옴):
+      </p>
       <p v-if="authStore.user">
-        <strong>사용자 ID:</strong> {{ authStore.user.id }}<br/>
+        <strong>사용자 ID:</strong> {{ authStore.user.id }}<br />
         <strong>사용자 이름:</strong> {{ authStore.user.name }}
       </p>
-      <p v-else class="text-red-500">로그인 사용자 정보를 가져올 수 없습니다.</p>
+      <p v-else class="text-red-500">
+        로그인 사용자 정보를 가져올 수 없습니다.
+      </p>
     </div>
 
     <button
@@ -34,21 +38,22 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue';
-import { usePopupStore } from '@/stores/popup';
-import { useAuthStore } from '@/stores/auth'; // AuthStore 임포트
+import { defineProps } from 'vue'
+import { usePopupStore } from '@/stores/popup'
+import { useAuthStore } from '@/stores/auth' // AuthStore 임포트
 
 const props = defineProps({
-  id: { // targetId가 이 props로 전달됩니다.
+  id: {
+    // targetId가 이 props로 전달됩니다.
     type: Number,
     default: null,
   },
-});
+})
 
-const popupStore = usePopupStore();
-const authStore = useAuthStore(); // AuthStore 인스턴스 생성
+const popupStore = usePopupStore()
+const authStore = useAuthStore() // AuthStore 인스턴스 생성
 
 const closePopup = () => {
-  popupStore.closePopup();
-};
+  popupStore.closePopup()
+}
 </script>

@@ -412,9 +412,9 @@ function navigateTo(route) {
 }
 
 const handleLogout = () => {
-  authStore.logout();
-  router.push('/login'); 
-};
+  authStore.logout()
+  router.push('/login')
+}
 
 function openNotice(notice) {
   // 공지사항 목록 페이지로 이동하면서 noticeId를 state로 전달
@@ -526,7 +526,8 @@ async function loadRecentNotices() {
     })
 
     recentNotices.value = response.data.items || []
-    totalNoticesCount.value = response.data.total || response.data.totalCount || 0
+    totalNoticesCount.value =
+      response.data.total || response.data.totalCount || 0
   } catch (error) {
     console.error('Failed to load notices:', error)
   }
@@ -564,7 +565,7 @@ async function loadDynamicActions() {
     ])
 
     const actions = actionsResponse.data || []
-    console.log('Home Actions:', actions); // 홈 화면 액션 데이터 확인용 로그
+    console.log('Home Actions:', actions) // 홈 화면 액션 데이터 확인용 로그
     const statuses = statusesResponse.data || []
 
     // 상태 정보를 맵으로 변환

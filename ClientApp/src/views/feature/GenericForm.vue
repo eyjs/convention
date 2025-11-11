@@ -3,14 +3,22 @@
     <div class="max-w-2xl mx-auto">
       <!-- 로딩 상태 -->
       <div v-if="loading" class="text-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
+        ></div>
         <p class="mt-4 text-gray-600">로딩 중...</p>
       </div>
 
       <!-- 에러 상태 -->
-      <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+      <div
+        v-else-if="error"
+        class="bg-red-50 border border-red-200 rounded-lg p-6 text-center"
+      >
         <p class="text-red-600">{{ error }}</p>
-        <button @click="router.back()" class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+        <button
+          @click="router.back()"
+          class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+        >
           돌아가기
         </button>
       </div>
@@ -19,11 +27,30 @@
       <div v-else-if="action" class="bg-white rounded-lg shadow-lg p-8">
         <!-- 헤더 -->
         <div class="mb-8">
-          <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ action.title }}</h1>
-          <p v-if="action.description" class="text-gray-600" v-html="action.description"></p>
-          <div v-if="action.deadline" class="mt-4 flex items-center text-sm text-orange-600">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">
+            {{ action.title }}
+          </h1>
+          <p
+            v-if="action.description"
+            class="text-gray-600"
+            v-html="action.description"
+          ></p>
+          <div
+            v-if="action.deadline"
+            class="mt-4 flex items-center text-sm text-orange-600"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
             </svg>
             마감: {{ formatDate(action.deadline) }}
           </div>
@@ -32,14 +59,21 @@
         <!-- 동적 폼 필드 -->
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <div v-for="field in formFields" :key="field.key" class="form-group">
-            <label :for="field.key" class="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              :for="field.key"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
               {{ field.label }}
               <span v-if="field.required" class="text-red-500">*</span>
             </label>
 
             <!-- Text Input -->
             <input
-              v-if="field.type === 'text' || field.type === 'email' || field.type === 'tel'"
+              v-if="
+                field.type === 'text' ||
+                field.type === 'email' ||
+                field.type === 'tel'
+              "
               :id="field.key"
               v-model="formData[field.key]"
               :type="field.type"
@@ -91,14 +125,22 @@
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">선택하세요</option>
-              <option v-for="option in field.options" :key="option.value" :value="option.value">
+              <option
+                v-for="option in field.options"
+                :key="option.value"
+                :value="option.value"
+              >
                 {{ option.label }}
               </option>
             </select>
 
             <!-- Radio -->
             <div v-else-if="field.type === 'radio'" class="space-y-2">
-              <label v-for="option in field.options" :key="option.value" class="flex items-center">
+              <label
+                v-for="option in field.options"
+                :key="option.value"
+                class="flex items-center"
+              >
                 <input
                   type="radio"
                   :name="field.key"
@@ -112,7 +154,10 @@
             </div>
 
             <!-- Checkbox -->
-            <div v-else-if="field.type === 'checkbox'" class="flex items-center">
+            <div
+              v-else-if="field.type === 'checkbox'"
+              class="flex items-center"
+            >
               <input
                 :id="field.key"
                 type="checkbox"
@@ -123,7 +168,9 @@
             </div>
 
             <!-- 도움말 텍스트 -->
-            <p v-if="field.help" class="mt-1 text-sm text-gray-500">{{ field.help }}</p>
+            <p v-if="field.help" class="mt-1 text-sm text-gray-500">
+              {{ field.help }}
+            </p>
           </div>
 
           <!-- 제출 버튼 -->
@@ -140,13 +187,18 @@
               :disabled="submitting"
               class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {{ submitting ? '제출 중...' : (isEditing ? '수정 완료' : '제출하기') }}
+              {{
+                submitting ? '제출 중...' : isEditing ? '수정 완료' : '제출하기'
+              }}
             </button>
           </div>
         </form>
 
         <!-- 성공 메시지 -->
-        <div v-if="successMessage" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+        <div
+          v-if="successMessage"
+          class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700"
+        >
           {{ successMessage }}
         </div>
       </div>
@@ -186,7 +238,7 @@ function formatDate(dateString) {
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 
@@ -194,7 +246,7 @@ function formatDate(dateString) {
 async function loadAction() {
   try {
     const response = await apiClient.get(
-      `/conventions/${conventionId.value}/actions/${actionId.value}`
+      `/conventions/${conventionId.value}/actions/${actionId.value}`,
     )
     action.value = response.data
 
@@ -205,7 +257,7 @@ async function loadAction() {
         formFields.value = config.fields || []
 
         // 폼 데이터 초기화
-        formFields.value.forEach(field => {
+        formFields.value.forEach((field) => {
           formData.value[field.key] = field.type === 'checkbox' ? false : ''
         })
       } catch (e) {
@@ -225,7 +277,7 @@ async function loadAction() {
 async function loadExistingSubmission() {
   try {
     const response = await apiClient.get(
-      `/conventions/${conventionId.value}/actions/${actionId.value}/submission`
+      `/conventions/${conventionId.value}/actions/${actionId.value}/submission`,
     )
 
     if (response.data) {
@@ -249,7 +301,7 @@ async function handleSubmit() {
   try {
     await apiClient.post(
       `/conventions/${conventionId.value}/actions/${actionId.value}/submit`,
-      formData.value
+      formData.value,
     )
 
     successMessage.value = '제출이 완료되었습니다!'

@@ -7,15 +7,27 @@
           @click="$emit('cancel')"
           class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-2"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
           </svg>
           <span>목록으로 돌아가기</span>
         </button>
         <h2 class="text-2xl font-bold text-gray-900">
           {{ isEditing ? '폼 수정' : '새 폼 만들기' }}
         </h2>
-        <p v-if="formDefinition" class="text-sm text-gray-600 mt-1">Form ID: {{ formDefinition.id }}</p>
+        <p v-if="formDefinition" class="text-sm text-gray-600 mt-1">
+          Form ID: {{ formDefinition.id }}
+        </p>
       </div>
       <button
         @click="saveForm"
@@ -37,12 +49,24 @@
             @click="addField(fieldType.type)"
             class="w-full flex items-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-primary-500 transition-colors text-left"
           >
-            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="fieldType.icon" />
+            <svg
+              class="w-5 h-5 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                :d="fieldType.icon"
+              />
             </svg>
             <div>
               <div class="font-medium text-gray-900">{{ fieldType.label }}</div>
-              <div class="text-xs text-gray-500">{{ fieldType.description }}</div>
+              <div class="text-xs text-gray-500">
+                {{ fieldType.description }}
+              </div>
             </div>
           </button>
         </div>
@@ -55,7 +79,9 @@
           <h3 class="font-bold text-gray-900 mb-4">폼 기본 정보</h3>
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">폼 이름 *</label>
+              <label class="block text-sm font-semibold text-gray-700 mb-2"
+                >폼 이름 *</label
+              >
               <input
                 v-model="formDefinition.name"
                 type="text"
@@ -64,7 +90,9 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">설명</label>
+              <label class="block text-sm font-semibold text-gray-700 mb-2"
+                >설명</label
+              >
               <textarea
                 v-model="formDefinition.description"
                 rows="2"
@@ -77,7 +105,9 @@
         <!-- 필드 목록 -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-gray-900">폼 필드 ({{ formDefinition.fields.length }}개)</h3>
+            <h3 class="font-bold text-gray-900">
+              폼 필드 ({{ formDefinition.fields.length }}개)
+            </h3>
             <button
               v-if="formDefinition.fields.length > 0"
               @click="clearAllFields"
@@ -92,8 +122,18 @@
             v-if="formDefinition.fields.length === 0"
             class="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg"
           >
-            <svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <svg
+              class="w-12 h-12 mx-auto text-gray-400 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             <p class="text-gray-600">왼쪽에서 필드를 추가해보세요</p>
           </div>
@@ -107,12 +147,20 @@
             handle=".drag-handle"
           >
             <template #item="{ element, index }">
-              <div class="border border-gray-300 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+              <div
+                class="border border-gray-300 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
                 <div class="flex items-start gap-3">
                   <!-- 드래그 핸들 -->
                   <div class="drag-handle cursor-move flex-shrink-0 mt-1">
-                    <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path>
+                    <svg
+                      class="w-5 h-5 text-gray-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"
+                      ></path>
                     </svg>
                   </div>
 
@@ -120,7 +168,10 @@
                   <div class="flex-1 space-y-3 min-w-0">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">필드 이름 (key) *</label>
+                        <label
+                          class="block text-xs font-medium text-gray-700 mb-1"
+                          >필드 이름 (key) *</label
+                        >
                         <input
                           v-model="element.key"
                           type="text"
@@ -130,7 +181,10 @@
                         />
                       </div>
                       <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">라벨 (표시명) *</label>
+                        <label
+                          class="block text-xs font-medium text-gray-700 mb-1"
+                          >라벨 (표시명) *</label
+                        >
                         <input
                           v-model="element.label"
                           type="text"
@@ -143,18 +197,28 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">필드 타입</label>
+                        <label
+                          class="block text-xs font-medium text-gray-700 mb-1"
+                          >필드 타입</label
+                        >
                         <select
                           v-model="element.fieldType"
                           class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500"
                         >
-                          <option v-for="type in fieldTypes" :key="type.type" :value="type.type">
+                          <option
+                            v-for="type in fieldTypes"
+                            :key="type.type"
+                            :value="type.type"
+                          >
                             {{ type.label }}
                           </option>
                         </select>
                       </div>
                       <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">플레이스홀더</label>
+                        <label
+                          class="block text-xs font-medium text-gray-700 mb-1"
+                          >플레이스홀더</label
+                        >
                         <input
                           v-model="element.placeholder"
                           type="text"
@@ -165,8 +229,15 @@
                     </div>
 
                     <!-- 옵션 (select, radio 타입) -->
-                    <div v-if="element.fieldType === 'select' || element.fieldType === 'radio'">
-                      <label class="block text-xs font-medium text-gray-700 mb-1">
+                    <div
+                      v-if="
+                        element.fieldType === 'select' ||
+                        element.fieldType === 'radio'
+                      "
+                    >
+                      <label
+                        class="block text-xs font-medium text-gray-700 mb-1"
+                      >
                         옵션 (JSON 배열) *
                       </label>
                       <textarea
@@ -176,7 +247,8 @@
                         class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 font-mono"
                       ></textarea>
                       <p class="text-xs text-gray-500 mt-1">
-                        예시: [{"value":"yes","label":"예"},{"value":"no","label":"아니오"}]
+                        예시:
+                        [{"value":"yes","label":"예"},{"value":"no","label":"아니오"}]
                       </p>
                     </div>
 
@@ -188,7 +260,10 @@
                         :id="`required-${index}`"
                         class="w-4 h-4 text-primary-600 rounded"
                       />
-                      <label :for="`required-${index}`" class="text-sm text-gray-700">
+                      <label
+                        :for="`required-${index}`"
+                        class="text-sm text-gray-700"
+                      >
                         필수 입력 항목
                       </label>
                     </div>
@@ -200,8 +275,18 @@
                     class="flex-shrink-0 p-1 hover:bg-red-50 text-red-600 rounded transition-colors"
                     title="필드 삭제"
                   >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      class="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -380,9 +465,15 @@ async function saveForm() {
 
   try {
     if (isEditing.value) {
-      await apiClient.put(`/admin/conventions/${props.conventionId}/forms/${formDefinition.value.id}`, payload)
+      await apiClient.put(
+        `/admin/conventions/${props.conventionId}/forms/${formDefinition.value.id}`,
+        payload,
+      )
     } else {
-      await apiClient.post(`/admin/conventions/${props.conventionId}/forms`, payload)
+      await apiClient.post(
+        `/admin/conventions/${props.conventionId}/forms`,
+        payload,
+      )
     }
 
     alert('폼이 저장되었습니다.')
@@ -403,7 +494,9 @@ async function loadForm() {
   if (!props.formDefinitionId) return
 
   try {
-    const response = await apiClient.get(`/admin/conventions/${props.conventionId}/forms/${props.formDefinitionId}`)
+    const response = await apiClient.get(
+      `/admin/conventions/${props.conventionId}/forms/${props.formDefinitionId}`,
+    )
     formDefinition.value = response.data
     isEditing.value = true
   } catch (error) {

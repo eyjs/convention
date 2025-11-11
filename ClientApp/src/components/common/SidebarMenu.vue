@@ -27,15 +27,43 @@
         <ul>
           <li>
             <router-link
+              to="/my-profile"
+              @click="close"
+              class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-md mb-2"
+            >
+              <div class="flex items-center gap-2">
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+                <span>내 정보</span>
+              </div>
+            </router-link>
+          </li>
+          <li>
+            <router-link
               to="/my-conventions"
+              @click="close"
               class="block w-full text-left px-4 py-3 text-sm text-gray-700 bg-gray-50 hover:bg-gray-200 rounded-md mb-2 shadow-sm"
             >
               행사 리스트
             </router-link>
           </li>
-
           <!-- 동적 추가 메뉴 -->
-          <li v-for="action in menuActions" :key="action.id">
+          <li
+            v-for="action in menuActions"
+            :key="action.id"
+            style="display: none"
+          >
             <router-link
               :to="action.mapsTo"
               @click="close"
@@ -48,7 +76,7 @@
                     'px-2 py-0.5 text-xs font-medium rounded ml-2',
                     action.isComplete
                       ? 'bg-[#17B185]/10 text-[#17B185]'
-                      : 'bg-gray-100 text-gray-600'
+                      : 'bg-gray-100 text-gray-600',
                   ]"
                 >
                   {{ action.isComplete ? '완료' : '미완료' }}
@@ -141,11 +169,14 @@ const loadMenuActions = async () => {
 }
 
 // 메뉴가 열릴 때 액션 목록 로드
-watch(() => props.isOpen, (isOpen) => {
-  if (isOpen) {
-    loadMenuActions()
-  }
-})
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (isOpen) {
+      loadMenuActions()
+    }
+  },
+)
 
 // 초기 로드
 onMounted(() => {

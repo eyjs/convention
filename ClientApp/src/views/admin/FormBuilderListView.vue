@@ -20,10 +20,7 @@
     <div class="mt-8 flex flex-col">
       <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-          <div
-            v-if="loading"
-            class="flex justify-center items-center py-10"
-          >
+          <div v-if="loading" class="flex justify-center items-center py-10">
             <div
               class="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"
             ></div>
@@ -133,7 +130,9 @@ async function fetchForms() {
   }
   loading.value = true
   try {
-    const response = await formBuilderService.getFormDefinitions(conventionId.value)
+    const response = await formBuilderService.getFormDefinitions(
+      conventionId.value,
+    )
     forms.value = response.data
   } catch (error) {
     console.error('Failed to fetch forms:', error)
@@ -144,11 +143,17 @@ async function fetchForms() {
 }
 
 function createNewForm() {
-  router.push({ name: 'FormBuilderEdit', params: { conventionId: conventionId.value, id: 'new' } })
+  router.push({
+    name: 'FormBuilderEdit',
+    params: { conventionId: conventionId.value, id: 'new' },
+  })
 }
 
 function editForm(id) {
-  router.push({ name: 'FormBuilderEdit', params: { conventionId: conventionId.value, id } })
+  router.push({
+    name: 'FormBuilderEdit',
+    params: { conventionId: conventionId.value, id },
+  })
 }
 
 async function confirmDelete(id) {

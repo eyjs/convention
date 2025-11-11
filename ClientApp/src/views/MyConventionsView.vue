@@ -1,31 +1,6 @@
 <template>
   <div class="min-h-screen min-h-dvh bg-gray-50">
-    <header class="bg-white shadow-sm sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <h1 class="text-2xl font-bold text-gray-900">행사 선택</h1>
-          <button
-            @click="handleLogout"
-            class="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-            <span>로그아웃</span>
-          </button>
-        </div>
-      </div>
-    </header>
+    <MainHeader title="행사 선택" />
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div v-if="loading" class="text-center py-12">
@@ -137,23 +112,15 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
+import MainHeader from '@/components/common/MainHeader.vue'
 
 const router = useRouter()
-const authStore = useAuthStore()
 const conventionStore = useConventionStore()
 
 const conventions = ref([])
 const loading = ref(false)
-
-const handleLogout = async () => {
-  if (confirm('로그아웃하시겠습니까?')) {
-    await authStore.logout()
-    router.push('/login')
-  }
-}
 
 const loadUserConventions = async () => {
   loading.value = true

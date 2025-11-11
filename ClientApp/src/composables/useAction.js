@@ -38,7 +38,8 @@ export function useAction() {
       return
     }
 
-    const { behaviorType, targetId, targetModuleId, mapsTo, route, title } = action // configJson 제거
+    const { behaviorType, targetId, targetModuleId, mapsTo, route, title } =
+      action // configJson 제거
 
     switch (behaviorType) {
       case 'StatusOnly':
@@ -46,18 +47,23 @@ export function useAction() {
         break
 
       case 'GenericForm': // Deprecated, fallback to FormBuilder
-        console.warn('Deprecated BehaviorType "GenericForm" used, falling back to "FormBuilder".')
-        // Fall-through
+        console.warn(
+          'Deprecated BehaviorType "GenericForm" used, falling back to "FormBuilder".',
+        )
+      // Fall-through
       case 'FormBuilder':
-        console.log('Executing FormBuilder action:', action);
-        console.log('Target ID:', targetId);
+        console.log('Executing FormBuilder action:', action)
+        console.log('Target ID:', targetId)
         if (targetId) {
           router.push({
             name: 'DynamicFormRenderer',
             params: { formDefinitionId: targetId },
           })
         } else {
-          console.warn('FormBuilder action without targetId (FormDefinitionId):', action)
+          console.warn(
+            'FormBuilder action without targetId (FormDefinitionId):',
+            action,
+          )
         }
         break
 
@@ -80,17 +86,21 @@ export function useAction() {
         break
 
       case 'ShowComponentPopup':
-        if (mapsTo) { // mapsTo를 componentName으로 사용
+        if (mapsTo) {
+          // mapsTo를 componentName으로 사용
           popupStore.openPopup({
             title: title, // action의 title을 팝업 제목으로 사용
             componentName: mapsTo, // mapsTo 필드를 컴포넌트 이름으로 사용
             targetId: targetId, // targetId 필드를 컴포넌트 props의 id로 사용
             // modalType 및 options는 필요에 따라 기본값 사용 또는 action에 추가 필드 정의
-          });
+          })
         } else {
-          console.warn('ShowComponentPopup action without mapsTo (componentName):', action);
+          console.warn(
+            'ShowComponentPopup action without mapsTo (componentName):',
+            action,
+          )
         }
-        break;
+        break
 
       default:
         console.warn('Unknown action behaviorType:', behaviorType)

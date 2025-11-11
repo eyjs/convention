@@ -11,11 +11,27 @@
         :class="maxWidthClass"
       >
         <!-- Header -->
-        <header v-if="$slots.header" class="px-6 py-4 border-b flex items-center justify-between flex-shrink-0">
+        <header
+          v-if="$slots.header"
+          class="px-6 py-4 border-b flex items-center justify-between flex-shrink-0"
+        >
           <slot name="header"></slot>
-          <button @click="close" class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 flex-shrink-0">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <button
+            @click="close"
+            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 flex-shrink-0"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </header>
@@ -26,7 +42,10 @@
         </main>
 
         <!-- Footer -->
-        <footer v-if="$slots.footer" class="px-6 py-4 border-t flex justify-end gap-3 flex-shrink-0">
+        <footer
+          v-if="$slots.footer"
+          class="px-6 py-4 border-t flex justify-end gap-3 flex-shrink-0"
+        >
           <slot name="footer"></slot>
         </footer>
       </div>
@@ -35,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onUnmounted } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -43,68 +62,71 @@ const props = defineProps({
     type: String,
     default: '2xl',
   },
-});
+})
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close'])
 
-const startPos = ref({ x: 0, y: 0 });
+const startPos = ref({ x: 0, y: 0 })
 
 const onMouseDown = (e) => {
-  startPos.value = { x: e.clientX, y: e.clientY };
-};
+  startPos.value = { x: e.clientX, y: e.clientY }
+}
 
 const onMouseUp = (e) => {
-  const dx = Math.abs(e.clientX - startPos.value.x);
-  const dy = Math.abs(e.clientY - startPos.value.y);
+  const dx = Math.abs(e.clientX - startPos.value.x)
+  const dy = Math.abs(e.clientY - startPos.value.y)
   if (dx < 5 && dy < 5) {
-    close();
+    close()
   }
-};
+}
 
 const close = () => {
-  emit('close');
-};
+  emit('close')
+}
 
 const maxWidthClass = computed(() => {
   return {
-    'sm': 'max-w-sm',
-    'md': 'max-w-md',
-    'lg': 'max-w-lg',
-    'xl': 'max-w-xl',
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
     '3xl': 'max-w-3xl',
     '4xl': 'max-w-4xl',
     '5xl': 'max-w-5xl',
-  }[props.maxWidth];
-});
+  }[props.maxWidth]
+})
 
 // 모달이 열릴 때 body 스크롤 막기
-watch(() => props.isOpen, (isOpen) => {
-  if (isOpen) {
-    // 현재 스크롤 위치 저장
-    const scrollY = window.scrollY;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflowY = 'scroll';
-  } else {
-    // 스크롤 위치 복원
-    const scrollY = document.body.style.top;
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.width = '';
-    document.body.style.overflowY = '';
-    window.scrollTo(0, parseInt(scrollY || '0') * -1);
-  }
-});
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (isOpen) {
+      // 현재 스크롤 위치 저장
+      const scrollY = window.scrollY
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
+      document.body.style.overflowY = 'scroll'
+    } else {
+      // 스크롤 위치 복원
+      const scrollY = document.body.style.top
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflowY = ''
+      window.scrollTo(0, parseInt(scrollY || '0') * -1)
+    }
+  },
+)
 
 // 컴포넌트 unmount 시 body 스타일 복원
 onUnmounted(() => {
-  document.body.style.position = '';
-  document.body.style.top = '';
-  document.body.style.width = '';
-  document.body.style.overflowY = '';
-});
+  document.body.style.position = ''
+  document.body.style.top = ''
+  document.body.style.width = ''
+  document.body.style.overflowY = ''
+})
 </script>
 
 <style scoped>

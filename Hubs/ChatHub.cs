@@ -10,6 +10,7 @@ namespace LocalRAG.Hubs;
 public class ParticipantInfo
 {
     public string Name { get; set; } = string.Empty;
+    public string? ProfileImageUrl { get; set; }
     public string Affiliation { get; set; } = string.Empty;
     public string CorpPart { get; set; } = string.Empty;
 }
@@ -64,6 +65,7 @@ public class ChatHub : Hub
             var participant = new ParticipantInfo
             {
                 Name = user.Name,
+                ProfileImageUrl = user.ProfileImageUrl,
                 Affiliation = user.Affiliation ?? "소속 정보 없음",
                 CorpPart = user.CorpPart
             };
@@ -118,6 +120,7 @@ public class ChatHub : Hub
         {
             userId = chatMessage.UserId,
             userName = user.Name,
+            profileImageUrl = user.ProfileImageUrl,
             message = chatMessage.Message,
             createdAt = chatMessage.CreatedAt.ToString("o"), // ISO 8601 format
             isAdmin = chatMessage.IsAdmin

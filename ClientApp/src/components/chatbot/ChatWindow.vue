@@ -101,6 +101,7 @@
             v-for="message in chatStore.messages"
             :key="message.id"
             :message="message"
+            :user-profile-image-url="userProfileImageUrl"
           />
         </div>
 
@@ -184,15 +185,19 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useChatStore } from '@/stores/chat'
 import { useConventionStore } from '@/stores/convention'
+import { useAuthStore } from '@/stores/auth'
 import ChatMessage from './ChatMessage.vue'
 import ChatInput from './ChatInput.vue'
 import SuggestedQuestions from './SuggestedQuestions.vue'
 
 const chatStore = useChatStore()
 const conventionStore = useConventionStore()
+const authStore = useAuthStore()
 
 const messagesContainer = ref(null)
 const chatInputRef = ref(null)
+
+const userProfileImageUrl = computed(() => authStore.user?.profileImageUrl)
 
 const showSuggestions = computed(() => {
   return (

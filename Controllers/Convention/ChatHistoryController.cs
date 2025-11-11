@@ -51,6 +51,7 @@ namespace LocalRAG.Controllers.Convention
                             userName = chatMessage.IsAdmin
                                 ? $"[관리자] {user.Name}"
                                 : user.Name,
+                            profileImageUrl = user.ProfileImageUrl,
                             message = chatMessage.Message,
                             createdAt = chatMessage.CreatedAt.ToString("o"),
                             isAdmin = chatMessage.IsAdmin
@@ -96,6 +97,7 @@ public class ChatHistoryMessageDto
 {
     public int userId { get; set; }
     public required string userName { get; set; }
+    public string? profileImageUrl { get; set; }
     public required string message { get; set; }
     public required string createdAt { get; set; }
     public bool isAdmin { get; set; }

@@ -25,7 +25,7 @@
           class="h-full transition-all duration-500 ease-out"
           :style="{
             width: `${checklist.progressPercentage}%`,
-            background: `linear-gradient(to right, ${brandColor}, ${hexToRgba(brandColor, 0.8)})`
+            background: `linear-gradient(to right, ${brandColor}, ${hexToRgba(brandColor, 0.8)})`,
           }"
         ></div>
       </div>
@@ -44,7 +44,14 @@
               ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
               : 'border-gray-200 hover:shadow-sm hover:border-blue-500 hover:bg-blue-50',
         ]"
-        :style="item.isComplete ? { backgroundColor: hexToRgba(brandColor, 0.1), borderColor: brandColor } : {}"
+        :style="
+          item.isComplete
+            ? {
+                backgroundColor: hexToRgba(brandColor, 0.1),
+                borderColor: brandColor,
+              }
+            : {}
+        "
         @click.prevent="isExpired(item.deadline) ? null : handleItemClick(item)"
       >
         <div class="flex items-start space-x-3 flex-1">
@@ -57,8 +64,19 @@
             "
             :style="{ backgroundColor: item.isComplete ? brandColor : '' }"
           >
-            <svg v-if="item.isComplete" class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            <svg
+              v-if="item.isComplete"
+              class="w-4 h-4 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
 
@@ -81,8 +99,18 @@
           </div>
         </div>
 
-        <svg class="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        <svg
+          class="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0 mt-1"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          />
         </svg>
       </div>
     </div>
@@ -114,8 +142,8 @@ function handleItemClick(item) {
     behaviorType: item.behaviorType,
     targetId: item.targetId,
     mapsTo: item.navigateTo,
-  };
-  executeAction(action);
+  }
+  executeAction(action)
 }
 
 function isExpired(deadline) {
@@ -124,9 +152,9 @@ function isExpired(deadline) {
 }
 
 function hexToRgba(hex, alpha) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 </script>

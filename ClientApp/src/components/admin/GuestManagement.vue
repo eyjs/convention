@@ -1,6 +1,8 @@
 <template>
   <div>
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div
+      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6"
+    >
       <div class="flex items-center gap-4">
         <h2 class="text-xl font-semibold">참석자 관리</h2>
         <!-- 선택된 참석자 수 표시 -->
@@ -339,7 +341,9 @@
                   </button>
                 </div>
                 <button
-                  @click="guestForm.customAttributes.push({ key: '', value: '' })"
+                  @click="
+                    guestForm.customAttributes.push({ key: '', value: '' })
+                  "
                   class="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-600 hover:bg-gray-50 whitespace-nowrap overflow-hidden text-ellipsis"
                 >
                   + 속성 추가
@@ -431,7 +435,11 @@
     </BaseModal>
 
     <!-- 참석자 상세 모달 -->
-    <BaseModal :is-open="showDetailModal" @close="closeDetailModal" max-width="4xl">
+    <BaseModal
+      :is-open="showDetailModal"
+      @close="closeDetailModal"
+      max-width="4xl"
+    >
       <template #header>
         <h2 class="text-2xl font-bold">{{ guestDetail?.guestName }}</h2>
       </template>
@@ -537,8 +545,8 @@
       :is-open="showCopyScheduleModal"
       @close="
         () => {
-          showCopyScheduleModal = false;
-          searchQuery = '';
+          showCopyScheduleModal = false
+          searchQuery = ''
         }
       "
       max-width="lg"
@@ -597,8 +605,8 @@
         <button
           @click="
             () => {
-              showCopyScheduleModal = false;
-              searchQuery = '';
+              showCopyScheduleModal = false
+              searchQuery = ''
             }
           "
           class="px-4 py-2 border rounded-lg hover:bg-gray-50"
@@ -641,9 +649,7 @@
 
         <div class="mb-4">
           <label class="block text-sm font-medium mb-2">배정할 일정 선택</label>
-          <div
-            class="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-3"
-          >
+          <div class="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-3">
             <label
               v-for="template in availableTemplates"
               :key="template.id"
@@ -657,10 +663,7 @@
               />
               <div class="flex-1">
                 <div class="font-medium">{{ template.courseName }}</div>
-                <div
-                  v-if="template.description"
-                  class="text-sm text-gray-600"
-                >
+                <div v-if="template.description" class="text-sm text-gray-600">
                   {{ template.description }}
                 </div>
                 <div class="text-xs text-gray-500 mt-1">
@@ -766,9 +769,7 @@
                 :key="guestId"
                 class="text-sm"
               >
-                <span class="font-medium">{{
-                  getGuestNameById(guestId)
-                }}</span>
+                <span class="font-medium">{{ getGuestNameById(guestId) }}</span>
                 <span class="text-gray-600 ml-2">
                   →
                   <span

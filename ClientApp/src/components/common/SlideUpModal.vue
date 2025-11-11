@@ -48,10 +48,7 @@
         </main>
 
         <!-- Footer -->
-        <footer
-          v-if="$slots.footer"
-          class="px-4 py-4 border-t flex-shrink-0"
-        >
+        <footer v-if="$slots.footer" class="px-4 py-4 border-t flex-shrink-0">
           <slot name="footer"></slot>
         </footer>
       </div>

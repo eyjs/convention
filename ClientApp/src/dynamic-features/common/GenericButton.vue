@@ -5,7 +5,11 @@
   Delegates click actions to the useAction composable.
 -->
 <template>
-  <button :class="buttonClasses" @click.prevent="handleClick" :disabled="isLoading">
+  <button
+    :class="buttonClasses"
+    @click.prevent="handleClick"
+    :disabled="isLoading"
+  >
     <!-- Icon (optional) -->
     <span v-if="config.icon" class="button-icon" v-html="config.icon"></span>
 
@@ -37,8 +41,11 @@ const { executeAction } = useAction()
 // Parse config (stored as JSON string in DB)
 const config = computed(() => {
   try {
-    if (typeof props.feature.configJson === 'string' && props.feature.configJson.trim() === '') {
-      return {};
+    if (
+      typeof props.feature.configJson === 'string' &&
+      props.feature.configJson.trim() === ''
+    ) {
+      return {}
     }
     return typeof props.feature.configJson === 'string'
       ? JSON.parse(props.feature.configJson)

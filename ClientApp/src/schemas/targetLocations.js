@@ -24,16 +24,14 @@ export const TARGET_LOCATIONS = [
   {
     key: 'HOME_SUB_HEADER',
     displayName: 'Home: Below Main Title',
-    description:
-      '홈 화면의 메인 배너 바로 아래에 기능이 추가됩니다.',
+    description: '홈 화면의 메인 배너 바로 아래에 기능이 추가됩니다.',
     page: 'ConventionHome.vue',
     allowedCategories: ['BUTTON', 'BANNER', 'CARD', 'CHECKLIST_CARD'],
   },
   {
     key: 'HOME_CONTENT_TOP',
     displayName: 'Home: Top of Content Area',
-    description:
-      '메인 콘텐츠 섹션 상단, 체크리스트 앞에 기능이 추가됩니다.',
+    description: '메인 콘텐츠 섹션 상단, 체크리스트 앞에 기능이 추가됩니다.',
     page: 'ConventionHome.vue',
     allowedCategories: ['BUTTON', 'BANNER', 'CARD', 'CHECKLIST_CARD'],
   },
@@ -48,16 +46,14 @@ export const TARGET_LOCATIONS = [
   {
     key: 'BOARD_CONTENT_TOP',
     displayName: 'Notice Board: Below Category Filter',
-    description:
-      '"게시판" 페이지의 카테고리 필터 탭 아래에 기능이 추가됩니다.',
+    description: '"게시판" 페이지의 카테고리 필터 탭 아래에 기능이 추가됩니다.',
     page: 'Board.vue',
     allowedCategories: ['BUTTON', 'BANNER'],
   },
   {
     key: 'MORE_FEATURES_GRID',
     displayName: 'More Features: Menu Grid',
-    description:
-      '"더보기" 화면의 메인 그리드에 새 메뉴 항목이 추가됩니다.',
+    description: '"더보기" 화면의 메인 그리드에 새 메뉴 항목이 추가됩니다.',
     page: 'MoreFeaturesView.vue',
     allowedCategories: ['MENU'],
   },

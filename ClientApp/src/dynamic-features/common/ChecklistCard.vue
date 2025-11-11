@@ -34,22 +34,23 @@
     <div class="flex-1 min-w-0">
       <h3
         class="text-base font-medium transition-colors"
-        :class="[
-          isCompleted
-            ? 'line-through text-gray-400'
-            : 'text-gray-900',
-        ]"
+        :class="[isCompleted ? 'line-through text-gray-400' : 'text-gray-900']"
       >
         {{ feature.title }}
       </h3>
-      <p v-if="feature.deadline && !isCompleted" class="text-xs text-gray-500 mt-0.5">
+      <p
+        v-if="feature.deadline && !isCompleted"
+        class="text-xs text-gray-500 mt-0.5"
+      >
         마감: {{ new Date(feature.deadline).toLocaleDateString() }}
       </p>
     </div>
 
     <!-- 완료 뱃지 (옵션) -->
     <div v-if="isCompleted" class="flex-shrink-0">
-      <span class="px-2 py-1 bg-[#17B185]/10 text-[#17B185] text-xs font-medium rounded">
+      <span
+        class="px-2 py-1 bg-[#17B185]/10 text-[#17B185] text-xs font-medium rounded"
+      >
         완료
       </span>
     </div>
@@ -77,7 +78,7 @@ const isCompleted = ref(props.feature.isComplete || false)
 
 // 카드 전체를 클릭했을 때의 동작
 function handleCardClick() {
-  console.log('ChecklistCard clicked:', props.feature); // 디버깅 로그 추가
+  console.log('ChecklistCard clicked:', props.feature) // 디버깅 로그 추가
   // StatusOnly 타입은 상태 토글만 수행
   if (props.feature.behaviorType === 'StatusOnly') {
     toggleStatus()
@@ -99,12 +100,11 @@ async function toggleStatus() {
 
     await apiClient.post(
       `/conventions/${conventionId}/actions/${props.feature.id}/toggle`,
-      { isComplete: newStatus }
+      { isComplete: newStatus },
     )
 
     isCompleted.value = newStatus
-    emit('statusToggled', { actionId: props.feature.id, isComplete: newStatus });
-
+    emit('statusToggled', { actionId: props.feature.id, isComplete: newStatus })
   } catch (error) {
     console.error('Failed to toggle action status:', error)
     alert('상태 변경에 실패했습니다.')

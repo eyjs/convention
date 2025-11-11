@@ -17,7 +17,7 @@ const formBuilderService = {
    * @returns {Promise<AxiosResponse<any>>}
    */
   getFormDefinition(id) {
-    return apiClient.get(`/forms/${id}/definition`);
+    return apiClient.get(`/forms/${id}/definition`)
   },
 
   /**
@@ -38,7 +38,10 @@ const formBuilderService = {
    * @returns {Promise<AxiosResponse<any>>}
    */
   updateFormDefinition(conventionId, id, formData) {
-    return apiClient.put(`/admin/conventions/${conventionId}/forms/${id}`, formData)
+    return apiClient.put(
+      `/admin/conventions/${conventionId}/forms/${id}`,
+      formData,
+    )
   },
 
   /**

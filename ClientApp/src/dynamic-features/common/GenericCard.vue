@@ -102,12 +102,15 @@ const { executeAction } = useAction()
 // Parse config
 const config = computed(() => {
   try {
-    if (typeof props.feature.configJson === 'string' && props.feature.configJson.trim() === '') {
-      return {};
+    if (
+      typeof props.feature.configJson === 'string' &&
+      props.feature.configJson.trim() === ''
+    ) {
+      return {}
     }
     return typeof props.feature.configJson === 'string'
       ? JSON.parse(props.feature.configJson)
-      : props.feature.configJson || {};
+      : props.feature.configJson || {}
   } catch (error) {
     console.error('Failed to parse card config:', error)
     return {}

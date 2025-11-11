@@ -7,6 +7,7 @@ using System.Security.Claims;
 using LocalRAG.Entities;
 using LocalRAG.DTOs.UserModels; // Changed from GuestModels
 using LocalRAG.DTOs.ActionModels;
+using LocalRAG.Interfaces;
 
 namespace LocalRAG.Controllers.User; // Changed from Guest
 
@@ -17,11 +18,13 @@ public class UserController : ControllerBase // Changed from GuestController
 {
     private readonly ConventionDbContext _context;
     private readonly ILogger<UserController> _logger;
+    private readonly IFileUploadService _fileUploadService;
 
-    public UserController(ConventionDbContext context, ILogger<UserController> logger)
+    public UserController(ConventionDbContext context, ILogger<UserController> logger, IFileUploadService fileUploadService)
     {
         _context = context;
         _logger = logger;
+        _fileUploadService = fileUploadService;
     }
 
     /// <summary>
@@ -102,6 +105,7 @@ public class UserController : ControllerBase // Changed from GuestController
                     u.CorpName,
                     u.CorpPart,
                     Phone = u.Phone,
+                    ProfileImageUrl = u.ProfileImageUrl,
                     Attributes = u.GuestAttributes.ToDictionary(
                         ga => ga.AttributeKey,
                         ga => ga.AttributeValue
@@ -481,5 +485,171 @@ public class UserController : ControllerBase // Changed from GuestController
             overallDeadline,
             items = items
         };
+    }
+
+    /// <summary>
+    /// 내 정보 조회
+    /// </summary>
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetMyProfile()
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+        var user = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return NotFound(new { message = "사용자 정보를 찾을 수 없습니다." });
+        }
+
+        var profileDto = new UserProfileDto
+        {
+            Id = user.Id,
+            LoginId = user.LoginId,
+            Name = user.Name,
+            Email = user.Email,
+            Phone = user.Phone,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            PassportNumber = user.PassportNumber,
+            PassportExpiryDate = user.PassportExpiryDate?.ToString("yyyy-MM-dd"),
+            Affiliation = user.Affiliation,
+            CorpName = user.CorpName,
+            CorpPart = user.CorpPart,
+            ProfileImageUrl = user.ProfileImageUrl
+        };
+
+        return Ok(profileDto);
+    }
+
+    /// <summary>
+    /// 내 정보 수정
+    /// </summary>
+    [HttpPut("profile")]
+    public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateUserProfileDto dto)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return NotFound(new { message = "사용자 정보를 찾을 수 없습니다." });
+        }
+
+        // 업데이트
+        user.Phone = dto.Phone;
+        user.FirstName = dto.FirstName;
+        user.LastName = dto.LastName;
+        user.PassportNumber = dto.PassportNumber;
+        user.Affiliation = dto.Affiliation;
+
+        // PassportExpiryDate 파싱 및 유효성 검사
+        if (!string.IsNullOrEmpty(dto.PassportExpiryDate))
+        {
+            if (DateOnly.TryParseExact(dto.PassportExpiryDate, "yyyy-MM-dd", out var parsedDate))
+            {
+                user.PassportExpiryDate = parsedDate;
+            }
+            else
+            {
+                return BadRequest(new { message = "여권 만료일 형식이 올바르지 않습니다. (yyyy-MM-dd)" });
+            }
+        }
+        else
+        {
+            user.PassportExpiryDate = null;
+        }
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "정보가 수정되었습니다." });
+    }
+
+    /// <summary>
+    /// 비밀번호 변경
+    /// </summary>
+    [HttpPut("password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return NotFound(new { message = "사용자 정보를 찾을 수 없습니다." });
+        }
+
+        // 현재 비밀번호 확인
+        if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
+        {
+            return BadRequest(new { message = "현재 비밀번호가 올바르지 않습니다." });
+        }
+
+        // 새 비밀번호로 업데이트
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "비밀번호가 변경되었습니다." });
+    }
+
+    /// <summary>
+    /// 프로필 사진 업로드
+    /// </summary>
+    [HttpPost("profile/photo")]
+    public async Task<IActionResult> UploadProfilePhoto(IFormFile file)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return NotFound(new { message = "사용자 정보를 찾을 수 없습니다." });
+        }
+
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { message = "파일이 비어있습니다." });
+        }
+
+        try
+        {
+            // 기존 프로필 사진이 있다면 삭제 (선택 사항, 여기서는 새 파일로 대체)
+            if (!string.IsNullOrEmpty(user.ProfileImageUrl))
+            {
+                // 실제 파일 시스템에서 삭제하는 로직이 필요할 수 있으나,
+                // 현재 _fileUploadService.DeleteFileAsync는 상대 경로를 받으므로
+                // ProfileImageUrl에서 상대 경로를 추출해야 함.
+                // 여기서는 간단히 URL만 업데이트하는 것으로 처리.
+                // TODO: 기존 파일 삭제 로직 추가 고려
+            }
+
+            // 새 프로필 사진 업로드
+            var uploadResult = await _fileUploadService.UploadImageAsync(file, "profile_photos");
+
+            if (string.IsNullOrEmpty(uploadResult.Url))
+            {
+                return StatusCode(500, new { message = "프로필 사진 업로드에 실패했습니다." });
+            }
+
+            user.ProfileImageUrl = uploadResult.Url;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "프로필 사진이 성공적으로 업로드되었습니다.", profileImageUrl = user.ProfileImageUrl });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "프로필 사진 업로드 실패");
+            return StatusCode(500, new { message = "프로필 사진 업로드 중 오류가 발생했습니다." });
+        }
     }
 }

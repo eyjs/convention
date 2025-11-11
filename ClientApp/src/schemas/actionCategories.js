@@ -15,8 +15,7 @@ export const ACTION_CATEGORIES = [
   {
     key: 'BUTTON',
     displayName: '버튼',
-    description:
-      '특정 페이지의 지정된 영역에 클릭 가능한 버튼을 생성합니다.',
+    description: '특정 페이지의 지정된 영역에 클릭 가능한 버튼을 생성합니다.',
     component: 'GenericButton',
     guide: {
       title: 'Button: 추가 설정 가이드',
@@ -40,8 +39,7 @@ export const ACTION_CATEGORIES = [
   {
     key: 'MENU',
     displayName: '추가메뉴',
-    description:
-      '"더보기" 페이지와 같은 메뉴 화면에 새 항목을 추가합니다.',
+    description: '"더보기" 페이지와 같은 메뉴 화면에 새 항목을 추가합니다.',
     component: 'GenericMenuItem',
     guide: {
       title: 'Menu Item: 추가 설정 가이드',
@@ -113,8 +111,7 @@ export const ACTION_CATEGORIES = [
   {
     key: 'CARD',
     displayName: '정보카드',
-    description:
-      '제목, 설명 및 선택적 아이콘이 있는 정보 카드를 표시합니다.',
+    description: '제목, 설명 및 선택적 아이콘이 있는 정보 카드를 표시합니다.',
     component: 'GenericCard',
     guide: {
       title: 'Info Card: 추가 설정 가이드',

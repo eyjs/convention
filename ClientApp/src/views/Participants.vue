@@ -82,15 +82,20 @@
         class="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all p-4 border border-transparent hover:border-blue-500"
       >
         <div class="flex flex-col items-center text-center">
-          <div
-            class="w-20 h-20 rounded-full bg-gray-200 mb-4 flex items-center justify-center"
-          >
-            <span class="text-3xl text-gray-500">{{
-              participant.guestName.charAt(0)
-            }}</span>
-          </div>
+          <template v-if="participant.profileImageUrl">
+            <img :src="participant.profileImageUrl" :alt="participant.name" class="w-20 h-20 rounded-full object-cover mb-4" />
+          </template>
+          <template v-else>
+            <div
+              class="w-20 h-20 rounded-full bg-gray-200 mb-4 flex items-center justify-center"
+            >
+              <span class="text-3xl text-gray-500">{{
+                participant.name.charAt(0)
+              }}</span>
+            </div>
+          </template>
           <p class="font-bold text-gray-900 text-lg">
-            {{ participant.guestName }}
+            {{ participant.name }}
           </p>
           <p v-if="participant.corpName" class="text-sm text-gray-600 mt-1">
             {{ participant.corpName }}
@@ -107,7 +112,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useConventionStore } from '@/stores/convention'
-import { guestAPI } from '@/services/guestService'
+import apiClient from '@/services/api'
 
 const conventionStore = useConventionStore()
 
@@ -122,7 +127,7 @@ const filteredParticipants = computed(() => {
   const query = searchQuery.value.toLowerCase()
   return participants.value.filter(
     (p) =>
-      p.guestName.toLowerCase().includes(query) ||
+      p.name.toLowerCase().includes(query) ||
       p.corpName?.toLowerCase().includes(query) ||
       p.corpPart?.toLowerCase().includes(query),
   )
@@ -138,7 +143,7 @@ const fetchParticipants = async () => {
       )
       return
     }
-    const response = await guestAPI.getParticipants({ conventionId })
+    const response = await apiClient.get('/api/users/participants', { params: { conventionId } })
     participants.value = response.data
   } catch (error) {
     console.error('Failed to fetch participants:', error)

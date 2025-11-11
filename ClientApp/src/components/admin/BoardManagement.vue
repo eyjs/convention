@@ -534,7 +534,11 @@
     </BaseModal>
 
     <!-- 상세보기 모달 -->
-    <BaseModal :is-open="!!viewingNotice" @close="closeViewModal" max-width="4xl">
+    <BaseModal
+      :is-open="!!viewingNotice"
+      @close="closeViewModal"
+      max-width="4xl"
+    >
       <template #header>
         <h2 class="text-base md:text-lg font-bold">게시글 상세</h2>
       </template>
@@ -575,10 +579,22 @@
         </div>
       </template>
       <template #footer>
-        <button @click="editNotice(viewingNotice); closeViewModal()" class="px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg hover:bg-gray-50">
+        <button
+          @click="
+            editNotice(viewingNotice)
+            closeViewModal()
+          "
+          class="px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg hover:bg-gray-50"
+        >
           수정
         </button>
-        <button @click="deleteNotice(viewingNotice.id); closeViewModal()" class="px-3 md:px-4 py-2 text-sm md:text-base bg-red-600 text-white rounded-lg hover:bg-red-700">
+        <button
+          @click="
+            deleteNotice(viewingNotice.id)
+            closeViewModal()
+          "
+          class="px-3 md:px-4 py-2 text-sm md:text-base bg-red-600 text-white rounded-lg hover:bg-red-700"
+        >
           삭제
         </button>
       </template>
@@ -791,8 +807,7 @@ async function saveCategory() {
         `/admin/conventions/${props.conventionId}/notice-categories/${editingCategory.value.id}`,
         payload,
       )
-    }
-    else {
+    } else {
       await apiClient.post(
         `/admin/conventions/${props.conventionId}/notice-categories`,
         payload,

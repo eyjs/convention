@@ -24,7 +24,14 @@ export const usePopupStore = defineStore('popup', {
      * @param {string} [payload.modalType='SlideUpModal'] - 사용할 모달 타입 ('SlideUpModal' 또는 'BaseModal')
      * @param {Object} [payload.options] - 팝업 자체에 대한 추가 옵션 (예: z-index-class)
      */
-    openPopup({ title, content, componentName, targetId = null, modalType = 'SlideUpModal', options = {} }) {
+    openPopup({
+      title,
+      content,
+      componentName,
+      targetId = null,
+      modalType = 'SlideUpModal',
+      options = {},
+    }) {
       this.title = title || ''
       this.content = content || ''
       // targetId를 props의 'id'로 전달하거나, 필요에 따라 다른 이름으로 매핑
@@ -34,9 +41,13 @@ export const usePopupStore = defineStore('popup', {
 
       if (componentName && popupComponents[componentName]) {
         // 비동기 컴포넌트로 로드하여 번들 크기 최적화
-        this.component = markRaw(defineAsyncComponent(popupComponents[componentName]))
+        this.component = markRaw(
+          defineAsyncComponent(popupComponents[componentName]),
+        )
       } else if (componentName) {
-        console.warn(`Popup component '${componentName}' not found in popupComponents registry.`)
+        console.warn(
+          `Popup component '${componentName}' not found in popupComponents registry.`,
+        )
         this.component = null
       } else {
         this.component = null

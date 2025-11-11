@@ -7,4 +7,4 @@ export const popupComponents = {
   MyInfoComponent: () => import('@/components/custom/MyInfoComponent.vue'),
   // 여기에 다른 팝업 컨텐츠 컴포넌트들을 추가합니다.
   // 'AnotherPopupContent': () => import('@/components/custom/AnotherPopupContent.vue'),
-};
+}

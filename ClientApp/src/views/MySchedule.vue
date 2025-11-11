@@ -356,19 +356,14 @@
           :participants="participants"
           :show-phone="isAdmin"
           :search-placeholder="
-            isAdmin
-              ? '이름, 소속, 연락처로 검색...'
-              : '이름, 소속으로 검색...'
+            isAdmin ? '이름, 소속, 연락처로 검색...' : '이름, 소속으로 검색...'
           "
         />
       </template>
     </SlideUpModal>
 
     <!-- 일정 상세 모달 -->
-    <SlideUpModal
-      :is-open="!!selectedSchedule"
-      @close="closeScheduleDetail"
-    >
+    <SlideUpModal :is-open="!!selectedSchedule" @close="closeScheduleDetail">
       <template #header-title>일정 상세</template>
       <template #body>
         <div class="space-y-4">

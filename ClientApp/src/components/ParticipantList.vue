@@ -19,14 +19,21 @@
           :key="participant.id || participant.name"
           class="p-4 flex items-center space-x-4 hover:bg-gray-100 transition-colors border-b border-gray-200"
         >
-          <!-- Avatar Placeholder -->
-          <div
-            class="w-12 h-12 rounded-full text-white flex items-center justify-center flex-shrink-0"
-            :style="{ backgroundColor: brandColor }"
-          >
-            <span class="text-xl font-bold">{{
-              participant.name.charAt(0)
-            }}</span>
+          <!-- Avatar -->
+          <div class="w-12 h-12 rounded-full flex-shrink-0">
+            <template v-if="participant.profileImageUrl">
+              <img :src="participant.profileImageUrl" :alt="participant.name" class="w-full h-full rounded-full object-cover" />
+            </template>
+            <template v-else>
+              <div
+                class="w-full h-full rounded-full text-white flex items-center justify-center"
+                :style="{ backgroundColor: brandColor }"
+              >
+                <span class="text-xl font-bold">{{
+                  participant.name.charAt(0)
+                }}</span>
+              </div>
+            </template>
           </div>
           <div class="flex-grow min-w-0">
             <p class="font-semibold text-gray-900 truncate">

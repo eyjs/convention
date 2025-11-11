@@ -73,10 +73,22 @@ public class User
     public string? Affiliation { get; set; }
 
     /// <summary>
-    /// 영문 이름 (여권상 이름)
+    /// 영문 이름 (여권상 이름) - Deprecated, use FirstName and LastName
     /// </summary>
     [MaxLength(100)]
     public string? EnglishName { get; set; }
+
+    /// <summary>
+    /// 영문 이름 (First Name)
+    /// </summary>
+    [MaxLength(50)]
+    public string? FirstName { get; set; }
+
+    /// <summary>
+    /// 영문 성 (Last Name)
+    /// </summary>
+    [MaxLength(50)]
+    public string? LastName { get; set; }
 
     /// <summary>
     /// 여권 번호

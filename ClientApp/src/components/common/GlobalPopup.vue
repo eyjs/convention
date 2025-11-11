@@ -23,20 +23,24 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent } from 'vue';
-import { usePopupStore } from '@/stores/popup';
+import { computed, defineAsyncComponent } from 'vue'
+import { usePopupStore } from '@/stores/popup'
 
 // 모달 컴포넌트들을 비동기적으로 임포트
-const BaseModal = defineAsyncComponent(() => import('@/components/common/BaseModal.vue'));
-const SlideUpModal = defineAsyncComponent(() => import('@/components/common/SlideUpModal.vue'));
+const BaseModal = defineAsyncComponent(
+  () => import('@/components/common/BaseModal.vue'),
+)
+const SlideUpModal = defineAsyncComponent(
+  () => import('@/components/common/SlideUpModal.vue'),
+)
 
-const popupStore = usePopupStore();
+const popupStore = usePopupStore()
 
 // 현재 선택된 모달 컴포넌트를 동적으로 결정
 const currentModalComponent = computed(() => {
   if (popupStore.modalType === 'BaseModal') {
-    return BaseModal;
+    return BaseModal
   }
-  return SlideUpModal; // 기본값
-});
+  return SlideUpModal // 기본값
+})
 </script>

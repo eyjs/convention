@@ -67,6 +67,17 @@ const routes = [
     },
   },
   {
+    path: '/my-profile',
+    name: 'MyProfile',
+    component: () => import('@/views/user/MyProfile.vue'),
+    meta: {
+      title: '내 정보',
+      requiresAuth: true,
+      layout: null,
+      showNav: false,
+    },
+  },
+  {
     path: '/',
     name: 'Home',
     component: () => import('@/views/ConventionHome.vue'),

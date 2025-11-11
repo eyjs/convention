@@ -14,7 +14,10 @@
 <template>
   <div v-if="features && features.length > 0" class="dynamic-actions-container">
     <!-- CHECKLIST_CARD 그룹 처리 -->
-    <div v-if="checklistItems.length > 0" class="bg-white rounded-2xl shadow-lg p-5">
+    <div
+      v-if="checklistItems.length > 0"
+      class="bg-white rounded-2xl shadow-lg p-5"
+    >
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-bold text-gray-900">자가 체크리스트</h2>
         <button
@@ -22,7 +25,11 @@
           @click="isChecklistExpanded = !isChecklistExpanded"
           class="text-sm text-[#17B185] font-medium flex items-center hover:underline"
         >
-          {{ isChecklistExpanded ? '접기' : `더보기 (${checklistItems.length - 3})` }}
+          {{
+            isChecklistExpanded
+              ? '접기'
+              : `더보기 (${checklistItems.length - 3})`
+          }}
           <svg
             class="w-4 h-4 ml-0.5 transition-transform"
             :class="{ 'rotate-180': isChecklistExpanded }"
@@ -84,11 +91,11 @@ const isChecklistExpanded = ref(false)
 
 // CHECKLIST_CARD와 다른 카테고리 분리
 const checklistItems = computed(() =>
-  props.features.filter(f => f.actionCategory === 'CHECKLIST_CARD')
+  props.features.filter((f) => f.actionCategory === 'CHECKLIST_CARD'),
 )
 
 const nonChecklistFeatures = computed(() =>
-  props.features.filter(f => f.actionCategory !== 'CHECKLIST_CARD')
+  props.features.filter((f) => f.actionCategory !== 'CHECKLIST_CARD'),
 )
 
 // 표시할 체크리스트 아이템 (펼침 상태에 따라 다름)
@@ -111,7 +118,9 @@ const componentMap = {
   ),
   BANNER: defineAsyncComponent(() => import('./common/GenericBanner.vue')),
   CARD: defineAsyncComponent(() => import('./common/GenericCard.vue')),
-  CHECKLIST_CARD: defineAsyncComponent(() => import('./common/ChecklistCard.vue')),
+  CHECKLIST_CARD: defineAsyncComponent(
+    () => import('./common/ChecklistCard.vue'),
+  ),
 }
 
 /**
