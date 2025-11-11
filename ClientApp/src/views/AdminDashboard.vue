@@ -216,15 +216,15 @@ const handleLogout = async () => {
 }
 
 const tabs = [
-  { id: 'dashboard', name: '대시보드', shortName: '대시보드' },
-  { id: 'guests', name: '참석자 관리', shortName: '참석자' },
-  { id: 'schedules', name: '일정 관리', shortName: '일정' },
-  { id: 'actions', name: '액션 관리', shortName: '액션' },
-  { id: 'surveys', name: '설문 관리', shortName: '설문' },
-  { id: 'attributes', name: '속성 템플릿', shortName: '속성' },
-  { id: 'board', name: '게시판 관리', shortName: '게시판' },
-  { id: 'upload', name: '엑셀 업로드', shortName: '업로드' },
-  { id: 'database', name: 'DB 관리', shortName: 'DB' },
+    { id: 'dashboard', name: '대시보드', shortName: '대시보드' },
+    { id: 'guests', name: '참석자 관리', shortName: '참석자' },
+    { id: 'board', name: '게시판 관리', shortName: '게시판' },
+    { id: 'schedules', name: '일정 관리', shortName: '일정' },
+    { id: 'attributes', name: '속성 템플릿', shortName: '속성' },
+    { id: 'actions', name: '액션 관리', shortName: '액션' },
+    { id: 'surveys', name: '설문 관리', shortName: '설문' },
+    { id: 'upload', name: '엑셀 업로드', shortName: '업로드' },
+  /*{ id: 'database', name: 'DB 관리', shortName: 'DB' },*/
 ]
 
 onMounted(async () => {

@@ -580,19 +580,13 @@
       </template>
       <template #footer>
         <button
-          @click="
-            editNotice(viewingNotice)
-            closeViewModal()
-          "
+            @click="editNotice(viewingNotice); closeViewModal()"
           class="px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg hover:bg-gray-50"
         >
           수정
         </button>
         <button
-          @click="
-            deleteNotice(viewingNotice.id)
-            closeViewModal()
-          "
+            @click="deleteNotice(viewingNotice.id); closeViewModal()"
           class="px-3 md:px-4 py-2 text-sm md:text-base bg-red-600 text-white rounded-lg hover:bg-red-700"
         >
           삭제
