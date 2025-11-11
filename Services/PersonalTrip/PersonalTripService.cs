@@ -92,6 +92,7 @@ namespace LocalRAG.Services.PersonalTrip
                 EndDate = trip.EndDate.ToString("yyyy-MM-dd"),
                 Destination = trip.Destination,
                 City = trip.City,
+                CountryCode = trip.CountryCode,
                 UserId = trip.UserId,
                 CreatedAt = trip.CreatedAt,
                 UpdatedAt = trip.UpdatedAt,
@@ -148,6 +149,7 @@ namespace LocalRAG.Services.PersonalTrip
                 EndDate = endDate,
                 Destination = dto.Destination,
                 City = dto.City,
+                CountryCode = dto.CountryCode,
                 UserId = userId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -164,6 +166,7 @@ namespace LocalRAG.Services.PersonalTrip
                 EndDate = trip.EndDate.ToString("yyyy-MM-dd"),
                 Destination = trip.Destination,
                 City = trip.City,
+                CountryCode = trip.CountryCode,
                 UserId = trip.UserId,
                 CreatedAt = trip.CreatedAt,
                 UpdatedAt = trip.UpdatedAt,
@@ -197,6 +200,7 @@ namespace LocalRAG.Services.PersonalTrip
             trip.EndDate = endDate;
             trip.Destination = dto.Destination;
             trip.City = dto.City;
+            trip.CountryCode = dto.CountryCode;
             trip.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -210,6 +214,7 @@ namespace LocalRAG.Services.PersonalTrip
                 EndDate = trip.EndDate.ToString("yyyy-MM-dd"),
                 Destination = trip.Destination,
                 City = trip.City,
+                CountryCode = trip.CountryCode,
                 UserId = trip.UserId,
                 CreatedAt = trip.CreatedAt,
                 UpdatedAt = trip.UpdatedAt,

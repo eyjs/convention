@@ -12,6 +12,7 @@ namespace LocalRAG.DTOs.PersonalTrip
         public string EndDate { get; set; } = string.Empty; // yyyy-MM-dd
         public string? Destination { get; set; }
         public string? City { get; set; }
+        public string? CountryCode { get; set; }
         public int UserId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

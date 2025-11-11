@@ -25,5 +25,8 @@ namespace LocalRAG.DTOs.PersonalTrip
 
         [MaxLength(100)]
         public string? City { get; set; }
+
+        [MaxLength(2)]
+        public string? CountryCode { get; set; }
     }
 }

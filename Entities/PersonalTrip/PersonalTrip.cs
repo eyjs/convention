@@ -49,6 +49,12 @@ namespace LocalRAG.Entities.PersonalTrip
         public string? City { get; set; }
 
         /// <summary>
+        /// 국가 코드 (ISO 3166-1 alpha-2, 예: KR, JP, US)
+        /// </summary>
+        [MaxLength(2)]
+        public string? CountryCode { get; set; }
+
+        /// <summary>
         /// 소유자 (사용자 ID)
         /// </summary>
         [Required]
