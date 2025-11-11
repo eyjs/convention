@@ -41,7 +41,7 @@ public class ActionManagementController : ControllerBase
                 OrderNum = a.OrderNum,
                 ActionCategory = a.ActionCategory,
                 TargetLocation = a.TargetLocation,
-                BehaviorType = a.BehaviorType,
+                BehaviorType = a.BehaviorType.ToString(),
                 TargetId = a.TargetId,
                 TargetModuleId = a.TargetModuleId
             })

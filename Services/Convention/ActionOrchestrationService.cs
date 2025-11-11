@@ -87,21 +87,29 @@ public class ActionOrchestrationService : IActionOrchestrationService
         // BehaviorType에 따라 상태 및 요약 정보 수집
         switch (action.BehaviorType)
         {
-            case ActionBehaviorType.StatusOnly:
+            case BehaviorType.StatusOnly:
                 await PopulateStatusOnlyData(dto, action.Id, userId);
                 break;
 
-            case ActionBehaviorType.FormBuilder:
+            case BehaviorType.FormBuilder:
                 await PopulateFormBuilderData(dto, action.TargetId, userId);
                 break;
 
-            case ActionBehaviorType.ModuleLink:
+            case BehaviorType.ModuleLink:
                 await PopulateModuleLinkData(dto, action.ModuleIdentifier, action.TargetId, userId);
                 break;
 
-            case ActionBehaviorType.Link:
+            case BehaviorType.Link:
                 // Link는 클릭만 하면 되므로 StatusOnly와 동일
                 await PopulateStatusOnlyData(dto, action.Id, userId);
+                break;
+            
+            case BehaviorType.ShowComponentPopup: // 새로 추가된 타입
+                // ShowComponentPopup은 프론트엔드에서 팝업을 띄우는 역할만 하므로,
+                // 별도의 상태 조회 로직은 필요하지 않음.
+                // 필요하다면 여기에 팝업 관련 초기 상태 로직을 추가할 수 있음.
+                dto.Status = "Ready"; // 또는 "NotStarted"
+                dto.Summary = "팝업 준비";
                 break;
 
             default:
@@ -262,20 +270,23 @@ public class ActionOrchestrationService : IActionOrchestrationService
     {
         return action.BehaviorType switch
         {
-            ActionBehaviorType.FormBuilder when action.TargetId.HasValue
+            BehaviorType.FormBuilder when action.TargetId.HasValue
                 => $"/feature/form/{action.TargetId}",
 
-            ActionBehaviorType.ModuleLink when !string.IsNullOrEmpty(action.FrontendRoute) && action.TargetId.HasValue
-                => $"{action.FrontendRoute.TrimEnd('/')}/{action.TargetId}",
+            BehaviorType.ModuleLink when !string.IsNullOrEmpty(action.FrontendRoute) && action.TargetId.HasValue
+                => $"/feature/{action.FrontendRoute.TrimEnd('/')}/{action.TargetId}",
 
-            ActionBehaviorType.ModuleLink
+            BehaviorType.ModuleLink
+                => $"/feature/{action.MapsTo}",
+
+            BehaviorType.Link
                 => action.MapsTo,
 
-            ActionBehaviorType.Link
+            BehaviorType.StatusOnly
                 => action.MapsTo,
-
-            ActionBehaviorType.StatusOnly
-                => action.MapsTo,
+            
+            BehaviorType.ShowComponentPopup
+                => "#", // 팝업은 라우트가 없으므로 '#' 또는 빈 문자열 반환
 
             _ => action.MapsTo
         };
