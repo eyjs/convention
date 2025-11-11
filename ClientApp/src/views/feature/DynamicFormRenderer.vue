@@ -114,14 +114,92 @@
             </div>
 
             <!-- File Upload -->
-            <input
-              v-else-if="field.fieldType === 'file'"
-              :id="`field-${field.id}`"
-              type="file"
-              @change="handleFileChange($event, field.key)"
-              :required="field.isRequired"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            <div v-else-if="field.fieldType === 'file'" class="space-y-3">
+              <!-- 파일 선택 input -->
+              <input
+                :id="`field-${field.id}`"
+                type="file"
+                @change="handleFileChange($event, field.key)"
+                :required="field.isRequired && !existingFileUrls[field.key]"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+
+              <!-- 새로 선택한 파일 정보 -->
+              <p v-if="uploadedFiles[field.key]" class="text-sm text-green-600">
+                ✓ 선택된 파일: {{ uploadedFiles[field.key].name }} ({{ Math.round(uploadedFiles[field.key].size / 1024) }} KB)
+              </p>
+
+              <!-- 기존 업로드된 파일 미리보기 -->
+              <div v-if="existingFileUrls[field.key] && !uploadedFiles[field.key]" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <p class="text-sm font-medium text-gray-700 mb-2">업로드된 파일:</p>
+
+                <!-- 이미지 파일인 경우 미리보기 -->
+                <div v-if="isImageFile(existingFileUrls[field.key])" class="space-y-2">
+                  <img
+                    :src="`http://localhost:5000${existingFileUrls[field.key]}`"
+                    :alt="field.label"
+                    class="max-w-full h-auto max-h-64 rounded-lg border border-gray-300 cursor-pointer hover:opacity-90 transition-opacity"
+                    @click="openImageViewer(existingFileUrls[field.key])"
+                  />
+                  <div class="flex gap-2">
+                    <button
+                      type="button"
+                      @click="openImageViewer(existingFileUrls[field.key])"
+                      class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    >
+                      🔍 크게 보기
+                    </button>
+                    <button
+                      type="button"
+                      @click="downloadFile(existingFileUrls[field.key])"
+                      class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    >
+                      ⬇ 다운로드
+                    </button>
+                  </div>
+                </div>
+
+                <!-- PDF 파일인 경우 -->
+                <div v-else-if="isPdfFile(existingFileUrls[field.key])" class="space-y-2">
+                  <!-- PDF 썸네일 (첫 페이지 미리보기) -->
+                  <div class="border border-gray-300 rounded-lg overflow-hidden bg-white">
+                    <iframe
+                      :src="`http://localhost:5000${existingFileUrls[field.key]}#toolbar=0&navpanes=0&scrollbar=0`"
+                      class="w-full h-64 pointer-events-none"
+                      title="PDF Preview"
+                    ></iframe>
+                  </div>
+                  <div class="flex gap-2">
+                    <button
+                      type="button"
+                      @click="openPdfViewer(existingFileUrls[field.key])"
+                      class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    >
+                      📄 PDF 보기
+                    </button>
+                    <button
+                      type="button"
+                      @click="downloadFile(existingFileUrls[field.key])"
+                      class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    >
+                      ⬇ 다운로드
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 일반 파일인 경우 다운로드 버튼만 -->
+                <div v-else>
+                  <p class="text-sm text-gray-600 mb-2">📄 {{ getFileName(existingFileUrls[field.key]) }}</p>
+                  <button
+                    type="button"
+                    @click="downloadFile(existingFileUrls[field.key])"
+                    class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                  >
+                    ⬇ 다운로드
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- 제출 버튼 -->
@@ -148,6 +226,85 @@
           {{ successMessage }}
         </div>
       </div>
+
+      <!-- 이미지 뷰어 모달 -->
+      <div
+        v-if="imageViewerUrl"
+        class="fixed inset-0 z-50 bg-black bg-opacity-90"
+      >
+        <!-- 닫기 버튼 (고정 위치 - 우상단) -->
+        <button
+          @click="closeImageViewer"
+          class="fixed top-6 right-6 w-12 h-12 flex items-center justify-center bg-white rounded-full text-gray-800 hover:bg-gray-200 transition-colors shadow-2xl z-[60] font-bold text-xl"
+        >
+          ✕
+        </button>
+
+        <!-- 다운로드 버튼 (고정 위치 - 우하단) -->
+        <button
+          type="button"
+          @click="downloadFile(imageViewerUrl)"
+          class="fixed bottom-6 right-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-2xl z-[60] font-medium flex items-center gap-2"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          다운로드
+        </button>
+
+        <!-- 이미지 (중앙 정렬) -->
+        <div class="w-full h-full flex items-center justify-center p-20" @click="closeImageViewer">
+          <img
+            :src="`http://localhost:5000${imageViewerUrl}`"
+            alt="Image Viewer"
+            class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            @click.stop
+          />
+        </div>
+      </div>
+
+      <!-- PDF 뷰어 모달 -->
+      <div
+        v-if="pdfViewerUrl"
+        @click="closePdfViewer"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
+      >
+        <div class="relative w-full max-w-6xl h-[90vh] bg-white rounded-lg shadow-2xl overflow-hidden" @click.stop>
+          <!-- 헤더 -->
+          <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+            <div class="flex items-center gap-3">
+              <span class="text-lg font-semibold text-gray-900">📄 PDF 문서</span>
+              <span class="text-sm text-gray-600">{{ getFileName(pdfViewerUrl) }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click="downloadFile(pdfViewerUrl)"
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center gap-2"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                다운로드
+              </button>
+              <button
+                type="button"
+                @click="closePdfViewer"
+                class="w-10 h-10 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-800 transition-colors font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <!-- PDF Viewer -->
+          <iframe
+            :src="`http://localhost:5000${pdfViewerUrl}`"
+            class="w-full h-[calc(90vh-4rem)] border-0"
+            title="PDF Viewer"
+          ></iframe>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -171,9 +328,13 @@ const loading = ref(true)
 const error = ref(null)
 const formDefinition = ref(null)
 const formData = ref({})
+const uploadedFiles = ref({}) // 새로 선택한 파일을 별도로 관리
+const existingFileUrls = ref({}) // 기존 업로드된 파일 URL
 const isEditing = ref(false)
 const submitting = ref(false)
 const successMessage = ref('')
+const imageViewerUrl = ref(null) // 이미지 뷰어용
+const pdfViewerUrl = ref(null) // PDF 뷰어용
 
 // 필드를 OrderIndex로 정렬
 const sortedFields = computed(() => {
@@ -196,8 +357,63 @@ function parseOptions(optionsJson) {
 function handleFileChange(event, key) {
   const file = event.target.files[0]
   if (file) {
-    formData.value[key] = file
+    // 파일을 별도로 저장 (Vue reactivity 문제 회피)
+    uploadedFiles.value[key] = file
+    // formData에는 파일명만 표시용으로 저장
+    formData.value[key] = file.name
+    console.log('파일 선택됨:', key, file.name, file.size, 'bytes')
   }
+}
+
+// 이미지 파일 여부 확인
+function isImageFile(url) {
+  if (!url) return false
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
+  const lowerUrl = url.toLowerCase()
+  return imageExtensions.some(ext => lowerUrl.endsWith(ext))
+}
+
+// PDF 파일 여부 확인
+function isPdfFile(url) {
+  if (!url) return false
+  return url.toLowerCase().endsWith('.pdf')
+}
+
+// URL에서 파일명 추출
+function getFileName(url) {
+  if (!url) return ''
+  const parts = url.split('/')
+  return parts[parts.length - 1]
+}
+
+// 이미지 뷰어 열기
+function openImageViewer(url) {
+  imageViewerUrl.value = url
+}
+
+// 이미지 뷰어 닫기
+function closeImageViewer() {
+  imageViewerUrl.value = null
+}
+
+// PDF 뷰어 열기
+function openPdfViewer(url) {
+  pdfViewerUrl.value = url
+}
+
+// PDF 뷰어 닫기
+function closePdfViewer() {
+  pdfViewerUrl.value = null
+}
+
+// 파일 다운로드 함수
+function downloadFile(url) {
+  const link = document.createElement('a')
+  link.href = `http://localhost:5000/api/files/download?path=${encodeURIComponent(url)}`
+  link.download = getFileName(url)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
 // 폼 정의 로드
@@ -230,8 +446,15 @@ async function loadExistingSubmission() {
     if (response.data) {
       // 기존 데이터로 폼 채우기 (폼 정의에 있는 필드만 할당)
       formDefinition.value.fields.forEach(field => {
-        if (response.data[field.key] !== undefined) {
-          formData.value[field.key] = response.data[field.key];
+        const value = response.data[field.key];
+        if (value !== undefined) {
+          // 파일 필드인 경우 URL을 별도로 저장
+          if (field.fieldType === 'file' && value && typeof value === 'string' && value.startsWith('/')) {
+            existingFileUrls.value[field.key] = value;
+            formData.value[field.key] = ''; // input은 비워둠 (보안상 설정 불가)
+          } else {
+            formData.value[field.key] = value;
+          }
         }
       });
       isEditing.value = true;
@@ -250,7 +473,6 @@ async function handleSubmit() {
 
   try {
     const submitFormData = new FormData();
-    let hasFile = false;
 
     // 일반 텍스트 필드와 파일 필드를 FormData에 추가
     const plainFormData = {};
@@ -259,31 +481,56 @@ async function handleSubmit() {
     // formDefinition의 필드 목록을 기반으로 plainFormData를 구성
     for (const field of formDefinition.value.fields) {
       const key = field.key;
-      const value = formData.value[key]; // 현재 폼 데이터에서 값 가져오기
 
-      if (value instanceof File) {
-        submitFormData.append('file', value, value.name); // 백엔드에서 'file'이라는 이름으로 받음
-        fileKey = key; // 파일 필드의 키를 저장
-        plainFormData[key] = null; // 파일 필드의 값은 null로 대체 (백엔드에서 URL로 채울 것임)
+      // 파일 필드인 경우
+      if (field.fieldType === 'file') {
+        // 새 파일을 선택한 경우
+        if (uploadedFiles.value[key]) {
+          const file = uploadedFiles.value[key];
+          console.log('파일 추가 중:', key, file.name, file.size, 'bytes');
+          submitFormData.append('File', file, file.name);
+          fileKey = key;
+          plainFormData[key] = null; // 백엔드에서 새 URL로 채울 것임
+        }
+        // 기존 파일이 있고 새 파일을 선택하지 않은 경우
+        else if (existingFileUrls.value[key]) {
+          plainFormData[key] = existingFileUrls.value[key]; // 기존 URL 유지
+        }
+        // 파일이 없는 경우
+        else {
+          plainFormData[key] = null;
+        }
       } else {
-        plainFormData[key] = value;
+        // 일반 필드는 formData에서 가져오기
+        plainFormData[key] = formData.value[key];
       }
     }
 
     // 파일 필드의 키가 있다면, 백엔드에서 해당 키를 찾아 URL로 대체할 수 있도록 힌트를 제공
     if (fileKey) {
-      submitFormData.append('fileFieldKey', fileKey);
+      submitFormData.append('FileFieldKey', fileKey); // 대문자로 시작하도록 수정
     }
 
-    // 일반 폼 데이터를 JSON 문자열로 변환하여 'formDataJson' 필드로 추가
-    submitFormData.append('formDataJson', JSON.stringify(plainFormData));
+    // 일반 폼 데이터를 JSON 문자열로 변환하여 'FormDataJson' 필드로 추가 (백엔드 DTO와 일치)
+    submitFormData.append('FormDataJson', JSON.stringify(plainFormData));
 
     // FormData 내용 디버깅
+    console.log('=== FormData 내용 ===');
     for (const pair of submitFormData.entries()) {
-      console.log(pair[0]+ ', ' + pair[1]); 
+      if (pair[1] instanceof File) {
+        console.log(`${pair[0]}: [File] ${pair[1].name} (${pair[1].size} bytes, ${pair[1].type})`);
+      } else {
+        console.log(`${pair[0]}: ${pair[1]}`);
+      }
     }
-    
-    await apiClient.post(`/forms/${formDefinitionId.value}/submit`, submitFormData); // headers 객체 제거
+    console.log('===================');
+
+    // FormData 전송 시 Content-Type을 multipart/form-data로 명시
+    await apiClient.post(`/forms/${formDefinitionId.value}/submit`, submitFormData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
     successMessage.value = '제출이 완료되었습니다!'
 

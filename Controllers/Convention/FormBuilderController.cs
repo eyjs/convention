@@ -5,6 +5,7 @@ using LocalRAG.Data;
 using LocalRAG.Entities.FormBuilder;
 using System.Security.Claims;
 using System.Text.Json;
+using System.IO;
 using LocalRAG.DTOs.FormBuilder; // DTO 네임스페이스 추가
 
 namespace LocalRAG.Controllers.Convention;
@@ -251,5 +252,53 @@ public class FormBuilderController : ControllerBase
         }).ToList();
 
         return Ok(submissions);
+    }
+
+    /// <summary>
+    /// 업로드된 파일 다운로드
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("/api/files/download")]
+    public IActionResult DownloadFile([FromQuery] string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return BadRequest(new { message = "파일 경로가 필요합니다." });
+        }
+
+        // 경로 검증 (보안)
+        if (path.Contains("..") || !path.StartsWith("/uploads/"))
+        {
+            return BadRequest(new { message = "잘못된 파일 경로입니다." });
+        }
+
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", path.TrimStart('/'));
+
+        if (!global::System.IO.File.Exists(filePath))
+        {
+            return NotFound(new { message = "파일을 찾을 수 없습니다." });
+        }
+
+        var fileBytes = global::System.IO.File.ReadAllBytes(filePath);
+        var fileName = Path.GetFileName(filePath);
+        var contentType = GetContentType(fileName);
+
+        return base.File(fileBytes, contentType, fileName);
+    }
+
+    private string GetContentType(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".pdf" => "application/pdf",
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".bmp" => "image/bmp",
+            ".webp" => "image/webp",
+            ".svg" => "image/svg+xml",
+            _ => "application/octet-stream"
+        };
     }
 }
