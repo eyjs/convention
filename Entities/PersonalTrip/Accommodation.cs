@@ -42,6 +42,16 @@ namespace LocalRAG.Entities.PersonalTrip
         public string? PostalCode { get; set; }
 
         /// <summary>
+        /// 위도
+        /// </summary>
+        public double? Latitude { get; set; }
+
+        /// <summary>
+        /// 경도
+        /// </summary>
+        public double? Longitude { get; set; }
+
+        /// <summary>
         /// 체크인 일시
         /// </summary>
         public DateTime? CheckInTime { get; set; }

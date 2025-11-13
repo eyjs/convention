@@ -51,7 +51,7 @@
         <div v-if="!trip.accommodations || trip.accommodations.length === 0" class="text-center py-8 text-gray-500">등록된 숙소가 없습니다.</div>
         <div v-else class="space-y-3">
           <div v-for="acc in trip.accommodations" :key="acc.id" class="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer flex justify-between items-center">
-            <div @click="openAccommodationEditModal(acc)" class="flex-grow">
+            <div @click="openAccommodationDetailModal(acc)" class="flex-grow">
               <p class="font-medium">{{ acc.name }}</p>
               <p v-if="acc.address" class="text-sm text-gray-600 mt-1">{{ acc.address }}</p>
             </div>
@@ -210,6 +210,14 @@
         </div>
       </template>
     </SlideUpModal>
+
+    <AccommodationDetailModal
+      :is-open="isAccommodationDetailModalOpen"
+      :accommodation="selectedAccommodation"
+      @close="closeAccommodationDetailModal"
+      @edit="editSelectedAccommodation"
+      :is-domestic="isDomestic"
+    />
 
     <!-- Kakao Map Search Modal -->
     <KakaoMapSearchModal 

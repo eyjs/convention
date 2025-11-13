@@ -11,6 +11,8 @@ namespace LocalRAG.DTOs.PersonalTrip
         public string? Type { get; set; }
         public string? Address { get; set; }
         public string? PostalCode { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
         public DateTime? CheckInTime { get; set; }
         public DateTime? CheckOutTime { get; set; }
         public string? BookingReference { get; set; }

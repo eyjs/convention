@@ -191,6 +191,9 @@ namespace LocalRAG.Services.PersonalTrip
                 Name = dto.Name,
                 Type = dto.Type,
                 Address = dto.Address,
+                PostalCode = dto.PostalCode,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
                 CheckInTime = dto.CheckInTime,
                 CheckOutTime = dto.CheckOutTime,
                 BookingReference = dto.BookingReference,
@@ -212,6 +215,9 @@ namespace LocalRAG.Services.PersonalTrip
             accommodation.Name = dto.Name;
             accommodation.Type = dto.Type;
             accommodation.Address = dto.Address;
+            accommodation.PostalCode = dto.PostalCode;
+            accommodation.Latitude = dto.Latitude;
+            accommodation.Longitude = dto.Longitude;
             accommodation.CheckInTime = dto.CheckInTime;
             accommodation.CheckOutTime = dto.CheckOutTime;
             accommodation.BookingReference = dto.BookingReference;
@@ -359,6 +365,9 @@ namespace LocalRAG.Services.PersonalTrip
                 Name = accommodation.Name,
                 Type = accommodation.Type,
                 Address = accommodation.Address,
+                PostalCode = accommodation.PostalCode,
+                Latitude = accommodation.Latitude,
+                Longitude = accommodation.Longitude,
                 CheckInTime = accommodation.CheckInTime,
                 CheckOutTime = accommodation.CheckOutTime,
                 BookingReference = accommodation.BookingReference,

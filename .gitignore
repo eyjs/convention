@@ -74,6 +74,7 @@ appsettings.*.local.json
 .env
 .env.local
 .env.production
+.env_development
 secrets.json
 
 ###############################################################################

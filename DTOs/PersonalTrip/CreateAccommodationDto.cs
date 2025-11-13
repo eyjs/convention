@@ -19,6 +19,10 @@ namespace LocalRAG.DTOs.PersonalTrip
         [MaxLength(20)]
         public string? PostalCode { get; set; }
 
+        public double? Latitude { get; set; }
+
+        public double? Longitude { get; set; }
+
         public DateTime? CheckInTime { get; set; }
 
         public DateTime? CheckOutTime { get; set; }
