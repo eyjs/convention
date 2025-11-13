@@ -5,7 +5,7 @@ using LocalRAG.Data;
 using LocalRAG.Services.Ai;
 using LocalRAG.Entities;
 using LocalRAG.Interfaces;
-
+using LocalRAG.DTOs.AdminModels;
 
 namespace LocalRAG.Controllers.Admin;
 
@@ -603,36 +603,3 @@ public class ChatbotManagementController : ControllerBase
     #endregion
 }
 
-#region Request Models
-
-public class ToggleChatbotRequest
-{
-    public bool Enabled { get; set; }
-}
-
-public class CreateProviderRequest
-{
-    public string ProviderType { get; set; } = string.Empty;
-    public string ModelName { get; set; } = string.Empty;
-    public string? ApiKey { get; set; }
-    public string? BaseUrl { get; set; }
-    public bool IsActive { get; set; }
-    public string? AdditionalSettings { get; set; }
-}
-
-public class UpdateProviderRequest
-{
-    public string ProviderType { get; set; } = string.Empty;
-    public string ModelName { get; set; } = string.Empty;
-    public string? ApiKey { get; set; }
-    public string? BaseUrl { get; set; }
-    public bool IsActive { get; set; }
-    public string? AdditionalSettings { get; set; }
-}
-
-public class ToggleProviderRequest
-{
-    public bool IsActive { get; set; }
-}
-
-#endregion

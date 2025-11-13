@@ -2,6 +2,10 @@ using LocalRAG.Data;
 using LocalRAG.DTOs.PersonalTrip;
 using LocalRAG.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LocalRAG.Services.PersonalTrip
 {
@@ -23,53 +27,11 @@ namespace LocalRAG.Services.PersonalTrip
                 .Where(t => t.UserId == userId)
                 .Include(t => t.Flights)
                 .Include(t => t.Accommodations)
+                .Include(t => t.ItineraryItems)
                 .OrderByDescending(t => t.StartDate)
                 .ToListAsync();
 
-            return trips.Select(t => new PersonalTripDto
-            {
-                Id = t.Id,
-                Title = t.Title,
-                Description = t.Description,
-                StartDate = t.StartDate.ToString("yyyy-MM-dd"),
-                EndDate = t.EndDate.ToString("yyyy-MM-dd"),
-                Destination = t.Destination,
-                City = t.City,
-                UserId = t.UserId,
-                CreatedAt = t.CreatedAt,
-                UpdatedAt = t.UpdatedAt,
-                Flights = t.Flights.Select(f => new FlightDto
-                {
-                    Id = f.Id,
-                    PersonalTripId = f.PersonalTripId,
-                    Airline = f.Airline,
-                    FlightNumber = f.FlightNumber,
-                    DepartureLocation = f.DepartureLocation,
-                    ArrivalLocation = f.ArrivalLocation,
-                    DepartureTime = f.DepartureTime,
-                    ArrivalTime = f.ArrivalTime,
-                    BookingReference = f.BookingReference,
-                    SeatNumber = f.SeatNumber,
-                    Notes = f.Notes,
-                    CreatedAt = f.CreatedAt,
-                    UpdatedAt = f.UpdatedAt
-                }).OrderBy(f => f.DepartureTime).ToList(),
-                Accommodations = t.Accommodations.Select(a => new AccommodationDto
-                {
-                    Id = a.Id,
-                    PersonalTripId = a.PersonalTripId,
-                    Name = a.Name,
-                    Type = a.Type,
-                    Address = a.Address,
-                    CheckInTime = a.CheckInTime,
-                    CheckOutTime = a.CheckOutTime,
-                    BookingReference = a.BookingReference,
-                    ContactNumber = a.ContactNumber,
-                    Notes = a.Notes,
-                    CreatedAt = a.CreatedAt,
-                    UpdatedAt = a.UpdatedAt
-                }).OrderBy(a => a.CheckInTime).ToList()
-            }).ToList();
+            return trips.Select(MapToPersonalTripDto).ToList();
         }
 
         public async Task<PersonalTripDto?> GetTripByIdAsync(int tripId, int userId)
@@ -78,65 +40,16 @@ namespace LocalRAG.Services.PersonalTrip
                 .AsNoTracking()
                 .Include(t => t.Flights)
                 .Include(t => t.Accommodations)
+                .Include(t => t.ItineraryItems)
                 .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
 
-            if (trip == null)
-                return null;
-
-            return new PersonalTripDto
-            {
-                Id = trip.Id,
-                Title = trip.Title,
-                Description = trip.Description,
-                StartDate = trip.StartDate.ToString("yyyy-MM-dd"),
-                EndDate = trip.EndDate.ToString("yyyy-MM-dd"),
-                Destination = trip.Destination,
-                City = trip.City,
-                CountryCode = trip.CountryCode,
-                UserId = trip.UserId,
-                CreatedAt = trip.CreatedAt,
-                UpdatedAt = trip.UpdatedAt,
-                Flights = trip.Flights.Select(f => new FlightDto
-                {
-                    Id = f.Id,
-                    PersonalTripId = f.PersonalTripId,
-                    Airline = f.Airline,
-                    FlightNumber = f.FlightNumber,
-                    DepartureLocation = f.DepartureLocation,
-                    ArrivalLocation = f.ArrivalLocation,
-                    DepartureTime = f.DepartureTime,
-                    ArrivalTime = f.ArrivalTime,
-                    BookingReference = f.BookingReference,
-                    SeatNumber = f.SeatNumber,
-                    Notes = f.Notes,
-                    CreatedAt = f.CreatedAt,
-                    UpdatedAt = f.UpdatedAt
-                }).OrderBy(f => f.DepartureTime).ToList(),
-                Accommodations = trip.Accommodations.Select(a => new AccommodationDto
-                {
-                    Id = a.Id,
-                    PersonalTripId = a.PersonalTripId,
-                    Name = a.Name,
-                    Type = a.Type,
-                    Address = a.Address,
-                    CheckInTime = a.CheckInTime,
-                    CheckOutTime = a.CheckOutTime,
-                    BookingReference = a.BookingReference,
-                    ContactNumber = a.ContactNumber,
-                    Notes = a.Notes,
-                    CreatedAt = a.CreatedAt,
-                    UpdatedAt = a.UpdatedAt
-                }).OrderBy(a => a.CheckInTime).ToList()
-            };
+            return trip == null ? null : MapToPersonalTripDto(trip);
         }
 
         public async Task<PersonalTripDto> CreateTripAsync(CreatePersonalTripDto dto, int userId)
         {
-            if (!DateOnly.TryParseExact(dto.StartDate, "yyyy-MM-dd", out var startDate))
-                throw new ArgumentException("시작일 형식이 올바르지 않습니다. (yyyy-MM-dd)");
-
-            if (!DateOnly.TryParseExact(dto.EndDate, "yyyy-MM-dd", out var endDate))
-                throw new ArgumentException("종료일 형식이 올바르지 않습니다. (yyyy-MM-dd)");
+            if (!DateOnly.TryParseExact(dto.StartDate, "yyyy-MM-dd", out var startDate) || !DateOnly.TryParseExact(dto.EndDate, "yyyy-MM-dd", out var endDate))
+                throw new ArgumentException("날짜 형식이 올바르지 않습니다. (yyyy-MM-dd)");
 
             if (endDate < startDate)
                 throw new ArgumentException("종료일은 시작일보다 이후여야 합니다.");
@@ -150,6 +63,8 @@ namespace LocalRAG.Services.PersonalTrip
                 Destination = dto.Destination,
                 City = dto.City,
                 CountryCode = dto.CountryCode,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
                 UserId = userId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -157,22 +72,7 @@ namespace LocalRAG.Services.PersonalTrip
             _context.PersonalTrips.Add(trip);
             await _context.SaveChangesAsync();
 
-            return new PersonalTripDto
-            {
-                Id = trip.Id,
-                Title = trip.Title,
-                Description = trip.Description,
-                StartDate = trip.StartDate.ToString("yyyy-MM-dd"),
-                EndDate = trip.EndDate.ToString("yyyy-MM-dd"),
-                Destination = trip.Destination,
-                City = trip.City,
-                CountryCode = trip.CountryCode,
-                UserId = trip.UserId,
-                CreatedAt = trip.CreatedAt,
-                UpdatedAt = trip.UpdatedAt,
-                Flights = new List<FlightDto>(),
-                Accommodations = new List<AccommodationDto>()
-            };
+            return MapToPersonalTripDto(trip);
         }
 
         public async Task<PersonalTripDto?> UpdateTripAsync(int tripId, UpdatePersonalTripDto dto, int userId)
@@ -180,16 +80,13 @@ namespace LocalRAG.Services.PersonalTrip
             var trip = await _context.PersonalTrips
                 .Include(t => t.Flights)
                 .Include(t => t.Accommodations)
+                .Include(t => t.ItineraryItems)
                 .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
 
-            if (trip == null)
-                return null;
+            if (trip == null) return null;
 
-            if (!DateOnly.TryParseExact(dto.StartDate, "yyyy-MM-dd", out var startDate))
-                throw new ArgumentException("시작일 형식이 올바르지 않습니다. (yyyy-MM-dd)");
-
-            if (!DateOnly.TryParseExact(dto.EndDate, "yyyy-MM-dd", out var endDate))
-                throw new ArgumentException("종료일 형식이 올바르지 않습니다. (yyyy-MM-dd)");
+            if (!DateOnly.TryParseExact(dto.StartDate, "yyyy-MM-dd", out var startDate) || !DateOnly.TryParseExact(dto.EndDate, "yyyy-MM-dd", out var endDate))
+                throw new ArgumentException("날짜 형식이 올바르지 않습니다. (yyyy-MM-dd)");
 
             if (endDate < startDate)
                 throw new ArgumentException("종료일은 시작일보다 이후여야 합니다.");
@@ -201,64 +98,19 @@ namespace LocalRAG.Services.PersonalTrip
             trip.Destination = dto.Destination;
             trip.City = dto.City;
             trip.CountryCode = dto.CountryCode;
+            trip.Latitude = dto.Latitude;
+            trip.Longitude = dto.Longitude;
             trip.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
-            return new PersonalTripDto
-            {
-                Id = trip.Id,
-                Title = trip.Title,
-                Description = trip.Description,
-                StartDate = trip.StartDate.ToString("yyyy-MM-dd"),
-                EndDate = trip.EndDate.ToString("yyyy-MM-dd"),
-                Destination = trip.Destination,
-                City = trip.City,
-                CountryCode = trip.CountryCode,
-                UserId = trip.UserId,
-                CreatedAt = trip.CreatedAt,
-                UpdatedAt = trip.UpdatedAt,
-                Flights = trip.Flights.Select(f => new FlightDto
-                {
-                    Id = f.Id,
-                    PersonalTripId = f.PersonalTripId,
-                    Airline = f.Airline,
-                    FlightNumber = f.FlightNumber,
-                    DepartureLocation = f.DepartureLocation,
-                    ArrivalLocation = f.ArrivalLocation,
-                    DepartureTime = f.DepartureTime,
-                    ArrivalTime = f.ArrivalTime,
-                    BookingReference = f.BookingReference,
-                    SeatNumber = f.SeatNumber,
-                    Notes = f.Notes,
-                    CreatedAt = f.CreatedAt,
-                    UpdatedAt = f.UpdatedAt
-                }).OrderBy(f => f.DepartureTime).ToList(),
-                Accommodations = trip.Accommodations.Select(a => new AccommodationDto
-                {
-                    Id = a.Id,
-                    PersonalTripId = a.PersonalTripId,
-                    Name = a.Name,
-                    Type = a.Type,
-                    Address = a.Address,
-                    CheckInTime = a.CheckInTime,
-                    CheckOutTime = a.CheckOutTime,
-                    BookingReference = a.BookingReference,
-                    ContactNumber = a.ContactNumber,
-                    Notes = a.Notes,
-                    CreatedAt = a.CreatedAt,
-                    UpdatedAt = a.UpdatedAt
-                }).OrderBy(a => a.CheckInTime).ToList()
-            };
+            return MapToPersonalTripDto(trip);
         }
 
         public async Task<bool> DeleteTripAsync(int tripId, int userId)
         {
-            var trip = await _context.PersonalTrips
-                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
-
-            if (trip == null)
-                return false;
+            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            if (trip == null) return false;
 
             _context.PersonalTrips.Remove(trip);
             await _context.SaveChangesAsync();
@@ -271,11 +123,8 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<FlightDto> AddFlightAsync(int tripId, CreateFlightDto dto, int userId)
         {
-            var trip = await _context.PersonalTrips
-                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
-
-            if (trip == null)
-                throw new ArgumentException("여행을 찾을 수 없습니다.");
+            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            if (trip == null) throw new ArgumentException("여행을 찾을 수 없습니다.");
 
             var flight = new Entities.PersonalTrip.Flight
             {
@@ -294,33 +143,13 @@ namespace LocalRAG.Services.PersonalTrip
 
             _context.Flights.Add(flight);
             await _context.SaveChangesAsync();
-
-            return new FlightDto
-            {
-                Id = flight.Id,
-                PersonalTripId = flight.PersonalTripId,
-                Airline = flight.Airline,
-                FlightNumber = flight.FlightNumber,
-                DepartureLocation = flight.DepartureLocation,
-                ArrivalLocation = flight.ArrivalLocation,
-                DepartureTime = flight.DepartureTime,
-                ArrivalTime = flight.ArrivalTime,
-                BookingReference = flight.BookingReference,
-                SeatNumber = flight.SeatNumber,
-                Notes = flight.Notes,
-                CreatedAt = flight.CreatedAt,
-                UpdatedAt = flight.UpdatedAt
-            };
+            return MapToFlightDto(flight);
         }
 
         public async Task<FlightDto?> UpdateFlightAsync(int flightId, CreateFlightDto dto, int userId)
         {
-            var flight = await _context.Flights
-                .Include(f => f.PersonalTrip)
-                .FirstOrDefaultAsync(f => f.Id == flightId && f.PersonalTrip.UserId == userId);
-
-            if (flight == null)
-                return null;
+            var flight = await _context.Flights.Include(f => f.PersonalTrip).FirstOrDefaultAsync(f => f.Id == flightId && f.PersonalTrip.UserId == userId);
+            if (flight == null) return null;
 
             flight.Airline = dto.Airline;
             flight.FlightNumber = dto.FlightNumber;
@@ -334,33 +163,13 @@ namespace LocalRAG.Services.PersonalTrip
             flight.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-
-            return new FlightDto
-            {
-                Id = flight.Id,
-                PersonalTripId = flight.PersonalTripId,
-                Airline = flight.Airline,
-                FlightNumber = flight.FlightNumber,
-                DepartureLocation = flight.DepartureLocation,
-                ArrivalLocation = flight.ArrivalLocation,
-                DepartureTime = flight.DepartureTime,
-                ArrivalTime = flight.ArrivalTime,
-                BookingReference = flight.BookingReference,
-                SeatNumber = flight.SeatNumber,
-                Notes = flight.Notes,
-                CreatedAt = flight.CreatedAt,
-                UpdatedAt = flight.UpdatedAt
-            };
+            return MapToFlightDto(flight);
         }
 
         public async Task<bool> DeleteFlightAsync(int flightId, int userId)
         {
-            var flight = await _context.Flights
-                .Include(f => f.PersonalTrip)
-                .FirstOrDefaultAsync(f => f.Id == flightId && f.PersonalTrip.UserId == userId);
-
-            if (flight == null)
-                return false;
+            var flight = await _context.Flights.Include(f => f.PersonalTrip).FirstOrDefaultAsync(f => f.Id == flightId && f.PersonalTrip.UserId == userId);
+            if (flight == null) return false;
 
             _context.Flights.Remove(flight);
             await _context.SaveChangesAsync();
@@ -373,11 +182,8 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<AccommodationDto> AddAccommodationAsync(int tripId, CreateAccommodationDto dto, int userId)
         {
-            var trip = await _context.PersonalTrips
-                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
-
-            if (trip == null)
-                throw new ArgumentException("여행을 찾을 수 없습니다.");
+            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            if (trip == null) throw new ArgumentException("여행을 찾을 수 없습니다.");
 
             var accommodation = new Entities.PersonalTrip.Accommodation
             {
@@ -395,32 +201,13 @@ namespace LocalRAG.Services.PersonalTrip
 
             _context.Accommodations.Add(accommodation);
             await _context.SaveChangesAsync();
-
-            return new AccommodationDto
-            {
-                Id = accommodation.Id,
-                PersonalTripId = accommodation.PersonalTripId,
-                Name = accommodation.Name,
-                Type = accommodation.Type,
-                Address = accommodation.Address,
-                CheckInTime = accommodation.CheckInTime,
-                CheckOutTime = accommodation.CheckOutTime,
-                BookingReference = accommodation.BookingReference,
-                ContactNumber = accommodation.ContactNumber,
-                Notes = accommodation.Notes,
-                CreatedAt = accommodation.CreatedAt,
-                UpdatedAt = accommodation.UpdatedAt
-            };
+            return MapToAccommodationDto(accommodation);
         }
 
         public async Task<AccommodationDto?> UpdateAccommodationAsync(int accommodationId, CreateAccommodationDto dto, int userId)
         {
-            var accommodation = await _context.Accommodations
-                .Include(a => a.PersonalTrip)
-                .FirstOrDefaultAsync(a => a.Id == accommodationId && a.PersonalTrip.UserId == userId);
-
-            if (accommodation == null)
-                return null;
+            var accommodation = await _context.Accommodations.Include(a => a.PersonalTrip).FirstOrDefaultAsync(a => a.Id == accommodationId && a.PersonalTrip.UserId == userId);
+            if (accommodation == null) return null;
 
             accommodation.Name = dto.Name;
             accommodation.Type = dto.Type;
@@ -433,7 +220,138 @@ namespace LocalRAG.Services.PersonalTrip
             accommodation.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+            return MapToAccommodationDto(accommodation);
+        }
 
+        public async Task<bool> DeleteAccommodationAsync(int accommodationId, int userId)
+        {
+            var accommodation = await _context.Accommodations.Include(a => a.PersonalTrip).FirstOrDefaultAsync(a => a.Id == accommodationId && a.PersonalTrip.UserId == userId);
+            if (accommodation == null) return false;
+
+            _context.Accommodations.Remove(accommodation);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        #endregion
+
+        #region ItineraryItem CRUD
+
+        public async Task<List<ItineraryItemDto>> GetItineraryItemsAsync(int tripId, int userId)
+        {
+            var trip = await _context.PersonalTrips.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            if (trip == null) throw new ArgumentException("여행을 찾을 수 없거나 접근 권한이 없습니다.");
+
+            var items = await _context.ItineraryItems
+                .AsNoTracking()
+                .Where(i => i.PersonalTripId == tripId)
+                .OrderBy(i => i.DayNumber)
+                .ThenBy(i => i.StartTime)
+                .ToListAsync();
+
+            return items.Select(MapToItineraryItemDto).ToList();
+        }
+
+        public async Task<ItineraryItemDto> AddItineraryItemAsync(int tripId, CreateItineraryItemDto dto, int userId)
+        {
+            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            if (trip == null) throw new ArgumentException("여행을 찾을 수 없거나 접근 권한이 없습니다.");
+
+            var newItem = new Entities.PersonalTrip.ItineraryItem
+            {
+                PersonalTripId = tripId,
+                DayNumber = dto.DayNumber,
+                LocationName = dto.LocationName,
+                Address = dto.Address,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                GooglePlaceId = dto.GooglePlaceId,
+                StartTime = dto.StartTime != null && TimeOnly.TryParse(dto.StartTime, out var st) ? st : null,
+                EndTime = dto.EndTime != null && TimeOnly.TryParse(dto.EndTime, out var et) ? et : null,
+            };
+
+            _context.ItineraryItems.Add(newItem);
+            await _context.SaveChangesAsync();
+            return MapToItineraryItemDto(newItem);
+        }
+
+        public async Task<ItineraryItemDto?> UpdateItineraryItemAsync(int itemId, UpdateItineraryItemDto dto, int userId)
+        {
+            var item = await _context.ItineraryItems.Include(i => i.PersonalTrip).FirstOrDefaultAsync(i => i.Id == itemId && i.PersonalTrip.UserId == userId);
+            if (item == null) return null;
+
+            item.DayNumber = dto.DayNumber;
+            item.LocationName = dto.LocationName;
+            item.Address = dto.Address;
+            item.Latitude = dto.Latitude;
+            item.Longitude = dto.Longitude;
+            item.GooglePlaceId = dto.GooglePlaceId;
+            item.StartTime = dto.StartTime != null && TimeOnly.TryParse(dto.StartTime, out var st) ? st : null;
+            item.EndTime = dto.EndTime != null && TimeOnly.TryParse(dto.EndTime, out var et) ? et : null;
+
+            await _context.SaveChangesAsync();
+            return MapToItineraryItemDto(item);
+        }
+
+        public async Task<bool> DeleteItineraryItemAsync(int itemId, int userId)
+        {
+            var item = await _context.ItineraryItems.Include(i => i.PersonalTrip).FirstOrDefaultAsync(i => i.Id == itemId && i.PersonalTrip.UserId == userId);
+            if (item == null) return false;
+
+            _context.ItineraryItems.Remove(item);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        #endregion
+
+        #region Mappers
+
+        private PersonalTripDto MapToPersonalTripDto(Entities.PersonalTrip.PersonalTrip trip)
+        {
+            return new PersonalTripDto
+            {
+                Id = trip.Id,
+                Title = trip.Title,
+                Description = trip.Description,
+                StartDate = trip.StartDate.ToString("yyyy-MM-dd"),
+                EndDate = trip.EndDate.ToString("yyyy-MM-dd"),
+                Destination = trip.Destination,
+                City = trip.City,
+                CountryCode = trip.CountryCode,
+                Latitude = trip.Latitude,
+                Longitude = trip.Longitude,
+                UserId = trip.UserId,
+                CreatedAt = trip.CreatedAt,
+                UpdatedAt = trip.UpdatedAt,
+                Flights = trip.Flights?.Select(MapToFlightDto).OrderBy(f => f.DepartureTime).ToList() ?? new List<FlightDto>(),
+                Accommodations = trip.Accommodations?.Select(MapToAccommodationDto).OrderBy(a => a.CheckInTime).ToList() ?? new List<AccommodationDto>(),
+                ItineraryItems = trip.ItineraryItems?.Select(MapToItineraryItemDto).OrderBy(i => i.DayNumber).ThenBy(i => i.StartTime).ToList() ?? new List<ItineraryItemDto>()
+            };
+        }
+
+        private FlightDto MapToFlightDto(Entities.PersonalTrip.Flight flight)
+        {
+            return new FlightDto
+            {
+                Id = flight.Id,
+                PersonalTripId = flight.PersonalTripId,
+                Airline = flight.Airline,
+                FlightNumber = flight.FlightNumber,
+                DepartureLocation = flight.DepartureLocation,
+                ArrivalLocation = flight.ArrivalLocation,
+                DepartureTime = flight.DepartureTime,
+                ArrivalTime = flight.ArrivalTime,
+                BookingReference = flight.BookingReference,
+                SeatNumber = flight.SeatNumber,
+                Notes = flight.Notes,
+                CreatedAt = flight.CreatedAt,
+                UpdatedAt = flight.UpdatedAt
+            };
+        }
+
+        private AccommodationDto MapToAccommodationDto(Entities.PersonalTrip.Accommodation accommodation)
+        {
             return new AccommodationDto
             {
                 Id = accommodation.Id,
@@ -451,18 +369,20 @@ namespace LocalRAG.Services.PersonalTrip
             };
         }
 
-        public async Task<bool> DeleteAccommodationAsync(int accommodationId, int userId)
+        private ItineraryItemDto MapToItineraryItemDto(Entities.PersonalTrip.ItineraryItem item)
         {
-            var accommodation = await _context.Accommodations
-                .Include(a => a.PersonalTrip)
-                .FirstOrDefaultAsync(a => a.Id == accommodationId && a.PersonalTrip.UserId == userId);
-
-            if (accommodation == null)
-                return false;
-
-            _context.Accommodations.Remove(accommodation);
-            await _context.SaveChangesAsync();
-            return true;
+            return new ItineraryItemDto
+            {
+                Id = item.Id,
+                DayNumber = item.DayNumber,
+                LocationName = item.LocationName,
+                Address = item.Address,
+                Latitude = item.Latitude,
+                Longitude = item.Longitude,
+                GooglePlaceId = item.GooglePlaceId,
+                StartTime = item.StartTime.HasValue ? item.StartTime.Value.ToString("HH:mm") : null,
+                EndTime = item.EndTime.HasValue ? item.EndTime.Value.ToString("HH:mm") : null
+            };
         }
 
         #endregion

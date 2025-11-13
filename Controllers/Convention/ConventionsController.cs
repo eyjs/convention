@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using LocalRAG.Entities;
 using System.Security.Claims;
+using LocalRAG.DTOs.ConventionModels;
 
 namespace LocalRAG.Controllers.Convention;
 
@@ -258,24 +259,3 @@ public class ConventionsController : ControllerBase
     }
 }
 
-public class CreateConventionRequest
-{
-    public string Title { get; set; } = string.Empty;
-    public string ConventionType { get; set; } = "DOMESTIC";
-    public string? RenderType { get; set; }
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
-    public string? BrandColor { get; set; }
-    public string? ThemePreset { get; set; }
-}
-
-public class UpdateConventionRequest
-{
-    public string Title { get; set; } = string.Empty;
-    public string ConventionType { get; set; } = "DOMESTIC";
-    public string? RenderType { get; set; }
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
-    public string? BrandColor { get; set; }
-    public string? ThemePreset { get; set; }
-}

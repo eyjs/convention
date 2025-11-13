@@ -269,5 +269,101 @@ namespace LocalRAG.Controllers.PersonalTrip
                 return StatusCode(500, new { message = "숙소 삭제에 실패했습니다.", error = ex.Message });
             }
         }
+
+        #region ItineraryItem Endpoints
+
+        /// <summary>
+        /// 특정 여행의 모든 일정 항목 조회
+        /// </summary>
+        [HttpGet("{tripId}/items")]
+        public async Task<IActionResult> GetItineraryItems(int tripId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var items = await _personalTripService.GetItineraryItemsAsync(tripId, userId);
+                return Ok(items);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "일정 항목 조회에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 새 일정 항목 추가
+        /// </summary>
+        [HttpPost("{tripId}/items")]
+        public async Task<IActionResult> AddItineraryItem(int tripId, [FromBody] CreateItineraryItemDto dto)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var item = await _personalTripService.AddItineraryItemAsync(tripId, dto, userId);
+                return Ok(item);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "일정 항목 추가에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 일정 항목 수정
+        /// </summary>
+        [HttpPut("items/{itemId}")]
+        public async Task<IActionResult> UpdateItineraryItem(int itemId, [FromBody] UpdateItineraryItemDto dto)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var item = await _personalTripService.UpdateItineraryItemAsync(itemId, dto, userId);
+
+                if (item == null)
+                    return NotFound(new { message = "일정 항목을 찾을 수 없습니다." });
+
+                return Ok(item);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "일정 항목 수정에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 일정 항목 삭제
+        /// </summary>
+        [HttpDelete("items/{itemId}")]
+        public async Task<IActionResult> DeleteItineraryItem(int itemId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var success = await _personalTripService.DeleteItineraryItemAsync(itemId, userId);
+
+                if (!success)
+                    return NotFound(new { message = "일정 항목을 찾을 수 없습니다." });
+
+                return Ok(new { message = "일정 항목이 삭제되었습니다." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "일정 항목 삭제에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        #endregion
     }
 }

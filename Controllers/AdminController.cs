@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Entities;
 using LocalRAG.DTOs.ScheduleModels;
+using LocalRAG.DTOs.AdminModels;
 using UserEntity = LocalRAG.Entities.User;
 using OfficeOpenXml;
 
@@ -718,47 +719,3 @@ public class AdminController : ControllerBase
     }
 }
 
-public class UserDto
-{
-    public string Name { get; set; } = string.Empty;
-    public string Phone { get; set; } = string.Empty;
-    public string? CorpPart { get; set; }
-    public string? ResidentNumber { get; set; }
-    public string? Affiliation { get; set; }
-    public string? Password { get; set; }
-    public Dictionary<string, string>? Attributes { get; set; }
-}
-
-
-
-public class CreateUserDto
-{
-    public string LoginId { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public string Role { get; set; } = "Guest";
-}
-
-public class UpdateUserDto
-{
-    public string Role { get; set; } = "Guest";
-}
-
-public class ResetPasswordDto
-{
-    public string NewPassword { get; set; } = string.Empty;
-}
-
-
-public class CreateNoticeDto
-{
-    public string Title { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-    public bool IsPinned { get; set; }
-}
-
-public class UpdateNoticeDto
-{
-    public string Title { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-    public bool IsPinned { get; set; }
-}

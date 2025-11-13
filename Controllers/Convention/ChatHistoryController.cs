@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
+using LocalRAG.DTOs.ChatModels;
 
 using System.Security.Claims;
 namespace LocalRAG.Controllers.Convention
@@ -92,13 +93,4 @@ namespace LocalRAG.Controllers.Convention
             return NoContent();
         }
     }
-}
-public class ChatHistoryMessageDto
-{
-    public int userId { get; set; }
-    public required string userName { get; set; }
-    public string? profileImageUrl { get; set; }
-    public required string message { get; set; }
-    public required string createdAt { get; set; }
-    public bool isAdmin { get; set; }
 }

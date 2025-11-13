@@ -13,11 +13,14 @@ namespace LocalRAG.DTOs.PersonalTrip
         public string? Destination { get; set; }
         public string? City { get; set; }
         public string? CountryCode { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
         public int UserId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
         public List<FlightDto> Flights { get; set; } = new();
         public List<AccommodationDto> Accommodations { get; set; } = new();
+        public List<ItineraryItemDto> ItineraryItems { get; set; } = new();
     }
 }

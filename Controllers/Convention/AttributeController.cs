@@ -1,5 +1,6 @@
 using LocalRAG.Data;
 using LocalRAG.Entities;
+using LocalRAG.DTOs.ConventionModels;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -79,10 +80,3 @@ public class AttributeController : ControllerBase
     }
 }
 
-public class AttributeDefinitionDto
-{
-    public string AttributeKey { get; set; } = string.Empty;
-    public string? Options { get; set; }
-    public int OrderNum { get; set; }
-    public bool IsRequired { get; set; }
-}

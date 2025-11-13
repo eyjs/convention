@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-100">
     <MainHeader title="내 여행" :show-back="false" />
 
     <div class="max-w-2xl mx-auto px-4 py-6">
@@ -11,14 +11,6 @@
 
       <!-- 여행 목록 -->
       <template v-else>
-        <!-- 새 여행 만들기 버튼 -->
-        <button @click="goToCreateTrip" class="w-full mb-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          <span>새 여행 만들기</span>
-        </button>
-
         <!-- 여행 카드 목록 -->
         <div v-if="trips.length === 0" class="text-center py-12">
           <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,6 +54,11 @@
         </div>
       </template>
     </div>
+
+    <!-- 새 여행 만들기 FAB -->
+    <button @click="goToCreateTrip" class="fixed bottom-8 right-8 bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-110">
+      <PlusIcon class="w-6 h-6" />
+    </button>
   </div>
 </template>
 
@@ -70,6 +67,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import MainHeader from '@/components/common/MainHeader.vue'
 import apiClient from '@/services/api'
+import { Plus as PlusIcon } from 'lucide-vue-next'
 
 const router = useRouter()
 const loading = ref(true)

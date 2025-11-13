@@ -61,6 +61,7 @@ public class ConventionDbContext : DbContext
     public DbSet<PersonalTrip> PersonalTrips { get; set; }
     public DbSet<Flight> Flights { get; set; }
     public DbSet<Accommodation> Accommodations { get; set; }
+    public DbSet<ItineraryItem> ItineraryItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -582,6 +583,16 @@ public class ConventionDbContext : DbContext
 
             entity.HasIndex(e => e.PersonalTripId).HasDatabaseName("IX_Accommodation_PersonalTripId");
             entity.HasIndex(e => e.CheckInTime).HasDatabaseName("IX_Accommodation_CheckInTime");
+        });
+
+        // ItineraryItem
+        modelBuilder.Entity<ItineraryItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+            entity.HasIndex(e => e.PersonalTripId).HasDatabaseName("IX_ItineraryItem_PersonalTripId");
+            entity.HasIndex(e => e.DayNumber).HasDatabaseName("IX_ItineraryItem_DayNumber");
         });
     }
 }

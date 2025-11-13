@@ -20,5 +20,11 @@ namespace LocalRAG.Interfaces
         Task<AccommodationDto> AddAccommodationAsync(int tripId, CreateAccommodationDto dto, int userId);
         Task<AccommodationDto?> UpdateAccommodationAsync(int accommodationId, CreateAccommodationDto dto, int userId);
         Task<bool> DeleteAccommodationAsync(int accommodationId, int userId);
+
+        // ItineraryItem CRUD
+        Task<List<ItineraryItemDto>> GetItineraryItemsAsync(int tripId, int userId);
+        Task<ItineraryItemDto> AddItineraryItemAsync(int tripId, CreateItineraryItemDto dto, int userId);
+        Task<ItineraryItemDto?> UpdateItineraryItemAsync(int itemId, UpdateItineraryItemDto dto, int userId);
+        Task<bool> DeleteItineraryItemAsync(int itemId, int userId);
     }
 }

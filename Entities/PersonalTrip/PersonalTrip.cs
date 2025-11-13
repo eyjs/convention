@@ -55,6 +55,16 @@ namespace LocalRAG.Entities.PersonalTrip
         public string? CountryCode { get; set; }
 
         /// <summary>
+        /// 목적지 위도
+        /// </summary>
+        public double? Latitude { get; set; }
+
+        /// <summary>
+        /// 목적지 경도
+        /// </summary>
+        public double? Longitude { get; set; }
+
+        /// <summary>
         /// 소유자 (사용자 ID)
         /// </summary>
         [Required]
@@ -76,5 +86,6 @@ namespace LocalRAG.Entities.PersonalTrip
 
         public virtual ICollection<Flight> Flights { get; set; } = new List<Flight>();
         public virtual ICollection<Accommodation> Accommodations { get; set; } = new List<Accommodation>();
+        public virtual ICollection<ItineraryItem> ItineraryItems { get; set; } = new List<ItineraryItem>();
     }
 }

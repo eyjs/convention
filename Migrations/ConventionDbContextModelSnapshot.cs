@@ -1107,6 +1107,10 @@ namespace LocalRAG.Migrations
                     b.Property<int>("PersonalTripId")
                         .HasColumnType("int");
 
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("Type")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -1189,6 +1193,56 @@ namespace LocalRAG.Migrations
                     b.ToTable("Flights");
                 });
 
+            modelBuilder.Entity("LocalRAG.Entities.PersonalTrip.ItineraryItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DayNumber")
+                        .HasColumnType("int");
+
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("GooglePlaceId")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<string>("LocationName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<int>("PersonalTripId")
+                        .HasColumnType("int");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DayNumber")
+                        .HasDatabaseName("IX_ItineraryItem_DayNumber");
+
+                    b.HasIndex("PersonalTripId")
+                        .HasDatabaseName("IX_ItineraryItem_PersonalTripId");
+
+                    b.ToTable("ItineraryItems");
+                });
+
             modelBuilder.Entity("LocalRAG.Entities.PersonalTrip.PersonalTrip", b =>
                 {
                     b.Property<int>("Id")
@@ -1220,6 +1274,12 @@ namespace LocalRAG.Migrations
 
                     b.Property<DateOnly>("EndDate")
                         .HasColumnType("date");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
@@ -2055,6 +2115,17 @@ namespace LocalRAG.Migrations
                     b.Navigation("PersonalTrip");
                 });
 
+            modelBuilder.Entity("LocalRAG.Entities.PersonalTrip.ItineraryItem", b =>
+                {
+                    b.HasOne("LocalRAG.Entities.PersonalTrip.PersonalTrip", "PersonalTrip")
+                        .WithMany("ItineraryItems")
+                        .HasForeignKey("PersonalTripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PersonalTrip");
+                });
+
             modelBuilder.Entity("LocalRAG.Entities.PersonalTrip.PersonalTrip", b =>
                 {
                     b.HasOne("LocalRAG.Entities.User", "User")
@@ -2259,6 +2330,8 @@ namespace LocalRAG.Migrations
                     b.Navigation("Accommodations");
 
                     b.Navigation("Flights");
+
+                    b.Navigation("ItineraryItems");
                 });
 
             modelBuilder.Entity("LocalRAG.Entities.Survey", b =>

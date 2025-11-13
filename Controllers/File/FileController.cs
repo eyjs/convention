@@ -4,6 +4,7 @@ using LocalRAG.Interfaces;
 using System.IO;
 using System.Drawing;
 using System.Drawing.Imaging;
+using LocalRAG.DTOs.UploadModels;
 
 namespace LocalRAG.Controllers.File;
 
@@ -283,9 +284,3 @@ public class FileController : ControllerBase
     #endregion
 #pragma warning restore CA1416 // Validate platform compatibility
 }
-
-public record Base64UploadRequest(
-    string Base64Data,
-    string? FileName = null,
-    string? DateFolder = null
-);

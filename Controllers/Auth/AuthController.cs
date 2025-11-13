@@ -1,5 +1,6 @@
 using LocalRAG.Data;
 using LocalRAG.Interfaces;
+using LocalRAG.DTOs.AuthModels;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -433,29 +434,3 @@ public class AuthController : ControllerBase
     }
 }
 
-public class RegisterRequest
-{
-    public string LoginId { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string? Email { get; set; }
-    public string? Phone { get; set; }
-}
-
-public class LoginRequest
-{
-    public string LoginId { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-}
-
-public class GuestLoginRequest
-{
-    public string Name { get; set; } = string.Empty;
-    public string Phone { get; set; } = string.Empty;
-    public int ConventionId { get; set; }
-}
-
-public class RefreshTokenRequest
-{
-    public string RefreshToken { get; set; } = string.Empty;
-}

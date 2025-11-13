@@ -2,6 +2,7 @@ using LocalRAG.Data;
 using LocalRAG.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using LocalRAG.DTOs.AuthModels;
 
 namespace LocalRAG.Controllers.Auth;
 
@@ -191,32 +192,3 @@ public class AccountRecoveryController : ControllerBase
     }
 }
 
-// DTOs
-public class FindIdSendCodeDto
-{
-    public string Name { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-}
-
-public class FindIdVerifyDto
-{
-    public string Name { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string Code { get; set; } = string.Empty;
-}
-
-public class ResetPasswordSendCodeDto
-{
-    public string LoginId { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-}
-
-public class ResetPasswordVerifyDto
-{
-    public string LoginId { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string Code { get; set; } = string.Empty;
-    public string NewPassword { get; set; } = string.Empty;
-}

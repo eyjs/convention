@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
 using LocalRAG.Entities;
+using LocalRAG.DTOs.ConventionModels;
 
 namespace LocalRAG.Controllers
 {
@@ -188,10 +189,5 @@ namespace LocalRAG.Controllers
                 return StatusCode(500, "기능 삭제 중 오류가 발생했습니다.");
             }
         }
-    }
-
-    public class FeatureStatusUpdate
-    {
-        public bool IsActive { get; set; }
     }
 }

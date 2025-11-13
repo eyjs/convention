@@ -28,5 +28,9 @@ namespace LocalRAG.DTOs.PersonalTrip
 
         [MaxLength(2)]
         public string? CountryCode { get; set; }
+
+        public double? Latitude { get; set; }
+
+        public double? Longitude { get; set; }
     }
 }
