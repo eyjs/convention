@@ -1,10 +1,19 @@
 <template>
   <div
-    class="min-h-screen flex flex-col justify-center items-center font-sans text-white bg-[url('https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1')] bg-cover bg-center relative overflow-hidden"
+    class="min-h-screen flex flex-col justify-center items-center font-sans text-white bg-black bg-cover bg-center relative overflow-hidden"
   >
+    <video 
+      ref="videoPlayer"
+      src="/videos/travel_splash.mp4" 
+      autoplay 
+      loop 
+      muted 
+      playsinline
+      class="absolute top-0 left-0 w-full h-full object-cover"
+    ></video>
     <div class="absolute inset-0 bg-black/50"></div>
 
-    <header class="flex justify-center py-8">
+    <header class="flex justify-center py-8 relative z-10">
       <img
         src="/images/logo_w.png"
         alt="iFA Logo"
@@ -425,7 +434,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import PrivacyPolicyModal from '@/components/common/PrivacyPolicyModal.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -450,6 +459,15 @@ const registerForm = ref({
   name: '',
   email: '',
   phone: '',
+})
+
+const videoPlayer = ref(null)
+onMounted(() => {
+  if (videoPlayer.value) {
+    videoPlayer.value.play().catch(error => {
+      console.error("Video play failed:", error);
+    });
+  }
 })
 
 // --- Real-time Validation Logic ---
