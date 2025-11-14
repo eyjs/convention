@@ -30,7 +30,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'terser',
+    minify: false,
     rollupOptions: {
       output: {},
     },
