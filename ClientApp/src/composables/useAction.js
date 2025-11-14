@@ -1,16 +1,17 @@
 import { useConventionStore } from '@/stores/convention'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
-import { usePopupStore } from '@/stores/popup' // usePopupStore 임포트
+import { usePopupStore } from '@/stores/popup'
+import { popupComponents } from '@/popups/popupComponents'
 
 export function useAction() {
   const conventionStore = useConventionStore()
   const authStore = useAuthStore()
   const router = useRouter()
   const conventionId = computed(() => conventionStore.currentConvention?.id)
-  const popupStore = usePopupStore() // popupStore 인스턴스 생성
+  const popupStore = usePopupStore()
 
   async function fetchChecklist() {
     if (!conventionId.value) {
@@ -38,8 +39,7 @@ export function useAction() {
       return
     }
 
-    const { behaviorType, targetId, targetModuleId, mapsTo, route, title } =
-      action // configJson 제거
+    const { behaviorType, targetId, mapsTo, title } = action
 
     switch (behaviorType) {
       case 'StatusOnly':
@@ -86,17 +86,16 @@ export function useAction() {
         break
 
       case 'ShowComponentPopup':
-        if (mapsTo) {
-          // mapsTo를 componentName으로 사용
+        if (mapsTo && popupComponents[mapsTo]) {
+          const component = defineAsyncComponent(popupComponents[mapsTo])
           popupStore.openPopup({
-            title: title, // action의 title을 팝업 제목으로 사용
-            componentName: mapsTo, // mapsTo 필드를 컴포넌트 이름으로 사용
-            targetId: targetId, // targetId 필드를 컴포넌트 props의 id로 사용
-            // modalType 및 options는 필요에 따라 기본값 사용 또는 action에 추가 필드 정의
+            title: title,
+            component: component,
+            targetId: targetId,
           })
         } else {
           console.warn(
-            'ShowComponentPopup action without mapsTo (componentName):',
+            `ShowComponentPopup action with invalid component name: ${mapsTo}`,
             action,
           )
         }

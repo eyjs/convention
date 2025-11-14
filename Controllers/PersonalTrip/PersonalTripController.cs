@@ -364,6 +364,24 @@ namespace LocalRAG.Controllers.PersonalTrip
             }
         }
 
+        /// <summary>
+        /// [Admin] 사용자 이름으로 여행 목록 검색
+        /// </summary>
+        [HttpGet("search")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> SearchTrips([FromQuery] string userName)
+        {
+            try
+            {
+                var trips = await _personalTripService.SearchTripsByUserNameAsync(userName);
+                return Ok(trips);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "여행 검색에 실패했습니다.", error = ex.Message });
+            }
+        }
+
         #endregion
     }
 }

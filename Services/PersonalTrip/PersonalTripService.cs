@@ -311,6 +311,46 @@ namespace LocalRAG.Services.PersonalTrip
 
         #endregion
 
+        #region Search
+
+        public async Task<IEnumerable<PersonalTripDto>> SearchTripsByUserNameAsync(string userName)
+        {
+            if (string.IsNullOrWhiteSpace(userName))
+            {
+                return new List<PersonalTripDto>();
+            }
+
+            var lowerCaseUserName = userName.ToLower();
+
+            // Find users whose first name, last name, or full name contains the search term
+            var userIds = await _context.Users
+                .AsNoTracking()
+                .Where(u => (u.FirstName != null && u.FirstName.ToLower().Contains(lowerCaseUserName)) ||
+                            (u.LastName != null && u.LastName.ToLower().Contains(lowerCaseUserName)) ||
+                            (u.Name != null && u.Name.ToLower().Contains(lowerCaseUserName)))
+                .Select(u => u.Id)
+                .ToListAsync();
+
+            if (!userIds.Any())
+            {
+                return new List<PersonalTripDto>();
+            }
+
+            // Get all personal trips for the found users
+            var trips = await _context.PersonalTrips
+                .AsNoTracking()
+                .Where(t => userIds.Contains(t.UserId))
+                .Include(t => t.Flights)
+                .Include(t => t.Accommodations)
+                .Include(t => t.ItineraryItems)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            return trips.Select(MapToPersonalTripDto).ToList();
+        }
+
+        #endregion
+
         #region Mappers
 
         private PersonalTripDto MapToPersonalTripDto(Entities.PersonalTrip.PersonalTrip trip)

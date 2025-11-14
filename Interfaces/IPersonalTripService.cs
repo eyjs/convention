@@ -26,5 +26,8 @@ namespace LocalRAG.Interfaces
         Task<ItineraryItemDto> AddItineraryItemAsync(int tripId, CreateItineraryItemDto dto, int userId);
         Task<ItineraryItemDto?> UpdateItineraryItemAsync(int itemId, UpdateItineraryItemDto dto, int userId);
         Task<bool> DeleteItineraryItemAsync(int itemId, int userId);
+
+        // Search
+        Task<IEnumerable<PersonalTripDto>> SearchTripsByUserNameAsync(string userName);
     }
 }
