@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authAPI } from '@/services/api'
-import { useChatStore } from '@/stores/chat' // 👈 chat.js 스토어를 임포트합니다.
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -80,8 +79,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    const chatStore = useChatStore() // chat.js 스토어 인스턴스를 가져옵니다.
-
     try {
       // API 호출은 실패할 수도 있으므로, finally 블록에서 상태를 확실히 초기화합니다.
       await authAPI.logout()
@@ -98,9 +95,8 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
 
-      // 2. 챗봇 스토어의 상태를 완전히 초기화합니다.
-      chatStore.resetChatState()
-
+      // 2. 챗봇 스토어의 상태를 완전히 초기화하는 로직은 logout을 호출하는 곳에서 처리해야 합니다.
+      //    예: 로그인 페이지로 리다이렉션하기 전에 useChatStore().resetChatState() 호출
       console.log('Logout successful and all states have been reset.')
     }
   }

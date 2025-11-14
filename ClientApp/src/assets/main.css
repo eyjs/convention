@@ -66,16 +66,16 @@
    CSS 변수 - 기본 테마 (iFA Teal)
    ======================================== */
 :root {
-  --color-primary-50: 240 253 249;
-  --color-primary-100: 204 251 239;
-  --color-primary-200: 153 246 224;
-  --color-primary-300: 95 233 208;
-  --color-primary-400: 45 212 191;
-  --color-primary-500: 20 184 166;
-  --color-primary-600: 13 148 136;
-  --color-primary-700: 15 118 110;
-  --color-primary-800: 17 94 89;
-  --color-primary-900: 19 78 74;
+  --color-primary-50: 230 249 244; /* #e6f9f4 */
+  --color-primary-100: 199 240 230; /* #c7f0e6 */
+  --color-primary-200: 160 229 212; /* #a0e5d4 */
+  --color-primary-300: 110 212 191; /* #6ed4bf */
+  --color-primary-400: 60 194 170;  /* #3cc2aa */
+  --color-primary-500: 23 177 133;  /* #17B185 */
+  --color-primary-600: 18 141 106;  /* #128d6a */
+  --color-primary-700: 14 105 79;   /* #0e694f */
+  --color-primary-800: 10 70 53;    /* #0a4635 */
+  --color-primary-900: 6 35 26;     /* #06231a */
 }
 
 /* 전역 스타일 */

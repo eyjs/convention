@@ -1,91 +1,204 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <MainHeader :title="trip.title || '여행 상세'" :show-back="true" />
+  <div class="min-h-screen relative bg-sky-50">
+    <!-- Decorative Background Elements -->
+    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+      <!-- Large gradient blobs -->
+      <div class="absolute top-20 -right-32 w-96 h-96 bg-gradient-to-br from-sky-200/15 to-blue-200/15 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-200/12 to-cyan-200/12 rounded-full blur-3xl"></div>
+      <div class="absolute top-1/3 left-1/3 w-72 h-72 bg-gradient-to-br from-cyan-200/12 to-sky-200/12 rounded-full blur-3xl"></div>
 
-    <div v-if="loading" class="text-center py-20">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-      <p class="mt-4 text-gray-600">여행 정보를 불러오는 중...</p>
+      <!-- Subtle dot pattern -->
+      <div class="absolute inset-0 opacity-[0.02]" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;20&quot; height=&quot;20&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;%239C92AC&quot; fill-opacity=&quot;1&quot;%3E%3Ccircle cx=&quot;2&quot; cy=&quot;2&quot; r=&quot;1&quot;/%3E%3C/g%3E%3C/svg%3E');"></div>
     </div>
 
-    <div v-else class="max-w-2xl mx-auto px-4 py-6">
-      <!-- 1. 조회 모드: 여행 정보 -->
-      <section class="bg-white rounded-lg shadow p-4 mb-6">
-        <div class="flex justify-between items-center mb-3">
-          <h2 class="text-xl font-bold">여행 정보</h2>
-          <button @click="openTripInfoModal" class="text-sm text-blue-600 hover:underline">수정</button>
-        </div>
-        <div class="space-y-3 text-gray-700">
-          <p class="flex items-start"><strong class="w-20 font-semibold text-gray-500">기간</strong> <span>{{ trip.startDate }} ~ {{ trip.endDate }}</span></p>
-          <p class="flex items-start"><strong class="w-20 font-semibold text-gray-500">목적지</strong> <span>{{ trip.destination }}</span></p>
-          <p v-if="trip.description" class="flex items-start"><strong class="w-20 font-semibold text-gray-500">설명</strong> <span class="whitespace-pre-wrap">{{ trip.description }}</span></p>
-        </div>
-      </section>
+    <div class="relative z-10">
+      <MainHeader :title="trip.title || '여행 상세'" :show-back="true" />
 
-      <!-- 2. 조회 모드: 항공권, 숙소, 일정 -->
-      <!-- 항공권 -->
-      <section class="bg-white rounded-lg shadow p-4 mb-6">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold">항공권</h2>
-          <button @click="openFlightModal()" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">+ 추가</button>
-        </div>
-        <div v-if="!trip.flights || trip.flights.length === 0" class="text-center py-8 text-gray-500">등록된 항공권이 없습니다.</div>
-        <div v-else class="space-y-3">
-          <div v-for="flight in trip.flights" :key="flight.id" class="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer flex justify-between items-center">
-            <div @click="openFlightModal(flight)" class="flex-grow">
-              <p class="font-medium">{{ flight.airline }} {{ flight.flightNumber }}</p>
-              <p class="text-sm text-gray-600 mt-1">{{ flight.departureLocation }} → {{ flight.arrivalLocation }}</p>
+      <div v-if="loading" class="text-center py-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p class="mt-4 text-gray-600 font-medium">여행 정보를 불러오는 중...</p>
+      </div>
+
+      <div v-else class="max-w-2xl mx-auto px-4 py-4">
+      <!-- Hero Section with Trip Info -->
+      <section class="relative overflow-hidden bg-primary-500 rounded-2xl shadow-xl p-6 mb-6 text-white">
+        <div class="relative z-10">
+          <div class="flex justify-between items-start mb-4">
+            <div class="flex-1">
+              <h2 class="text-2xl font-bold mb-2">{{ trip.title }}</h2>
+              <div class="flex items-center gap-2 text-white/90 mb-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="font-medium">{{ trip.startDate }} ~ {{ trip.endDate }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-white/90">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="font-medium">{{ trip.destination }}</span>
+              </div>
             </div>
-            <button @click.stop="deleteFlightFromList(flight.id)" class="p-2 text-red-500 hover:text-red-700 rounded-full">
-              <Trash2Icon class="w-5 h-5" />
+            <button @click="openTripInfoModal" class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors">
+              수정
             </button>
           </div>
+          <p v-if="trip.description" class="text-white/90 text-sm leading-relaxed">{{ trip.description }}</p>
         </div>
+        <!-- Decorative elements -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
       </section>
 
-      <!-- 숙소 -->
-      <section class="bg-white rounded-lg shadow p-4 mb-6">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold">숙소</h2>
-          <button @click="openAccommodationEditModal()" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">+ 추가</button>
-        </div>
-        <div v-if="!trip.accommodations || trip.accommodations.length === 0" class="text-center py-8 text-gray-500">등록된 숙소가 없습니다.</div>
-        <div v-else class="space-y-3">
-          <div v-for="acc in trip.accommodations" :key="acc.id" class="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer flex justify-between items-center">
-            <div @click="openAccommodationDetailModal(acc)" class="flex-grow">
-              <p class="font-medium">{{ acc.name }}</p>
-              <p v-if="acc.address" class="text-sm text-gray-600 mt-1">{{ acc.address }}</p>
-            </div>
-            <button @click.stop="deleteAccommodationFromList(acc.id)" class="p-2 text-red-500 hover:text-red-700 rounded-full">
-              <Trash2Icon class="w-5 h-5" />
+      <!-- Quick Actions Grid -->
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <!-- 항공권 -->
+        <section class="bg-white rounded-2xl shadow-md p-5">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+              항공권
+            </h2>
+          </div>
+          <div v-if="!trip.flights || trip.flights.length === 0" class="text-center py-6">
+            <p class="text-sm text-gray-500 mb-3">등록된 항공권이 없습니다</p>
+            <button @click="openFlightModal()" class="w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-100 transition-colors">
+              + 추가
             </button>
           </div>
-        </div>
-      </section>
+          <div v-else>
+            <div class="space-y-2 mb-3">
+              <div v-for="flight in trip.flights" :key="flight.id" class="border border-gray-200 rounded-lg p-3 hover:border-blue-300 hover:shadow-sm cursor-pointer transition-all">
+                <div @click="openFlightModal(flight)" class="flex items-start gap-2">
+                  <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-sm text-gray-900 truncate">{{ flight.airline }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ flight.departureLocation }} → {{ flight.arrivalLocation }}</p>
+                  </div>
+                  <button @click.stop="deleteFlightFromList(flight.id)" class="p-1 text-gray-400 hover:text-red-500 rounded">
+                    <Trash2Icon class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button @click="openFlightModal()" class="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors">
+              + 추가
+            </button>
+          </div>
+        </section>
+
+        <!-- 숙소 -->
+        <section class="bg-white rounded-2xl shadow-md p-5">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              숙소
+            </h2>
+          </div>
+          <div v-if="!trip.accommodations || trip.accommodations.length === 0" class="text-center py-6">
+            <p class="text-sm text-gray-500 mb-3">등록된 숙소가 없습니다</p>
+            <button @click="openAccommodationEditModal()" class="w-full py-2 bg-green-50 text-green-600 rounded-lg text-sm font-semibold hover:bg-green-100 transition-colors">
+              + 추가
+            </button>
+          </div>
+          <div v-else>
+            <div class="space-y-2 mb-3">
+              <div v-for="acc in trip.accommodations" :key="acc.id" class="border border-gray-200 rounded-lg p-3 hover:border-green-300 hover:shadow-sm cursor-pointer transition-all">
+                <div @click="openAccommodationDetailModal(acc)" class="flex items-start gap-2">
+                  <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-sm text-gray-900 truncate">{{ acc.name }}</p>
+                    <p v-if="acc.address" class="text-xs text-gray-500 mt-0.5 truncate">{{ acc.address }}</p>
+                  </div>
+                  <button @click.stop="deleteAccommodationFromList(acc.id)" class="p-1 text-gray-400 hover:text-red-500 rounded">
+                    <Trash2Icon class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button @click="openAccommodationEditModal()" class="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:border-green-400 hover:text-green-600 transition-colors">
+              + 추가
+            </button>
+          </div>
+        </section>
+      </div>
 
       <!-- 일정 -->
-      <section class="bg-white rounded-lg shadow p-4">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold">일정</h2>
-          <button @click="openItineraryModal()" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">+ 추가</button>
+      <section class="bg-white rounded-2xl shadow-md p-5">
+        <div class="flex justify-between items-center mb-5">
+          <h2 class="text-xl font-bold text-gray-900">일정</h2>
         </div>
-        <div v-if="groupedItinerary.length === 0" class="text-center py-8 text-gray-500">등록된 일정이 없습니다.</div>
+
+        <div v-if="groupedItinerary.length === 0" class="text-center py-12">
+          <div class="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+            <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <p class="text-gray-500 font-medium mb-4">등록된 일정이 없습니다</p>
+          <button @click="openItineraryModal()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-500 text-white rounded-full font-semibold hover:shadow-lg transition-shadow">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            첫 일정 추가
+          </button>
+        </div>
+
         <div v-else class="space-y-6">
           <div v-for="dayGroup in groupedItinerary" :key="dayGroup.dayNumber">
-            <h3 class="text-md font-semibold mb-2 pb-1 border-b">{{ dayGroup.dayNumber }}일차</h3>
-            <div class="space-y-3">
-              <div 
-                v-for="item in dayGroup.items" 
-                :key="item.id" 
-                class="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-all flex justify-between items-center"
-                :class="{ 'border-blue-500 border-2 shadow-md': currentItineraryItemId === item.id }">
-                <div @click="openItineraryDetailModal(item)" class="flex-grow">
-                  <p class="font-medium">{{ item.locationName }}</p>
-                  <p v-if="item.startTime" class="text-sm text-gray-500 mt-1">{{ item.startTime.substring(0, 5) }} - {{ item.endTime.substring(0, 5) }}</p>
+            <!-- Day Header -->
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-bold text-gray-900">Day {{ dayGroup.dayNumber }}</h3>
+              <span class="text-sm text-gray-500">{{ dayGroup.items.length }}개 일정</span>
+            </div>
+
+            <!-- Itinerary Items -->
+            <div class="space-y-3 mb-4">
+              <div
+                v-for="item in dayGroup.items"
+                :key="item.id"
+                class="group relative bg-white border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-md cursor-pointer transition-all"
+                :class="{ 'border-blue-500 border-2 shadow-lg': currentItineraryItemId === item.id }">
+                <div @click="openItineraryDetailModal(item)" class="flex gap-3">
+                  <!-- Category Icon -->
+                  <div class="flex-shrink-0 w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+
+                  <!-- Content -->
+                  <div class="flex-1 min-w-0">
+                    <p class="font-bold text-gray-900 mb-1">{{ item.locationName }}</p>
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span v-if="item.startTime">{{ item.startTime.substring(0, 5) }} - {{ item.endTime.substring(0, 5) }}</span>
+                      <span v-else>시간 미정</span>
+                    </div>
+                  </div>
+
+                  <!-- Delete Button -->
+                  <button @click.stop="deleteItineraryItemFromList(item.id)" class="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                    <Trash2Icon class="w-5 h-5" />
+                  </button>
                 </div>
-                <button @click.stop="deleteItineraryItemFromList(item.id)" class="p-2 text-red-500 hover:text-red-700 rounded-full">
-                  <Trash2Icon class="w-5 h-5" />
-                </button>
               </div>
+            </div>
+
+            <!-- Add Place/Memo Buttons -->
+            <div class="flex gap-3">
+              <button @click="openItineraryModal(null, dayGroup.dayNumber)" class="flex-1 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 font-medium hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
+                + 장소 추가
+              </button>
+              <button @click="openDayNoteModal(dayGroup.dayNumber)" class="flex-1 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 font-medium hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-all">
+                + 메모 추가
+              </button>
             </div>
           </div>
         </div>
@@ -220,13 +333,14 @@
     />
 
     <!-- Kakao Map Search Modal -->
-    <KakaoMapSearchModal 
-      :is-open="isKakaoMapSearchModalOpen" 
+    <KakaoMapSearchModal
+      :is-open="isKakaoMapSearchModalOpen"
       @update:is-open="isKakaoMapSearchModalOpen = $event"
       @select-place="handleKakaoPlaceSelection"
       :initial-location="currentKakaoSearchInitialLocation"
     />
 
+    </div>
   </div>
 </template>
 
@@ -314,8 +428,27 @@ onMounted(async () => {
 async function loadTrip() {
   loading.value = true
   try {
-    const response = await apiClient.get(`/personal-trips/${tripId.value}`)
-    trip.value = response.data
+    // 새 여행 생성 모드 (tripId가 없을 때)
+    if (!tripId.value) {
+      trip.value = {
+        title: '새 여행',
+        description: '',
+        startDate: '',
+        endDate: '',
+        destination: '',
+        countryCode: '',
+        flights: [],
+        accommodations: [],
+        itineraryItems: []
+      }
+      // 새 여행 생성 시 바로 여행 정보 입력 모달 열기
+      await nextTick()
+      openTripInfoModal()
+    } else {
+      // 기존 여행 조회 모드
+      const response = await apiClient.get(`/personal-trips/${tripId.value}`)
+      trip.value = response.data
+    }
   } catch (error) {
     console.error('Failed to load trip:', error)
     alert('여행 정보를 불러오는 데 실패했습니다.')
@@ -331,14 +464,29 @@ function openTripInfoModal() {
   countryCity.value = { destination: trip.value.destination, countryCode: trip.value.countryCode }
   isTripInfoModalOpen.value = true
 }
-function closeTripInfoModal() { isTripInfoModalOpen.value = false }
+function closeTripInfoModal() {
+  isTripInfoModalOpen.value = false
+  // 새 여행 생성 모드에서 모달을 닫으면 목록으로 돌아가기
+  if (!tripId.value && !trip.value.id) {
+    router.push('/trips')
+  }
+}
 async function saveTripInfo() {
   tripData.value.destination = countryCity.value.destination
   tripData.value.countryCode = countryCity.value.countryCode
-  
+
   try {
-    await apiClient.put(`/personal-trips/${tripId.value}`, tripData.value)
-    await loadTrip()
+    if (!tripId.value) {
+      // 새 여행 생성
+      const response = await apiClient.post('/personal-trips', tripData.value)
+      const newTripId = response.data.id
+      // 새로 생성된 여행 페이지로 이동
+      router.push(`/trips/${newTripId}`)
+    } else {
+      // 기존 여행 수정
+      await apiClient.put(`/personal-trips/${tripId.value}`, tripData.value)
+      await loadTrip()
+    }
     closeTripInfoModal()
   } catch (error) {
     console.error('Failed to save trip info:', error)
@@ -479,20 +627,36 @@ const currentItineraryItemId = computed(() => {
   return null
 })
 
-function openItineraryModal(item = null) {
+function openItineraryModal(item = null, dayNumber = null) {
   editingItineraryItem.value = item
-  itineraryItemData.value = item ? { 
-    locationName: item.locationName, 
-    address: item.address, 
-    latitude: item.latitude, 
-    longitude: item.longitude, 
+  itineraryItemData.value = item ? {
+    locationName: item.locationName,
+    address: item.address,
+    latitude: item.latitude,
+    longitude: item.longitude,
     googlePlaceId: item.googlePlaceId,
     kakaoPlaceId: item.kakaoPlaceId,
     startTime: item.startTime,
     endTime: item.endTime,
     notes: item.notes,
     dayNumber: item.dayNumber
-  } : { locationName: '', address: '', latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null, dayNumber: 1 }
+  } : { locationName: '', address: '', latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null, dayNumber: dayNumber || 1 }
+  isItineraryModalOpen.value = true
+}
+
+function openDayNoteModal(dayNumber) {
+  // 메모 타입의 일정 아이템 생성 (장소 없는 메모)
+  itineraryItemData.value = {
+    locationName: '메모',
+    address: '',
+    latitude: null,
+    longitude: null,
+    googlePlaceId: null,
+    kakaoPlaceId: null,
+    dayNumber: dayNumber,
+    notes: ''
+  }
+  editingItineraryItem.value = null
   isItineraryModalOpen.value = true
 }
 function closeItineraryModal() { isItineraryModalOpen.value = false }
