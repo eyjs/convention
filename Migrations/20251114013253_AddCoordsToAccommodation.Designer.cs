@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalRAG.Migrations
 {
     [DbContext(typeof(ConventionDbContext))]
-    [Migration("20251113054433_AddCoordsToAccommodation")]
+    [Migration("20251114013253_AddCoordsToAccommodation")]
     partial class AddCoordsToAccommodation
     {
         /// <inheritdoc />

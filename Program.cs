@@ -239,22 +239,25 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 // CORS를 HTTPS 리다이렉션보다 먼저 설정
 app.UseCors("AllowSPA");
 
-// 개발 환경에서는 HTTPS 리다이렉션 비활성화
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
+// // 개발 환경에서는 HTTPS 리다이렉션 비활성화 (현재 임시로 전체 주석 처리)
+// if (!app.Environment.IsDevelopment())
+// {
+//     app.UseHttpsRedirection();
+// }
 
 // 정적 파일 서비스 설정
 app.UseStaticFiles(); // wwwroot 폴더
 
-// 업로드된 파일 서비스 설정 (d:\home 폴더)
-app.UseStaticFiles(new StaticFileOptions
+// 업로드된 파일 서비스 설정
+var fileUploadPath = builder.Configuration.GetValue<string>("StorageSettings:FileUploadPath");
+if (!string.IsNullOrEmpty(fileUploadPath) && Directory.Exists(fileUploadPath))
 {
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
-        Path.Combine("d:", "home")),
-    RequestPath = "/uploads"
-});
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(fileUploadPath),
+        RequestPath = "/uploads"
+    });
+}
 
 app.UseSession();  // 세션 미들웨어 추가
 
