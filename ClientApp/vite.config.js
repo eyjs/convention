@@ -32,12 +32,7 @@ export default defineConfig({
     sourcemap: false,
     minify: 'terser',
     rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['vue', 'vue-router', 'pinia'],
-          utils: ['axios', 'date-fns', 'lucide-vue-next'],
-        },
-      },
+      output: {},
     },
   },
   css: {
