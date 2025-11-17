@@ -18,11 +18,42 @@ public class AdminController : ControllerBase
 {
     private readonly ConventionDbContext _context;
     private readonly IAuthService _authService;
+    private readonly IFileUploadService _fileUploadService;
 
-    public AdminController(ConventionDbContext context, IAuthService authService)
+    public AdminController(ConventionDbContext context, IAuthService authService, IFileUploadService fileUploadService)
     {
         _context = context;
         _authService = authService;
+        _fileUploadService = fileUploadService;
+    }
+
+    [HttpPost("conventions/upload-cover-image")]
+    public async Task<IActionResult> UploadConventionCoverImage(IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "파일이 제공되지 않았습니다." });
+
+            var uploadResult = await _fileUploadService.UploadImageAsync(file, "convention-covers");
+
+            if (string.IsNullOrEmpty(uploadResult.Url))
+            {
+                return StatusCode(500, new { message = "커버 이미지 업로드에 실패했습니다." });
+            }
+
+            return Ok(new { url = uploadResult.Url });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            // In a real app, use a logger here
+            Console.WriteLine($"Convention cover image upload failed: {ex}");
+            return StatusCode(500, new { message = "이미지 업로드 중 오류가 발생했습니다.", error = ex.Message });
+        }
     }
 
     [HttpGet("conventions/{conventionId}/stats")]

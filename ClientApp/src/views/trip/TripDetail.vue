@@ -499,7 +499,7 @@ async function loadTrip() {
       openTripInfoModal()
     } else {
       // 기존 여행 조회 모드
-      const response = await apiClient.get(`/personal-trips/${tripId.value}`)
+      const response = await apiClient.get(`/personal-trips/${tripId.value}?_=${new Date().getTime()}`)
       trip.value = response.data
     }
   } catch (error) {

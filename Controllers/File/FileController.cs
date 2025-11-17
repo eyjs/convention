@@ -180,8 +180,29 @@ public class FileController : ControllerBase
 #pragma warning disable CA1416 // Validate platform compatibility
     public IActionResult GetImage(string year, string dayOfYear, string fileName, [FromQuery] string? resize = null)
     {
+        return GetImageInternal(null, year, dayOfYear, fileName, resize);
+    }
+
+    [HttpGet("viewer/{dateFolder}/{year}/{dayOfYear}/{fileName}")]
+    public IActionResult GetImageWithDateFolder(string dateFolder, string year, string dayOfYear, string fileName, [FromQuery] string? resize = null)
+    {
+        return GetImageInternal(dateFolder, year, dayOfYear, fileName, resize);
+    }
+
+    private IActionResult GetImageInternal(string? dateFolder, string year, string dayOfYear, string fileName, string? resize)
+    {
         var basePath = _fileUploadService.GetUploadBasePath();
-        var filePath = Path.Combine(basePath, year, dayOfYear, fileName);
+        
+        var pathSegments = new List<string> { basePath };
+        if (!string.IsNullOrEmpty(dateFolder))
+        {
+            pathSegments.Add(dateFolder);
+        }
+        pathSegments.Add(year);
+        pathSegments.Add(dayOfYear);
+        pathSegments.Add(fileName);
+
+        var filePath = Path.Combine(pathSegments.ToArray());
 
         if (!global::System.IO.File.Exists(filePath))
         {

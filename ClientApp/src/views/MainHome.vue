@@ -165,15 +165,21 @@
               @click="goToConvention(convention)"
               class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group">
               <!-- 상단 이미지 영역 -->
-              <div class="relative h-[200px] bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500 overflow-hidden">
-                <div class="absolute inset-0 flex items-center justify-center">
-                  <svg class="w-20 h-20 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
+              <div class="relative h-[200px] overflow-hidden">
+                <div v-if="convention.conventionImg" 
+                     class="absolute inset-0 bg-cover bg-center"
+                     :style="{ backgroundImage: `url(${convention.conventionImg})` }">
                 </div>
-                <!-- Decorative elements -->
-                <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+                <div v-else class="absolute inset-0 bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <svg class="w-20 h-20 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                  <!-- Decorative elements -->
+                  <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+                  <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+                </div>
               </div>
 
               <!-- 카드 정보 -->

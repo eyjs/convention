@@ -20,9 +20,9 @@ public class FileUploadService : IFileUploadService
         _logger = logger;
         _environment = environment;
         
-        // appsettings.json에서 업로드 경로 읽기 (기본값: D:\Home)
-        _uploadBasePath = configuration["FileUpload:BasePath"] ?? "D:\\Home";
-        _baseUrl = configuration["FileUpload:BaseUrl"] ?? "/uploads";
+        // appsettings.json에서 업로드 경로 읽기
+        _uploadBasePath = configuration["StorageSettings:FileUploadPath"] ?? throw new InvalidOperationException("StorageSettings:FileUploadPath is not configured.");
+        _baseUrl = "/api/file/viewer"; // BaseUrl을 뷰어 엔드포인트로 고정
         
         // 디렉토리가 없으면 생성
         if (!Directory.Exists(_uploadBasePath))
@@ -40,11 +40,18 @@ public class FileUploadService : IFileUploadService
         // 파일 검증
         ValidateImageFile(file);
 
-        // 날짜 폴더 생성 (YYYY/1~365)
         var year = DateTime.Now.Year.ToString();
         var dayOfYear = DateTime.Now.DayOfYear.ToString();
-        var folderPath = Path.Combine(year, dayOfYear);
-        var uploadPath = Path.Combine(_uploadBasePath, folderPath);
+        
+        var pathSegments = new List<string> { _uploadBasePath };
+        if (!string.IsNullOrEmpty(dateFolder))
+        {
+            pathSegments.Add(dateFolder);
+        }
+        pathSegments.Add(year);
+        pathSegments.Add(dayOfYear);
+        
+        var uploadPath = Path.Combine(pathSegments.ToArray());
         
         if (!Directory.Exists(uploadPath))
         {
@@ -62,8 +69,11 @@ public class FileUploadService : IFileUploadService
         }
 
         // 상대 경로 및 URL 생성
-        var relativePath = $"{year}/{dayOfYear}/{fileName}";
-        var url = $"/api/file/viewer/{year}/{dayOfYear}/{fileName}";
+        var relativePath = !string.IsNullOrEmpty(dateFolder)
+            ? $"{dateFolder}/{year}/{dayOfYear}/{fileName}"
+            : $"{year}/{dayOfYear}/{fileName}";
+        
+        var url = $"{_baseUrl}/{relativePath}";
 
         _logger.LogInformation("Image uploaded: {FileName} -> {Path}", file.FileName, filePath);
 
@@ -85,8 +95,16 @@ public class FileUploadService : IFileUploadService
 
         var year = DateTime.Now.Year.ToString();
         var dayOfYear = DateTime.Now.DayOfYear.ToString();
-        var folderPath = Path.Combine(year, dayOfYear);
-        var uploadPath = Path.Combine(_uploadBasePath, folderPath);
+
+        var pathSegments = new List<string> { _uploadBasePath };
+        if (!string.IsNullOrEmpty(dateFolder))
+        {
+            pathSegments.Add(dateFolder);
+        }
+        pathSegments.Add(year);
+        pathSegments.Add(dayOfYear);
+
+        var uploadPath = Path.Combine(pathSegments.ToArray());
         
         if (!Directory.Exists(uploadPath))
         {
@@ -101,8 +119,11 @@ public class FileUploadService : IFileUploadService
             await file.CopyToAsync(stream);
         }
 
-        var relativePath = $"{year}/{dayOfYear}/{fileName}";
-        var url = $"/api/file/viewer/{year}/{dayOfYear}/{fileName}";
+        var relativePath = !string.IsNullOrEmpty(dateFolder)
+            ? $"{dateFolder}/{year}/{dayOfYear}/{fileName}"
+            : $"{year}/{dayOfYear}/{fileName}";
+            
+        var url = $"{_baseUrl}/{relativePath}";
 
         _logger.LogInformation("File uploaded: {FileName} -> {Path}", file.FileName, filePath);
 
@@ -139,8 +160,16 @@ public class FileUploadService : IFileUploadService
 
             var year = DateTime.Now.Year.ToString();
             var dayOfYear = DateTime.Now.DayOfYear.ToString();
-            var folderPath = Path.Combine(year, dayOfYear);
-            var uploadPath = Path.Combine(_uploadBasePath, folderPath);
+
+            var pathSegments = new List<string> { _uploadBasePath };
+            if (!string.IsNullOrEmpty(dateFolder))
+            {
+                pathSegments.Add(dateFolder);
+            }
+            pathSegments.Add(year);
+            pathSegments.Add(dayOfYear);
+            
+            var uploadPath = Path.Combine(pathSegments.ToArray());
             
             if (!Directory.Exists(uploadPath))
             {
@@ -153,8 +182,11 @@ public class FileUploadService : IFileUploadService
             // 파일 저장
             await System.IO.File.WriteAllBytesAsync(filePath, fileBytes);
 
-            var relativePath = $"{year}/{dayOfYear}/{newFileName}";
-            var url = $"/api/file/viewer/{year}/{dayOfYear}/{newFileName}";
+            var relativePath = !string.IsNullOrEmpty(dateFolder)
+                ? $"{dateFolder}/{year}/{dayOfYear}/{newFileName}"
+                : $"{year}/{dayOfYear}/{newFileName}";
+
+            var url = $"{_baseUrl}/{relativePath}";
 
             _logger.LogInformation("Base64 image uploaded: {FileName} -> {Path}", fileName, filePath);
 

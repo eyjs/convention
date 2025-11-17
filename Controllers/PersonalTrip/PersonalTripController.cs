@@ -13,11 +13,19 @@ namespace LocalRAG.Controllers.PersonalTrip
     {
         private readonly IPersonalTripService _personalTripService;
         private readonly IWebHostEnvironment _environment;
+        private readonly IConfiguration _configuration;
+        private readonly IFileUploadService _fileUploadService;
 
-        public PersonalTripController(IPersonalTripService personalTripService, IWebHostEnvironment environment)
+        public PersonalTripController(
+            IPersonalTripService personalTripService, 
+            IWebHostEnvironment environment, 
+            IConfiguration configuration,
+            IFileUploadService fileUploadService)
         {
             _personalTripService = personalTripService;
             _environment = environment;
+            _configuration = configuration;
+            _fileUploadService = fileUploadService;
         }
 
         private int GetCurrentUserId()
@@ -148,43 +156,28 @@ namespace LocalRAG.Controllers.PersonalTrip
         {
             try
             {
-                // 파일 유효성 검사
                 if (file == null || file.Length == 0)
                     return BadRequest(new { message = "파일이 제공되지 않았습니다." });
 
-                // 파일 크기 제한 (5MB)
-                const long maxFileSize = 5 * 1024 * 1024;
-                if (file.Length > maxFileSize)
-                    return BadRequest(new { message = "파일 크기는 5MB를 초과할 수 없습니다." });
+                // 공용 파일 업로드 서비스 사용
+                var uploadResult = await _fileUploadService.UploadImageAsync(file, "trip-covers");
 
-                // 파일 타입 검사
-                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                if (!allowedExtensions.Contains(fileExtension))
-                    return BadRequest(new { message = "지원하지 않는 파일 형식입니다. (jpg, jpeg, png, gif, webp만 가능)" });
-
-                // 업로드 디렉토리 생성
-                var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "trip-covers");
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
-
-                // 고유한 파일명 생성
-                var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                // 파일 저장
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                if (string.IsNullOrEmpty(uploadResult.Url))
                 {
-                    await file.CopyToAsync(stream);
+                    return StatusCode(500, new { message = "커버 이미지 업로드에 실패했습니다." });
                 }
 
-                // URL 반환
-                var fileUrl = $"/uploads/trip-covers/{uniqueFileName}";
-                return Ok(new { url = fileUrl });
+                return Ok(new { url = uploadResult.Url });
+            }
+            catch (InvalidOperationException ex) // 파일 검증 실패 시
+            {
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "이미지 업로드에 실패했습니다.", error = ex.Message });
+                // _logger가 없으므로 Console.WriteLine 사용 또는 로거 주입 필요
+                Console.WriteLine($"Cover image upload failed: {ex}");
+                return StatusCode(500, new { message = "이미지 업로드 중 오류가 발생했습니다.", error = ex.Message });
             }
         }
 

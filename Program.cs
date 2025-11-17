@@ -248,17 +248,6 @@ app.UseCors("AllowSPA");
 // 정적 파일 서비스 설정
 app.UseStaticFiles(); // wwwroot 폴더
 
-// 업로드된 파일 서비스 설정
-var fileUploadPath = builder.Configuration.GetValue<string>("StorageSettings:FileUploadPath");
-if (!string.IsNullOrEmpty(fileUploadPath) && Directory.Exists(fileUploadPath))
-{
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(fileUploadPath),
-        RequestPath = "/uploads"
-    });
-}
-
 app.UseSession();  // 세션 미들웨어 추가
 
 app.UseAuthentication();

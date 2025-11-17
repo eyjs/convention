@@ -46,8 +46,9 @@
             <!-- 카드 헤더 (이미지 영역) -->
             <div class="relative h-40 overflow-hidden">
               <!-- 사용자 업로드 이미지 또는 기본 그라데이션 -->
-              <div v-if="trip.coverImageUrl" class="absolute inset-0">
-                <img :src="trip.coverImageUrl" :alt="trip.title" class="w-full h-full object-cover" />
+              <div v-if="trip.coverImageUrl" 
+                   class="absolute inset-0 bg-cover bg-center"
+                   :style="{ backgroundImage: `url(${trip.coverImageUrl})` }">
               </div>
               <div v-else class="absolute inset-0 bg-gradient-to-br from-cyan-500 via-teal-500 to-blue-600">
                 <div class="absolute inset-0 flex items-center justify-center">
@@ -126,7 +127,7 @@ const trips = ref([])
 async function loadTrips() {
   loading.value = true
   try {
-    const response = await apiClient.get('/personal-trips')
+    const response = await apiClient.get(`/personal-trips?_=${new Date().getTime()}`)
     trips.value = response.data
   } catch (error) {
     console.error('여행 목록 로드 실패:', error)
