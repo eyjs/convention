@@ -66,25 +66,23 @@ public class UserUploadService : IUserUploadService
             {
                 for (int row = 2; row <= rowCount; row++) // 1행은 헤더
                 {
-                    var affiliation = sheet.Cells[row, 1].Text?.Trim();
-                    var corpPart = sheet.Cells[row, 2].Text?.Trim();
+                    // A열은 무시
+                    var corpPart = sheet.Cells[row, 2].Text?.Trim(); // B열: 부서 -> 소속(Affiliation)으로 사용
                     var userName = sheet.Cells[row, 3].Text?.Trim();
                     var residentNumber = sheet.Cells[row, 4].Text?.Trim();
                     var telephone = sheet.Cells[row, 5].Text?.Trim();
-                    var groupName = sheet.Cells[row, 6].Text?.Trim();
+                    // F열(6)은 그룹 정보였으나, 이제 사용하지 않음
+                    var remarks = sheet.Cells[row, 7].Text?.Trim(); // G열(7): 비고
 
-                    // 필수값 검증 (이름, 그룹만 필수)
+                    // 필수값 검증 (이름만 필수)
                     if (string.IsNullOrEmpty(userName))
                     {
                         result.Warnings.Add($"Row {row}: 이름이 비어있습니다. 건너뜁니다.");
                         continue;
                     }
 
-                    if (string.IsNullOrEmpty(groupName))
-                    {
-                        result.Warnings.Add($"Row {row}: 그룹명이 비어있습니다. 건너뜁니다.");
-                        continue;
-                    }
+                    // 그룹명은 이제 엑셀에서 읽지 않으므로 null로 설정
+                    string? groupName = null;
 
                     // 전화번호 검증 및 포맷팅 (선택사항)
                     string? formattedPhone = null;
@@ -120,29 +118,20 @@ public class UserUploadService : IUserUploadService
                     result.TotalProcessed++;
 
                     // 기존 User 찾기
-                    // 1순위: 이름 + 전화번호 매칭
-                    // 2순위: 이름 + 주민번호 매칭
-                    // 3순위: 전화번호/주민번호 둘 다 없으면 신규 생성
                     User? existingUser = null;
 
                     if (!string.IsNullOrEmpty(normalizedPhone))
                     {
-                        // 전화번호로 매칭
                         var usersByPhone = await _unitOfWork.Users
-                            .FindAsync(u => u.Name == userName &&
-                                           !string.IsNullOrEmpty(u.Phone));
-
+                            .FindAsync(u => u.Name == userName && !string.IsNullOrEmpty(u.Phone));
                         existingUser = usersByPhone.FirstOrDefault(u =>
                             PhoneNumberFormatter.Normalize(u.Phone) == normalizedPhone);
                     }
 
                     if (existingUser == null && !string.IsNullOrEmpty(formattedResidentNumber))
                     {
-                        // 주민번호로 매칭
                         var usersByResident = await _unitOfWork.Users
-                            .FindAsync(u => u.Name == userName &&
-                                           !string.IsNullOrEmpty(u.ResidentNumber));
-
+                            .FindAsync(u => u.Name == userName && !string.IsNullOrEmpty(u.ResidentNumber));
                         existingUser = usersByResident.FirstOrDefault(u =>
                             PhoneNumberFormatter.Normalize(u.ResidentNumber ?? "") ==
                             PhoneNumberFormatter.Normalize(formattedResidentNumber));
@@ -150,42 +139,38 @@ public class UserUploadService : IUserUploadService
 
                     if (existingUser != null)
                     {
-                        // User 정보 업데이트 (포맷팅된 값으로 저장)
+                        // User 정보 업데이트
                         existingUser.Name = userName;
                         existingUser.Phone = formattedPhone;
-                        existingUser.Affiliation = affiliation;
+                        existingUser.Affiliation = corpPart; // B열(부서)을 소속으로 업데이트
                         existingUser.CorpPart = corpPart;
                         existingUser.ResidentNumber = formattedResidentNumber;
+                        existingUser.Remarks = remarks; // G열(비고)을 Remarks 필드에 저장
                         existingUser.UpdatedAt = DateTime.UtcNow;
 
                         _unitOfWork.Users.Update(existingUser);
 
-                        // UserConvention 존재 확인
-                        var existingUserConventions = await _unitOfWork.UserConventions
-                            .FindAsync(uc => uc.UserId == existingUser.Id && uc.ConventionId == conventionId);
-
-                        var existingUserConvention = existingUserConventions.FirstOrDefault();
+                        // UserConvention 존재 확인 및 처리
+                        var existingUserConvention = (await _unitOfWork.UserConventions
+                            .FindAsync(uc => uc.UserId == existingUser.Id && uc.ConventionId == conventionId))
+                            .FirstOrDefault();
 
                         if (existingUserConvention != null)
                         {
-                            // UserConvention 업데이트
-                            existingUserConvention.GroupName = groupName;
+                            existingUserConvention.GroupName = groupName; // null로 설정
                             _unitOfWork.UserConventions.Update(existingUserConvention);
                             result.UsersUpdated++;
                         }
                         else
                         {
-                            // UserConvention 생성
-                            var newUserConvention = new Entities.UserConvention
+                            await _unitOfWork.UserConventions.AddAsync(new UserConvention
                             {
                                 UserId = existingUser.Id,
                                 ConventionId = conventionId,
-                                GroupName = groupName,
+                                GroupName = groupName, // null
                                 AccessToken = Guid.NewGuid().ToString("N"),
                                 CreatedAt = DateTime.UtcNow
-                            };
-
-                            await _unitOfWork.UserConventions.AddAsync(newUserConvention);
+                            });
                             result.UsersCreated++;
                         }
 
@@ -193,46 +178,42 @@ public class UserUploadService : IUserUploadService
                     }
                     else
                     {
-                        // LoginId 중복 체크 및 생성
+                        // 신규 User 생성
                         var baseLoginId = userName;
                         var loginId = baseLoginId;
                         var suffix = 2;
-
-                        // LoginId 중복 체크 (이름, 이름_2, 이름_3... 형태로 생성)
                         while (await _unitOfWork.Users.FindAsync(u => u.LoginId == loginId).ContinueWith(t => t.Result.Any()))
                         {
                             loginId = $"{baseLoginId}_{suffix}";
                             suffix++;
                         }
 
-                        // 신규 User 및 UserConvention 생성 (포맷팅된 값으로 저장)
-                        var newUser = new Entities.User
+                        var newUser = new User
                         {
-                            LoginId = loginId, // 이름 기반 LoginId
-                            PasswordHash = BCrypt.Net.BCrypt.HashPassword("1111"), // 기본 비밀번호 '1111' 해싱
+                            LoginId = loginId,
+                            PasswordHash = BCrypt.Net.BCrypt.HashPassword("1111"),
                             Name = userName,
-                            Phone = formattedPhone, // 포맷팅된 전화번호 저장 (010-XXXX-XXXX)
+                            Phone = formattedPhone,
                             Role = "Guest",
-                            Affiliation = affiliation,
+                            Affiliation = corpPart, // B열(부서)을 소속으로 저장
                             CorpPart = corpPart,
-                            ResidentNumber = formattedResidentNumber, // 포맷팅된 주민번호 저장 (XXXXXX-XXXXXXX)
+                            ResidentNumber = formattedResidentNumber,
+                            Remarks = remarks, // G열(비고)을 Remarks 필드에 저장
                             IsActive = true,
                             CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        };
-
-                        // UserConvention을 User의 네비게이션 속성에 추가 (EF Core가 자동으로 관계 설정)
-                        newUser.UserConventions = new List<Entities.UserConvention>
-                        {
-                            new Entities.UserConvention
+                            UpdatedAt = DateTime.UtcNow,
+                            UserConventions = new List<UserConvention>
                             {
-                                ConventionId = conventionId,
-                                GroupName = groupName,
-                                AccessToken = Guid.NewGuid().ToString("N"),
-                                CreatedAt = DateTime.UtcNow
+                                new UserConvention
+                                {
+                                    ConventionId = conventionId,
+                                    GroupName = groupName, // null
+                                    AccessToken = Guid.NewGuid().ToString("N"),
+                                    CreatedAt = DateTime.UtcNow
+                                }
                             }
                         };
-
+                        
                         await _unitOfWork.Users.AddAsync(newUser);
                         result.UsersCreated++;
 

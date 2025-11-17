@@ -61,6 +61,12 @@ public class User
     public string? CorpPart { get; set; }
 
     /// <summary>
+    /// 비고 (관리자용 메모)
+    /// </summary>
+    [MaxLength(500)]
+    public string? Remarks { get; set; }
+
+    /// <summary>
     /// 주민등록번호 (앞 6자리 또는 전체, 암호화 권장)
     /// </summary>
     [MaxLength(50)]
