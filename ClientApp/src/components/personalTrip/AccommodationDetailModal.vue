@@ -23,16 +23,15 @@
       </div>
     </template>
     <template #footer>
-      <div class="flex justify-end gap-3">
-        <button type="button" @click="editAccommodation" class="btn-secondary">수정</button>
-        <button type="button" @click="closeModal" class="btn-primary">닫기</button>
+      <div class="flex gap-3 w-full">
+        <button type="button" @click="editAccommodation" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">수정</button>
+        <button type="button" @click="closeModal" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">닫기</button>
       </div>
     </template>
   </SlideUpModal>
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import KakaoMap from '@/components/common/KakaoMap.vue'
 import GoogleMapPlaceholder from '@/components/common/GoogleMapPlaceholder.vue'
@@ -76,12 +75,3 @@ const formatDateTime = (dateTimeString) => {
   }
 }
 </script>
-
-<style scoped>
-.btn-primary {
-  @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700;
-}
-.btn-secondary {
-  @apply px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100;
-}
-</style>

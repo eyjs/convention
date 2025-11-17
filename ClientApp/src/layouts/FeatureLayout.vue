@@ -1,5 +1,5 @@
 <template>
-  <div class="feature-layout min-h-screen bg-white">
+  <div class="feature-layout min-h-screen bg-white safe-area-container">
     <header
       class="feature-header sticky top-0 z-10 bg-white border-b border-gray-200"
     >
@@ -55,5 +55,18 @@ const goBack = () => {
 .feature-content {
   flex: 1;
   overflow-y: auto;
+}
+
+/* Safe area support for mobile devices with notches */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-area-container {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .feature-header {
+    padding-top: 0.75rem; /* Reset to original padding since container handles safe area */
+  }
 }
 </style>

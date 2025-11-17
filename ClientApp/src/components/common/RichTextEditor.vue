@@ -16,17 +16,10 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { QuillEditor, Quill } from '@vueup/vue-quill'
-import BlotFormatter from 'quill-blot-formatter'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import apiClient from '@/services/api'
 
-const editorModules = [
-  {
-    name: 'blotFormatter',
-    module: BlotFormatter,
-    options: {},
-  },
-]
+const editorModules = []
 
 const props = defineProps({
   modelValue: { type: String, default: '' },

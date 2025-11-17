@@ -8,13 +8,13 @@
   >
     <template #header-title>{{ popupStore.title }}</template>
     <template #body>
-      <div v-if="popupStore.component" class="p-4">
+      <div v-if="popupStore.component">
         <component :is="popupStore.component" v-bind="popupStore.props" />
       </div>
-      <div v-else-if="popupStore.content" class="p-4 text-gray-700">
+      <div v-else-if="popupStore.content" class="text-gray-700">
         {{ popupStore.content }}
       </div>
-      <div v-else class="p-4 text-gray-500">
+      <div v-else class="text-gray-500">
         <!-- 컴포넌트도 없고 content도 없을 때만 표시 -->
         팝업 내용이 없습니다.
       </div>

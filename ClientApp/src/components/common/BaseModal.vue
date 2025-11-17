@@ -2,26 +2,28 @@
   <Transition name="modal-fade">
     <div
       v-if="isOpen"
-      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end md:items-center z-50 md:p-4"
       @mousedown.self="onMouseDown"
       @mouseup.self="onMouseUp"
+      @touchstart.self="onTouchStart"
+      @touchend.self="onTouchEnd"
     >
       <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+        class="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-h-[90vh] flex flex-col overflow-hidden modal-content"
         :class="maxWidthClass"
       >
         <!-- Header -->
         <header
           v-if="$slots.header"
-          class="px-6 py-4 border-b flex items-center justify-between flex-shrink-0"
+          class="px-4 py-4 md:px-6 md:py-4 border-b flex items-center justify-between flex-shrink-0"
         >
           <slot name="header"></slot>
           <button
             @click="close"
-            class="p-2 hover:bg-gray-100 rounded-lg text-gray-500 flex-shrink-0"
+            class="p-2.5 md:p-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-gray-500 flex-shrink-0 transition-colors"
           >
             <svg
-              class="w-5 h-5"
+              class="w-6 h-6 md:w-5 md:h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -37,14 +39,14 @@
         </header>
 
         <!-- Body -->
-        <main class="p-6 overflow-y-auto overflow-x-hidden flex-1 min-h-0">
+        <main class="p-4 md:p-6 overflow-y-auto overflow-x-hidden flex-1 min-h-0">
           <slot name="body"></slot>
         </main>
 
         <!-- Footer -->
         <footer
           v-if="$slots.footer"
-          class="px-6 py-4 border-t flex justify-end gap-3 flex-shrink-0"
+          class="px-4 py-4 md:px-6 md:py-4 border-t flex justify-end gap-3 flex-shrink-0"
         >
           <slot name="footer"></slot>
         </footer>
@@ -75,6 +77,20 @@ const onMouseDown = (e) => {
 const onMouseUp = (e) => {
   const dx = Math.abs(e.clientX - startPos.value.x)
   const dy = Math.abs(e.clientY - startPos.value.y)
+  if (dx < 5 && dy < 5) {
+    close()
+  }
+}
+
+const onTouchStart = (e) => {
+  const touch = e.touches[0]
+  startPos.value = { x: touch.clientX, y: touch.clientY }
+}
+
+const onTouchEnd = (e) => {
+  const touch = e.changedTouches[0]
+  const dx = Math.abs(touch.clientX - startPos.value.x)
+  const dy = Math.abs(touch.clientY - startPos.value.y)
   if (dx < 5 && dy < 5) {
     close()
   }
@@ -130,13 +146,50 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.25s ease-in-out;
+/* 데스크탑: 페이드 애니메이션 */
+@media (min-width: 768px) {
+  .modal-fade-enter-active,
+  .modal-fade-leave-active {
+    transition: opacity 0.25s ease-in-out;
+  }
+
+  .modal-fade-enter-active .modal-content,
+  .modal-fade-leave-active .modal-content {
+    transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
+  }
+
+  .modal-fade-enter-from,
+  .modal-fade-leave-to {
+    opacity: 0;
+  }
+
+  .modal-fade-enter-from .modal-content,
+  .modal-fade-leave-to .modal-content {
+    transform: scale(0.95);
+    opacity: 0;
+  }
 }
 
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
+/* 모바일: 슬라이드업 애니메이션 */
+@media (max-width: 767px) {
+  .modal-fade-enter-active,
+  .modal-fade-leave-active {
+    transition: opacity 0.3s ease-out;
+  }
+
+  .modal-fade-enter-active .modal-content,
+  .modal-fade-leave-active .modal-content {
+    transition: transform 0.3s ease-out;
+  }
+
+  .modal-fade-enter-from,
+  .modal-fade-leave-to {
+    opacity: 0;
+  }
+
+  .modal-fade-enter-from .modal-content,
+  .modal-fade-leave-to .modal-content {
+    transform: translateY(100%);
+  }
 }
 </style>

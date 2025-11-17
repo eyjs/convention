@@ -23,11 +23,11 @@ const authStore = useAuthStore()
 const uiStore = useUIStore()
 const conventionStore = useConventionStore()
 
-// 전역 키보드 대응 활성화
+// 전역 키보드 대응 비활성화 (네이티브 스크롤 사용)
 const { isKeyboardVisible } = useKeyboardAdjust({
   offset: 20, // 키보드 위 여백 (px)
   duration: 300, // 스크롤 애니메이션 시간 (ms)
-  enabled: true, // 항상 활성화
+  enabled: false, // 비활성화하여 자연스러운 스크롤 유지
 })
 
 onMounted(() => {
@@ -95,5 +95,6 @@ const currentLayout = computed(() => {
 #app {
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for better mobile support */
 }
 </style>

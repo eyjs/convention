@@ -19,7 +19,8 @@
       "Bash(npm run dev:*)",
       "Bash(Select-String \"error\")",
       "Bash(npm run build:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(Test-Path \"wwwroot\")"
     ],
     "deny": [],
     "ask": []

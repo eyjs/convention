@@ -2,11 +2,6 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import Quill from 'quill'
 import 'quill/dist/quill.snow.css'
 import apiClient from '@/services/api'
-import BlotFormatter from 'quill-blot-formatter'
-
-if (!Quill.imports['modules/blotFormatter']) {
-  Quill.register('modules/blotFormatter', BlotFormatter)
-}
 
 /**
  * Quill 에디터 Composable
@@ -52,7 +47,6 @@ export function useQuillEditor(options = {}) {
         // 기타
         ['clean'], // 포맷 제거 버튼
       ],
-      blotFormatter: {}, // Add blotFormatter module
     },
   }
 

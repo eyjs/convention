@@ -16,7 +16,7 @@
 
       <div class="max-w-2xl mx-auto px-4 py-4">
       <!-- 환영 메시지 (Hero Section) -->
-      <div class="relative overflow-hidden bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl shadow-xl p-8 mb-8 text-white">
+      <div class="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
         <div class="relative z-10">
           <h2 class="text-3xl font-bold mb-2">안녕하세요,<br/>{{ userName }}님! ✈️</h2>
           <p class="text-lg text-white/90">다음 여행을 계획해보세요</p>
@@ -28,7 +28,7 @@
 
       <!-- 빠른 액션 -->
       <div class="grid grid-cols-2 gap-4 mb-8">
-        <button @click="goToCreateTrip" class="relative overflow-hidden bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 active:scale-95">
+        <button @click="goToCreateTrip" class="relative overflow-hidden bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 active:scale-95">
           <div class="flex flex-col items-center gap-3 text-white">
             <div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
               <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,7 +40,7 @@
           <div class="absolute -bottom-2 -right-2 w-20 h-20 bg-white/10 rounded-full"></div>
         </button>
 
-        <button @click="goToConventions" class="relative overflow-hidden bg-gradient-to-br from-orange-400 to-rose-500 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 active:scale-95">
+        <button @click="router.push('/')" class="relative overflow-hidden bg-gradient-to-br from-rose-500 to-orange-500 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 active:scale-95">
           <div class="flex flex-col items-center gap-3 text-white">
             <div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
               <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,7 +74,7 @@
           </div>
           <p class="text-gray-600 mb-2 font-medium">아직 여행 계획이 없습니다</p>
           <p class="text-sm text-gray-400 mb-4">첫 여행을 계획해보세요!</p>
-          <button @click="goToCreateTrip" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-semibold hover:shadow-lg transition-shadow">
+          <button @click="goToCreateTrip" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full font-semibold hover:shadow-lg transition-shadow">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -91,20 +91,26 @@
               @click="goToTripDetail(trip.id)"
               class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group">
               <!-- 상단 이미지 영역 (인스타그램 스타일) -->
-              <div class="relative h-[200px] bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 overflow-hidden">
-                <div class="absolute inset-0 flex items-center justify-center">
-                  <svg class="w-20 h-20 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+              <div class="relative h-[200px] overflow-hidden">
+                <!-- 사용자 업로드 이미지 또는 기본 그라데이션 -->
+                <div v-if="trip.coverImageUrl" class="absolute inset-0">
+                  <img :src="trip.coverImageUrl" :alt="trip.title" class="w-full h-full object-cover" />
                 </div>
-                <!-- Decorative elements -->
-                <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+                <div v-else class="absolute inset-0 bg-gradient-to-br from-cyan-500 via-teal-500 to-blue-600">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <svg class="w-20 h-20 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <!-- Decorative elements -->
+                  <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+                  <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+                </div>
               </div>
 
               <!-- 카드 정보 (인스타그램 스타일) -->
               <div class="p-4">
-                <h4 class="font-bold text-gray-900 text-lg mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">{{ trip.title }}</h4>
+                <h4 class="font-bold text-gray-900 text-lg mb-2 line-clamp-1 group-hover:text-cyan-600 transition-colors">{{ trip.title }}</h4>
 
                 <!-- 날짜 -->
                 <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
@@ -159,9 +165,9 @@
               @click="goToConvention(convention)"
               class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group">
               <!-- 상단 이미지 영역 -->
-              <div class="relative h-[200px] bg-gradient-to-br from-orange-400 via-rose-500 to-pink-500 overflow-hidden">
+              <div class="relative h-[200px] bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500 overflow-hidden">
                 <div class="absolute inset-0 flex items-center justify-center">
-                  <svg class="w-20 h-20 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-20 h-20 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
@@ -172,7 +178,7 @@
 
               <!-- 카드 정보 -->
               <div class="p-4">
-                <h4 class="font-bold text-gray-900 text-lg mb-2 line-clamp-1 group-hover:text-orange-600 transition-colors">{{ convention.title }}</h4>
+                <h4 class="font-bold text-gray-900 text-lg mb-2 line-clamp-1 group-hover:text-rose-600 transition-colors">{{ convention.title }}</h4>
 
                 <!-- 날짜 -->
                 <div class="flex items-center gap-2 text-sm text-gray-500">

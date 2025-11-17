@@ -5,15 +5,18 @@ using LocalRAG.Repositories;
 using LocalRAG.Data;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
-using System.Text.RegularExpressions;
 
 namespace LocalRAG.Services.Upload;
 
 /// <summary>
 /// 일정 업로드 서비스
-/// Excel 형식:
-/// - A열: "월/일(요일)_일정명_시:분" (예: "11/03(일)_조식_07:30")
-/// - B열: 상세 내용 (엑셀 내부 줄바꿈 또는 <br/> 태그)
+/// Excel 형식 (2행부터 데이터 시작, 1행은 헤더):
+/// - A열: 날짜 (2025-11-17)
+/// - B열: 시작시간 (09:00)
+/// - C열: 종료시간 (11:30)
+/// - D열: 장소 (호텔로비)
+/// - E열: 일정명 (개인정비)
+/// - F열: 메모 (상세 설명, 여러 줄 가능)
 ///
 /// ScheduleTemplate + ScheduleItem 구조로 저장
 /// 한 번의 업로드 = 하나의 ScheduleTemplate + 여러 ScheduleItems
@@ -94,43 +97,50 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
 
                 for (int row = 2; row <= rowCount; row++) // 1행은 헤더
                 {
-                    var scheduleHeader = sheet.Cells[row, 1].Text?.Trim();
-                    var detailContent = sheet.Cells[row, 2].Value?.ToString(); // Value로 읽어서 줄바꿈 보존
+                    // A~F열 읽기
+                    var dateText = sheet.Cells[row, 1].Text?.Trim(); // A: 날짜 (2025-11-17)
+                    var startTimeText = sheet.Cells[row, 2].Text?.Trim(); // B: 시작시간 (09:00)
+                    var endTimeText = sheet.Cells[row, 3].Text?.Trim(); // C: 종료시간 (11:30)
+                    var locationText = sheet.Cells[row, 4].Text?.Trim(); // D: 장소 (호텔로비)
+                    var titleText = sheet.Cells[row, 5].Text?.Trim(); // E: 일정명 (개인정비)
+                    var memoText = sheet.Cells[row, 6].Value?.ToString(); // F: 메모 (줄바꿈 보존)
 
-                    if (string.IsNullOrEmpty(scheduleHeader))
+                    // 필수 필드 확인 (날짜, 시작시간, 일정명)
+                    if (string.IsNullOrEmpty(dateText) || string.IsNullOrEmpty(startTimeText) || string.IsNullOrEmpty(titleText))
                     {
-                        continue; // 빈 행 건너뛰기
-                    }
+                        // 모든 필드가 비어있으면 빈 행으로 간주하여 건너뛰기
+                        if (string.IsNullOrEmpty(dateText) && string.IsNullOrEmpty(startTimeText) && string.IsNullOrEmpty(titleText))
+                        {
+                            continue;
+                        }
 
-                    // A열 파싱: "11/03(일)_조식_07:30"
-                    var parsed = ParseScheduleHeader(scheduleHeader);
-                    if (parsed == null)
-                    {
-                        result.Warnings.Add($"Row {row}: 일정 헤더 형식이 올바르지 않습니다. ({scheduleHeader})");
+                        result.Warnings.Add($"Row {row}: 필수 항목이 누락되었습니다. (날짜, 시작시간, 일정명은 필수입니다.)");
                         continue;
                     }
 
-                    // B열 처리: 엑셀 내부 줄바꿈(\n)은 그대로 유지
-                    string? processedContent = null;
-                    if (!string.IsNullOrEmpty(detailContent))
-                    {
-                        processedContent = detailContent;
-                    }
-
-                    // DateTime 생성 (현재 연도 사용)
-                    var currentYear = DateTime.Now.Year;
+                    // 날짜 파싱
                     DateTime scheduleDate;
-
                     try
                     {
-                        scheduleDate = new DateTime(
-                            currentYear,
-                            parsed.Month,
-                            parsed.Day);
+                        scheduleDate = DateTime.Parse(dateText);
                     }
-                    catch (ArgumentOutOfRangeException)
+                    catch (FormatException)
                     {
-                        result.Warnings.Add($"Row {row}: 잘못된 날짜/시간입니다. ({parsed.Month}/{parsed.Day} {parsed.Hour}:{parsed.Minute})");
+                        result.Warnings.Add($"Row {row}: 잘못된 날짜 형식입니다. ({dateText}) - 올바른 형식: 2025-11-17");
+                        continue;
+                    }
+
+                    // 시작시간 검증 (HH:mm 형식)
+                    if (!TimeSpan.TryParse(startTimeText, out _))
+                    {
+                        result.Warnings.Add($"Row {row}: 잘못된 시작시간 형식입니다. ({startTimeText}) - 올바른 형식: 09:00");
+                        continue;
+                    }
+
+                    // 종료시간 검증 (선택사항)
+                    if (!string.IsNullOrEmpty(endTimeText) && !TimeSpan.TryParse(endTimeText, out _))
+                    {
+                        result.Warnings.Add($"Row {row}: 잘못된 종료시간 형식입니다. ({endTimeText}) - 올바른 형식: 11:30");
                         continue;
                     }
 
@@ -139,11 +149,11 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                     {
                         ScheduleTemplate = scheduleTemplate, // Navigation property 설정
                         ScheduleDate = scheduleDate,
-                        StartTime = $"{parsed.Hour:D2}:{parsed.Minute:D2}",
-                        EndTime = null, // 종료시간은 별도 지정 가능
-                        Title = parsed.Title,
-                        Content = processedContent,
-                        Location = null,
+                        StartTime = startTimeText,
+                        EndTime = string.IsNullOrEmpty(endTimeText) ? null : endTimeText,
+                        Title = titleText,
+                        Content = memoText,
+                        Location = string.IsNullOrEmpty(locationText) ? null : locationText,
                         OrderNum = itemOrderNum,
                         CreatedAt = DateTime.UtcNow
                     };
@@ -151,7 +161,7 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                     scheduleItems.Add(scheduleItem);
                     itemOrderNum++;
 
-                    _logger.LogDebug("Created schedule item: {Title} at {Date} {Time}", parsed.Title, scheduleDate, scheduleItem.StartTime);
+                    _logger.LogDebug("Created schedule item: {Title} at {Date} {Time}", titleText, scheduleDate, startTimeText);
                 }
 
                 // ScheduleTemplate의 ScheduleItems 컬렉션에 추가
@@ -194,41 +204,5 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
         }
 
         return result;
-    }
-
-    /// <summary>
-    /// 일정 헤더 파싱
-    /// 형식: "월/일(요일)_일정명_시:분" (예: "11/03(일)_조식_07:30")
-    /// </summary>
-    private ScheduleHeaderParsed? ParseScheduleHeader(string header)
-    {
-        // 정규식: "MM/DD(요일)_제목_HH:MM"
-        var pattern = @"(\d{1,2})/(\d{1,2})\((.+?)\)_(.+?)_(\d{1,2}):(\d{2})";
-        var match = Regex.Match(header, pattern);
-
-        if (!match.Success)
-        {
-            return null;
-        }
-
-        return new ScheduleHeaderParsed
-        {
-            Month = int.Parse(match.Groups[1].Value),
-            Day = int.Parse(match.Groups[2].Value),
-            DayOfWeek = match.Groups[3].Value,
-            Title = match.Groups[4].Value.Trim(),
-            Hour = int.Parse(match.Groups[5].Value),
-            Minute = int.Parse(match.Groups[6].Value)
-        };
-    }
-
-    private class ScheduleHeaderParsed
-    {
-        public int Month { get; set; }
-        public int Day { get; set; }
-        public string DayOfWeek { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
-        public int Hour { get; set; }
-        public int Minute { get; set; }
     }
 }

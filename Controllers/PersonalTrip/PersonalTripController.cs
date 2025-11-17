@@ -12,10 +12,12 @@ namespace LocalRAG.Controllers.PersonalTrip
     public class PersonalTripController : ControllerBase
     {
         private readonly IPersonalTripService _personalTripService;
+        private readonly IWebHostEnvironment _environment;
 
-        public PersonalTripController(IPersonalTripService personalTripService)
+        public PersonalTripController(IPersonalTripService personalTripService, IWebHostEnvironment environment)
         {
             _personalTripService = personalTripService;
+            _environment = environment;
         }
 
         private int GetCurrentUserId()
@@ -135,6 +137,54 @@ namespace LocalRAG.Controllers.PersonalTrip
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "여행 삭제에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 여행 커버 이미지 업로드
+        /// </summary>
+        [HttpPost("upload-cover-image")]
+        public async Task<IActionResult> UploadCoverImage([FromForm] IFormFile file)
+        {
+            try
+            {
+                // 파일 유효성 검사
+                if (file == null || file.Length == 0)
+                    return BadRequest(new { message = "파일이 제공되지 않았습니다." });
+
+                // 파일 크기 제한 (5MB)
+                const long maxFileSize = 5 * 1024 * 1024;
+                if (file.Length > maxFileSize)
+                    return BadRequest(new { message = "파일 크기는 5MB를 초과할 수 없습니다." });
+
+                // 파일 타입 검사
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (!allowedExtensions.Contains(fileExtension))
+                    return BadRequest(new { message = "지원하지 않는 파일 형식입니다. (jpg, jpeg, png, gif, webp만 가능)" });
+
+                // 업로드 디렉토리 생성
+                var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "trip-covers");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                // 고유한 파일명 생성
+                var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                // 파일 저장
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                // URL 반환
+                var fileUrl = $"/uploads/trip-covers/{uniqueFileName}";
+                return Ok(new { url = fileUrl });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "이미지 업로드에 실패했습니다.", error = ex.Message });
             }
         }
 

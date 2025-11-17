@@ -1054,7 +1054,20 @@ ALTER TABLE [Accommodations] ADD [Longitude] float NULL;
 GO
 
 INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20251113054433_AddCoordsToAccommodation', N'8.0.8');
+VALUES (N'20251114013253_AddCoordsToAccommodation', N'8.0.8');
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+ALTER TABLE [PersonalTrips] ADD [CoverImageUrl] nvarchar(500) NULL;
+GO
+
+INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20251114084744_AddCoverImageUrlToPersonalTrip', N'8.0.8');
 GO
 
 COMMIT;

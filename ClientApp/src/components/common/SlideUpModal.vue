@@ -12,22 +12,22 @@
       >
         <!-- Header -->
         <header
-          class="relative px-4 py-4 border-b flex items-center justify-between flex-shrink-0"
+          class="relative px-4 py-4 md:px-6 md:py-4 border-b flex items-center justify-between flex-shrink-0"
         >
-          <div class="w-8">
+          <div class="w-8 md:w-10">
             <slot name="header-left"></slot>
           </div>
           <h2
-            class="absolute left-1/2 -translate-x-1/2 text-lg font-bold text-gray-900 text-center truncate px-8"
+            class="absolute left-1/2 -translate-x-1/2 text-lg md:text-xl font-bold text-gray-900 text-center truncate px-8"
           >
             <slot name="header-title"></slot>
           </h2>
           <button
             @click="close"
-            class="p-2 -mr-2 hover:bg-gray-100 rounded-lg z-10 text-gray-500"
+            class="p-2.5 md:p-2 -mr-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg z-10 text-gray-500 transition-colors"
           >
             <svg
-              class="w-5 h-5"
+              class="w-6 h-6 md:w-5 md:h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -43,12 +43,12 @@
         </header>
 
         <!-- Body -->
-        <main class="flex-1 overflow-y-auto p-4">
+        <main class="flex-1 overflow-y-auto p-4 md:p-6">
           <slot name="body"></slot>
         </main>
 
         <!-- Footer -->
-        <footer v-if="$slots.footer" class="px-4 py-4 border-t flex-shrink-0">
+        <footer v-if="$slots.footer" class="px-4 py-4 md:px-6 md:py-4 border-t flex-shrink-0">
           <slot name="footer"></slot>
         </footer>
       </div>

@@ -32,5 +32,8 @@ namespace LocalRAG.DTOs.PersonalTrip
         public double? Latitude { get; set; }
 
         public double? Longitude { get; set; }
+
+        [MaxLength(500)]
+        public string? CoverImageUrl { get; set; }
     }
 }

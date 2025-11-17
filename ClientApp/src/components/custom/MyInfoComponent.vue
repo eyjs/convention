@@ -1,7 +1,7 @@
 <!-- ClientApp/src/components/custom/MyInfoComponent.vue -->
 <template>
-  <div class="space-y-4 p-4">
-    <h3 class="text-xl font-bold text-gray-900">내 정보 상세</h3>
+  <div class="space-y-4">
+    <h3 class="text-lg md:text-xl font-bold text-gray-900">내 정보 상세</h3>
     <p class="text-gray-700">
       이 팝업은 백엔드 설정에 따라 동적으로 로드된 컴포넌트입니다.
     </p>
@@ -15,7 +15,7 @@
       <p class="text-red-500">전달받은 ID (TargetId)가 없습니다.</p>
     </div>
 
-    <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+    <div class="mt-4 p-3 md:p-4 bg-blue-50 rounded-lg">
       <p class="font-semibold text-blue-800">
         현재 로그인 사용자 정보 (AuthStore에서 가져옴):
       </p>
@@ -30,7 +30,7 @@
 
     <button
       @click="closePopup"
-      class="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+      class="mt-4 w-full py-3 px-4 md:py-2 md:px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl md:rounded-lg font-semibold hover:shadow-lg active:scale-95 transition-all"
     >
       닫기
     </button>

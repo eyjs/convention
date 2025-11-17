@@ -44,8 +44,9 @@
         @click.self="closeLoginModal"
       >
         <div
-          class="bg-white rounded-t-3xl shadow-2xl p-8 w-full max-w-md text-center relative"
+          class="bg-white rounded-t-3xl shadow-2xl w-full max-w-md text-center relative max-h-[90vh] overflow-y-auto"
         >
+          <div class="pt-8 pb-8 px-8">
           <button
             @click="closeLoginModal"
             class="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
@@ -53,10 +54,10 @@
             ✕
           </button>
           <h2 class="text-2xl font-bold text-gray-800 mb-2">로그인</h2>
-          <p class="text-sm text-gray-600 mb-6">참가자 전용 로그인</p>
+          <p class="text-sm text-gray-600 mb-4">참가자 전용 로그인</p>
 
           <!-- 탭 -->
-          <div class="flex space-x-2 mb-6 bg-gray-100 p-1 rounded-xl">
+          <div class="flex space-x-2 bg-gray-100 p-1 rounded-xl mb-6">
             <button
               @click="activeTab = 'login'"
               :class="[
@@ -410,6 +411,7 @@
               {{ authStore.loading ? '처리 중...' : '회원가입' }}
             </button>
           </form>
+          </div>
         </div>
       </div>
     </Transition>

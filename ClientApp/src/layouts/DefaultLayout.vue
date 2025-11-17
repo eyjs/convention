@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen min-h-dvh bg-gray-50">
+  <div class="min-h-screen min-h-dvh bg-gray-50 safe-area-container">
     <main :class="{ 'pb-20': showNav }">
       <slot />
     </main>
@@ -176,9 +176,18 @@ function navigateTo(path) {
   }
 }
 
+/* Safe area support for mobile devices with notches */
 @supports (padding: env(safe-area-inset-bottom)) {
   nav {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-area-container {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }
 

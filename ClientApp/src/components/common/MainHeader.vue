@@ -106,4 +106,11 @@ const isSidebarOpen = ref(false)
   opacity: 0;
   transform: translateY(-10px);
 }
+
+/* Safe area support for mobile devices with notches */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .sticky {
+    padding-top: env(safe-area-inset-top);
+  }
+}
 </style>

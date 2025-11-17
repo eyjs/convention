@@ -207,7 +207,7 @@
 
     <!-- Modals -->
     <SlideUpModal :is-open="isTripInfoModalOpen" @close="closeTripInfoModal">
-      <template #header-title>여행 정보 수정</template>
+      <template #header-title>{{ tripId ? '여행 정보 수정' : '여행 정보 입력' }}</template>
       <template #body>
         <form id="trip-info-form" @submit.prevent="saveTripInfo" class="space-y-4">
           <div><label class="block text-sm font-medium text-gray-700 mb-1">여행 제목</label><input v-model="tripData.title" type="text" class="w-full input" /></div>
@@ -220,10 +220,38 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">도시/국가</label>
             <CountryCitySearch v-model="countryCity" />
           </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">커버 이미지</label>
+            <div class="space-y-3">
+              <div v-if="coverImagePreview" class="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
+                <img :src="coverImagePreview" alt="커버 이미지 미리보기" class="w-full h-full object-cover" />
+                <button type="button" @click="removeCoverImage" class="absolute top-2 right-2 p-2.5 bg-red-500 text-white rounded-full hover:bg-red-600 active:scale-95 transition-all shadow-lg">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <label class="block">
+                <input type="file" ref="coverImageInput" @change="handleCoverImageChange" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" class="hidden" />
+                <div class="flex items-center justify-center w-full py-4 px-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors active:scale-95">
+                  <div class="text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-600 font-medium">이미지 선택</p>
+                    <p class="mt-1 text-xs text-gray-500">JPG, PNG, GIF, WebP (최대 5MB)</p>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
         </form>
       </template>
       <template #footer>
-        <div class="flex justify-end gap-3"><button type="button" @click="closeTripInfoModal" class="btn-secondary">취소</button><button type="submit" form="trip-info-form" class="btn-primary">저장</button></div>
+        <div class="flex gap-3 w-full">
+          <button type="button" @click="closeTripInfoModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
+          <button type="submit" form="trip-info-form" :disabled="isUploadingImage" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{{ isUploadingImage ? '업로드 중...' : '저장' }}</button>
+        </div>
       </template>
     </SlideUpModal>
 
@@ -242,9 +270,9 @@
         </form>
        </template>
        <template #footer>
-        <div class="flex justify-between">
-          <button v-if="editingFlight?.id" @click="deleteFlight" type="button" class="btn-danger">삭제</button>
-          <div class="flex gap-3 ml-auto"><button type="button" @click="closeFlightModal" class="btn-secondary">취소</button><button type="submit" form="flight-form" class="btn-primary">저장</button></div>
+        <div class="flex gap-3 w-full">
+          <button type="button" @click="closeFlightModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
+          <button type="submit" form="flight-form" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">저장</button>
         </div>
        </template>
     </SlideUpModal>
@@ -266,9 +294,9 @@
         </form>
       </template>
       <template #footer>
-        <div class="flex justify-between">
-          <button v-if="editingAccommodation?.id" @click="deleteAccommodation" type="button" class="btn-danger">삭제</button>
-          <div class="flex gap-3 ml-auto"><button type="button" @click="closeAccommodationEditModal" class="btn-secondary">취소</button><button type="submit" form="acc-form" class="btn-primary">저장</button></div>
+        <div class="flex gap-3 w-full">
+          <button type="button" @click="closeAccommodationEditModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
+          <button type="submit" form="acc-form" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">저장</button>
         </div>
       </template>
     </SlideUpModal>
@@ -290,9 +318,9 @@
         </form>
       </template>
       <template #footer>
-        <div class="flex justify-between">
-          <button v-if="editingItineraryItem?.id" @click="deleteItineraryItem" type="button" class="btn-danger">삭제</button>
-          <div class="flex gap-3 ml-auto"><button type="button" @click="closeItineraryModal" class="btn-secondary">취소</button><button type="submit" form="itinerary-form" class="btn-primary">저장</button></div>
+        <div class="flex gap-3 w-full">
+          <button type="button" @click="closeItineraryModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
+          <button type="submit" form="itinerary-form" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">저장</button>
         </div>
       </template>
     </SlideUpModal>
@@ -317,9 +345,9 @@
         </div>
       </template>
       <template #footer>
-        <div class="flex justify-end gap-3">
-          <button type="button" @click="editSelectedItinerary" class="btn-secondary">수정</button>
-          <button type="button" @click="closeItineraryDetailModal" class="btn-primary">닫기</button>
+        <div class="flex gap-3 w-full">
+          <button type="button" @click="editSelectedItinerary" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">수정</button>
+          <button type="button" @click="closeItineraryDetailModal" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">닫기</button>
         </div>
       </template>
     </SlideUpModal>
@@ -385,6 +413,12 @@ const countryCity = ref({ destination: '', countryCode: '' })
 const flightData = ref({})
 const accommodationData = ref({ name: '', address: '', postalCode: null, latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null })
 const itineraryItemData = ref({ locationName: '', address: '', latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null })
+
+// Cover image upload
+const coverImageInput = ref(null)
+const coverImageFile = ref(null)
+const coverImagePreview = ref(null)
+const isUploadingImage = ref(false)
 
 // Editing items
 const editingFlight = ref(null)
@@ -462,6 +496,13 @@ async function loadTrip() {
 function openTripInfoModal() {
   tripData.value = { ...trip.value }
   countryCity.value = { destination: trip.value.destination, countryCode: trip.value.countryCode }
+  // 기존 이미지가 있으면 미리보기 설정
+  if (trip.value.coverImageUrl) {
+    coverImagePreview.value = trip.value.coverImageUrl
+  } else {
+    coverImagePreview.value = null
+  }
+  coverImageFile.value = null
   isTripInfoModalOpen.value = true
 }
 function closeTripInfoModal() {
@@ -471,11 +512,103 @@ function closeTripInfoModal() {
     router.push('/trips')
   }
 }
+
+function handleCoverImageChange(event) {
+  const file = event.target.files?.[0]
+  if (!file) {
+    console.log('No file selected')
+    return
+  }
+
+  console.log('File selected:', file.name, file.type, file.size)
+
+  // 파일 크기 체크 (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('파일 크기는 5MB를 초과할 수 없습니다.')
+    if (coverImageInput.value) {
+      coverImageInput.value.value = ''
+    }
+    return
+  }
+
+  // 파일 타입 체크
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    alert('지원하지 않는 파일 형식입니다. (JPG, PNG, GIF, WebP만 가능)')
+    if (coverImageInput.value) {
+      coverImageInput.value.value = ''
+    }
+    return
+  }
+
+  coverImageFile.value = file
+
+  // 미리보기 생성
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    coverImagePreview.value = e.target.result
+    console.log('Preview generated successfully')
+  }
+  reader.onerror = (error) => {
+    console.error('Failed to read file:', error)
+    alert('이미지 파일을 읽는 데 실패했습니다.')
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeCoverImage() {
+  coverImageFile.value = null
+  coverImagePreview.value = null
+  tripData.value.coverImageUrl = null
+  if (coverImageInput.value) {
+    coverImageInput.value.value = ''
+  }
+}
+
+async function uploadCoverImage() {
+  if (!coverImageFile.value) {
+    console.log('No cover image file to upload')
+    return null
+  }
+
+  console.log('Uploading cover image:', coverImageFile.value.name)
+
+  const formData = new FormData()
+  formData.append('file', coverImageFile.value)
+
+  try {
+    isUploadingImage.value = true
+    console.log('Starting upload request...')
+    const response = await apiClient.post('/personal-trips/upload-cover-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    console.log('Upload successful:', response.data)
+    return response.data.url
+  } catch (error) {
+    console.error('Failed to upload cover image:', error)
+    console.error('Error details:', error.response?.data || error.message)
+    alert(`이미지 업로드에 실패했습니다.\n${error.response?.data?.message || error.message}`)
+    return null
+  } finally {
+    isUploadingImage.value = false
+  }
+}
+
 async function saveTripInfo() {
   tripData.value.destination = countryCity.value.destination
   tripData.value.countryCode = countryCity.value.countryCode
 
   try {
+    // 새 이미지 파일이 있으면 업로드
+    if (coverImageFile.value) {
+      const imageUrl = await uploadCoverImage()
+      if (imageUrl) {
+        tripData.value.coverImageUrl = imageUrl
+      }
+    }
+
     if (!tripId.value) {
       // 새 여행 생성
       const response = await apiClient.post('/personal-trips', tripData.value)
@@ -484,8 +617,9 @@ async function saveTripInfo() {
       router.push(`/trips/${newTripId}`)
     } else {
       // 기존 여행 수정
-      await apiClient.put(`/personal-trips/${tripId.value}`, tripData.value)
-      await loadTrip()
+      const response = await apiClient.put(`/personal-trips/${tripId.value}`, tripData.value)
+      // 로컬 trip 데이터를 즉시 업데이트
+      trip.value = response.data
     }
     closeTripInfoModal()
   } catch (error) {

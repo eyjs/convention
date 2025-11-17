@@ -15,6 +15,7 @@ namespace LocalRAG.DTOs.PersonalTrip
         public string? CountryCode { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public string? CoverImageUrl { get; set; }
         public int UserId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

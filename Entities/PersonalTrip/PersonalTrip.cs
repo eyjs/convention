@@ -65,6 +65,12 @@ namespace LocalRAG.Entities.PersonalTrip
         public double? Longitude { get; set; }
 
         /// <summary>
+        /// 카드 커버 이미지 URL
+        /// </summary>
+        [MaxLength(500)]
+        public string? CoverImageUrl { get; set; }
+
+        /// <summary>
         /// 소유자 (사용자 ID)
         /// </summary>
         [Required]
