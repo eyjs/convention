@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen relative bg-sky-50">
+  <div class="min-h-screen relative bg-gray-50">
     <!-- Decorative Background Elements -->
     <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
       <!-- Large gradient blobs -->
@@ -212,9 +212,8 @@
         <form id="trip-info-form" @submit.prevent="saveTripInfo" class="space-y-4">
           <div><label class="block text-sm font-medium text-gray-700 mb-1">여행 제목</label><input v-model="tripData.title" type="text" class="w-full input" /></div>
           <div><label class="block text-sm font-medium text-gray-700 mb-1">설명</label><textarea v-model="tripData.description" rows="3" class="w-full input"></textarea></div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">시작일</label><input v-model="tripData.startDate" type="date" class="w-full input" /></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">종료일</label><input v-model="tripData.endDate" type="date" class="w-full input" /></div>
+          <div>
+            <DateRangePicker v-model="dateRange" label="여행 기간" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">도시/국가</label>
@@ -378,6 +377,7 @@ import { useRoute, useRouter } from 'vue-router'
 import MainHeader from '@/components/common/MainHeader.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import DateTimePicker from '@/components/common/DateTimePicker.vue'
+import DateRangePicker from '@/components/common/DateRangePicker.vue'
 import CountryCitySearch from '@/components/common/CountryCitySearch.vue'
 import KakaoMap from '@/components/common/KakaoMap.vue'
 import GoogleMapPlaceholder from '@/components/common/GoogleMapPlaceholder.vue'
@@ -388,6 +388,7 @@ import AccommodationDetailModal from '@/components/personalTrip/AccommodationDet
 import apiClient from '@/services/api'
 import { useGoogleMaps } from '@/composables/useGoogleMaps'
 import { Trash2 as Trash2Icon } from 'lucide-vue-next' // Import Trash2Icon
+import dayjs from 'dayjs'
 
 const route = useRoute()
 const router = useRouter()
@@ -413,6 +414,24 @@ const countryCity = ref({ destination: '', countryCode: '' })
 const flightData = ref({})
 const accommodationData = ref({ name: '', address: '', postalCode: null, latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null })
 const itineraryItemData = ref({ locationName: '', address: '', latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null })
+
+const dateRange = computed({
+  get() {
+    return {
+      start: tripData.value.startDate ? new Date(tripData.value.startDate) : null,
+      end: tripData.value.endDate ? new Date(tripData.value.endDate) : null,
+    }
+  },
+  set(newRange) {
+    if (!newRange) {
+      tripData.value.startDate = null
+      tripData.value.endDate = null
+      return
+    }
+    tripData.value.startDate = newRange.start ? dayjs(newRange.start).format('YYYY-MM-DD') : null
+    tripData.value.endDate = newRange.end ? dayjs(newRange.end).format('YYYY-MM-DD') : null
+  },
+})
 
 // Cover image upload
 const coverImageInput = ref(null)

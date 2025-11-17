@@ -8,7 +8,9 @@ import './assets/main.css'
 import { setupQuill } from './plugins/quill'
 
 import 'viewerjs/dist/viewer.css'
+import 'v-calendar/style.css'
 import Viewer from 'v-viewer'
+import VCalendar from 'v-calendar'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -16,6 +18,7 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(Viewer)
+app.use(VCalendar, {})
 
 // Quill 전역 설정
 setupQuill()

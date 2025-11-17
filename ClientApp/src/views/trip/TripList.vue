@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen relative bg-sky-50">
+  <div class="min-h-screen relative bg-gray-50">
     <!-- Decorative Background Elements -->
     <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
       <!-- Large gradient blobs -->

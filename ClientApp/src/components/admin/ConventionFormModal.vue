@@ -67,29 +67,8 @@
         </div>
 
         <!-- 기간 -->
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              시작일 <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="form.startDate"
-              type="date"
-              required
-              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              종료일 <span class="text-red-500">*</span>
-            </label>
-            <input
-              v-model="form.endDate"
-              type="date"
-              required
-              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
+        <div>
+          <DateRangePicker v-model="dateRange" label="기간" />
         </div>
 
         <!-- 브랜드 컬러 -->
@@ -166,8 +145,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import BaseModal from '@/components/common/BaseModal.vue'
+import DateRangePicker from '@/components/common/DateRangePicker.vue'
+import dayjs from 'dayjs'
 
 const props = defineProps({
   convention: Object,
@@ -187,6 +168,24 @@ const form = ref({
   brandColor: '#6366f1',
   renderType: 'STANDARD',
   themePreset: 'default',
+})
+
+const dateRange = computed({
+  get() {
+    return {
+      start: form.value.startDate ? new Date(form.value.startDate) : null,
+      end: form.value.endDate ? new Date(form.value.endDate) : null,
+    }
+  },
+  set(newRange) {
+    if (!newRange) {
+      form.value.startDate = null
+      form.value.endDate = null
+      return
+    }
+    form.value.startDate = newRange.start ? dayjs(newRange.start).format('YYYY-MM-DD') : null
+    form.value.endDate = newRange.end ? dayjs(newRange.end).format('YYYY-MM-DD') : null
+  },
 })
 
 // 기본색상 체크박스 변경 시 브랜드 컬러 자동 설정

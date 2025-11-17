@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" class="bg-gray-50">
     <component v-if="currentLayout" :is="currentLayout">
       <router-view />
     </component>
