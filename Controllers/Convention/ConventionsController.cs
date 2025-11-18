@@ -122,6 +122,7 @@ public class ConventionsController : ControllerBase
             convention.EndDate,
             convention.BrandColor,
             convention.ThemePreset,
+            convention.ConventionImg,
             convention.DeleteYn,
             convention.CompleteYn,
             convention.RegDtm,
@@ -146,6 +147,7 @@ public class ConventionsController : ControllerBase
             EndDate = request.EndDate,
             BrandColor = request.BrandColor ?? "#6366f1",
             ThemePreset = request.ThemePreset ?? "default",
+            ConventionImg = request.ConventionImg,
             RegDtm = DateTime.Now,
             DeleteYn = "N",
             CompleteYn = "N"
@@ -194,6 +196,7 @@ public class ConventionsController : ControllerBase
         convention.EndDate = request.EndDate;
         convention.BrandColor = request.BrandColor ?? convention.BrandColor;
         convention.ThemePreset = request.ThemePreset ?? convention.ThemePreset;
+        convention.ConventionImg = request.ConventionImg ?? convention.ConventionImg;
 
         await _context.SaveChangesAsync();
 

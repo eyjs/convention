@@ -11,5 +11,6 @@ namespace LocalRAG.DTOs.PersonalTrip
         public string? GooglePlaceId { get; set; }
         public string? StartTime { get; set; }
         public string? EndTime { get; set; }
+        public int OrderNum { get; set; }
     }
 }

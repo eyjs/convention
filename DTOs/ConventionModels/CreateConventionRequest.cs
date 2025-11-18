@@ -9,4 +9,5 @@ public class CreateConventionRequest
     public DateTime? EndDate { get; set; }
     public string? BrandColor { get; set; }
     public string? ThemePreset { get; set; }
+    public string? ConventionImg { get; set; }
 }

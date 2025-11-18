@@ -253,6 +253,7 @@ namespace LocalRAG.Services.PersonalTrip
                 .AsNoTracking()
                 .Where(i => i.PersonalTripId == tripId)
                 .OrderBy(i => i.DayNumber)
+                .ThenBy(i => i.OrderNum)
                 .ThenBy(i => i.StartTime)
                 .ToListAsync();
 
@@ -308,6 +309,29 @@ namespace LocalRAG.Services.PersonalTrip
             _context.ItineraryItems.Remove(item);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task ReorderItineraryItemsAsync(int tripId, List<Controllers.PersonalTrip.ReorderItemDto> items, int userId)
+        {
+            // 여행이 사용자의 것인지 확인
+            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            if (trip == null)
+                throw new ArgumentException("여행을 찾을 수 없습니다.");
+
+            // 각 항목의 순서 업데이트
+            foreach (var itemDto in items)
+            {
+                var item = await _context.ItineraryItems
+                    .Include(i => i.PersonalTrip)
+                    .FirstOrDefaultAsync(i => i.Id == itemDto.Id && i.PersonalTrip.UserId == userId);
+
+                if (item != null)
+                {
+                    item.OrderNum = itemDto.OrderNum;
+                }
+            }
+
+            await _context.SaveChangesAsync();
         }
 
         #endregion
@@ -432,7 +456,8 @@ namespace LocalRAG.Services.PersonalTrip
                 Longitude = item.Longitude,
                 GooglePlaceId = item.GooglePlaceId,
                 StartTime = item.StartTime.HasValue ? item.StartTime.Value.ToString("HH:mm") : null,
-                EndTime = item.EndTime.HasValue ? item.EndTime.Value.ToString("HH:mm") : null
+                EndTime = item.EndTime.HasValue ? item.EndTime.Value.ToString("HH:mm") : null,
+                OrderNum = item.OrderNum
             };
         }
 

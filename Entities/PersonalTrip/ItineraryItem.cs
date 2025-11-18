@@ -56,6 +56,11 @@ namespace LocalRAG.Entities.PersonalTrip
         /// </summary>
         public TimeOnly? EndTime { get; set; }
 
+        /// <summary>
+        /// 정렬 순서 (같은 날짜 내에서)
+        /// </summary>
+        public int OrderNum { get; set; }
+
         // Foreign Key
         [Required]
         public int PersonalTripId { get; set; }

@@ -6,6 +6,17 @@ using System.Security.Claims;
 
 namespace LocalRAG.Controllers.PersonalTrip
 {
+    public class ReorderItineraryItemsRequest
+    {
+        public List<ReorderItemDto> Items { get; set; } = new();
+    }
+
+    public class ReorderItemDto
+    {
+        public int Id { get; set; }
+        public int OrderNum { get; set; }
+    }
+
     [Authorize]
     [ApiController]
     [Route("api/personal-trips")]
@@ -408,6 +419,30 @@ namespace LocalRAG.Controllers.PersonalTrip
         }
 
         /// <summary>
+        /// 일정 항목 순서 재정렬
+        /// </summary>
+        [HttpPut("{tripId}/items/reorder")]
+        public async Task<IActionResult> ReorderItineraryItems(int tripId, [FromBody] ReorderItineraryItemsRequest request)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _personalTripService.ReorderItineraryItemsAsync(tripId, request.Items, userId);
+                return Ok(new { message = "일정 순서가 변경되었습니다." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "일정 순서 변경에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        #endregion
+
+        /// <summary>
         /// [Admin] 사용자 이름으로 여행 목록 검색
         /// </summary>
         [HttpGet("search")]
@@ -424,7 +459,5 @@ namespace LocalRAG.Controllers.PersonalTrip
                 return StatusCode(500, new { message = "여행 검색에 실패했습니다.", error = ex.Message });
             }
         }
-
-        #endregion
     }
 }

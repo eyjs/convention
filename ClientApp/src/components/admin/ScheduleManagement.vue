@@ -93,6 +93,9 @@
                 </div>
                 <div class="text-primary-600 font-semibold mt-0.5">
                   {{ item.startTime }}
+                  <span v-if="item.endTime" class="text-gray-500">
+                    ~ {{ item.endTime }}
+                  </span>
                 </div>
               </div>
               <div class="flex-1 min-w-0">
@@ -247,19 +250,28 @@
       </template>
       <template #body>
         <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">날짜 *</label>
+            <input
+              v-model="itemForm.scheduleDate"
+              type="date"
+              class="w-full px-3 py-2 border rounded-lg"
+            />
+          </div>
+
           <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-sm font-medium mb-1">날짜 *</label>
-              <input
-                v-model="itemForm.scheduleDate"
-                type="date"
-                class="w-full px-3 py-2 border rounded-lg"
-              />
-            </div>
             <div>
               <label class="block text-sm font-medium mb-1">시작 시간 *</label>
               <input
                 v-model="itemForm.startTime"
+                type="time"
+                class="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">종료 시간</label>
+              <input
+                v-model="itemForm.endTime"
                 type="time"
                 class="w-full px-3 py-2 border rounded-lg"
               />
@@ -420,7 +432,12 @@
                     <div class="font-medium text-gray-600">
                       {{ formatDate(item.scheduleDate) }}
                     </div>
-                    <div class="text-primary-600">{{ item.startTime }}</div>
+                    <div class="text-primary-600">
+                      {{ item.startTime }}
+                      <span v-if="item.endTime" class="text-gray-500">
+                        ~ {{ item.endTime }}
+                      </span>
+                    </div>
                   </div>
                   <div class="flex-1">
                     <p class="font-medium">{{ item.title }}</p>
@@ -502,6 +519,7 @@ const templateForm = ref({
 const itemForm = ref({
   scheduleDate: '',
   startTime: '',
+  endTime: '',
   title: '',
   location: '',
   content: '',
@@ -597,6 +615,7 @@ const addScheduleItem = (template) => {
   itemForm.value = {
     scheduleDate: '',
     startTime: '',
+    endTime: '',
     title: '',
     location: '',
     content: '',
@@ -610,6 +629,7 @@ const editScheduleItem = (template, item) => {
   itemForm.value = {
     scheduleDate: item.scheduleDate?.split('T')[0] || '',
     startTime: item.startTime,
+    endTime: item.endTime || '',
     title: item.title,
     location: item.location || '',
     content: item.content || '',
@@ -736,6 +756,7 @@ const copyAllItemsFromTemplate = async (sourceTemplate) => {
     const itemsToCopy = sourceTemplate.scheduleItems.map((item) => ({
       scheduleDate: item.scheduleDate,
       startTime: item.startTime,
+      endTime: item.endTime,
       title: item.title,
       location: item.location,
       content: item.content,
@@ -766,6 +787,7 @@ const copySelectedItems = async () => {
           itemsToCopy.push({
             scheduleDate: item.scheduleDate,
             startTime: item.startTime,
+            endTime: item.endTime,
             title: item.title,
             location: item.location,
             content: item.content,

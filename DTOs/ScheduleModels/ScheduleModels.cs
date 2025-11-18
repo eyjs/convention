@@ -71,7 +71,17 @@ namespace LocalRAG.DTOs.ScheduleModels
         /// 장소
         /// </summary>
         public string? Location { get; set; }
-        
+
+        /// <summary>
+        /// 위도 (Latitude)
+        /// </summary>
+        public double? Latitude { get; set; }
+
+        /// <summary>
+        /// 경도 (Longitude)
+        /// </summary>
+        public double? Longitude { get; set; }
+
         /// <summary>
         /// 정렬 순서
         /// </summary>

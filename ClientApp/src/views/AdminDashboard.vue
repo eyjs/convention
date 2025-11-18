@@ -175,6 +175,13 @@
         <DatabaseMigration />
       </div>
     </div>
+    
+    <ConventionFormModal
+      v-if="showEditModal"
+      :convention="convention"
+      @close="showEditModal = false"
+      @save="handleSaveConvention"
+    />
   </div>
 </template>
 
@@ -239,15 +246,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-<style scoped>
-.fade-down-enter-active,
-.fade-down-leave-active {
-  transition: all 0.2s ease-out;
-}
-.fade-down-enter-from,
-.fade-down-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-</style>

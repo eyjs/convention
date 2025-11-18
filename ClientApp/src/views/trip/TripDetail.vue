@@ -150,43 +150,93 @@
         <div v-else class="space-y-6">
           <div v-for="dayGroup in groupedItinerary" :key="dayGroup.dayNumber">
             <!-- Day Header -->
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-lg font-bold text-gray-900">Day {{ dayGroup.dayNumber }}</h3>
-              <span class="text-sm text-gray-500">{{ dayGroup.items.length }}개 일정</span>
+            <div class="mb-4">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-lg font-bold text-gray-900">Day {{ dayGroup.dayNumber }}</h3>
+                <div class="flex items-center gap-2">
+                  <button @click="optimizeRoute(dayGroup.dayNumber)" class="px-3 py-1.5 text-xs rounded-lg hover:opacity-80 transition-all font-medium" style="background-color: rgba(23, 177, 133, 0.1); color: rgba(23, 177, 133, 1);">
+                    경로 최적화
+                  </button>
+                  <button @click="toggleEditMode(dayGroup.dayNumber)" :class="['px-3 py-1.5 text-xs rounded-lg transition-all font-medium']" :style="isEditModeForDay(dayGroup.dayNumber) ? 'background-color: rgba(23, 177, 133, 1); color: white;' : 'background-color: #f3f4f6; color: #374151;'">
+                    {{ isEditModeForDay(dayGroup.dayNumber) ? '편집 완료' : '순서 편집' }}
+                  </button>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-sm text-gray-500">{{ dayGroup.items.length }}개 일정</span>
+              </div>
             </div>
 
-            <!-- Itinerary Items -->
-            <div class="space-y-3 mb-4">
-              <div
-                v-for="item in dayGroup.items"
-                :key="item.id"
-                class="group relative bg-white border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-md cursor-pointer transition-all"
-                :class="{ 'border-blue-500 border-2 shadow-lg': currentItineraryItemId === item.id }">
-                <div @click="openItineraryDetailModal(item)" class="flex gap-3">
-                  <!-- Category Icon -->
-                  <div class="flex-shrink-0 w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
+            <!-- Itinerary Items with Timeline -->
+            <div class="relative">
+              <div v-for="(item, index) in dayGroup.items" :key="item.id" class="relative">
+                <!-- Timeline Item -->
+                <div class="flex gap-4 mb-3 items-start">
+                  <!-- Timeline Line with Distance in Middle -->
+                  <div class="flex flex-col items-center flex-shrink-0 relative" style="width: 20px; padding-top: 28px;">
+                    <!-- Circle (카드 중앙 정렬) -->
+                    <div class="w-3 h-3 rounded-full z-10 relative" style="background-color: rgba(23, 177, 133, 1);"></div>
 
-                  <!-- Content -->
-                  <div class="flex-1 min-w-0">
-                    <p class="font-bold text-gray-900 mb-1">{{ item.locationName }}</p>
-                    <div class="flex items-center gap-2 text-sm text-gray-500">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span v-if="item.startTime">{{ item.startTime.substring(0, 5) }} - {{ item.endTime.substring(0, 5) }}</span>
-                      <span v-else>시간 미정</span>
+                    <!-- Vertical Dashed Line (전체 연결) -->
+                    <div v-if="index < dayGroup.items.length - 1" class="relative" style="width: 100%; flex: 1; margin: 4px 0; min-height: 60px;">
+                      <!-- 점선 - 전체 높이 -->
+                      <div class="absolute" style="width: 0px; height: 100%; left: 50%; top: 0; border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
+
+                      <!-- Distance Badge in Middle (점선 위에) -->
+                      <div v-if="item.distanceToNext" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap" style="background-color: white; color: rgba(23, 177, 133, 1); box-shadow: 0 0 0 2px white;">
+                        {{ item.distanceToNext.formatted }}
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Delete Button -->
-                  <button @click.stop="deleteItineraryItemFromList(item.id)" class="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
-                    <Trash2Icon class="w-5 h-5" />
-                  </button>
+                  <!-- Card -->
+                  <div
+                    :draggable="isEditModeForDay(dayGroup.dayNumber)"
+                    @dragstart="onDragStart(item, dayGroup.dayNumber, $event)"
+                    @drag="onDrag"
+                    @dragend="onDragEnd"
+                    @dragover="onDragOver"
+                    @drop="onDrop(item, dayGroup.dayNumber)"
+                    class="group relative bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex-1"
+                    :class="{
+                      'cursor-grab active:cursor-grabbing': isEditModeForDay(dayGroup.dayNumber),
+                      'cursor-pointer': !isEditModeForDay(dayGroup.dayNumber)
+                    }"
+                    :style="currentItineraryItemId === item.id ? 'border: 2px solid rgba(23, 177, 133, 1); box-shadow: 0 4px 6px -1px rgba(23, 177, 133, 0.1); touch-action: none;' : 'border-color: rgba(23, 177, 133, 0.2); touch-action: none;'">
+                    <div @click="!isEditModeForDay(dayGroup.dayNumber) && openItineraryDetailModal(item)" class="flex gap-3">
+                      <!-- Drag Handle (only in edit mode) -->
+                      <div v-if="isEditModeForDay(dayGroup.dayNumber)" class="flex-shrink-0 flex items-center text-gray-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                        </svg>
+                      </div>
+
+                      <!-- Category Icon -->
+                      <div v-else class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style="background-color: rgba(23, 177, 133, 0.1);">
+                        <svg class="w-6 h-6" style="color: rgba(23, 177, 133, 1);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+
+                      <!-- Content -->
+                      <div class="flex-1 min-w-0">
+                        <p class="font-bold text-gray-900 mb-1">{{ item.locationName }}</p>
+                        <div class="flex items-center gap-2 text-sm text-gray-500">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span v-if="item.startTime">{{ item.startTime.substring(0, 5) }} - {{ item.endTime.substring(0, 5) }}</span>
+                          <span v-else>시간 미정</span>
+                        </div>
+                      </div>
+
+                      <!-- Delete Button -->
+                      <button @click.stop="deleteItineraryItemFromList(item.id)" class="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                        <Trash2Icon class="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -387,6 +437,7 @@ import KakaoMapSearchModal from '@/components/common/KakaoMapSearchModal.vue'
 import AccommodationDetailModal from '@/components/personalTrip/AccommodationDetailModal.vue' // Import AccommodationDetailModal
 import apiClient from '@/services/api'
 import { useGoogleMaps } from '@/composables/useGoogleMaps'
+import { useDistance } from '@/composables/useDistance'
 import { Trash2 as Trash2Icon } from 'lucide-vue-next' // Import Trash2Icon
 import dayjs from 'dayjs'
 
@@ -753,15 +804,49 @@ function deleteAccommodationFromList(id) {
 }
 
 // --- Itinerary ---
+const {  calculateItemDistances, optimizeRouteByDistance, calculateTotalDistance } = useDistance()
+const editModeByDay = ref({}) // 각 날짜별 편집 모드 상태
+const draggedItem = ref(null)
+const draggedDay = ref(null)
+
 const groupedItinerary = computed(() => {
-  if (!trip.value.itineraryItems) return []
-  const groups = trip.value.itineraryItems.reduce((acc, item) => {
-    const day = item.dayNumber || 1
-    if (!acc[day]) acc[day] = { dayNumber: day, items: [] }
-    acc[day].items.push(item)
-    return acc
-  }, {})
-  return Object.values(groups).sort((a, b) => a.dayNumber - b.dayNumber)
+  if (!trip.value.startDate || !trip.value.endDate) return []
+
+  // 여행 기간의 총 일수 계산
+  const startDate = new Date(trip.value.startDate)
+  const endDate = new Date(trip.value.endDate)
+  const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1
+
+  // 기존 itineraryItems를 dayNumber로 그룹화
+  const itemsByDay = {}
+  if (trip.value.itineraryItems) {
+    trip.value.itineraryItems.forEach(item => {
+      const day = item.dayNumber || 1
+      if (!itemsByDay[day]) itemsByDay[day] = []
+      itemsByDay[day].push(item)
+    })
+  }
+
+  // 전체 날짜 범위에 대해 Day 생성 (빈 날짜 포함)
+  const allDays = []
+  for (let i = 1; i <= daysDiff; i++) {
+    const items = itemsByDay[i] || []
+    const itemsWithDistance = calculateItemDistances(items)
+    const totalDistance = calculateTotalDistance(items)
+
+    // 날짜 계산
+    const currentDate = new Date(startDate)
+    currentDate.setDate(startDate.getDate() + i - 1)
+
+    allDays.push({
+      dayNumber: i,
+      date: currentDate,
+      items: itemsWithDistance,
+      totalDistance
+    })
+  }
+
+  return allDays
 })
 
 const currentItineraryItemId = computed(() => {
@@ -850,6 +935,119 @@ async function deleteItineraryItem(id) { // Modified to accept id
 }
 function deleteItineraryItemFromList(id) {
   deleteItineraryItem(id);
+}
+
+// --- 드래그앤드롭 ---
+function onDragStart(item, dayNumber, event) {
+  if (!isEditModeForDay(dayNumber)) return
+
+  draggedItem.value = item
+  draggedDay.value = dayNumber
+
+  // 드래그 중 스크롤 방지
+  document.body.style.overflow = 'hidden'
+  document.body.style.touchAction = 'none'
+
+  // 드래그 이미지 설정 (선택사항)
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+  }
+}
+
+function onDrag(e) {
+  // 드래그 중 스크롤 방지 유지
+  e.preventDefault()
+}
+
+function onDragEnd() {
+  // 드래그 종료 시 스크롤 복원
+  document.body.style.overflow = ''
+  document.body.style.touchAction = ''
+}
+
+function onDragOver(e) {
+  e.preventDefault()
+  e.stopPropagation()
+}
+
+function onDrop(targetItem, targetDayNumber) {
+  if (!isEditModeForDay(targetDayNumber) || !draggedItem.value) return
+
+  // 스크롤 복원
+  document.body.style.overflow = ''
+  document.body.style.touchAction = ''
+
+  const items = trip.value.itineraryItems
+  const draggedIndex = items.findIndex(i => i.id === draggedItem.value.id)
+  const targetIndex = items.findIndex(i => i.id === targetItem.id)
+
+  if (draggedIndex === -1 || targetIndex === -1) return
+
+  // 같은 날짜 내에서만 이동 허용
+  if (draggedDay.value !== targetDayNumber) {
+    alert('같은 날짜 내에서만 순서를 변경할 수 있습니다.')
+    draggedItem.value = null
+    draggedDay.value = null
+    return
+  }
+
+  // 순서 변경
+  const [removed] = items.splice(draggedIndex, 1)
+  items.splice(targetIndex, 0, removed)
+
+  // API 업데이트
+  saveItineraryOrder(targetDayNumber)
+
+  draggedItem.value = null
+  draggedDay.value = null
+}
+
+async function saveItineraryOrder(dayNumber) {
+  const dayItems = trip.value.itineraryItems
+    .filter(item => item.dayNumber === dayNumber)
+    .map((item, index) => ({
+      id: item.id,
+      orderNum: index
+    }))
+
+  try {
+    await apiClient.put(`/personal-trips/${tripId.value}/items/reorder`, { items: dayItems })
+    await loadTrip()
+  } catch (error) {
+    console.error('Failed to save order:', error)
+    alert('순서 저장에 실패했습니다.')
+  }
+}
+
+// --- 경로 최적화 ---
+async function optimizeRoute(dayNumber) {
+  const dayItems = trip.value.itineraryItems.filter(item => item.dayNumber === dayNumber)
+  const optimized = optimizeRouteByDistance(dayItems)
+
+  if (optimized.length === dayItems.length) {
+    // API로 최적화된 순서 업데이트
+    const updatePayload = optimized.map((item, index) => ({
+      id: item.id,
+      orderNum: index
+    }))
+
+    try {
+      await apiClient.put(`/personal-trips/${tripId.value}/items/reorder`, { items: updatePayload })
+      await loadTrip()
+      alert('경로가 최적화되었습니다!')
+    } catch (error) {
+      console.error('Failed to optimize route:', error)
+      alert('경로 최적화에 실패했습니다.')
+    }
+  }
+}
+
+function toggleEditMode(dayNumber) {
+  editModeByDay.value[dayNumber] = !editModeByDay.value[dayNumber]
+}
+
+function isEditModeForDay(dayNumber) {
+  return editModeByDay.value[dayNumber] || false
 }
 
 // --- Itinerary Detail Modal ---

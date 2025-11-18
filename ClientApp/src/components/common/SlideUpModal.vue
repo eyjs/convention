@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -70,6 +70,25 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const startPos = ref({ x: 0, y: 0 })
+
+// 모달 열림/닫힘 시 body 스크롤 제어
+watch(() => props.isOpen, (newValue) => {
+  if (newValue) {
+    // 모달이 열릴 때 body 스크롤 막기
+    document.body.style.overflow = 'hidden'
+    document.body.style.touchAction = 'none'
+  } else {
+    // 모달이 닫힐 때 body 스크롤 복원
+    document.body.style.overflow = ''
+    document.body.style.touchAction = ''
+  }
+})
+
+// 컴포넌트가 언마운트될 때 스크롤 복원
+onUnmounted(() => {
+  document.body.style.overflow = ''
+  document.body.style.touchAction = ''
+})
 
 const onMouseDown = (e) => {
   startPos.value = { x: e.clientX, y: e.clientY }
