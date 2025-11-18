@@ -114,7 +114,7 @@
                           <p class="font-bold text-gray-900 mb-1">{{ item.locationName }}</p>
                           <div class="flex items-center gap-2 text-sm text-gray-500">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <span v-if="item.startTime">{{ item.startTime.substring(0, 5) }} - {{ item.endTime.substring(0, 5) }}</span>
+                            <span v-if="item.startTime && item.endTime">{{ item.startTime.substring(0, 5) }} - {{ item.endTime.substring(0, 5) }}</span>
                             <span v-else>시간 미정</span>
                           </div>
                         </div>
@@ -143,17 +143,33 @@
       <template #body>
         <div v-if="selectedItinerary" class="space-y-4">
           <h3 class="text-xl font-bold">{{ selectedItinerary.locationName }}</h3>
-          <p class="text-gray-600">{{ selectedItinerary.address }}</p>
-          <p class="text-gray-800 font-medium" v-if="selectedItinerary.startTime">{{ selectedItinerary.startTime.substring(0, 5) }} - {{ selectedItinerary.endTime.substring(0, 5) }}</p>
-          <p v-if="selectedItinerary.notes" class="whitespace-pre-wrap">{{ selectedItinerary.notes }}</p>
+          <p v-if="selectedItinerary.address" class="text-gray-600">{{ selectedItinerary.address }}</p>
+          <p v-if="selectedItinerary.startTime && selectedItinerary.endTime" class="text-gray-800 font-medium">{{ selectedItinerary.startTime.substring(0, 5) }} - {{ selectedItinerary.endTime.substring(0, 5) }}</p>
+          <p v-if="selectedItinerary.notes" class="whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{{ selectedItinerary.notes }}</p>
           
-          <div class="h-48 w-full rounded-lg mt-4">
-            <KakaoMap
-              v-if="isDomestic && selectedItinerary.latitude && selectedItinerary.longitude"
-              :latitude="selectedItinerary.latitude"
-              :longitude="selectedItinerary.longitude"
-            />
-            <GoogleMapPlaceholder v-else-if="!isDomestic && selectedItinerary.latitude" />
+          <button 
+            v-if="selectedItinerary.latitude && !showItineraryMap" 
+            @click="showItineraryMap = true"
+            class="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+          >
+            지도 보기
+          </button>
+
+          <div v-if="showItineraryMap" class="space-y-2">
+            <div class="h-48 w-full rounded-lg">
+              <KakaoMap
+                v-if="isDomestic && selectedItinerary.latitude && selectedItinerary.longitude"
+                :latitude="selectedItinerary.latitude"
+                :longitude="selectedItinerary.longitude"
+              />
+              <GoogleMapPlaceholder v-else-if="!isDomestic && selectedItinerary.latitude" />
+            </div>
+            <button 
+              @click="showItineraryMap = false"
+              class="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+            >
+              지도 접기
+            </button>
           </div>
         </div>
       </template>
@@ -191,6 +207,7 @@ const currentItineraryItemRef = ref(null)
 // Modal states
 const isAccommodationDetailModalOpen = ref(false)
 const isItineraryDetailModalOpen = ref(false)
+const showItineraryMap = ref(false)
 const selectedAccommodation = ref(null)
 const selectedItinerary = ref(null)
 
@@ -223,11 +240,13 @@ function openAccommodationDetailModal(acc) {
 
 function openItineraryDetailModal(item) {
   selectedItinerary.value = item
+  showItineraryMap.value = false
   isItineraryDetailModalOpen.value = true
 }
 
 function closeItineraryDetailModal() {
   isItineraryDetailModalOpen.value = false
+  showItineraryMap.value = false
 }
 
 // --- Itinerary ---

@@ -24,5 +24,8 @@ namespace LocalRAG.DTOs.PersonalTrip
         public string? StartTime { get; set; } // "HH:mm" format
 
         public string? EndTime { get; set; } // "HH:mm" format
+
+        [MaxLength(2000)]
+        public string? Notes { get; set; }
     }
 }

@@ -12,5 +12,6 @@ namespace LocalRAG.DTOs.PersonalTrip
         public string? StartTime { get; set; }
         public string? EndTime { get; set; }
         public int OrderNum { get; set; }
+        public string? Notes { get; set; }
     }
 }

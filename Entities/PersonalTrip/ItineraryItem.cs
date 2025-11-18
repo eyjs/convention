@@ -61,6 +61,12 @@ namespace LocalRAG.Entities.PersonalTrip
         /// </summary>
         public int OrderNum { get; set; }
 
+        /// <summary>
+        /// 메모
+        /// </summary>
+        [MaxLength(2000)]
+        public string? Notes { get; set; }
+
         // Foreign Key
         [Required]
         public int PersonalTripId { get; set; }

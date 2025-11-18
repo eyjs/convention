@@ -3,6 +3,7 @@
     <template #header-title>장소 검색</template>
     <template #body>
       <div class="space-y-4">
+        <!-- 1. Search Input -->
         <div class="relative">
           <input
             type="text"
@@ -20,35 +21,48 @@
           </button>
         </div>
 
-        <div ref="mapContainer" class="w-full h-64 rounded-lg shadow-md"></div>
-
-        <div v-if="searchResults.length" class="max-h-48 overflow-y-scroll border rounded-lg">
+        <!-- 2. Search Results / Status -->
+        <div v-if="searchResults.length" class="max-h-64 overflow-y-scroll border rounded-lg">
           <ul>
             <li
               v-for="result in searchResults"
               :key="result.id"
-              @click="selectPlace(result)"
-              class="px-4 py-2 cursor-pointer hover:bg-gray-100 text-sm"
+              @click="showPlaceOnMap(result)"
+              class="px-4 py-3 cursor-pointer hover:bg-gray-100 text-sm border-b last:border-b-0"
+              :class="{ 'bg-blue-50': selectedPlaceForMap && selectedPlaceForMap.id === result.id }"
             >
               <p class="font-medium">{{ result.place_name }}</p>
               <p class="text-gray-500">{{ result.address_name }}</p>
             </li>
           </ul>
         </div>
-        <p v-else-if="searchTerm && !loadingSearch" class="text-center text-gray-500 text-sm">검색 결과가 없습니다.</p>
-        <p v-else-if="loadingSearch" class="text-center text-blue-500 text-sm">검색 중...</p>
+        <p v-else-if="searchTerm && !loadingSearch" class="text-center text-gray-500 text-sm py-4">검색 결과가 없습니다.</p>
+        <p v-else-if="loadingSearch" class="text-center text-blue-500 text-sm py-4">검색 중...</p>
+
+        <!-- 3. Map Container (conditionally shown) -->
+        <div v-if="selectedPlaceForMap">
+          <div ref="mapContainer" class="w-full h-64 rounded-lg shadow-md mt-4"></div>
+        </div>
       </div>
     </template>
     <template #footer>
-      <div class="flex justify-end gap-3">
-        <button type="button" @click="closeModal" class="btn-secondary">닫기</button>
+      <div class="flex justify-end gap-3 w-full">
+        <button type="button" @click="closeModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">닫기</button>
+        <button 
+          type="button" 
+          @click="confirmSelection" 
+          :disabled="!selectedPlaceForMap"
+          class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          이 장소로 선택
+        </button>
       </div>
     </template>
   </SlideUpModal>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 
 const props = defineProps({
@@ -68,71 +82,58 @@ const searchTerm = ref('')
 const mapContainer = ref(null)
 let map = null
 let places = null // Kakao Places service
-let markers = []
-let infowindow = null
+let marker = null // Single marker instance
 const searchResults = ref([])
 const loadingSearch = ref(false)
-
-onMounted(() => {
-  // Ensure Kakao Maps API is loaded before attempting to initialize
-  if (window.kakao && window.kakao.maps) {
-    // Map initialization will happen when modal opens
-  } else {
-    console.error('Kakao Maps API is not loaded on mount.')
-  }
-})
+const selectedPlaceForMap = ref(null)
 
 // Watch for modal open state
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
+    // Reset state when modal opens
     searchTerm.value = props.initialLocation.name || ''
-    nextTick(() => {
-      // Initialize map only if not already initialized and container is ready
-      if (!map && mapContainer.value && window.kakao && window.kakao.maps) {
-        initMap()
-      }
-      // Always relayout map after modal opens to ensure it's correctly sized
-      if (map) {
-        // Add a small delay to ensure modal transition is complete
-        setTimeout(() => {
-          map.relayout()
-          // If there's an initial location, set center and add marker
-          if (props.initialLocation.latitude && props.initialLocation.longitude) {
-            const center = new window.kakao.maps.LatLng(props.initialLocation.latitude, props.initialLocation.longitude)
-            map.setCenter(center)
-            addMarker(center, props.initialLocation.name, props.initialLocation.address)
-          } else {
-            // Default center for Korea if no initial location
-            map.setCenter(new window.kakao.maps.LatLng(33.450701, 126.570667))
-          }
-        }, 50); // Small delay
-      }
-    })
-  } else {
-    clearMarkers()
     searchResults.value = []
-    clearTimeout(searchTimeout); // Clear any pending search timeout
-    if (map) {
-      // map.relayout(); // Not strictly necessary before nullifying, but can help clean up
-      map = null; // Explicitly nullify map instance when modal closes
-      places = null; // Also nullify places service
-    }
+    selectedPlaceForMap.value = null
+    map = null
+    places = null
+    marker = null
+  } else {
+    // Clear any pending search timeout when closing
+    clearTimeout(searchTimeout)
   }
 })
 
-function initMap() {
-  // Ensure window.kakao.maps is available before using it
+function initMapAndMarker(place) {
   if (!window.kakao || !window.kakao.maps) {
-    console.error('Kakao Maps API is not available for initMap.')
+    console.error('Kakao Maps API is not available.')
     return
   }
+
+  const position = new window.kakao.maps.LatLng(place.y, place.x)
+  
   const options = {
-    center: new window.kakao.maps.LatLng(33.450701, 126.570667), // Default to Jeju
+    center: position,
     level: 3
   }
-  map = new window.kakao.maps.Map(mapContainer.value, options)
-  places = new window.kakao.maps.services.Places() // Initialize Places service
-  infowindow = new window.kakao.maps.InfoWindow({ zIndex: 1 })
+
+  if (!map) {
+    map = new window.kakao.maps.Map(mapContainer.value, options)
+  } else {
+    map.setCenter(position)
+  }
+
+  // Clear existing marker
+  if (marker) {
+    marker.setMap(null)
+  }
+
+  // Create and display new marker
+  marker = new window.kakao.maps.Marker({
+    map: map,
+    position: position
+  })
+
+  map.relayout()
 }
 
 let searchTimeout = null
@@ -141,79 +142,36 @@ function searchPlaces() {
   searchTimeout = setTimeout(() => {
     if (searchTerm.value.length < 2) {
       searchResults.value = []
-      clearMarkers()
       return
     }
     loadingSearch.value = true
-    // Ensure places service is initialized
-    if (places) {
-      places.keywordSearch(searchTerm.value, placesSearchCB)
-    } else {
-      console.error('Kakao Places service not initialized.')
-      loadingSearch.value = false
+    
+    if (!places) {
+      places = new window.kakao.maps.services.Places()
     }
+    
+    places.keywordSearch(searchTerm.value, (data, status) => {
+      loadingSearch.value = false
+      if (status === window.kakao.maps.services.Status.OK) {
+        searchResults.value = data
+      } else {
+        searchResults.value = []
+      }
+    })
   }, 300)
 }
 
-function placesSearchCB(data, status, pagination) {
-  loadingSearch.value = false
-  if (status === window.kakao.maps.services.Status.OK) {
-    console.log('Kakao Search Result:', data); // Log the data to inspect its structure
-    searchResults.value = data
-    displayPlaces(data)
-  } else {
-    console.error('Kakao Places API search failed:', status)
-    searchResults.value = []
-    clearMarkers()
-  }
-}
-
-function displayPlaces(places) {
-  clearMarkers()
-  if (places.length === 0) {
-    return
-  }
-
-  const bounds = new window.kakao.maps.LatLngBounds()
-  for (let i = 0; i < places.length; i++) {
-    const placePosition = new window.kakao.maps.LatLng(places[i].y, places[i].x)
-    addMarker(placePosition, places[i].place_name, places[i].address_name)
-    bounds.extend(placePosition)
-  }
-  map.setBounds(bounds)
-}
-
-function addMarker(position, title, address) {
-  const marker = new window.kakao.maps.Marker({
-    map: map,
-    position: position
-  })
-  markers.push(marker)
-
-  window.kakao.maps.event.addListener(marker, 'click', () => {
-    infowindow.setContent('<div style="padding:5px;font-size:12px;">' + title + '</div>')
-    infowindow.open(map, marker)
-    // Optionally, emit the place data when marker is clicked
-    emit('selectPlace', {
-      name: title,
-      address: address,
-      latitude: position.getLat(),
-      longitude: position.getLng(),
-      kakaoPlaceId: null // Kakao API doesn't directly provide a place_id like Google
-    })
-    closeModal()
+function showPlaceOnMap(place) {
+  selectedPlaceForMap.value = place
+  nextTick(() => {
+    initMapAndMarker(place)
   })
 }
 
-function clearMarkers() {
-  for (let i = 0; i < markers.length; i++) {
-    markers[i].setMap(null)
-  }
-  markers = []
-  if (infowindow) infowindow.close()
-}
+function confirmSelection() {
+  if (!selectedPlaceForMap.value) return
 
-function selectPlace(place) {
+  const place = selectedPlaceForMap.value
   emit('selectPlace', {
     name: place.place_name,
     address: place.address_name,
@@ -227,7 +185,9 @@ function selectPlace(place) {
 function clearSearch() {
   searchTerm.value = ''
   searchResults.value = []
-  clearMarkers()
+  selectedPlaceForMap.value = null
+  map = null
+  marker = null
 }
 
 function closeModal() {
@@ -236,9 +196,6 @@ function closeModal() {
 </script>
 
 <style scoped>
-.btn-secondary {
-  @apply px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100;
-}
 /* Custom scrollbar for WebKit browsers */
 ul::-webkit-scrollbar {
   width: 8px;

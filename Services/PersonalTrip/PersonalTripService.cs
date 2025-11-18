@@ -276,6 +276,7 @@ namespace LocalRAG.Services.PersonalTrip
                 GooglePlaceId = dto.GooglePlaceId,
                 StartTime = dto.StartTime != null && TimeOnly.TryParse(dto.StartTime, out var st) ? st : null,
                 EndTime = dto.EndTime != null && TimeOnly.TryParse(dto.EndTime, out var et) ? et : null,
+                Notes = dto.Notes
             };
 
             _context.ItineraryItems.Add(newItem);
@@ -296,6 +297,7 @@ namespace LocalRAG.Services.PersonalTrip
             item.GooglePlaceId = dto.GooglePlaceId;
             item.StartTime = dto.StartTime != null && TimeOnly.TryParse(dto.StartTime, out var st) ? st : null;
             item.EndTime = dto.EndTime != null && TimeOnly.TryParse(dto.EndTime, out var et) ? et : null;
+            item.Notes = dto.Notes;
 
             await _context.SaveChangesAsync();
             return MapToItineraryItemDto(item);
@@ -506,7 +508,8 @@ namespace LocalRAG.Services.PersonalTrip
                 GooglePlaceId = item.GooglePlaceId,
                 StartTime = item.StartTime.HasValue ? item.StartTime.Value.ToString("HH:mm") : null,
                 EndTime = item.EndTime.HasValue ? item.EndTime.Value.ToString("HH:mm") : null,
-                OrderNum = item.OrderNum
+                OrderNum = item.OrderNum,
+                Notes = item.Notes
             };
         }
 
