@@ -169,40 +169,43 @@
 
             <!-- Itinerary Items with Timeline -->
             <div class="relative">
-              <div v-for="(item, index) in dayGroup.items" :key="item.id" class="relative">
-                <!-- Timeline Item -->
-                <div class="flex gap-4 mb-3 items-start">
-                  <!-- Timeline Line with Distance in Middle -->
-                  <div class="flex flex-col items-center flex-shrink-0 relative" style="width: 20px; padding-top: 28px;">
-                    <!-- Circle (카드 중앙 정렬) -->
-                    <div class="w-3 h-3 rounded-full z-10 relative" style="background-color: rgba(23, 177, 133, 1);"></div>
+              <template v-for="(item, index) in dayGroup.items" :key="item.id">
+                <!-- Schedule Card -->
+                <div class="flex gap-4" :class="index < dayGroup.items.length - 1 ? 'mb-2' : 'mb-3'">
+                  <!-- Date Dot (Timeline) -->
+                  <div class="flex flex-col items-center flex-shrink-0 relative" style="width: 20px;">
+                    <!-- Bullet -->
+                    <div class="w-3 h-3 rounded-full flex-shrink-0 z-10 relative" style="background-color: rgba(23, 177, 133, 1); margin-top: 16px;"></div>
 
-                    <!-- Vertical Dashed Line (전체 연결) -->
-                    <div v-if="index < dayGroup.items.length - 1" class="relative" style="width: 100%; flex: 1; margin: 4px 0; min-height: 60px;">
-                      <!-- 점선 - 전체 높이 -->
-                      <div class="absolute" style="width: 0px; height: 100%; left: 50%; top: 0; border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
-
-                      <!-- Distance Badge in Middle (점선 위에) -->
-                      <div v-if="item.distanceToNext" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap" style="background-color: white; color: rgba(23, 177, 133, 1); box-shadow: 0 0 0 2px white;">
-                        {{ item.distanceToNext.formatted }}
-                      </div>
+                    <!-- 점선 (카드 높이만큼) -->
+                    <div class="relative w-full flex-1">
+                      <!-- 첫 번째 카드: 아래로만 -->
+                      <div v-if="index === 0" class="absolute" style="width: 0px; height: 100%; left: 50%; top: 0; border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
+                      <!-- 마지막 카드: 위로만 -->
+                      <div v-else-if="index === dayGroup.items.length - 1" class="absolute" style="width: 0px; height: 0px; left: 50%; bottom: 0;"></div>
+                      <!-- 중간 카드: 위아래 전체 -->
+                      <div v-else class="absolute" style="width: 0px; height: calc(100% + 16px); left: 50%; top: -16px; border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
                     </div>
                   </div>
 
-                  <!-- Card -->
+                  <!-- Schedule Content -->
                   <div
+                    :data-item-id="item.id"
                     :draggable="isEditModeForDay(dayGroup.dayNumber)"
                     @dragstart="onDragStart(item, dayGroup.dayNumber, $event)"
                     @drag="onDrag"
                     @dragend="onDragEnd"
                     @dragover="onDragOver"
                     @drop="onDrop(item, dayGroup.dayNumber)"
+                    @touchstart="onTouchStart(item, dayGroup.dayNumber, $event)"
+                    @touchmove="onTouchMove"
+                    @touchend="onTouchEnd(item, dayGroup.dayNumber, $event)"
                     class="group relative bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex-1"
                     :class="{
                       'cursor-grab active:cursor-grabbing': isEditModeForDay(dayGroup.dayNumber),
                       'cursor-pointer': !isEditModeForDay(dayGroup.dayNumber)
                     }"
-                    :style="currentItineraryItemId === item.id ? 'border: 2px solid rgba(23, 177, 133, 1); box-shadow: 0 4px 6px -1px rgba(23, 177, 133, 0.1); touch-action: none;' : 'border-color: rgba(23, 177, 133, 0.2); touch-action: none;'">
+                    :style="currentItineraryItemId === item.id ? 'border: 2px solid rgba(23, 177, 133, 1); box-shadow: 0 4px 6px -1px rgba(23, 177, 133, 0.1);' : 'border-color: rgba(23, 177, 133, 0.2);'">
                     <div @click="!isEditModeForDay(dayGroup.dayNumber) && openItineraryDetailModal(item)" class="flex gap-3">
                       <!-- Drag Handle (only in edit mode) -->
                       <div v-if="isEditModeForDay(dayGroup.dayNumber)" class="flex-shrink-0 flex items-center text-gray-400">
@@ -238,18 +241,31 @@
                     </div>
                   </div>
                 </div>
-              </div>
+
+                <!-- Distance Indicator (카드 사이에 동적으로 삽입) -->
+                <div v-if="index < dayGroup.items.length - 1 && item.distanceToNext" class="flex gap-4 mb-2">
+                  <!-- Date Dot for Distance -->
+                  <div class="flex flex-col items-center flex-shrink-0 relative" style="width: 20px;">
+                    <!-- 점선 -->
+                    <div class="relative w-full h-full flex items-center justify-center" style="min-height: 32px;">
+                      <div class="absolute" style="width: 0px; height: 100%; left: 50%; top: 0; border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
+                      <!-- 거리 배지 -->
+                      <div class="relative z-10 px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: rgba(23, 177, 133, 0.1); color: rgba(23, 177, 133, 1);">
+                        {{ item.distanceToNext.formatted }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Empty Space -->
+                  <div class="flex-1"></div>
+                </div>
+              </template>
             </div>
 
-            <!-- Add Place/Memo Buttons -->
-            <div class="flex gap-3">
-              <button @click="openItineraryModal(null, dayGroup.dayNumber)" class="flex-1 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 font-medium hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
-                + 장소 추가
-              </button>
-              <button @click="openDayNoteModal(dayGroup.dayNumber)" class="flex-1 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 font-medium hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-all">
-                + 메모 추가
-              </button>
-            </div>
+            <!-- Add Itinerary Button -->
+            <button @click="openItineraryModal(null, dayGroup.dayNumber)" class="w-full py-3 border-2 border-dashed rounded-xl font-medium hover:opacity-80 transition-all" style="border-color: rgba(23, 177, 133, 0.3); color: rgba(23, 177, 133, 1); background-color: rgba(23, 177, 133, 0.05);">
+              + 일정 추가
+            </button>
           </div>
         </div>
       </section>
@@ -361,8 +377,14 @@
             </template>
             <GooglePlacesAutocomplete v-else v-model="itineraryItemData" placeholder="장소 검색 (구글맵)" />
           </div>
-          <div><label class="label">시작 시간</label><DateTimePicker v-model="itineraryItemData.startTime" /></div>
-          <div><label class="label">종료 시간</label><DateTimePicker v-model="itineraryItemData.endTime" /></div>
+          <div>
+            <label class="label">시작 시간</label>
+            <input type="time" v-model="itineraryItemData.startTime" class="input" />
+          </div>
+          <div>
+            <label class="label">종료 시간</label>
+            <input type="time" v-model="itineraryItemData.endTime" class="input" />
+          </div>
           <div><label class="label">메모</label><textarea v-model="itineraryItemData.notes" rows="3" class="input"></textarea></div>
         </form>
       </template>
@@ -808,6 +830,8 @@ const {  calculateItemDistances, optimizeRouteByDistance, calculateTotalDistance
 const editModeByDay = ref({}) // 각 날짜별 편집 모드 상태
 const draggedItem = ref(null)
 const draggedDay = ref(null)
+const touchStartY = ref(0)
+const touchDraggedElement = ref(null)
 
 const groupedItinerary = computed(() => {
   if (!trip.value.startDate || !trip.value.endDate) return []
@@ -937,7 +961,7 @@ function deleteItineraryItemFromList(id) {
   deleteItineraryItem(id);
 }
 
-// --- 드래그앤드롭 ---
+// --- 드래그앤드롭 (데스크톱) ---
 function onDragStart(item, dayNumber, event) {
   if (!isEditModeForDay(dayNumber)) return
 
@@ -1002,6 +1026,85 @@ function onDrop(targetItem, targetDayNumber) {
   draggedDay.value = null
 }
 
+// --- 터치 드래그앤드롭 (모바일) ---
+function onTouchStart(item, dayNumber, event) {
+  if (!isEditModeForDay(dayNumber)) return
+
+  draggedItem.value = item
+  draggedDay.value = dayNumber
+  touchStartY.value = event.touches[0].clientY
+  touchDraggedElement.value = event.currentTarget
+
+  // 드래그 시작 시각 피드백
+  event.currentTarget.style.opacity = '0.5'
+  event.currentTarget.style.transform = 'scale(1.05)'
+}
+
+function onTouchMove(event) {
+  if (!draggedItem.value) return
+
+  event.preventDefault()
+
+  const touch = event.touches[0]
+  const currentY = touch.clientY
+
+  // 터치 위치에서 요소 찾기
+  const elements = document.elementsFromPoint(touch.clientX, currentY)
+  const targetCard = elements.find(el => el.hasAttribute('data-item-id') && el !== touchDraggedElement.value)
+
+  if (targetCard) {
+    // 호버 효과
+    targetCard.style.borderColor = 'rgba(23, 177, 133, 1)'
+  }
+}
+
+function onTouchEnd(targetItem, targetDayNumber, event) {
+  if (!draggedItem.value) return
+
+  // 시각 피드백 복원
+  if (touchDraggedElement.value) {
+    touchDraggedElement.value.style.opacity = ''
+    touchDraggedElement.value.style.transform = ''
+  }
+
+  const touch = event.changedTouches[0]
+  const elements = document.elementsFromPoint(touch.clientX, touch.clientY)
+  const targetCard = elements.find(el => el.hasAttribute('data-item-id') && el !== touchDraggedElement.value)
+
+  if (targetCard) {
+    const targetId = parseInt(targetCard.getAttribute('data-item-id'))
+    const target = trip.value.itineraryItems.find(i => i.id === targetId)
+
+    if (target) {
+      // 같은 날짜 내에서만 이동 허용
+      if (draggedDay.value !== target.dayNumber) {
+        alert('같은 날짜 내에서만 순서를 변경할 수 있습니다.')
+        draggedItem.value = null
+        draggedDay.value = null
+        touchDraggedElement.value = null
+        return
+      }
+
+      const items = trip.value.itineraryItems
+      const draggedIndex = items.findIndex(i => i.id === draggedItem.value.id)
+      const targetIndex = items.findIndex(i => i.id === targetId)
+
+      if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
+        // 순서 변경
+        const [removed] = items.splice(draggedIndex, 1)
+        items.splice(targetIndex, 0, removed)
+
+        // API 업데이트
+        saveItineraryOrder(target.dayNumber)
+      }
+    }
+  }
+
+  draggedItem.value = null
+  draggedDay.value = null
+  touchDraggedElement.value = null
+}
+
 async function saveItineraryOrder(dayNumber) {
   const dayItems = trip.value.itineraryItems
     .filter(item => item.dayNumber === dayNumber)
@@ -1012,10 +1115,18 @@ async function saveItineraryOrder(dayNumber) {
 
   try {
     await apiClient.put(`/personal-trips/${tripId.value}/items/reorder`, { items: dayItems })
-    await loadTrip()
+    // 로컬 상태만 업데이트 (페이지 새로고침 방지)
+    dayItems.forEach(({ id, orderNum }) => {
+      const item = trip.value.itineraryItems.find(i => i.id === id)
+      if (item) {
+        item.orderNum = orderNum
+      }
+    })
   } catch (error) {
     console.error('Failed to save order:', error)
     alert('순서 저장에 실패했습니다.')
+    // 실패 시에만 전체 데이터 다시 로드
+    await loadTrip()
   }
 }
 
@@ -1033,7 +1144,23 @@ async function optimizeRoute(dayNumber) {
 
     try {
       await apiClient.put(`/personal-trips/${tripId.value}/items/reorder`, { items: updatePayload })
-      await loadTrip()
+
+      // 로컬 상태 업데이트 (페이지 새로고침 방지)
+      const items = trip.value.itineraryItems
+      const draggedDayItems = items.filter(i => i.dayNumber === dayNumber)
+
+      // 최적화된 순서대로 재배치
+      optimized.forEach((optimizedItem, newIndex) => {
+        const item = draggedDayItems.find(i => i.id === optimizedItem.id)
+        if (item) {
+          item.orderNum = newIndex
+        }
+      })
+
+      // 배열 순서도 업데이트
+      const otherDayItems = items.filter(i => i.dayNumber !== dayNumber)
+      trip.value.itineraryItems = [...otherDayItems, ...optimized]
+
       alert('경로가 최적화되었습니다!')
     } catch (error) {
       console.error('Failed to optimize route:', error)
