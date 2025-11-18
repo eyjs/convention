@@ -9,6 +9,15 @@
       <div v-else class="max-w-2xl mx-auto px-4 py-4">
         <!-- Hero Section with Trip Info -->
         <section class="relative overflow-hidden bg-primary-500 rounded-2xl shadow-xl p-6 mb-6 text-white">
+          <!-- Background Image -->
+          <div
+            v-if="trip.coverImageUrl"
+            class="absolute inset-0 bg-cover bg-center"
+            :style="{ backgroundImage: `url(${trip.coverImageUrl})` }"
+          ></div>
+          <!-- Overlay for text readability -->
+          <div class="absolute inset-0 bg-black/30"></div>
+
           <div class="relative z-10">
             <div class="flex justify-between items-start mb-4">
               <div class="flex-1">
@@ -28,32 +37,35 @@
         </section>
 
         <!-- Flights & Accommodations -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <section class="bg-white rounded-2xl shadow-md p-5">
+        <div class="space-y-4 mb-6">
+          <section v-if="trip.flights && trip.flights.length > 0" class="bg-white rounded-2xl shadow-md p-5">
             <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-3">
               <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
               항공편
             </h2>
-            <div v-if="trip.flights && trip.flights.length > 0" class="space-y-2">
+            <div class="space-y-2">
               <div v-for="flight in trip.flights" :key="flight.id" class="border-t pt-2">
                 <p class="font-semibold">{{ flight.airline }} {{ flight.flightNumber }}</p>
                 <p class="text-sm text-gray-600">{{ flight.departureLocation }} → {{ flight.arrivalLocation }}</p>
               </div>
             </div>
-            <p v-else class="text-sm text-gray-500">등록된 항공편 없음</p>
           </section>
-          <section class="bg-white rounded-2xl shadow-md p-5">
-            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-3">
+          <section v-if="trip.accommodations && trip.accommodations.length > 0">
+            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-3 px-2">
               <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
               숙소
             </h2>
-            <div v-if="trip.accommodations && trip.accommodations.length > 0" class="space-y-2">
-              <div v-for="acc in trip.accommodations" :key="acc.id" @click="openAccommodationDetailModal(acc)" class="border-t pt-2 cursor-pointer hover:bg-gray-50">
-                <p class="font-semibold">{{ acc.name }}</p>
-                <p class="text-sm text-gray-600">{{ acc.address }}</p>
-              </div>
+            <div class="space-y-4">
+              <AccommodationCard
+                v-for="acc in trip.accommodations"
+                :key="acc.id"
+                :accommodation="acc"
+                :show-actions="false"
+                :show-time-remaining="true"
+                @click="openAccommodationDetailModal(acc)"
+                class="cursor-pointer"
+              />
             </div>
-            <p v-else class="text-sm text-gray-500">등록된 숙소 없음</p>
           </section>
         </div>
 
@@ -158,6 +170,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import AccommodationDetailModal from '@/components/personalTrip/AccommodationDetailModal.vue'
+import AccommodationCard from '@/components/personalTrip/AccommodationCard.vue'
 import KakaoMap from '@/components/common/KakaoMap.vue'
 import GoogleMapPlaceholder from '@/components/common/GoogleMapPlaceholder.vue'
 import apiClient from '@/services/api'

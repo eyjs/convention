@@ -12,6 +12,10 @@ import 'v-calendar/style.css'
 import Viewer from 'v-viewer'
 import VCalendar from 'v-calendar'
 
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+dayjs.extend(duration);
+
 const app = createApp(App)
 const pinia = createPinia()
 
