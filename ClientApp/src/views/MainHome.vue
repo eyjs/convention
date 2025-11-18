@@ -252,7 +252,7 @@ async function loadConventions() {
 
 // 네비게이션
 function goToCreateTrip() {
-  router.push('/trips/create')
+  router.push('/trips/new')
 }
 
 function goToTripDetail(tripId) {

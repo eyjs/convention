@@ -92,28 +92,27 @@ const routes = [
       showNav: false,
     },
   },
-  {
-    path: '/trips/create',
-    name: 'CreateTrip',
-    component: () => import('@/views/trip/TripDetail.vue'),
-    meta: {
-      title: '새 여행',
-      requiresAuth: true,
-      layout: null,
-      showNav: false,
-    },
-  },
-  {
-    path: '/trips/:id',
-    name: 'TripDetail',
-    component: () => import('@/views/trip/TripDetail.vue'),
-    meta: {
-      title: '여행 상세',
-      requiresAuth: true,
-      layout: null,
-      showNav: false,
-    },
-  },
+      {
+        path: '/trips/new',
+        name: 'NewTrip',
+        component: () => import('@/views/trip/TripDetail.vue'),
+        meta: { requiresAuth: true, title: '새 여행' }
+      },
+      {
+        path: '/trips/share/:shareToken',
+        name: 'SharedTripDetail',
+        component: () => import('@/views/trip/SharedTripDetail.vue'),
+        meta: { requiresAuth: false, title: '공유된 여행' }
+      },
+      {
+        path: '/trips/:id',
+        name: 'TripDetail',
+        component: () => import('@/views/trip/TripDetail.vue'),
+        meta: { requiresAuth: true, title: '여행 상세' }
+      },
+      // ----------------------------------------------------------------
+      // 동적 라우팅
+      // ----------------------------------------------------------------
 
   {
     path: '/',

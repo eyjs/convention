@@ -12,7 +12,15 @@
     </div>
 
     <div class="relative z-10">
-      <MainHeader :title="trip.title || '여행 상세'" :show-back="true" />
+      <MainHeader :title="trip.title || '여행 상세'" :show-back="true">
+        <template #actions>
+          <button v-if="tripId" @click="openShareModal" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+            </svg>
+          </button>
+        </template>
+      </MainHeader>
 
       <div v-if="loading" class="text-center py-20">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -40,9 +48,11 @@
                 <span class="font-medium">{{ trip.destination }}</span>
               </div>
             </div>
-            <button @click="openTripInfoModal" class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors">
-              수정
-            </button>
+            <div class="flex items-center gap-2">
+              <button @click="openTripInfoModal" class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors">
+                수정
+              </button>
+            </div>
           </div>
           <p v-if="trip.description" class="text-white/90 text-sm leading-relaxed">{{ trip.description }}</p>
         </div>
@@ -224,6 +234,14 @@
           </div>
       
           <!-- Modals -->
+          <ShareTripModal
+            :is-open="isShareModalOpen"
+            :is-shared="trip.isShared"
+            :share-url="shareableUrl"
+            @close="closeShareModal"
+            @update:is-shared="handleSharingToggle"
+          />
+
           <SlideUpModal :is-open="isTripInfoModalOpen" @close="closeTripInfoModal">
             <template #header-title>{{ tripId ? '여행 정보 수정' : '여행 정보 입력' }}</template>
             <template #body>
@@ -429,6 +447,7 @@ import KakaoMapSearchModal from '@/components/common/KakaoMapSearchModal.vue'
 import AccommodationDetailModal from '@/components/personalTrip/AccommodationDetailModal.vue'
 import FlightManagementModal from '@/components/personalTrip/FlightManagementModal.vue'
 import AccommodationManagementModal from '@/components/personalTrip/AccommodationManagementModal.vue'
+import ShareTripModal from '@/components/personalTrip/ShareTripModal.vue'
 import apiClient from '@/services/api'
 import { useGoogleMaps } from '@/composables/useGoogleMaps'
 import { useDistance } from '@/composables/useDistance'
@@ -454,6 +473,7 @@ const isAccommodationDetailModalOpen = ref(false)
 const isItineraryModalOpen = ref(false)
 const isItineraryDetailModalOpen = ref(false)
 const isKakaoMapSearchModalOpen = ref(false)
+const isShareModalOpen = ref(false)
 
 // Data for modals
 const tripData = ref({})
@@ -461,6 +481,13 @@ const countryCity = ref({ destination: '', countryCode: '' })
 const flightData = ref({})
 const accommodationData = ref({ name: '', address: '', postalCode: null, latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null })
 const itineraryItemData = ref({ locationName: '', address: '', latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null })
+
+const shareableUrl = computed(() => {
+  if (trip.value.isShared && trip.value.shareToken) {
+    return `${window.location.origin}/trips/share/${trip.value.shareToken}`;
+  }
+  return '';
+});
 
 const dateRange = computed({
   get() {
@@ -556,6 +583,31 @@ async function loadTrip() {
     router.push('/trips')
   } finally {
     loading.value = false
+  }
+}
+
+// --- Sharing ---
+function openShareModal() {
+  isShareModalOpen.value = true;
+}
+function closeShareModal() {
+  isShareModalOpen.value = false;
+}
+async function handleSharingToggle(isShared) {
+  try {
+    if (isShared) {
+      const response = await apiClient.post(`/personal-trips/${tripId.value}/share`);
+      trip.value.shareToken = response.data.shareToken;
+      trip.value.isShared = true;
+    } else {
+      await apiClient.delete(`/personal-trips/${tripId.value}/share`);
+      trip.value.isShared = false;
+    }
+  } catch (error) {
+    console.error('Failed to update sharing status:', error);
+    alert('공유 상태 변경에 실패했습니다.');
+    // Revert UI on failure
+    trip.value.isShared = !isShared;
   }
 }
 

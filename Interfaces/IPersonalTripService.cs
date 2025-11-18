@@ -30,5 +30,10 @@ namespace LocalRAG.Interfaces
 
         // Search
         Task<IEnumerable<PersonalTripDto>> SearchTripsByUserNameAsync(string userName);
+
+        // Sharing
+        Task<string> GenerateShareTokenAsync(int tripId, int userId);
+        Task DisableSharingAsync(int tripId, int userId);
+        Task<PersonalTripDto?> GetPublicTripByTokenAsync(string token);
     }
 }

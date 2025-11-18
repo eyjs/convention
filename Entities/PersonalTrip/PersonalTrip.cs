@@ -86,6 +86,17 @@ namespace LocalRAG.Entities.PersonalTrip
         /// </summary>
         public DateTime? UpdatedAt { get; set; }
 
+        /// <summary>
+        /// 공유 여부
+        /// </summary>
+        public bool IsShared { get; set; } = false;
+
+        /// <summary>
+        /// 공유를 위한 고유 토큰
+        /// </summary>
+        [MaxLength(36)]
+        public string? ShareToken { get; set; }
+
         // Navigation properties
         [ForeignKey(nameof(UserId))]
         public virtual User User { get; set; } = null!;

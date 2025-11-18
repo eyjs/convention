@@ -24,7 +24,7 @@
     </template>
     <template #footer>
       <div class="flex gap-3 w-full">
-        <button type="button" @click="editAccommodation" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">수정</button>
+        <button v-if="showEdit" type="button" @click="editAccommodation" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">수정</button>
         <button type="button" @click="closeModal" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">닫기</button>
       </div>
     </template>
@@ -49,6 +49,10 @@ const props = defineProps({
   isDomestic: {
     type: Boolean,
     default: false
+  },
+  showEdit: {
+    type: Boolean,
+    default: true
   }
 })
 

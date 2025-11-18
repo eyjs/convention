@@ -546,6 +546,7 @@ public class ConventionDbContext : DbContext
 
             entity.HasIndex(e => e.UserId).HasDatabaseName("IX_PersonalTrip_UserId");
             entity.HasIndex(e => e.StartDate).HasDatabaseName("IX_PersonalTrip_StartDate");
+            entity.HasIndex(e => e.ShareToken).IsUnique().HasDatabaseName("UQ_PersonalTrip_ShareToken");
 
             entity.HasOne(e => e.User)
                   .WithMany()

@@ -376,6 +376,53 @@ namespace LocalRAG.Services.PersonalTrip
 
         #endregion
 
+        #region Sharing
+
+        public async Task<string> GenerateShareTokenAsync(int tripId, int userId)
+        {
+            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            if (trip == null)
+                throw new ArgumentException("여행을 찾을 수 없거나 권한이 없습니다.");
+
+            if (string.IsNullOrEmpty(trip.ShareToken))
+            {
+                trip.ShareToken = Guid.NewGuid().ToString();
+            }
+
+            trip.IsShared = true;
+            trip.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return trip.ShareToken;
+        }
+
+        public async Task DisableSharingAsync(int tripId, int userId)
+        {
+            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            if (trip == null)
+                throw new ArgumentException("여행을 찾을 수 없거나 권한이 없습니다.");
+
+            trip.IsShared = false;
+            trip.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<PersonalTripDto?> GetPublicTripByTokenAsync(string token)
+        {
+            var trip = await _context.PersonalTrips
+                .AsNoTracking()
+                .Where(t => t.ShareToken == token && t.IsShared)
+                .Include(t => t.Flights)
+                .Include(t => t.Accommodations)
+                .Include(t => t.ItineraryItems)
+                .FirstOrDefaultAsync();
+
+            return trip == null ? null : MapToPersonalTripDto(trip);
+        }
+
+        #endregion
+
         #region Mappers
 
         private PersonalTripDto MapToPersonalTripDto(Entities.PersonalTrip.PersonalTrip trip)
@@ -396,6 +443,8 @@ namespace LocalRAG.Services.PersonalTrip
                 UserId = trip.UserId,
                 CreatedAt = trip.CreatedAt,
                 UpdatedAt = trip.UpdatedAt,
+                IsShared = trip.IsShared,
+                ShareToken = trip.ShareToken,
                 Flights = trip.Flights?.Select(MapToFlightDto).OrderBy(f => f.DepartureTime).ToList() ?? new List<FlightDto>(),
                 Accommodations = trip.Accommodations?.Select(MapToAccommodationDto).OrderBy(a => a.CheckInTime).ToList() ?? new List<AccommodationDto>(),
                 ItineraryItems = trip.ItineraryItems?.Select(MapToItineraryItemDto).OrderBy(i => i.DayNumber).ThenBy(i => i.StartTime).ToList() ?? new List<ItineraryItemDto>()

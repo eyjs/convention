@@ -138,7 +138,7 @@ async function loadTrips() {
 }
 
 function goToCreateTrip() {
-  router.push('/trips/create')
+  router.push('/trips/new')
 }
 
 function goToTripDetail(tripId) {

@@ -442,6 +442,76 @@ namespace LocalRAG.Controllers.PersonalTrip
 
         #endregion
 
+        #region Sharing Endpoints
+
+        /// <summary>
+        /// 여행 공유 링크 생성/활성화
+        /// </summary>
+        [HttpPost("{tripId}/share")]
+        public async Task<IActionResult> EnableSharing(int tripId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var token = await _personalTripService.GenerateShareTokenAsync(tripId, userId);
+                return Ok(new { shareToken = token });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "공유 링크 생성에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 여행 공유 비활성화
+        /// </summary>
+        [HttpDelete("{tripId}/share")]
+        public async Task<IActionResult> DisableSharing(int tripId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _personalTripService.DisableSharingAsync(tripId, userId);
+                return Ok(new { message = "공유가 비활성화되었습니다." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "공유 비활성화에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 공유 토큰으로 여행 정보 조회 (공개)
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("public/{token}")]
+        public async Task<IActionResult> GetPublicTrip(string token)
+        {
+            try
+            {
+                var trip = await _personalTripService.GetPublicTripByTokenAsync(token);
+                if (trip == null)
+                {
+                    return NotFound(new { message = "유효하지 않은 링크이거나 공유가 중단된 여행입니다." });
+                }
+                return Ok(trip);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "여행 정보 조회에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        #endregion
+
         /// <summary>
         /// [Admin] 사용자 이름으로 여행 목록 검색
         /// </summary>
