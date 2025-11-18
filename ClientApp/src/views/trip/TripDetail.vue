@@ -167,28 +167,47 @@
               </div>
             </div>
 
-            <!-- Itinerary Items with Timeline -->
-            <div class="relative">
-              <template v-for="(item, index) in dayGroup.items" :key="item.id">
-                <!-- Schedule Card -->
-                <div class="flex gap-4" :class="index < dayGroup.items.length - 1 ? 'mb-2' : 'mb-3'">
-                  <!-- Date Dot (Timeline) -->
-                  <div class="flex flex-col items-center flex-shrink-0 relative" style="width: 20px;">
-                    <!-- Bullet -->
-                    <div class="w-3 h-3 rounded-full flex-shrink-0 z-10 relative" style="background-color: rgba(23, 177, 133, 1); margin-top: 16px;"></div>
+            <!-- Itinerary Items with REFACTORED Timeline -->
+            <div>
+              <div v-for="(item, index) in dayGroup.items" :key="item.id" class="flex gap-4">
+                <!-- 1. Timeline Column -->
+                <div class="relative flex-shrink-0 w-5 flex flex-col items-center">
+                  <!-- Top line (hidden for first item) -->
+                  <div
+                    v-if="index > 0"
+                    class="absolute top-0 left-1/2 -translate-x-1/2 h-9"
+                    style="width: 0px; border-right: 1px dashed rgba(23, 177, 133, 0.5);"
+                  ></div>
+                  
+                  <!-- Bullet -->
+                  <div
+                    class="relative z-10 w-3 h-3 mt-9 rounded-full flex-shrink-0"
+                    style="background-color: rgba(23, 177, 133, 1);"
+                  ></div>
 
-                    <!-- 점선 (카드 높이만큼) -->
-                    <div class="relative w-full flex-1">
-                      <!-- 첫 번째 카드: 아래로만 -->
-                      <div v-if="index === 0" class="absolute" style="width: 0px; height: 100%; left: 50%; top: 0; border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
-                      <!-- 마지막 카드: 위로만 -->
-                      <div v-else-if="index === dayGroup.items.length - 1" class="absolute" style="width: 0px; height: 0px; left: 50%; bottom: 0;"></div>
-                      <!-- 중간 카드: 위아래 전체 -->
-                      <div v-else class="absolute" style="width: 0px; height: calc(100% + 16px); left: 50%; top: -16px; border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
+                  <!-- Bottom line & Distance Badge Container -->
+                  <div
+                    v-if="index < dayGroup.items.length - 1"
+                    class="absolute top-9 bottom-0 left-1/2 -translate-x-1/2"
+                    style="width: 0px;"
+                  >
+                    <!-- The actual line -->
+                    <div class="absolute inset-0" style="border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
+                    
+                    <!-- Distance Badge -->
+                    <div
+                      v-if="item.distanceToNext"
+                      class="absolute z-20 bottom-0 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+                      style="background-color: rgba(23, 177, 133, 0.1); color: rgba(23, 177, 133, 1);"
+                    >
+                      {{ item.distanceToNext.formatted }}
                     </div>
                   </div>
+                </div>
 
-                  <!-- Schedule Content -->
+                <!-- 2. Content Column -->
+                <div class="flex-1 pb-6">
+                  <!-- Schedule Card -->
                   <div
                     :data-item-id="item.id"
                     :draggable="isEditModeForDay(dayGroup.dayNumber)"
@@ -200,7 +219,7 @@
                     @touchstart="onTouchStart(item, dayGroup.dayNumber, $event)"
                     @touchmove="onTouchMove"
                     @touchend="onTouchEnd(item, dayGroup.dayNumber, $event)"
-                    class="group relative bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all flex-1"
+                    class="group relative bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all"
                     :class="{
                       'cursor-grab active:cursor-grabbing': isEditModeForDay(dayGroup.dayNumber),
                       'cursor-pointer': !isEditModeForDay(dayGroup.dayNumber)
@@ -241,25 +260,7 @@
                     </div>
                   </div>
                 </div>
-
-                <!-- Distance Indicator (카드 사이에 동적으로 삽입) -->
-                <div v-if="index < dayGroup.items.length - 1 && item.distanceToNext" class="flex gap-4 mb-2">
-                  <!-- Date Dot for Distance -->
-                  <div class="flex flex-col items-center flex-shrink-0 relative" style="width: 20px;">
-                    <!-- 점선 -->
-                    <div class="relative w-full h-full flex items-center justify-center" style="min-height: 32px;">
-                      <div class="absolute" style="width: 0px; height: 100%; left: 50%; top: 0; border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
-                      <!-- 거리 배지 -->
-                      <div class="relative z-10 px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: rgba(23, 177, 133, 0.1); color: rgba(23, 177, 133, 1);">
-                        {{ item.distanceToNext.formatted }}
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Empty Space -->
-                  <div class="flex-1"></div>
-                </div>
-              </template>
+              </div>
             </div>
 
             <!-- Add Itinerary Button -->
@@ -854,7 +855,11 @@ const groupedItinerary = computed(() => {
   // 전체 날짜 범위에 대해 Day 생성 (빈 날짜 포함)
   const allDays = []
   for (let i = 1; i <= daysDiff; i++) {
-    const items = itemsByDay[i] || []
+    let items = itemsByDay[i] || []
+
+    // Sort items within each day by orderNum
+    items.sort((a, b) => (a.orderNum || 0) - (b.orderNum || 0));
+
     const itemsWithDistance = calculateItemDistances(items)
     const totalDistance = calculateTotalDistance(items)
 
@@ -890,20 +895,32 @@ const currentItineraryItemId = computed(() => {
 })
 
 function openItineraryModal(item = null, dayNumber = null) {
-  editingItineraryItem.value = item
-  itineraryItemData.value = item ? {
-    locationName: item.locationName,
-    address: item.address,
-    latitude: item.latitude,
-    longitude: item.longitude,
-    googlePlaceId: item.googlePlaceId,
-    kakaoPlaceId: item.kakaoPlaceId,
-    startTime: item.startTime,
-    endTime: item.endTime,
-    notes: item.notes,
-    dayNumber: item.dayNumber
-  } : { locationName: '', address: '', latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null, dayNumber: dayNumber || 1 }
-  isItineraryModalOpen.value = true
+  if (!trip.value.startDate) {
+    alert('여행 기간을 먼저 설정해주세요.');
+    openTripInfoModal();
+    return;
+  }
+
+  editingItineraryItem.value = item;
+  if (item) {
+    // Editing: just copy the data. The startTime/endTime are already "HH:mm:ss" or "HH:mm"
+    itineraryItemData.value = { ...item };
+  } else {
+    // New: set default time strings
+    itineraryItemData.value = {
+      locationName: '',
+      address: '',
+      latitude: null,
+      longitude: null,
+      googlePlaceId: null,
+      kakaoPlaceId: null,
+      notes: '',
+      dayNumber: dayNumber || 1,
+      startTime: '09:00', // Simple time string
+      endTime: '10:00',   // Simple time string
+    };
+  }
+  isItineraryModalOpen.value = true;
 }
 
 function openDayNoteModal(dayNumber) {
@@ -924,26 +941,21 @@ function openDayNoteModal(dayNumber) {
 function closeItineraryModal() { isItineraryModalOpen.value = false }
 async function saveItineraryItem() {
   try {
+    // Just spread the data. The v-model from input[type=time] will be a HH:mm string.
     const payload = { 
       ...itineraryItemData.value, 
       personalTripId: tripId.value,
-      locationName: itineraryItemData.value.locationName,
-      address: itineraryItemData.value.address,
-      latitude: itineraryItemData.value.latitude,
-      longitude: itineraryItemData.value.longitude,
-      googlePlaceId: itineraryItemData.value.googlePlaceId,
-      kakaoPlaceId: itineraryItemData.value.kakaoPlaceId
-    }
+    };
     if (editingItineraryItem.value?.id) {
-      await apiClient.put(`/personal-trips/items/${editingItineraryItem.value.id}`, payload)
+      await apiClient.put(`/personal-trips/items/${editingItineraryItem.value.id}`, payload);
     } else {
-      await apiClient.post(`/personal-trips/${tripId.value}/items`, payload)
+      await apiClient.post(`/personal-trips/${tripId.value}/items`, payload);
     }
-    await loadTrip()
-    closeItineraryModal()
+    await loadTrip();
+    closeItineraryModal();
   } catch (error) {
-    console.error('Failed to save itinerary item:', error)
-    alert('저장에 실패했습니다.')
+    console.error('Failed to save itinerary item:', error);
+    alert('저장에 실패했습니다.');
   }
 }
 async function deleteItineraryItem(id) { // Modified to accept id
@@ -1132,39 +1144,31 @@ async function saveItineraryOrder(dayNumber) {
 
 // --- 경로 최적화 ---
 async function optimizeRoute(dayNumber) {
-  const dayItems = trip.value.itineraryItems.filter(item => item.dayNumber === dayNumber)
-  const optimized = optimizeRouteByDistance(dayItems)
+  const dayGroup = groupedItinerary.value.find(g => g.dayNumber === dayNumber);
+  if (!dayGroup) return;
+
+  const dayItems = dayGroup.items;
+  if (dayItems.length < 2) {
+    alert('경로를 최적화하려면 2개 이상의 일정이 필요합니다.');
+    return;
+  }
+
+  // Pass only the dayItems to the optimization function
+  const optimized = optimizeRouteByDistance(dayItems);
 
   if (optimized.length === dayItems.length) {
-    // API로 최적화된 순서 업데이트
     const updatePayload = optimized.map((item, index) => ({
       id: item.id,
       orderNum: index
-    }))
+    }));
 
     try {
-      await apiClient.put(`/personal-trips/${tripId.value}/items/reorder`, { items: updatePayload })
-
-      // 로컬 상태 업데이트 (페이지 새로고침 방지)
-      const items = trip.value.itineraryItems
-      const draggedDayItems = items.filter(i => i.dayNumber === dayNumber)
-
-      // 최적화된 순서대로 재배치
-      optimized.forEach((optimizedItem, newIndex) => {
-        const item = draggedDayItems.find(i => i.id === optimizedItem.id)
-        if (item) {
-          item.orderNum = newIndex
-        }
-      })
-
-      // 배열 순서도 업데이트
-      const otherDayItems = items.filter(i => i.dayNumber !== dayNumber)
-      trip.value.itineraryItems = [...otherDayItems, ...optimized]
-
-      alert('경로가 최적화되었습니다!')
+      await apiClient.put(`/personal-trips/${tripId.value}/items/reorder`, { items: updatePayload });
+      await loadTrip();
+      alert('경로가 최적화되었습니다!');
     } catch (error) {
-      console.error('Failed to optimize route:', error)
-      alert('경로 최적화에 실패했습니다.')
+      console.error('Failed to optimize route:', error);
+      alert('경로 최적화에 실패했습니다.');
     }
   }
 }

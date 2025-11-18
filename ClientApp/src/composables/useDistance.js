@@ -13,13 +13,22 @@
  * @returns {number} 두 지점 간의 거리 (km)
  */
 function calculateDistance(lat1, lon1, lat2, lon2) {
+  const nLat1 = Number(lat1);
+  const nLon1 = Number(lon1);
+  const nLat2 = Number(lat2);
+  const nLon2 = Number(lon2);
+
+  if (!isFinite(nLat1) || !isFinite(nLon1) || !isFinite(nLat2) || !isFinite(nLon2)) {
+    return Number.MAX_VALUE;
+  }
+
   const R = 6371 // 지구 반경 (km)
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
+  const dLat = toRad(nLat2 - nLat1)
+  const dLon = toRad(nLon2 - nLon1)
 
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.cos(toRad(nLat1)) * Math.cos(toRad(nLat2)) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2)
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
@@ -90,47 +99,38 @@ function calculateItemDistances(items) {
  * @returns {Array} 최적화된 순서의 일정 배열
  */
 function optimizeRouteByDistance(items) {
-  if (!items || items.length <= 1) return items
+  if (!items || items.length <= 1) return items;
 
-  // 위치 정보가 있는 항목들만 필터링
   const itemsWithLocation = items.filter(
     item => item.latitude && item.longitude
-  )
+  );
 
-  // 위치 정보가 없거나 1개 이하면 원본 반환
-  if (itemsWithLocation.length <= 1) return items
+  if (itemsWithLocation.length <= 1) return items;
 
-  const optimized = []
-  const remaining = [...itemsWithLocation]
+  // The first item is the fixed reference point.
+  const referenceItem = itemsWithLocation[0];
 
-  // 첫 번째 항목을 시작점으로
-  let current = remaining.shift()
-  optimized.push(current)
+  // Calculate distances from the reference item to all other items.
+  const otherItems = itemsWithLocation.slice(1).map(item => {
+    const distance = calculateDistance(
+      referenceItem.latitude,
+      referenceItem.longitude,
+      item.latitude,
+      item.longitude
+    );
+    return { ...item, distanceToRef: distance }; // Temporarily store distance for sorting
+  });
 
-  // 가장 가까운 다음 지점을 반복적으로 선택
-  while (remaining.length > 0) {
-    let nearestIndex = 0
-    let minDistance = Infinity
+  // Sort other items by their distance to the reference item.
+  otherItems.sort((a, b) => a.distanceToRef - b.distanceToRef);
 
-    remaining.forEach((item, index) => {
-      const distance = calculateDistance(
-        current.latitude,
-        current.longitude,
-        item.latitude,
-        item.longitude
-      )
+  // Construct the final optimized list: reference item + sorted other items.
+  const optimized = [referenceItem, ...otherItems];
 
-      if (distance < minDistance) {
-        minDistance = distance
-        nearestIndex = index
-      }
-    })
+  // Remove the temporary distanceToRef property before returning.
+  optimized.forEach(item => delete item.distanceToRef);
 
-    current = remaining.splice(nearestIndex, 1)[0]
-    optimized.push(current)
-  }
-
-  return optimized
+  return optimized;
 }
 
 /**
