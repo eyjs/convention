@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted, onMounted } from 'vue'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -69,6 +69,15 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const startPos = ref({ x: 0, y: 0 })
+const historyPushed = ref(false)
+
+// 뒤로가기 이벤트 핸들러
+const handlePopState = (event) => {
+  if (props.isOpen && historyPushed.value) {
+    event.preventDefault()
+    close(true) // true = 히스토리에서 닫힘
+  }
+}
 
 const onMouseDown = (e) => {
   startPos.value = { x: e.clientX, y: e.clientY }
@@ -96,8 +105,15 @@ const onTouchEnd = (e) => {
   }
 }
 
-const close = () => {
-  emit('close')
+const close = (fromHistory = false) => {
+  // 히스토리에서 닫힌 경우가 아니면 뒤로가기 실행
+  if (!fromHistory && historyPushed.value) {
+    historyPushed.value = false
+    window.history.back()
+  } else {
+    historyPushed.value = false
+    emit('close')
+  }
 }
 
 const maxWidthClass = computed(() => {
@@ -113,18 +129,26 @@ const maxWidthClass = computed(() => {
   }[props.maxWidth]
 })
 
-// 모달이 열릴 때 body 스크롤 막기
+// 모달이 열릴 때 body 스크롤 막기 및 히스토리 관리
 watch(
   () => props.isOpen,
-  (isOpen) => {
-    if (isOpen) {
+  (isOpen, wasOpen) => {
+    if (isOpen && !wasOpen) {
+      // 모달이 열릴 때
       // 현재 스크롤 위치 저장
       const scrollY = window.scrollY
       document.body.style.position = 'fixed'
       document.body.style.top = `-${scrollY}px`
       document.body.style.width = '100%'
       document.body.style.overflowY = 'scroll'
-    } else {
+
+      // 히스토리에 가상 엔트리 추가
+      if (!historyPushed.value) {
+        window.history.pushState({ modal: 'open' }, '')
+        historyPushed.value = true
+      }
+    } else if (!isOpen && wasOpen) {
+      // 모달이 닫힐 때
       // 스크롤 위치 복원
       const scrollY = document.body.style.top
       document.body.style.position = ''
@@ -136,12 +160,22 @@ watch(
   },
 )
 
-// 컴포넌트 unmount 시 body 스타일 복원
+onMounted(() => {
+  window.addEventListener('popstate', handlePopState)
+})
+
+// 컴포넌트 unmount 시 body 스타일 복원 및 이벤트 리스너 제거
 onUnmounted(() => {
   document.body.style.position = ''
   document.body.style.top = ''
   document.body.style.width = ''
   document.body.style.overflowY = ''
+  window.removeEventListener('popstate', handlePopState)
+
+  // 히스토리 정리
+  if (historyPushed.value && props.isOpen) {
+    window.history.back()
+  }
 })
 </script>
 

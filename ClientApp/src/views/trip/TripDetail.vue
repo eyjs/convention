@@ -170,16 +170,20 @@
                   <!-- Day Header -->
                   <div class="mb-4">
                     <div class="flex items-center justify-between mb-2">
-                      <h3 class="text-lg font-bold text-gray-900">Day {{ dayGroup.dayNumber }}</h3>
-                      <div class="flex items-center gap-2">
-                        <button @click="optimizeRoute(dayGroup.dayNumber)" class="px-3 py-1.5 text-xs rounded-lg hover:opacity-80 transition-all font-medium" style="background-color: rgba(23, 177, 133, 0.1); color: rgba(23, 177, 133, 1);">
-                          경로 최적화
+                      <h3 class="text-lg font-bold text-gray-900">
+                        Day {{ dayGroup.dayNumber }} <span class="text-base font-medium text-gray-500">{{ formatDateWithDay(dayGroup.date) }}</span>
+                      </h3>
+                      <div class="flex items-center gap-3">
+                        <!-- 편집 모드일 때: 거리순 재정렬만 표시 -->
+                        <button v-if="isEditModeForDay(dayGroup.dayNumber)" @click="optimizeRoute(dayGroup.dayNumber)" class="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                          </svg>
+                          거리순 재정렬
                         </button>
-                        <button @click="clearDaySchedule(dayGroup.dayNumber)" class="px-3 py-1.5 text-xs rounded-lg hover:opacity-80 transition-all font-medium" style="background-color: rgba(239, 68, 68, 0.1); color: rgba(239, 68, 68, 1);">
-                          초기화
-                        </button>
-                        <button @click="toggleEditMode(dayGroup.dayNumber)" :class="['px-3 py-1.5 text-xs rounded-lg transition-all font-medium']" :style="isEditModeForDay(dayGroup.dayNumber) ? 'background-color: rgba(23, 177, 133, 1); color: white;' : 'background-color: #f3f4f6; color: #374151;'">
-                          {{ isEditModeForDay(dayGroup.dayNumber) ? '편집 완료' : '순서 편집' }}
+                        <!-- 편집 버튼 -->
+                        <button @click="toggleEditMode(dayGroup.dayNumber)" class="text-sm font-medium transition-colors" :class="isEditModeForDay(dayGroup.dayNumber) ? 'text-blue-600 hover:text-blue-700' : 'text-gray-600 hover:text-gray-700'">
+                          {{ isEditModeForDay(dayGroup.dayNumber) ? '완료' : '편집' }}
                         </button>
                       </div>
                     </div>
@@ -190,22 +194,35 @@
       
                   <!-- Itinerary Items with Original Timeline + Improved Content -->
                   <div>
-                    <div v-for="(item, index) in dayGroup.items" :key="item.id" class="flex gap-4">
-                      <!-- 1. Timeline Column (Original Style) -->
-                      <div class="relative flex-shrink-0 w-5 flex flex-col items-center">
+                    <div v-for="(item, index) in dayGroup.items" :key="item.id" class="flex gap-3">
+                      <!-- Checkbox (편집 모드일 때만) -->
+                      <div v-if="isEditModeForDay(dayGroup.dayNumber)" class="flex-shrink-0 pt-9">
+                        <button
+                          @click.stop="toggleItemSelection(item.id)"
+                          class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                          :class="selectedItineraryItems.includes(item.id) ? 'bg-primary-500 border-primary-500' : 'border-gray-300 bg-white hover:border-primary-400'"
+                        >
+                          <svg v-if="selectedItineraryItems.includes(item.id)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <!-- 1. Timeline Column (편집 모드가 아닐 때만 표시) -->
+                      <div v-if="!isEditModeForDay(dayGroup.dayNumber)" class="relative flex-shrink-0 w-5 flex flex-col items-center">
                         <!-- Top line (hidden for first item) -->
                         <div
                           v-if="index > 0"
                           class="absolute top-0 left-1/2 -translate-x-1/2 h-9"
                           style="width: 0px; border-right: 1px dashed rgba(23, 177, 133, 0.5);"
                         ></div>
-                        
+
                         <!-- Bullet -->
                         <div
                           class="relative z-10 w-3 h-3 mt-9 rounded-full flex-shrink-0"
                           style="background-color: rgba(23, 177, 133, 1);"
                         ></div>
-      
+
                         <!-- Bottom line & Distance Badge Container -->
                         <div
                           v-if="index < dayGroup.items.length - 1"
@@ -214,7 +231,7 @@
                         >
                           <!-- The actual line -->
                           <div class="absolute inset-0" style="border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
-                          
+
                           <!-- Distance Badge -->
                           <div
                             v-if="item.distanceToNext"
@@ -253,21 +270,30 @@
                           <div class="flex items-start justify-between gap-3">
                             <!-- Main content -->
                             <div class="flex-1 min-w-0">
-                              <!-- Place name + category icon -->
-                              <div class="flex items-center gap-2 mb-1">
-                                <h3 class="font-bold text-gray-900 text-base">{{ item.locationName }}</h3>
-                                <component :is="getCategoryIcon(item.category)" v-if="item.category" class="w-4 h-4 text-gray-500 flex-shrink-0" />
-                              </div>
-                              
-                              <!-- Category + Time range -->
-                              <div class="flex items-center gap-2 text-sm text-gray-500 mb-1">
-                                <span v-if="item.category">{{ item.category }}</span>
-                                <span v-if="item.category && item.startTime && item.endTime">·</span>
-                                <span v-if="item.startTime && item.endTime" class="text-primary-600 font-medium">
-                                  {{ item.startTime.substring(0, 5) }}-{{ item.endTime.substring(0, 5) }}
+                              <!-- Category Badge -->
+                              <div v-if="item.category" class="mb-2">
+                                <span class="inline-flex items-center gap-1 px-2 py-1 bg-primary-50 text-primary-700 text-xs font-medium rounded-full">
+                                  <component :is="getCategoryIcon(item.category)" class="w-3 h-3" />
+                                  {{ item.category }}
                                 </span>
                               </div>
-                              
+
+                              <!-- Place name -->
+                              <h3 class="font-bold text-gray-900 text-base mb-1">{{ item.locationName }}</h3>
+
+                              <!-- Address -->
+                              <p v-if="item.address" class="text-xs text-gray-500 mb-1">{{ item.address }}</p>
+
+                              <!-- Time range -->
+                              <div v-if="item.startTime && item.endTime" class="flex items-center gap-1 text-sm text-gray-600 mb-1">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="font-medium">
+                                  {{ item.startTime.substring(0, 5) }} - {{ item.endTime.substring(0, 5) }}
+                                </span>
+                              </div>
+
                               <!-- Notes/Details -->
                               <p v-if="item.notes && item.notes.trim() !== ''" class="text-sm text-gray-600 leading-relaxed mt-2">
                                 {{ item.notes }}
@@ -275,30 +301,43 @@
                             </div>
 
                             <!-- Actions -->
-                            <div class="flex items-center gap-1 flex-shrink-0">
+                            <div v-if="isEditModeForDay(dayGroup.dayNumber)" class="flex items-center gap-1 flex-shrink-0">
                               <!-- Drag Handle (only in edit mode) -->
-                              <div v-if="isEditModeForDay(dayGroup.dayNumber)" class="text-gray-400 cursor-grab">
+                              <div class="text-gray-400 cursor-grab">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
                                 </svg>
                               </div>
-                              
-                              <!-- Delete Button -->
-                              <button 
-                                @click.stop="deleteItineraryItemFromList(item.id)" 
-                                class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                :disabled="item.isAutoGenerated"
-                              >
-                                <Trash2Icon class="w-4 h-4" />
-                              </button>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <!-- Add Itinerary Button -->
-                  <button @click="openItineraryModal(null, dayGroup.dayNumber)" class="w-full py-3 border-2 border-dashed rounded-xl font-medium hover:opacity-80 transition-all" style="border-color: rgba(23, 177, 133, 0.3); color: rgba(23, 177, 133, 1); background-color: rgba(23, 177, 133, 0.05);">
+
+                  <!-- 편집 모드 하단 버튼들 -->
+                  <div v-if="isEditModeForDay(dayGroup.dayNumber)" class="space-y-3 mb-3">
+                    <!-- day 전체 선택 버튼 -->
+                    <button
+                      @click="toggleSelectAllForDay(dayGroup.dayNumber)"
+                      class="w-full py-3 border-2 rounded-xl font-semibold transition-all"
+                      :class="isAllSelectedForDay(dayGroup.dayNumber) ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-300 bg-white text-gray-700 hover:border-primary-400'"
+                    >
+                      {{ isAllSelectedForDay(dayGroup.dayNumber) ? '전체 선택 해제' : 'day 전체 선택' }}
+                    </button>
+
+                    <!-- 선택 항목 삭제 버튼 (선택된 항목이 있을 때만) -->
+                    <button
+                      v-if="getSelectedItemsForDay(dayGroup.dayNumber).length > 0"
+                      @click="bulkDeleteSelectedItems(dayGroup.dayNumber)"
+                      class="w-full py-3 border-2 border-red-500 bg-red-50 text-red-700 rounded-xl font-semibold hover:bg-red-100 transition-all"
+                    >
+                      선택 항목 삭제 ({{ getSelectedItemsForDay(dayGroup.dayNumber).length }}개)
+                    </button>
+                  </div>
+
+                  <!-- Add Itinerary Button (편집 모드가 아닐 때만) -->
+                  <button v-if="!isEditModeForDay(dayGroup.dayNumber)" @click="openItineraryModal(null, dayGroup.dayNumber)" class="w-full py-3 border-2 border-dashed rounded-xl font-medium hover:opacity-80 transition-all" style="border-color: rgba(23, 177, 133, 0.3); color: rgba(23, 177, 133, 1); background-color: rgba(23, 177, 133, 0.05);">
                     + 일정 추가
                   </button>
                 </div>
@@ -449,12 +488,20 @@
                 </div>
                 <div>
                   <label class="label">카테고리</label>
-                  <input type="text" v-model="itineraryItemData.category" placeholder="예: 음식점, 쇼핑" class="input" />
+                  <input type="text" v-model="itineraryItemData.category" placeholder="카카오맵에서 자동 설정됨" class="input bg-gray-50 cursor-not-allowed" readonly />
                   <div class="flex flex-wrap gap-2 mt-2">
-                    <button v-for="cat in presetCategories" :key="cat" type="button" @click="itineraryItemData.category = cat" class="px-3 py-1 text-sm rounded-full transition-colors" :class="itineraryItemData.category === cat ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
-                      {{ cat }}
+                    <button type="button" @click="itineraryItemData.category = '기타'" class="px-3 py-1 text-sm rounded-full transition-colors" :class="itineraryItemData.category === '기타' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
+                      기타
                     </button>
                   </div>
+                </div>
+                <div>
+                  <label class="label">전화번호</label>
+                  <input type="tel" v-model="itineraryItemData.phoneNumber" placeholder="카카오맵에서 자동 설정됨" class="input bg-gray-50 cursor-not-allowed" readonly />
+                </div>
+                <div>
+                  <label class="label">금액 (원)</label>
+                  <input type="number" v-model.number="itineraryItemData.expenseAmount" placeholder="예: 50000" class="input" min="0" step="100" />
                 </div>
                 <div><label class="label">메모</label><textarea v-model="itineraryItemData.notes" rows="3" class="input"></textarea></div>
               </form>
@@ -471,13 +518,60 @@
             <template #header-title>일정 상세</template>
             <template #body>
               <div v-if="selectedItinerary" class="space-y-4">
+                <!-- Category Badge & Phone Link -->
+                <div class="flex items-center justify-between">
+                  <div v-if="selectedItinerary.category">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 text-sm font-medium rounded-full">
+                      <component :is="getCategoryIcon(selectedItinerary.category)" class="w-4 h-4" />
+                      {{ selectedItinerary.category }}
+                    </span>
+                  </div>
+                  <div v-else class="flex-1"></div>
+
+                  <!-- Phone Call Link -->
+                  <a v-if="selectedItinerary.phoneNumber" :href="`tel:${selectedItinerary.phoneNumber}`" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                    전화걸기
+                  </a>
+                </div>
+
                 <h3 class="text-xl font-bold">{{ selectedItinerary.locationName }}</h3>
-                <p v-if="selectedItinerary.address" class="text-gray-600">{{ selectedItinerary.address }}</p>
-                <p v-if="selectedItinerary.startTime && selectedItinerary.endTime" class="text-gray-800 font-medium">{{ selectedItinerary.startTime.substring(0, 5) }} - {{ selectedItinerary.endTime.substring(0, 5) }}</p>
+
+                <!-- 주소 (길찾기 버튼) -->
+                <div v-if="selectedItinerary.address" class="flex items-start gap-2">
+                  <svg class="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <p class="text-gray-600 flex-1 text-sm leading-5">{{ selectedItinerary.address }}</p>
+                  <a v-if="selectedItinerary.kakaoPlaceUrl" :href="selectedItinerary.kakaoPlaceUrl" target="_blank" class="text-blue-600 hover:text-blue-700 text-sm font-medium whitespace-nowrap leading-5" title="카카오맵에서 길찾기">
+                    길찾기
+                  </a>
+                  <a v-else-if="selectedItinerary.latitude && selectedItinerary.longitude" :href="`https://map.kakao.com/link/to/${selectedItinerary.locationName},${selectedItinerary.latitude},${selectedItinerary.longitude}`" target="_blank" class="text-blue-600 hover:text-blue-700 text-sm font-medium whitespace-nowrap leading-5" title="카카오맵에서 길찾기">
+                    길찾기
+                  </a>
+                </div>
+
+                <!-- 시간 -->
+                <div v-if="selectedItinerary.startTime && selectedItinerary.endTime" class="text-gray-800 font-medium flex items-start gap-2">
+                  <svg class="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{{ selectedItinerary.startTime.substring(0, 5) }} - {{ selectedItinerary.endTime.substring(0, 5) }}</span>
+                </div>
+
+                <!-- 금액 -->
+                <div v-if="selectedItinerary.expenseAmount" class="text-gray-800 font-medium flex items-start gap-2">
+                  <svg class="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{{ selectedItinerary.expenseAmount.toLocaleString() }}원</span>
+                </div>
+
+                <!-- 메모 -->
                 <p v-if="selectedItinerary.notes" class="whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{{ selectedItinerary.notes }}</p>
-                
-                <button 
-                  v-if="selectedItinerary.latitude && !showItineraryMap" 
+
+                <button
+                  v-if="selectedItinerary.latitude && !showItineraryMap"
                   @click="showItineraryMap = true"
                   class="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
                 >
@@ -493,7 +587,7 @@
                     />
                     <GoogleMapPlaceholder v-else-if="!isDomestic && selectedItinerary.latitude" />
                   </div>
-                  <button 
+                  <button
                     @click="showItineraryMap = false"
                     class="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
                   >
@@ -504,8 +598,8 @@
             </template>
             <template #footer>
               <div class="flex gap-3 w-full">
-                <button type="button" @click="editSelectedItinerary" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors" :disabled="selectedItinerary?.isAutoGenerated">수정</button>
-                <button type="button" @click="closeItineraryDetailModal" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">닫기</button>
+                <button type="button" @click="closeItineraryDetailModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">닫기</button>
+                <button type="button" @click="editSelectedItinerary" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all" :disabled="selectedItinerary?.isAutoGenerated">수정</button>
               </div>
             </template>
           </SlideUpModal>
@@ -524,6 +618,7 @@
             @update:is-open="isKakaoMapSearchModalOpen = $event"
             @select-place="handleKakaoPlaceSelection"
             :initial-location="currentKakaoSearchInitialLocation"
+            z-index-class="z-[70]"
           />
       
           </div>
@@ -623,7 +718,7 @@ const tripData = ref({})
 const countryCity = ref({ destination: '', countryCode: '' })
 const flightData = ref({})
 const accommodationData = ref({ name: '', address: '', postalCode: null, latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null })
-const itineraryItemData = ref({ locationName: '', address: '', latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null })
+const itineraryItemData = ref({ locationName: '', address: '', latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null, phoneNumber: null, kakaoPlaceUrl: null, expenseAmount: null })
 const presetCategories = ['음식점', '카페', '쇼핑', '관광', '기타'];
 
 const shareableUrl = computed(() => {
@@ -1136,8 +1231,23 @@ function openItineraryModal(item = null, dayNumber = null) {
 
   editingItineraryItem.value = item;
   if (item) {
-    // Editing existing item
-    itineraryItemData.value = { ...item };
+    // Editing existing item - explicitly copy all fields
+    itineraryItemData.value = {
+      locationName: item.locationName || '',
+      address: item.address || '',
+      latitude: item.latitude || null,
+      longitude: item.longitude || null,
+      googlePlaceId: item.googlePlaceId || null,
+      kakaoPlaceId: item.kakaoPlaceId || null,
+      phoneNumber: item.phoneNumber || null,
+      category: item.category || null,
+      kakaoPlaceUrl: item.kakaoPlaceUrl || null,
+      expenseAmount: item.expenseAmount || null,
+      dayNumber: item.dayNumber,
+      startTime: item.startTime || '',
+      endTime: item.endTime || '',
+      notes: item.notes || ''
+    };
   } else {
     // Adding new item
     const targetDayNumber = dayNumber || 1;
@@ -1171,6 +1281,9 @@ function openItineraryModal(item = null, dayNumber = null) {
       kakaoPlaceId: null,
       notes: '',
       category: '', // Initialize category
+      phoneNumber: null,
+      kakaoPlaceUrl: null,
+      expenseAmount: null,
       dayNumber: targetDayNumber,
       startTime: defaultStartTime,
       endTime: defaultEndTime,
@@ -1428,32 +1541,36 @@ async function optimizeRoute(dayNumber) {
 
 function toggleEditMode(dayNumber) {
   editModeByDay.value[dayNumber] = !editModeByDay.value[dayNumber]
+
+  // 편집 모드 종료 시 선택 항목 초기화
+  if (!editModeByDay.value[dayNumber]) {
+    const dayItems = trip.value.itineraryItems?.filter(item => item.dayNumber === dayNumber) || []
+    selectedItineraryItems.value = selectedItineraryItems.value.filter(id =>
+      !dayItems.some(item => item.id === id)
+    )
+  }
 }
 
 function isEditModeForDay(dayNumber) {
+  return editModeByDay.value[dayNumber] || false
+}
 
-async function clearDaySchedule(dayNumber) {
-  const dayItems = trip.value.itineraryItems?.filter(item => item.dayNumber === dayNumber && !item.isAutoGenerated) || []
-  if (dayItems.length === 0) {
-    alert('삭제할 일정이 없습니다.')
-    return
-  }
-  
-  if (!confirm(`Day ${dayNumber}의 ${dayItems.length}개 일정을 모두 삭제하시겠습니까?`)) return
-
-  try {
-    await Promise.all(
-      dayItems.map(item =>
-        apiClient.delete(`/personal-trips/items/${item.id}`)
-      )
-    )
-    await loadTrip()
-  } catch (error) {
-    console.error('Failed to clear day schedule:', error)
-    alert('일정 초기화에 실패했습니다.')
+// 개별 아이템 선택/해제
+function toggleItemSelection(id) {
+  const index = selectedItineraryItems.value.indexOf(id)
+  if (index > -1) {
+    selectedItineraryItems.value.splice(index, 1)
+  } else {
+    selectedItineraryItems.value.push(id)
   }
 }
-  return editModeByDay.value[dayNumber] || false
+
+// 특정 day의 선택된 아이템 개수
+function getSelectedItemsForDay(dayNumber) {
+  const dayItems = trip.value.itineraryItems?.filter(item => item.dayNumber === dayNumber) || []
+  return selectedItineraryItems.value.filter(id =>
+    dayItems.some(item => item.id === id)
+  )
 }
 
 // --- Itinerary Detail Modal ---
@@ -1471,6 +1588,22 @@ function editSelectedItinerary() {
   openItineraryModal(selectedItinerary.value)
 }
 
+// --- Date Formatting ---
+function formatDateWithDay(date) {
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토']
+  return `${dayjs(date).format('M/D')}(${weekdays[dayjs(date).day()]})`
+}
+
+// --- Copy to Clipboard ---
+async function copyToClipboard(text, label = '내용') {
+  try {
+    await navigator.clipboard.writeText(text)
+    alert(`${label}가 복사되었습니다.`)
+  } catch (error) {
+    console.error('Failed to copy to clipboard:', error)
+    alert('복사에 실패했습니다.')
+  }
+}
 
 // --- Bulk Actions ---
 function isAllSelectedForDay(dayNumber) {
@@ -1493,17 +1626,21 @@ function toggleSelectAllForDay(dayNumber) {
   }
 }
 
-async function bulkDeleteSelectedItems() {
-  if (selectedItineraryItems.value.length === 0) return
-  if (!confirm(`${selectedItineraryItems.value.length}개의 일정을 삭제하시겠습니까?`)) return
+async function bulkDeleteSelectedItems(dayNumber) {
+  const itemsToDelete = getSelectedItemsForDay(dayNumber)
+  if (itemsToDelete.length === 0) return
+  if (!confirm(`${itemsToDelete.length}개의 일정을 삭제하시겠습니까?`)) return
 
   try {
     await Promise.all(
-      selectedItineraryItems.value.map(id =>
+      itemsToDelete.map(id =>
         apiClient.delete(`/personal-trips/items/${id}`)
       )
     )
-    selectedItineraryItems.value = []
+    // 삭제된 항목을 선택 목록에서 제거
+    selectedItineraryItems.value = selectedItineraryItems.value.filter(id =>
+      !itemsToDelete.includes(id)
+    )
     await loadTrip()
   } catch (error) {
     console.error('Failed to delete items:', error)
@@ -1559,6 +1696,9 @@ function handleKakaoPlaceSelection(place) {
     itineraryItemData.value.latitude = place.latitude
     itineraryItemData.value.longitude = place.longitude
     itineraryItemData.value.kakaoPlaceId = place.kakaoPlaceId
+    itineraryItemData.value.phoneNumber = place.phoneNumber || null
+    itineraryItemData.value.category = place.category || null
+    itineraryItemData.value.kakaoPlaceUrl = place.kakaoPlaceUrl || null
   }
   isKakaoMapSearchModalOpen.value = false
 }

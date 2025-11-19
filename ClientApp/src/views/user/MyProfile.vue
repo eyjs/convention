@@ -30,65 +30,96 @@
           </div>
         </div>
 
+        <!-- 프로필 편집 버튼 -->
+        <div class="px-4 py-4">
+          <button @click="openProfileEditModal" class="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">
+            프로필 편집
+          </button>
+        </div>
+
         <!-- 정보 목록 -->
         <div class="bg-white rounded-lg shadow">
           <ul class="divide-y divide-gray-200">
-            <li v-for="field in profileFields" :key="field.key" @click="field.isEditable ? openEditModal(field.key) : null" :class="{'cursor-pointer hover:bg-gray-50': field.isEditable}" class="px-4 py-4 flex justify-between items-center">
+            <li v-for="field in profileFields" :key="field.key" class="px-4 py-4 flex justify-between items-center">
               <span class="font-medium text-gray-700">{{ field.label }}</span>
               <div class="flex items-center gap-2">
-                <span class="text-gray-900">{{ field.value || '' }}</span>
-                <ChevronRight v-if="field.isEditable" class="w-5 h-5 text-gray-400" />
+                <span class="text-gray-900">{{ field.value || '-' }}</span>
               </div>
             </li>
           </ul>
         </div>
+
+        <!-- 비밀번호 변경 버튼 -->
+        <div class="px-4 py-4">
+          <button @click="openPasswordChangeModal" class="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">
+            비밀번호 변경
+          </button>
+        </div>
       </template>
     </div>
 
-    <!-- 공통 수정 모달 사용 -->
-    <SlideUpModal :is-open="isEditModalOpen" @close="closeEditModal">
-      <template #header-title>{{ modalTitle }}</template>
+    <!-- 프로필 편집 모달 -->
+    <SlideUpModal :is-open="isProfileEditModalOpen" @close="closeProfileEditModal">
+      <template #header-title>프로필 편집</template>
       <template #body>
-        <form id="edit-form" @submit.prevent="handleSave">
-          <!-- 영문 이름 수정 -->
-          <div v-if="editingField === 'englishName'" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">영문 이름 (First Name)</label>
-              <input v-model="tempData.firstName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">영문 성 (Last Name)</label>
-              <input v-model="tempData.lastName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-            </div>
+        <form id="profile-edit-form" @submit.prevent="handleProfileSave" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">영문 이름 (First Name)</label>
+            <input v-model="tempProfileData.firstName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
-
-          <!-- 비밀번호 변경 -->
-          <div v-else-if="editingField === 'password'" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
-              <input v-model="tempData.currentPassword" type="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
-              <input v-model="tempData.newPassword" type="password" required minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">새 비밀번호 확인</label>
-              <input v-model="tempData.confirmPassword" type="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-            </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">영문 성 (Last Name)</label>
+            <input v-model="tempProfileData.lastName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
-          
-          <!-- 기타 단일 필드 수정 -->
-          <div v-else>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ modalTitle }}</label>
-            <input :type="editingField === 'passportExpiryDate' ? 'date' : 'text'" v-model="tempData.value" class="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">휴대폰 번호</label>
+            <input v-model="tempProfileData.phone" type="tel" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">소속</label>
+            <input v-model="tempProfileData.affiliation" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">여권 번호</label>
+            <input v-model="tempProfileData.passportNumber" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">여권 만료일</label>
+            <input v-model="tempProfileData.passportExpiryDate" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
         </form>
       </template>
       <template #footer>
-        <div class="flex justify-end gap-3">
-          <button type="button" @click="closeEditModal" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100">취소</button>
-          <button type="submit" form="edit-form" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">저장</button>
+        <div class="flex gap-3 w-full">
+          <button type="button" @click="closeProfileEditModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
+          <button type="submit" form="profile-edit-form" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">저장</button>
+        </div>
+      </template>
+    </SlideUpModal>
+
+    <!-- 비밀번호 변경 모달 -->
+    <SlideUpModal :is-open="isPasswordModalOpen" @close="closePasswordModal">
+      <template #header-title>비밀번호 변경</template>
+      <template #body>
+        <form id="password-form" @submit.prevent="handlePasswordSave" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
+            <input v-model="tempPasswordData.currentPassword" type="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
+            <input v-model="tempPasswordData.newPassword" type="password" required minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">새 비밀번호 확인</label>
+            <input v-model="tempPasswordData.confirmPassword" type="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+          </div>
+        </form>
+      </template>
+      <template #footer>
+        <div class="flex gap-3 w-full">
+          <button type="button" @click="closePasswordModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
+          <button type="submit" form="password-form" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">저장</button>
         </div>
       </template>
     </SlideUpModal>
@@ -97,7 +128,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { Camera, ChevronRight } from 'lucide-vue-next'
+import { Camera } from 'lucide-vue-next'
 import MainHeader from '@/components/common/MainHeader.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import apiClient from '@/services/api'
@@ -105,37 +136,25 @@ import apiClient from '@/services/api'
 const loading = ref(true)
 const profile = ref({})
 
-const isEditModalOpen = ref(false)
-const editingField = ref('')
-const tempData = ref({})
+const isProfileEditModalOpen = ref(false)
+const isPasswordModalOpen = ref(false)
+const tempProfileData = ref({})
+const tempPasswordData = ref({})
 
 const profileFields = computed(() => {
   if (!profile.value) return []
   return [
-    { key: 'loginId', label: '아이디', value: profile.value.loginId, isEditable: false },
-    { key: 'name', label: '이름', value: profile.value.name, isEditable: false },
-    { key: 'englishName', label: '영문 이름', value: `${profile.value.firstName || ''} ${profile.value.lastName || ''}`.trim(), isEditable: true },
-    { key: 'phone', label: '휴대폰 번호', value: profile.value.phone, isEditable: true },
-    { key: 'email', label: '이메일', value: profile.value.email, isEditable: false },
-    { key: 'affiliation', label: '소속', value: profile.value.affiliation, isEditable: true },
-    { key: 'passportNumber', label: '여권 번호', value: profile.value.passportNumber, isEditable: true },
-    { key: 'passportExpiryDate', label: '여권 만료일', value: profile.value.passportExpiryDate, isEditable: true },
-    ...(profile.value.corpName ? [{ key: 'corpName', label: '회사명', value: profile.value.corpName, isEditable: false }] : []),
-    ...(profile.value.corpPart ? [{ key: 'corpPart', label: '부서', value: profile.value.corpPart, isEditable: false }] : []),
-    { key: 'password', label: '비밀번호 변경', value: '', isEditable: true },
+    { key: 'loginId', label: '아이디', value: profile.value.loginId },
+    { key: 'name', label: '이름', value: profile.value.name },
+    { key: 'englishName', label: '영문 이름', value: `${profile.value.firstName || ''} ${profile.value.lastName || ''}`.trim() },
+    { key: 'phone', label: '휴대폰 번호', value: profile.value.phone },
+    { key: 'email', label: '이메일', value: profile.value.email },
+    { key: 'affiliation', label: '소속', value: profile.value.affiliation },
+    { key: 'passportNumber', label: '여권 번호', value: profile.value.passportNumber },
+    { key: 'passportExpiryDate', label: '여권 만료일', value: profile.value.passportExpiryDate },
+    ...(profile.value.corpName ? [{ key: 'corpName', label: '회사명', value: profile.value.corpName }] : []),
+    ...(profile.value.corpPart ? [{ key: 'corpPart', label: '부서', value: profile.value.corpPart }] : []),
   ]
-})
-
-const modalTitle = computed(() => {
-  switch (editingField.value) {
-    case 'englishName': return '영문 이름 수정'
-    case 'phone': return '휴대폰 번호 수정'
-    case 'affiliation': return '소속 수정'
-    case 'passportNumber': return '여권 번호 수정'
-    case 'passportExpiryDate': return '여권 만료일 수정'
-    case 'password': return '비밀번호 변경'
-    default: return '정보 수정'
-  }
 })
 
 // 내 정보 로드
@@ -152,64 +171,77 @@ async function loadProfile() {
   }
 }
 
-// 수정 모달 열기
-function openEditModal(fieldKey) {
-  editingField.value = fieldKey
-  if (fieldKey === 'englishName') {
-    tempData.value = { firstName: profile.value.firstName, lastName: profile.value.lastName }
-  } else if (fieldKey === 'password') {
-    tempData.value = { currentPassword: '', newPassword: '', confirmPassword: '' }
-  } else {
-    tempData.value = { value: profile.value[fieldKey] }
+// 프로필 편집 모달 열기
+function openProfileEditModal() {
+  tempProfileData.value = {
+    firstName: profile.value.firstName || '',
+    lastName: profile.value.lastName || '',
+    phone: profile.value.phone || '',
+    affiliation: profile.value.affiliation || '',
+    passportNumber: profile.value.passportNumber || '',
+    passportExpiryDate: profile.value.passportExpiryDate || ''
   }
-  isEditModalOpen.value = true
+  isProfileEditModalOpen.value = true
 }
 
-// 수정 모달 닫기
-function closeEditModal() {
-  isEditModalOpen.value = false
-  editingField.value = ''
-  tempData.value = {}
+// 프로필 편집 모달 닫기
+function closeProfileEditModal() {
+  isProfileEditModalOpen.value = false
+  tempProfileData.value = {}
 }
 
-// 변경사항 저장
-async function handleSave() {
-  let endpoint = '/users/profile'
-  let payload = {}
-
-  if (editingField.value === 'password') {
-    if (tempData.value.newPassword !== tempData.value.confirmPassword) {
-      alert('새 비밀번호가 일치하지 않습니다.')
-      return
-    }
-    endpoint = '/users/password'
-    payload = tempData.value
-  } else {
-    payload = {
-      phone: profile.value.phone,
-      firstName: profile.value.firstName,
-      lastName: profile.value.lastName,
-      passportNumber: profile.value.passportNumber,
-      passportExpiryDate: profile.value.passportExpiryDate,
-      affiliation: profile.value.affiliation,
-    }
-
-    if (editingField.value === 'englishName') {
-      payload.firstName = tempData.value.firstName
-      payload.lastName = tempData.value.lastName
-    } else {
-      payload[editingField.value] = tempData.value.value
-    }
+// 비밀번호 변경 모달 열기
+function openPasswordChangeModal() {
+  tempPasswordData.value = {
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   }
-  
+  isPasswordModalOpen.value = true
+}
+
+// 비밀번호 변경 모달 닫기
+function closePasswordModal() {
+  isPasswordModalOpen.value = false
+  tempPasswordData.value = {}
+}
+
+// 프로필 저장
+async function handleProfileSave() {
+  const payload = {
+    firstName: tempProfileData.value.firstName,
+    lastName: tempProfileData.value.lastName,
+    phone: tempProfileData.value.phone,
+    affiliation: tempProfileData.value.affiliation,
+    passportNumber: tempProfileData.value.passportNumber,
+    passportExpiryDate: tempProfileData.value.passportExpiryDate,
+  }
+
   try {
-    await apiClient.put(endpoint, payload)
-    alert('정보가 수정되었습니다.')
-    closeEditModal()
+    await apiClient.put('/users/profile', payload)
+    alert('프로필이 수정되었습니다.')
+    closeProfileEditModal()
     await loadProfile() // 데이터 새로고침
   } catch (error) {
-    console.error('정보 수정 실패:', error)
-    alert(error.response?.data?.message || '정보 수정에 실패했습니다.')
+    console.error('프로필 수정 실패:', error)
+    alert(error.response?.data?.message || '프로필 수정에 실패했습니다.')
+  }
+}
+
+// 비밀번호 저장
+async function handlePasswordSave() {
+  if (tempPasswordData.value.newPassword !== tempPasswordData.value.confirmPassword) {
+    alert('새 비밀번호가 일치하지 않습니다.')
+    return
+  }
+
+  try {
+    await apiClient.put('/users/password', tempPasswordData.value)
+    alert('비밀번호가 변경되었습니다.')
+    closePasswordModal()
+  } catch (error) {
+    console.error('비밀번호 변경 실패:', error)
+    alert(error.response?.data?.message || '비밀번호 변경에 실패했습니다.')
   }
 }
 

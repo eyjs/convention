@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted, onMounted } from 'vue'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -70,24 +70,49 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const startPos = ref({ x: 0, y: 0 })
+const historyPushed = ref(false)
 
-// 모달 열림/닫힘 시 body 스크롤 제어
-watch(() => props.isOpen, (newValue) => {
-  if (newValue) {
-    // 모달이 열릴 때 body 스크롤 막기
+// 뒤로가기 이벤트 핸들러
+const handlePopState = (event) => {
+  if (props.isOpen && historyPushed.value) {
+    event.preventDefault()
+    close(true) // true = 히스토리에서 닫힘
+  }
+}
+
+// 모달 열림/닫힘 시 body 스크롤 제어 및 히스토리 관리
+watch(() => props.isOpen, (newValue, oldValue) => {
+  if (newValue && !oldValue) {
+    // 모달이 열릴 때
     document.body.style.overflow = 'hidden'
     document.body.style.touchAction = 'none'
-  } else {
-    // 모달이 닫힐 때 body 스크롤 복원
+
+    // 히스토리에 가상 엔트리 추가
+    if (!historyPushed.value) {
+      window.history.pushState({ modal: 'open' }, '')
+      historyPushed.value = true
+    }
+  } else if (!newValue && oldValue) {
+    // 모달이 닫힐 때
     document.body.style.overflow = ''
     document.body.style.touchAction = ''
   }
 })
 
-// 컴포넌트가 언마운트될 때 스크롤 복원
+onMounted(() => {
+  window.addEventListener('popstate', handlePopState)
+})
+
+// 컴포넌트가 언마운트될 때 스크롤 복원 및 이벤트 리스너 제거
 onUnmounted(() => {
   document.body.style.overflow = ''
   document.body.style.touchAction = ''
+  window.removeEventListener('popstate', handlePopState)
+
+  // 히스토리 정리
+  if (historyPushed.value && props.isOpen) {
+    window.history.back()
+  }
 })
 
 const onMouseDown = (e) => {
@@ -102,8 +127,15 @@ const onMouseUp = (e) => {
   }
 }
 
-const close = () => {
-  emit('close')
+const close = (fromHistory = false) => {
+  // 히스토리에서 닫힌 경우가 아니면 뒤로가기 실행
+  if (!fromHistory && historyPushed.value) {
+    historyPushed.value = false
+    window.history.back()
+  } else {
+    historyPushed.value = false
+    emit('close')
+  }
 }
 </script>
 

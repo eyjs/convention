@@ -1,5 +1,5 @@
 <template>
-  <SlideUpModal :is-open="isOpen" @close="closeModal">
+  <SlideUpModal :is-open="isOpen" @close="closeModal" :z-index-class="zIndexClass">
     <template #header-title>장소 검색</template>
     <template #body>
       <div class="space-y-4">
@@ -33,6 +33,12 @@
             >
               <p class="font-medium">{{ result.place_name }}</p>
               <p class="text-gray-500">{{ result.address_name }}</p>
+              <p v-if="result.phone" class="text-gray-600 text-xs mt-1 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                {{ result.phone }}
+              </p>
             </li>
           </ul>
         </div>
@@ -73,6 +79,10 @@ const props = defineProps({
   initialLocation: {
     type: Object,
     default: () => ({ latitude: null, longitude: null, name: '', address: '' })
+  },
+  zIndexClass: {
+    type: String,
+    default: 'z-50'
   }
 })
 
@@ -172,12 +182,23 @@ function confirmSelection() {
   if (!selectedPlaceForMap.value) return
 
   const place = selectedPlaceForMap.value
+
+  // 카테고리 파싱: "음식점 > 한식 > 육류,고기요리" -> "음식점"
+  let categoryName = null
+  if (place.category_name) {
+    const categories = place.category_name.split(' > ')
+    categoryName = categories[0] || null
+  }
+
   emit('selectPlace', {
     name: place.place_name,
     address: place.address_name,
     latitude: parseFloat(place.y),
     longitude: parseFloat(place.x),
-    kakaoPlaceId: place.id
+    kakaoPlaceId: place.id,
+    phoneNumber: place.phone || null,
+    category: categoryName,
+    kakaoPlaceUrl: place.place_url || null
   })
   closeModal()
 }

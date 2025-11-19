@@ -24,7 +24,19 @@ namespace LocalRAG.DTOs.PersonalTrip
         public string? StartTime { get; set; } // "HH:mm" format
 
         public string? EndTime { get; set; }
+
+        [MaxLength(2000)]
         public string? Notes { get; set; }
+
+        [MaxLength(100)]
         public string? Category { get; set; }
+
+        [MaxLength(50)]
+        public string? PhoneNumber { get; set; }
+
+        [MaxLength(500)]
+        public string? KakaoPlaceUrl { get; set; }
+
+        public decimal? ExpenseAmount { get; set; }
     }
 }
