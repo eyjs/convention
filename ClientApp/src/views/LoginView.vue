@@ -37,14 +37,14 @@
     </section>
 
     <!-- 로그인 모달 -->
-    <Transition name="modal-slide-bottom">
+    <Transition name="modal-fade">
       <div
         v-if="isModalOpen"
-        class="fixed inset-0 bg-black/60 flex justify-center items-end z-50"
+        class="fixed inset-0 bg-black/60 flex justify-center items-end md:items-center z-50"
         @click.self="closeLoginModal"
       >
         <div
-          class="bg-white rounded-t-3xl shadow-2xl w-full max-w-md text-center relative max-h-[90vh] overflow-y-auto"
+          class="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-w-md text-center relative max-h-[90vh] md:max-h-[80vh] overflow-y-auto"
         >
           <div class="pt-8 pb-8 px-8">
           <button
@@ -699,23 +699,34 @@ async function handleRegister() {
   animation: fade-in 1.2s ease-out forwards;
 }
 
-/* New Modal Slide Animation */
-.modal-slide-bottom-enter-active,
-.modal-slide-bottom-leave-active {
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+/* New Responsive Modal Animation */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: background-color 0.4s ease;
 }
-.modal-slide-bottom-enter-active .bg-white,
-.modal-slide-bottom-leave-active .bg-white {
+
+.modal-fade-enter-active .bg-white,
+.modal-fade-leave-active .bg-white {
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.modal-slide-bottom-enter-from,
-.modal-slide-bottom-leave-to {
+.modal-fade-enter-from,
+.modal-fade-leave-to {
   background-color: rgba(0, 0, 0, 0);
 }
 
-.modal-slide-bottom-enter-from .bg-white,
-.modal-slide-bottom-leave-to .bg-white {
+/* Mobile: Slide from bottom */
+.modal-fade-enter-from .bg-white,
+.modal-fade-leave-to .bg-white {
   transform: translateY(100%);
+}
+
+/* Desktop: Fade and scale */
+@media (min-width: 768px) {
+  .modal-fade-enter-from .bg-white,
+  .modal-fade-leave-to .bg-white {
+    transform: scale(0.95);
+    opacity: 0;
+  }
 }
 </style>

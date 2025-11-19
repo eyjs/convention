@@ -1,26 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell -Command:*)",
-      "Bash(curl:*)",
-      "Bash(cat:*)",
-      "Bash(sqlcmd:*)",
-      "Bash(echo:*)",
-      "Bash(switch-to-llama3.sh)",
-      "Bash(chmod:*)",
-      "Bash(dir:*)",
-      "Bash(Test-Path \"models/all-MiniLM-L6-v2.onnx\")",
-      "Bash(dotnet build:*)",
-      "Bash(npm install:*)",
-      "Bash(dotnet ef migrations:*)",
-      "Bash(nul)",
-      "Bash(findstr:*)",
-      "Bash(dotnet ef database update:*)",
-      "Bash(npm run dev:*)",
-      "Bash(Select-String \"error\")",
-      "Bash(npm run build:*)",
-      "Bash(git checkout:*)",
-      "Bash(Test-Path \"wwwroot\")"
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

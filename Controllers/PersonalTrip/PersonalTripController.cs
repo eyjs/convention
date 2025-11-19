@@ -419,6 +419,58 @@ namespace LocalRAG.Controllers.PersonalTrip
         }
 
         /// <summary>
+        /// 일정 항목 대량 삭제
+        /// </summary>
+        [HttpDelete("{tripId}/items/bulk")]
+        public async Task<IActionResult> BulkDeleteItineraryItems(int tripId, [FromBody] BulkDeleteItineraryItemsDto dto)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var success = await _personalTripService.BulkDeleteItineraryItemsAsync(tripId, dto.ItemIds, userId);
+
+                if (!success)
+                    return NotFound(new { message = "일정 항목을 찾을 수 없습니다." });
+
+                return Ok(new { message = "선택된 일정 항목이 삭제되었습니다." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "일정 항목 대량 삭제에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 일정 항목 날짜 대량 변경
+        /// </summary>
+        [HttpPut("{tripId}/items/bulk-day")]
+        public async Task<IActionResult> BulkUpdateItineraryItemsDay(int tripId, [FromBody] BulkUpdateItineraryItemsDayDto dto)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var success = await _personalTripService.BulkUpdateItineraryItemsDayAsync(tripId, dto.Updates, userId);
+
+                if (!success)
+                    return NotFound(new { message = "일정 항목을 찾을 수 없습니다." });
+
+                return Ok(new { message = "선택된 일정 항목의 날짜가 변경되었습니다." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "일정 항목 날짜 대량 변경에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// 일정 항목 순서 재정렬
         /// </summary>
         [HttpPut("{tripId}/items/reorder")]

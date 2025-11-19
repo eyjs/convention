@@ -74,49 +74,144 @@
           <div class="flex justify-between items-center mb-5">
             <h2 class="text-xl font-bold text-gray-900">일정</h2>
           </div>
+      
+      
+              <!-- Day Filter Tabs with Scroll Arrows -->
+              <div v-if="groupedItinerary.length > 0" class="relative">
+                <div
+                  ref="dayFilterContainer"
+                  class="flex gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar"
+                  @scroll="handleDayFilterScroll"
+                >
+                  <button 
+                    @click="selectedDay = null"
+                    :class="['flex items-center justify-center px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all', selectedDay === null ? 'text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']"
+                    :style="selectedDay === null ? 'background-color: rgba(23, 177, 133, 1);' : ''"
+                  >
+                    전체
+                  </button>
+                  <button 
+                    v-for="day in groupedItinerary"
+                    :key="day.dayNumber"
+                    @click="selectedDay = day.dayNumber"
+                    :class="['flex items-center justify-center px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all', selectedDay === day.dayNumber ? 'text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']"
+                    :style="selectedDay === day.dayNumber ? 'background-color: rgba(23, 177, 133, 1);' : ''"
+                  >
+                    Day {{ day.dayNumber }}
+                  </button>
+                </div>
+                
+                <!-- Left Scroll Arrow -->
+                <div
+                  v-if="showLeftDayScroll"
+                  class="absolute left-0 top-0 bottom-2 flex items-center bg-gradient-to-r from-white to-transparent pr-4 pointer-events-none"
+                >
+                  <button
+                    @click="scrollDayFilterLeft"
+                    class="p-1.5 bg-white rounded-full shadow-md pointer-events-auto hover:bg-gray-50 transition-colors"
+                  >
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <!-- Right Scroll Arrow -->
+                <div
+                  v-if="showRightDayScroll"
+                  class="absolute right-0 top-0 bottom-2 flex items-center bg-gradient-to-l from-white to-transparent pl-4 pointer-events-none"
+                >
+                  <button
+                    @click="scrollDayFilterRight"
+                    class="p-1.5 bg-white rounded-full shadow-md pointer-events-auto hover:bg-gray-50 transition-colors"
+                  >
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
           <div v-if="groupedItinerary.length === 0" class="text-center py-12">
             <p class="text-gray-500 font-medium">등록된 일정이 없습니다</p>
           </div>
 
           <div v-else class="space-y-6">
-            <div v-for="dayGroup in groupedItinerary" :key="dayGroup.dayNumber">
+            <div v-for="dayGroup in filteredItinerary" :key="dayGroup.dayNumber">
               <div class="mb-4">
                 <h3 class="text-lg font-bold text-gray-900">Day {{ dayGroup.dayNumber }}</h3>
                 <span class="text-sm text-gray-500">{{ dayGroup.items.length }}개 일정</span>
               </div>
 
+              <!-- Itinerary Items with Improved Layout -->
               <div>
                 <div v-for="(item, index) in dayGroup.items" :key="item.id" class="flex gap-4">
+                  <!-- 1. Timeline Column (Original Style) -->
                   <div class="relative flex-shrink-0 w-5 flex flex-col items-center">
-                    <div v-if="index > 0" class="absolute top-0 left-1/2 -translate-x-1/2 h-9" style="width: 0px; border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
-                    <div class="relative z-10 w-3 h-3 mt-9 rounded-full flex-shrink-0" style="background-color: rgba(23, 177, 133, 1);"></div>
-                    <div v-if="index < dayGroup.items.length - 1" class="absolute top-9 bottom-0 left-1/2 -translate-x-1/2" style="width: 0px;">
+                    <!-- Top line (hidden for first item) -->
+                    <div
+                      v-if="index > 0"
+                      class="absolute top-0 left-1/2 -translate-x-1/2 h-9"
+                      style="width: 0px; border-right: 1px dashed rgba(23, 177, 133, 0.5);"
+                    ></div>
+                    
+                    <!-- Bullet -->
+                    <div
+                      class="relative z-10 w-3 h-3 mt-9 rounded-full flex-shrink-0"
+                      style="background-color: rgba(23, 177, 133, 1);"
+                    ></div>
+  
+                    <!-- Bottom line & Distance Badge Container -->
+                    <div
+                      v-if="index < dayGroup.items.length - 1"
+                      class="absolute top-9 bottom-0 left-1/2 -translate-x-1/2"
+                      style="width: 0px;"
+                    >
+                      <!-- The actual line -->
                       <div class="absolute inset-0" style="border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
-                      <div v-if="item.distanceToNext" class="absolute z-20 bottom-0 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap" style="background-color: rgba(23, 177, 133, 0.1); color: rgba(23, 177, 133, 1);">
+                      
+                      <!-- Distance Badge -->
+                      <div
+                        v-if="item.distanceToNext"
+                        class="absolute z-20 bottom-0 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+                        style="background-color: rgba(23, 177, 133, 0.1); color: rgba(23, 177, 133, 1);"
+                      >
                         {{ item.distanceToNext.formatted }}
                       </div>
                     </div>
                   </div>
-
+  
+                  <!-- 2. Content Column (Improved) -->
                   <div class="flex-1 pb-6">
                     <div
                       @click="openItineraryDetailModal(item)"
                       :ref="(el) => { if (item.id === currentItineraryItemId) currentItineraryItemRef = el }"
                       :data-item-id="item.id"
-                      class="group relative bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition-shadow"
-                      :style="currentItineraryItemId === item.id ? 'border: 2px solid rgba(23, 177, 133, 1); box-shadow: 0 4px 6px -1px rgba(23, 177, 133, 0.1);' : 'border-color: rgba(23, 177, 133, 0.2);'">
-                      <div class="flex gap-3">
-                        <div class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style="background-color: rgba(23, 177, 133, 0.1);">
-                          <svg class="w-6 h-6" style="color: rgba(23, 177, 133, 1);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        </div>
+                      class="group relative bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all cursor-pointer"
+                      :style="currentItineraryItemId === item.id ? 'border: 2px solid rgba(23, 177, 133, 1); box-shadow: 0 4px 6px -1px rgba(23, 177, 133, 0.1);' : ''"
+                    >
+                      <div class="flex items-start justify-between gap-3">
+                        <!-- Main content -->
                         <div class="flex-1 min-w-0">
-                          <p class="font-bold text-gray-900 mb-1">{{ item.locationName }}</p>
-                          <div class="flex items-center gap-2 text-sm text-gray-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <span v-if="item.startTime && item.endTime">{{ item.startTime.substring(0, 5) }} - {{ item.endTime.substring(0, 5) }}</span>
-                            <span v-else>시간 미정</span>
+                          <!-- Place name + category icon -->
+                          <div class="flex items-center gap-2 mb-1">
+                            <h3 class="font-bold text-gray-900 text-base">{{ item.locationName }}</h3>
+                            <component :is="getCategoryIcon(item.category)" v-if="item.category" class="w-4 h-4 text-gray-500 flex-shrink-0" />
                           </div>
+                          
+                          <!-- Category + Time range -->
+                          <div class="flex items-center gap-2 text-sm text-gray-500 mb-1">
+                            <span v-if="item.category">{{ item.category }}</span>
+                            <span v-if="item.category && item.startTime && item.endTime">·</span>
+                            <span v-if="item.startTime && item.endTime" class="text-primary-600 font-medium">
+                              {{ item.startTime.substring(0, 5) }}-{{ item.endTime.substring(0, 5) }}
+                            </span>
+                          </div>
+                          
+                          <!-- Notes/Details -->
+                          <p v-if="item.notes && item.notes.trim() !== ''" class="text-sm text-gray-600 leading-relaxed mt-2">
+                            {{ item.notes }}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -191,6 +286,7 @@ import KakaoMap from '@/components/common/KakaoMap.vue'
 import GoogleMapPlaceholder from '@/components/common/GoogleMapPlaceholder.vue'
 import apiClient from '@/services/api'
 import { useDistance } from '@/composables/useDistance'
+import { Utensils, Coffee, ShoppingBag, Landmark, CircleDot } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const route = useRoute()
@@ -200,7 +296,41 @@ const shareToken = computed(() => route.params.shareToken)
 const loading = ref(true)
 const trip = ref({})
 const isDomestic = computed(() => trip.value.countryCode === 'KR')
+
+const categoryIconMap = {
+  '음식점': Utensils,
+  '카페': Coffee,
+  '쇼핑': ShoppingBag,
+  '관광': Landmark,
+  '기타': CircleDot,
+}
+
+function getCategoryIcon(category) {
+  return categoryIconMap[category] || CircleDot
+}
 const now = ref(new Date())
+const selectedDay = ref(null)
+const dayFilterContainer = ref(null)
+const showLeftDayScroll = ref(false)
+const showRightDayScroll = ref(false)
+
+const handleDayFilterScroll = () => {
+  if (dayFilterContainer.value) {
+    showLeftDayScroll.value = dayFilterContainer.value.scrollLeft > 0
+    showRightDayScroll.value =
+      dayFilterContainer.value.scrollLeft <
+      dayFilterContainer.value.scrollWidth - dayFilterContainer.value.clientWidth
+  }
+}
+
+const scrollDayFilterLeft = () => {
+  dayFilterContainer.value?.scrollBy({ left: -200, behavior: 'smooth' })
+}
+
+const scrollDayFilterRight = () => {
+  dayFilterContainer.value?.scrollBy({ left: 200, behavior: 'smooth' })
+}
+
 
 const currentItineraryItemRef = ref(null)
 
@@ -215,7 +345,10 @@ const selectedItinerary = ref(null)
 onMounted(async () => {
   await loadTrip()
   setInterval(() => { now.value = new Date() }, 60000) // Update time every minute for highlight
+  await nextTick()
+  handleDayFilterScroll()
 })
+
 
 async function loadTrip() {
   loading.value = true
@@ -285,6 +418,18 @@ const groupedItinerary = computed(() => {
   }
 
   return allDays
+})
+
+const filteredItinerary = computed(() => {
+  if (selectedDay.value === null) {
+    return groupedItinerary.value
+  }
+  return groupedItinerary.value.filter(day => day.dayNumber === selectedDay.value)
+})
+
+watch(groupedItinerary, async () => {
+  await nextTick()
+  handleDayFilterScroll()
 })
 
 const currentItineraryItemId = computed(() => {

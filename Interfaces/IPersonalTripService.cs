@@ -26,6 +26,8 @@ namespace LocalRAG.Interfaces
         Task<ItineraryItemDto> AddItineraryItemAsync(int tripId, CreateItineraryItemDto dto, int userId);
         Task<ItineraryItemDto?> UpdateItineraryItemAsync(int itemId, UpdateItineraryItemDto dto, int userId);
         Task<bool> DeleteItineraryItemAsync(int itemId, int userId);
+        Task<bool> BulkDeleteItineraryItemsAsync(int tripId, List<int> itemIds, int userId);
+        Task<bool> BulkUpdateItineraryItemsDayAsync(int tripId, List<UpdateItemDayDto> updates, int userId);
         Task ReorderItineraryItemsAsync(int tripId, List<Controllers.PersonalTrip.ReorderItemDto> items, int userId);
 
         // Search

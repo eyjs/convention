@@ -27,5 +27,6 @@ namespace LocalRAG.DTOs.PersonalTrip
 
         [MaxLength(2000)]
         public string? Notes { get; set; }
+        public string? Category { get; set; }
     }
 }
