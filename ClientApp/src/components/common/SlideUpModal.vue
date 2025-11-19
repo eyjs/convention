@@ -58,6 +58,9 @@
 
 <script setup>
 import { ref, watch, onUnmounted, onMounted } from 'vue'
+import { useUIStore } from '@/stores/ui'
+
+const uiStore = useUIStore()
 
 const props = defineProps({
   isOpen: Boolean,
@@ -84,6 +87,7 @@ const handlePopState = (event) => {
 watch(() => props.isOpen, (newValue, oldValue) => {
   if (newValue && !oldValue) {
     // 모달이 열릴 때
+    uiStore.openModal()
     document.body.style.overflow = 'hidden'
     document.body.style.touchAction = 'none'
 
@@ -94,6 +98,7 @@ watch(() => props.isOpen, (newValue, oldValue) => {
     }
   } else if (!newValue && oldValue) {
     // 모달이 닫힐 때
+    uiStore.closeModal()
     document.body.style.overflow = ''
     document.body.style.touchAction = ''
   }
@@ -105,6 +110,9 @@ onMounted(() => {
 
 // 컴포넌트가 언마운트될 때 스크롤 복원 및 이벤트 리스너 제거
 onUnmounted(() => {
+  if (props.isOpen) {
+    uiStore.closeModal()
+  }
   document.body.style.overflow = ''
   document.body.style.touchAction = ''
   window.removeEventListener('popstate', handlePopState)

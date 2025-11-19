@@ -110,6 +110,24 @@ const routes = [
         component: () => import('@/views/trip/TripDetail.vue'),
         meta: { requiresAuth: true, title: '여행 상세' }
       },
+      {
+        path: '/trips/:id/itinerary',
+        name: 'TripItinerary',
+        component: () => import('@/views/trip/TripItinerary.vue'),
+        meta: { requiresAuth: true, title: '여행 일정표' }
+      },
+      {
+        path: '/trips/:id/expenses',
+        name: 'TripExpenses',
+        component: () => import('@/views/trip/TripExpenses.vue'),
+        meta: { requiresAuth: true, title: '여행 가계부' }
+      },
+      {
+        path: '/trips/:id/notes',
+        name: 'TripNotes',
+        component: () => import('@/views/trip/TripNotes.vue'),
+        meta: { requiresAuth: true, title: '여행 노트' }
+      },
       // ----------------------------------------------------------------
       // 동적 라우팅
       // ----------------------------------------------------------------

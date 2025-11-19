@@ -27,7 +27,7 @@
         <p class="mt-4 text-gray-600 font-medium">여행 정보를 불러오는 중...</p>
       </div>
 
-      <div v-else class="max-w-2xl mx-auto px-4 py-4">
+      <div v-else class="max-w-2xl mx-auto px-4 py-4 pb-24">
       <!-- Hero Section with Trip Info -->
       <section class="relative overflow-hidden bg-primary-500 rounded-2xl shadow-xl p-6 mb-6 text-white">
         <div class="relative z-10">
@@ -354,7 +354,7 @@
             @update:is-shared="handleSharingToggle"
           />
 
-          <SlideUpModal :is-open="isTripInfoModalOpen" @close="closeTripInfoModal">
+          <SlideUpModal :is-open="isTripInfoModalOpen" @close="closeTripInfoModal" z-index-class="z-[60]">
             <template #header-title>{{ tripId ? '여행 정보 수정' : '여행 정보 입력' }}</template>
             <template #body>
               <form id="trip-info-form" @submit.prevent="saveTripInfo" class="space-y-4">
@@ -467,7 +467,7 @@
             </template>
           </SlideUpModal>
           
-          <SlideUpModal :is-open="isItineraryModalOpen" @close="closeItineraryModal">
+          <SlideUpModal :is-open="isItineraryModalOpen" @close="closeItineraryModal" z-index-class="z-[60]">
             <template #header-title>{{ editingItineraryItem?.id ? '일정 수정' : '일정 추가' }}</template>
             <template #body>
               <form id="itinerary-form" @submit.prevent="saveItineraryItem" class="space-y-4">
@@ -514,7 +514,7 @@
             </template>
           </SlideUpModal>
           
-          <SlideUpModal :is-open="isItineraryDetailModalOpen" @close="closeItineraryDetailModal">
+          <SlideUpModal :is-open="isItineraryDetailModalOpen" @close="closeItineraryDetailModal" z-index-class="z-[60]">
             <template #header-title>일정 상세</template>
             <template #body>
               <div v-if="selectedItinerary" class="space-y-4">
@@ -621,13 +621,21 @@
             z-index-class="z-[70]"
           />
       
-          </div>
         </div>
-      </template>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <BottomNavigationBar v-if="tripId" :trip-id="tripId" :show="!uiStore.isModalOpen" />
+  
+</template>
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MainHeader from '@/components/common/MainHeader.vue'
+import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue'
+import { useUIStore } from '@/stores/ui'
+
+const uiStore = useUIStore()
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import DateTimePicker from '@/components/common/DateTimePicker.vue'
 import DateRangePicker from '@/components/common/DateRangePicker.vue'

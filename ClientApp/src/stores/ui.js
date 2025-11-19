@@ -1,25 +1,22 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
 export const useUIStore = defineStore('ui', () => {
-  const isChatOpen = ref(false)
+  const isModalOpen = ref(false);
+  const openModalCount = ref(0);
 
-  function toggleChat() {
-    isChatOpen.value = !isChatOpen.value
+  function openModal() {
+    openModalCount.value++;
+    isModalOpen.value = true;
   }
 
-  function openChat() {
-    isChatOpen.value = true
+  function closeModal() {
+    openModalCount.value--;
+    if (openModalCount.value <= 0) {
+      isModalOpen.value = false;
+      openModalCount.value = 0; // Ensure it doesn't go negative
+    }
   }
 
-  function closeChat() {
-    isChatOpen.value = false
-  }
-
-  return {
-    isChatOpen,
-    toggleChat,
-    openChat,
-    closeChat,
-  }
-})
+  return { isModalOpen, openModal, closeModal };
+});
