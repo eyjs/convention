@@ -97,96 +97,52 @@
           </div>
         </div>
 
-        <!-- 일정비용 -->
-        <div class="bg-white rounded-2xl shadow-md overflow-hidden">
-          <button @click="toggleCategory('itinerary')" class="w-full p-5 flex justify-between items-center">
+        <div v-for="category in categoryStats" :key="category.key" class="bg-white rounded-2xl shadow-md overflow-hidden">
+          <button @click="toggleCategory(category.key)" class="w-full p-5 flex justify-between items-center">
             <div class="flex items-center gap-3">
-              <span class="text-2xl">🍽️</span>
+              <span class="text-2xl">{{ category.icon }}</span>
               <div class="text-left">
-                <h3 class="font-bold text-gray-900">일정비용</h3>
-                <p class="text-xs text-gray-500">{{ categoryStats.itinerary.count }}건</p>
+                <h3 class="font-bold text-gray-900">{{ category.name }}</h3>
+                <p class="text-xs text-gray-500">{{ category.count }}건</p>
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <p class="text-xl font-bold text-primary-600">₩{{ categoryStats.itinerary.total.toLocaleString('ko-KR') }}</p>
-              <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': expandedCategories.itinerary }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <p class="text-xl font-bold text-primary-600">₩{{ category.total.toLocaleString('ko-KR') }}</p>
+              <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': expandedCategories[category.key] }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
             </div>
           </button>
 
-          <div v-if="expandedCategories.itinerary" class="border-t border-gray-100 p-5 pt-3 space-y-2">
-            <div v-for="item in trip.itineraryItems?.filter(i => i.expenseAmount > 0)" :key="item.id" class="flex justify-between items-start text-sm">
-              <div>
-                <p class="font-medium text-gray-900">{{ item.locationName }}</p>
-                <p class="text-xs text-gray-500">Day {{ item.dayNumber }}</p>
-              </div>
-              <p class="font-semibold text-gray-700">₩{{ item.expenseAmount.toLocaleString('ko-KR') }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 숙소비용 -->
-        <div class="bg-white rounded-2xl shadow-md overflow-hidden">
-          <button @click="toggleCategory('accommodation')" class="w-full p-5 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-              <span class="text-2xl">🏨</span>
-              <div class="text-left">
-                <h3 class="font-bold text-gray-900">숙소비용</h3>
-                <p class="text-xs text-gray-500">{{ categoryStats.accommodation.count }}건</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <p class="text-xl font-bold text-primary-600">₩{{ categoryStats.accommodation.total.toLocaleString('ko-KR') }}</p>
-              <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': expandedCategories.accommodation }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </button>
-
-          <div v-if="expandedCategories.accommodation" class="border-t border-gray-100 p-5 pt-3 space-y-2">
-            <div v-for="item in trip.accommodations?.filter(a => a.expenseAmount > 0)" :key="item.id" class="flex justify-between items-start text-sm">
-              <div>
-                <p class="font-medium text-gray-900">{{ item.name }}</p>
-                <p class="text-xs text-gray-500">{{ formatDate(item.checkInTime) }} ~ {{ formatDate(item.checkOutTime) }}</p>
-              </div>
-              <p class="font-semibold text-gray-700">₩{{ item.expenseAmount.toLocaleString('ko-KR') }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 교통비용 -->
-        <div class="bg-white rounded-2xl shadow-md overflow-hidden">
-          <button @click="toggleCategory('transportation')" class="w-full p-5 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-              <span class="text-2xl">🚗</span>
-              <div class="text-left">
-                <h3 class="font-bold text-gray-900">교통비용</h3>
-                <p class="text-xs text-gray-500">{{ categoryStats.transportation.count }}건</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <p class="text-xl font-bold text-primary-600">₩{{ categoryStats.transportation.total.toLocaleString('ko-KR') }}</p>
-              <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': expandedCategories.transportation }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </button>
-
-          <div v-if="expandedCategories.transportation" class="border-t border-gray-100 p-5 pt-3">
-            <button @click="openTransportationModal" class="w-full mb-3 py-2 bg-primary-50 text-primary-600 rounded-lg text-sm font-semibold hover:bg-primary-100 transition-colors">
-              + 교통수단 관리
-            </button>
-
-            <div class="space-y-2">
-              <div v-for="item in trip.flights" :key="item.id" class="flex justify-between items-start text-sm">
+          <div v-if="expandedCategories[category.key]" class="border-t border-gray-100 p-5 pt-3 space-y-2">
+            <!-- Content for each category type -->
+            <template v-if="category.key === 'itinerary'">
+              <div v-for="item in trip.itineraryItems?.filter(i => i.expenseAmount > 0)" :key="item.id" class="flex justify-between items-start text-sm">
                 <div>
-                  <p class="font-medium text-gray-900">{{ getCategoryIcon(item.category) }} {{ item.category }}</p>
-                  <p v-if="item.bookingReference" class="text-xs text-gray-500">예약: {{ item.bookingReference }}</p>
+                  <p class="font-medium text-gray-900">{{ item.locationName }}</p>
+                  <p class="text-xs text-gray-500">Day {{ item.dayNumber }}</p>
                 </div>
-                <p class="font-semibold text-gray-700">₩{{ (item.amount || 0).toLocaleString('ko-KR') }}</p>
+                <p class="font-semibold text-gray-700">₩{{ item.expenseAmount.toLocaleString('ko-KR') }}</p>
               </div>
-            </div>
+            </template>
+            <template v-else-if="category.key === 'accommodation'">
+              <div v-for="item in trip.accommodations?.filter(a => a.expenseAmount > 0)" :key="item.id" class="flex justify-between items-start text-sm">
+                <div>
+                  <p class="font-medium text-gray-900">{{ item.name }}</p>
+                  <p class="text-xs text-gray-500">{{ formatDate(item.checkInTime) }} ~ {{ formatDate(item.checkOutTime) }}</p>
+                </div>
+                <p class="font-semibold text-gray-700">₩{{ item.expenseAmount.toLocaleString('ko-KR') }}</p>
+              </div>
+            </template>
+                        <template v-else-if="category.key === 'transportation'">
+                          <div v-for="item in trip.flights" :key="item.id" class="flex justify-between items-start text-sm">
+                            <div>
+                              <p class="font-medium text-gray-900">{{ getCategoryIcon(item.category) }} {{ item.category }}</p>
+                              <p v-if="item.bookingReference" class="text-xs text-gray-500">예약: {{ item.bookingReference }}</p>
+                            </div>
+                            <p class="font-semibold text-gray-700">₩{{ (item.amount || 0).toLocaleString('ko-KR') }}</p>
+                          </div>
+                        </template>
           </div>
         </div>
       </div>
@@ -236,10 +192,24 @@ async function loadTrip() {
 
 // 총 지출 계산
 const totalExpenses = computed(() => {
-  const itineraryTotal = trip.value.itineraryItems?.reduce((sum, item) => sum + (item.expenseAmount || 0), 0) || 0;
-  const accommodationTotal = trip.value.accommodations?.reduce((sum, item) => sum + (item.expenseAmount || 0), 0) || 0;
-  const transportationTotal = trip.value.flights?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-  return itineraryTotal + accommodationTotal + transportationTotal;
+  let total = 0
+  if (trip.value.itineraryItems) {
+    total += trip.value.itineraryItems.reduce((sum, item) => sum + (item.expenseAmount || 0), 0)
+  }
+  if (trip.value.accommodations) {
+    total += trip.value.accommodations.reduce((sum, acc) => sum + (acc.expenseAmount || 0), 0)
+  }
+  if (trip.value.flights) {
+    total += trip.value.flights.reduce((sum, flight) => {
+      if (flight.category === '렌트카' || flight.category === '자가용') {
+        return sum + (flight.amount || 0);
+      } else {
+        return sum + (flight.amount || 0) + (flight.tollFee || 0) +
+               (flight.fuelCost || 0) + (flight.parkingFee || 0);
+      }
+    }, 0)
+  }
+  return total
 });
 
 // 일자별 통계
@@ -273,18 +243,18 @@ const dailyExpenses = computed(() => {
     }
   });
 
-  // 숙소비용 (체크인 날짜 기준)
-  trip.value.accommodations?.forEach(acc => {
-    if (acc.expenseAmount > 0 && acc.checkInTime) {
-      const checkInDate = dayjs(acc.checkInTime);
-      const startDate = dayjs(trip.value.startDate);
-      const dayNumber = checkInDate.diff(startDate, 'day') + 1;
-      const day = days.get(dayNumber);
-      if (day) {
-        day.accommodationExpenses += acc.expenseAmount;
-      }
-    }
-  });
+  // 숙소비용 (체크인 날짜 기준) - dailyExpenses에서 제외
+  // trip.value.accommodations?.forEach(acc => {
+  //   if (acc.expenseAmount > 0 && acc.checkInTime) {
+  //     const checkInDate = dayjs(acc.checkInTime);
+  //     const startDate = dayjs(trip.value.startDate);
+  //     const dayNumber = checkInDate.diff(startDate, 'day') + 1;
+  //     const day = days.get(dayNumber);
+  //     if (day) {
+  //       day.accommodationExpenses += acc.expenseAmount;
+  //     }
+  //   }
+  // });
 
   // 교통비용 (택시만 일자별)
   trip.value.flights?.filter(f => f.category === '택시' && f.itineraryItemId).forEach(taxi => {
@@ -306,11 +276,12 @@ const dailyExpenses = computed(() => {
   return Array.from(days.values()).filter(day => day.total > 0);
 });
 
-// 여행 전체 비용 (항공편, 기차, 버스, 렌트카, 자가용)
+// 여행 전체 비용 (항공편, 기차, 버스, 렌트카, 자가용, 숙소)
 const tripWideExpenses = computed(() => {
   const items = [];
   const categories = ['항공편', '기차', '버스', '렌트카', '자가용'];
 
+  // 교통 비용
   categories.forEach(category => {
     const categoryFlights = trip.value.flights?.filter(f => f.category === category) || [];
     const total = categoryFlights.reduce((sum, f) => sum + (f.amount || 0), 0);
@@ -318,6 +289,12 @@ const tripWideExpenses = computed(() => {
       items.push({ category, amount: total, count: categoryFlights.length });
     }
   });
+
+  // 숙소 비용
+  const accommodationTotal = trip.value.accommodations?.reduce((sum, acc) => sum + (acc.expenseAmount || 0), 0) || 0;
+  if (accommodationTotal > 0) {
+    items.push({ category: '숙소', amount: accommodationTotal, count: trip.value.accommodations?.length || 0 });
+  }
 
   const total = items.reduce((sum, item) => sum + item.amount, 0);
 
@@ -330,20 +307,32 @@ const categoryStats = computed(() => {
   const accommodationItems = trip.value.accommodations?.filter(a => a.expenseAmount > 0) || [];
   const transportationItems = trip.value.flights || [];
 
-  return {
-    itinerary: {
+  const stats = [
+    {
+      name: '일정비용',
+      key: 'itinerary',
       total: itineraryItems.reduce((sum, i) => sum + i.expenseAmount, 0),
       count: itineraryItems.length,
+      icon: '🍽️', // Added icon for display
     },
-    accommodation: {
-      total: accommodationItems.reduce((sum, a) => sum + a.expenseAmount, 0),
+    {
+      name: '숙소비용',
+      key: 'accommodation',
+      total: accommodationItems.reduce((sum, a) => sum + (a.expenseAmount || 0), 0),
       count: accommodationItems.length,
+      icon: '🏨', // Added icon for display
     },
-    transportation: {
+    {
+      name: '교통비용',
+      key: 'transportation',
       total: transportationItems.reduce((sum, f) => sum + (f.amount || 0), 0),
       count: transportationItems.length,
+      icon: '🚗', // Added icon for display
     },
-  };
+  ];
+
+  // 비용 내림차순으로 정렬
+  return stats.sort((a, b) => b.total - a.total);
 });
 
 // 유틸리티 함수
@@ -359,19 +348,25 @@ function getCategoryIcon(category) {
     '택시': '🚕',
     '렌트카': '🚗',
     '자가용': '🚙',
+    '숙소': '🏨', // Added accommodation icon
   };
-  return icons[category] || '🚗';
+  return icons[category] || '🏠'; // Default to '🏠' (house) instead of car
 }
 
 function formatDayDate(dayNumber) {
   if (!trip.value.startDate) return '';
   const date = dayjs(trip.value.startDate).add(dayNumber - 1, 'day');
-  return date.format('M/D(ddd)');
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토']; // Korean weekdays
+  return `${date.format('M/D')}(${weekdays[date.day()]})`;
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
   return dayjs(dateStr).format('M/D');
+}
+
+function openTransportationModal() {
+  emit('open-flight-modal'); // Assuming the parent TripDetail.vue handles this
 }
 
 onMounted(() => {

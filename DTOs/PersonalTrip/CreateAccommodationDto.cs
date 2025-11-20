@@ -35,5 +35,8 @@ namespace LocalRAG.DTOs.PersonalTrip
 
         [MaxLength(500)]
         public string? Notes { get; set; }
+
+        public decimal? ExpenseAmount { get; set; }
+
     }
 }

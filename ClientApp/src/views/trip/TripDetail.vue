@@ -259,6 +259,10 @@
                 <div><label class="label">주소</label><input v-model="accommodationData.address" type="text" class="input" readonly /></div>
                 <div><label class="label">체크인</label><DateTimePicker v-model="accommodationData.checkInTime" /></div>
                 <div><label class="label">체크아웃</label><DateTimePicker v-model="accommodationData.checkOutTime" /></div>
+                <div> <!-- Added expenseAmount input -->
+                  <label class="label">비용 (원)</label>
+                  <input v-model.number="accommodationData.expenseAmount" type="number" class="input" placeholder="예: 100000" min="0" step="100" />
+                </div>
               </form>
             </template>
             <template #footer>
@@ -693,7 +697,11 @@ const bulkChangeDayTargetDay = ref(1) // Default to day 1
 // Data for modals
 const tripData = ref({})
 const countryCity = ref({ destination: '', countryCode: '' })
-const accommodationData = ref({ name: '', address: '', postalCode: null, latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null })
+const accommodationData = ref({ 
+  name: '', address: '', postalCode: null, latitude: null, longitude: null, 
+  googlePlaceId: null, kakaoPlaceId: null, expenseAmount: null,
+  type: null, bookingReference: null, contactNumber: null, notes: null // Added these fields
+})
 const itineraryItemData = ref({ locationName: '', address: '', latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null, phoneNumber: null, kakaoPlaceUrl: null, expenseAmount: null })
 const presetCategories = ['음식점', '카페', '쇼핑', '관광', '기타'];
 
@@ -1007,6 +1015,7 @@ function openAccommodationEditModal(acc = null) { // Renamed
   editingAccommodation.value = acc
   accommodationData.value = acc ? { 
     name: acc.name, 
+    type: acc.type, // Added
     address: acc.address, 
     postalCode: acc.postalCode,
     latitude: acc.latitude, 
@@ -1014,8 +1023,17 @@ function openAccommodationEditModal(acc = null) { // Renamed
     googlePlaceId: acc.googlePlaceId,
     kakaoPlaceId: acc.kakaoPlaceId,
     checkInTime: acc.checkInTime,
-    checkOutTime: acc.checkOutTime
-  } : { name: '', address: '', postalCode: null, latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null }
+    checkOutTime: acc.checkOutTime,
+    bookingReference: acc.bookingReference, // Added
+    contactNumber: acc.contactNumber, // Added
+    notes: acc.notes, // Added
+    expenseAmount: acc.expenseAmount
+  } : { 
+    name: '', type: null, address: '', postalCode: null, latitude: null, longitude: null, 
+    googlePlaceId: null, kakaoPlaceId: null, 
+    checkInTime: null, checkOutTime: null, // Ensure these are initialized to null for new
+    bookingReference: null, contactNumber: null, notes: null, expenseAmount: null 
+  }
   isAccommodationEditModalOpen.value = true
 }
 function closeAccommodationEditModal() { isAccommodationEditModalOpen.value = false } // Renamed
@@ -1034,16 +1052,23 @@ async function saveAccommodation() {
   if (effectiveReadonly.value) return
   try {
     const payload = { 
-      ...accommodationData.value, 
       personalTripId: tripId.value,
       name: accommodationData.value.name,
+      type: accommodationData.value.type || null, // Ensure type is included
       address: accommodationData.value.address,
       postalCode: accommodationData.value.postalCode,
       latitude: accommodationData.value.latitude,
       longitude: accommodationData.value.longitude,
+      checkInTime: accommodationData.value.checkInTime,
+      checkOutTime: accommodationData.value.checkOutTime,
+      bookingReference: accommodationData.value.bookingReference || null, // Ensure bookingReference is included
+      contactNumber: accommodationData.value.contactNumber || null, // Ensure contactNumber is included
+      notes: accommodationData.value.notes || null, // Ensure notes is included
       googlePlaceId: accommodationData.value.googlePlaceId,
-      kakaoPlaceId: accommodationData.value.kakaoPlaceId
+      kakaoPlaceId: accommodationData.value.kakaoPlaceId,
+      expenseAmount: accommodationData.value.expenseAmount // Send directly
     }
+    
     if (editingAccommodation.value?.id) {
       await apiClient.put(`/personal-trips/accommodations/${editingAccommodation.value.id}`, payload)
     } else {

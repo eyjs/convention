@@ -9,9 +9,18 @@
         오늘의 일정 (Day {{ currentDayNumber }})
       </h2>
       <div v-if="todayItineraries.length > 0" class="space-y-3">
-        <div v-for="item in todayItineraries" :key="item.id" class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+        <div 
+          v-for="item in todayItineraries" 
+          :key="item.id" 
+          class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg transition-all duration-300"
+          :class="{
+            'border-2 border-primary-500': item.isCurrent // Only border highlight
+          }"
+        >
           <div class="flex-shrink-0 w-12 text-center">
-            <p class="text-sm font-semibold text-primary-600">{{ item.startTime || '--:--' }}</p>
+            <p class="text-sm font-semibold text-primary-600">
+              {{ item.startTime || '--:--' }}
+            </p>
           </div>
           <div class="flex-1">
             <p class="font-medium text-gray-900">{{ item.locationName }}</p>
@@ -153,6 +162,9 @@
 import { computed, defineEmits } from 'vue'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
+import isBetween from 'dayjs/plugin/isBetween' // Import the plugin
+
+dayjs.extend(isBetween) // Extend dayjs with the plugin
 
 const props = defineProps({
   trip: {
@@ -195,13 +207,46 @@ const currentDayNumber = computed(() => {
 // 오늘의 일정
 const todayItineraries = computed(() => {
   if (!isDuringTrip.value || !props.trip.itineraryItems) return []
-  return props.trip.itineraryItems
+
+  const now = dayjs(); // Get current time
+  const currentTripDate = dayjs(props.trip.startDate).add(currentDayNumber.value - 1, 'day');
+
+  let filtered = props.trip.itineraryItems
     .filter(item => item.dayNumber === currentDayNumber.value)
+    .filter(item => {
+      // Filter out items whose end time has already passed
+      if (item.endTime) {
+        const itemEndTime = dayjs(`${currentTripDate.format('YYYY-MM-DD')}T${item.endTime}`);
+        return itemEndTime.isAfter(now); // Only show items that are still active or upcoming
+      }
+      return true; // If no end time, assume it's always relevant
+    })
     .sort((a, b) => {
       if (!a.startTime) return 1
       if (!b.startTime) return -1
       return a.startTime.localeCompare(b.startTime)
-    })
+    });
+
+  // Add isCurrent status
+  let nextUpcomingFound = false;
+  return filtered.map(item => {
+    const itemStartTime = dayjs(`${currentTripDate.format('YYYY-MM-DD')}T${item.startTime}`);
+    const itemEndTime = dayjs(`${currentTripDate.format('YYYY-MM-DD')}T${item.endTime}`);
+    
+    const isCurrent = now.isBetween(itemStartTime, itemEndTime, null, '[]'); // [] includes start and end
+    
+    // Highlight the very next upcoming item if no current item is found
+    let isNextUpcoming = false;
+    if (!isCurrent && !nextUpcomingFound && itemStartTime.isAfter(now)) {
+        isNextUpcoming = true;
+        nextUpcomingFound = true; // Mark that we found the next upcoming
+    }
+
+    return {
+      ...item,
+      isCurrent: isCurrent || isNextUpcoming, // Highlight current or next upcoming
+    };
+  });
 })
 
 // 카운트
@@ -220,8 +265,14 @@ const totalExpenses = computed(() => {
   }
   if (props.trip.flights) {
     total += props.trip.flights.reduce((sum, flight) => {
-      return sum + (flight.amount || 0) + (flight.tollFee || 0) +
-             (flight.fuelCost || 0) + (flight.parkingFee || 0) + (flight.rentalCost || 0)
+      // If it's a rental car or personal car, flight.amount already includes all sub-costs
+      if (flight.category === '렌트카' || flight.category === '자가용') {
+        return sum + (flight.amount || 0);
+      } else {
+        // For other flight types, amount might be separate
+        return sum + (flight.amount || 0) + (flight.tollFee || 0) +
+               (flight.fuelCost || 0) + (flight.parkingFee || 0);
+      }
     }, 0)
   }
   return total
@@ -249,8 +300,12 @@ const expensesByCategory = computed(() => {
   }
   if (props.trip.flights) {
     const total = props.trip.flights.reduce((sum, flight) => {
-      return sum + (flight.amount || 0) + (flight.tollFee || 0) +
-             (flight.fuelCost || 0) + (flight.parkingFee || 0) + (flight.rentalCost || 0)
+      if (flight.category === '렌트카' || flight.category === '자가용') {
+        return sum + (flight.amount || 0);
+      } else {
+        return sum + (flight.amount || 0) + (flight.tollFee || 0) +
+               (flight.fuelCost || 0) + (flight.parkingFee || 0);
+      }
     }, 0)
     if (total > 0) categories['교통'] = total
   }

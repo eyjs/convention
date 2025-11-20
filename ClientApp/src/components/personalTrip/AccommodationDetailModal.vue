@@ -8,6 +8,7 @@
         <p v-if="accommodation.postalCode" class="text-gray-600">우편번호: {{ accommodation.postalCode }}</p>
         <p class="text-gray-800 font-medium">체크인: {{ formatDateTime(accommodation.checkInTime) }}</p>
         <p class="text-gray-800 font-medium">체크아웃: {{ formatDateTime(accommodation.checkOutTime) }}</p>
+        <p v-if="accommodation.expenseAmount" class="text-gray-800 font-medium">비용: ₩{{ accommodation.expenseAmount.toLocaleString() }}</p> <!-- Added this line -->
         <p v-if="accommodation.bookingReference" class="text-gray-700">예약 번호: {{ accommodation.bookingReference }}</p>
         <p v-if="accommodation.contactNumber" class="text-gray-700">연락처: {{ accommodation.contactNumber }}</p>
         <p v-if="accommodation.notes" class="whitespace-pre-wrap text-gray-700">{{ accommodation.notes }}</p>

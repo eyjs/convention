@@ -337,6 +337,7 @@ namespace LocalRAG.Services.PersonalTrip
                 BookingReference = dto.BookingReference,
                 ContactNumber = dto.ContactNumber,
                 Notes = dto.Notes,
+                ExpenseAmount = dto.ExpenseAmount, // Added ExpenseAmount mapping
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -372,6 +373,7 @@ namespace LocalRAG.Services.PersonalTrip
             accommodation.BookingReference = dto.BookingReference;
             accommodation.ContactNumber = dto.ContactNumber;
             accommodation.Notes = dto.Notes;
+            accommodation.ExpenseAmount = dto.ExpenseAmount; // Added ExpenseAmount mapping
             accommodation.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();

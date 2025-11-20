@@ -1,16 +1,10 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <MainHeader :title="'체크리스트'" :subtitle="trip.title" :show-back="true">
-      <template #actions>
-        <button @click="toggleEditMode" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg font-semibold">
-          {{ isEditMode ? '완료' : '편집' }}
-        </button>
-      </template>
-    </MainHeader>
+    <MainHeader :title="'체크리스트'" :subtitle="trip.title" :show-back="true" />
     
     <div class="max-w-2xl mx-auto px-4 py-4 pb-28">
       <!-- Tab Navigation -->
-      <div class="mb-4 border-b border-gray-200">
+      <div class="flex justify-between items-center mb-4 border-b border-gray-200">
         <nav class="flex space-x-4" aria-label="Tabs">
           <button @click="activeTab = 'photos'"
                   :class="['px-3 py-2 font-medium text-sm rounded-t-lg', activeTab === 'photos' ? 'border-b-2 border-primary-500 text-primary-600' : 'text-gray-500 hover:text-gray-700']">
@@ -40,7 +34,10 @@
             <div @click="toggleCategory(category.id)" class="flex justify-between items-center p-4 cursor-pointer">
               <h2 class="font-bold text-lg">{{ category.name }} <span class="text-gray-500 text-sm font-medium ml-2">({{ category.completedItemsCount }}/{{ category.totalItemsCount }})</span></h2>
                <div class="flex items-center gap-2">
-                <button v-if="isEditMode && !category.isDefault" @click.stop="deleteCategory(category.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full">
+                <button @click.stop="category.isEditing = !category.isEditing" class="text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors">
+                  {{ category.isEditing ? '완료' : '편집' }}
+                </button>
+                <button v-if="category.isEditing && !category.isDefault" @click.stop="deleteCategory(category.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
                 <svg class="w-6 h-6 text-gray-400 transition-transform" :class="{'rotate-180': expandedCategories.includes(category.id)}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -59,7 +56,7 @@
                     <p class="text-gray-800">{{ item.task }}</p>
                     <p v-if="item.description" class="text-xs text-gray-500">{{ item.description }}</p>
                   </div>
-                  <button v-if="isEditMode" @click.stop="deleteItem(category.id, item.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button v-if="category.isEditing" @click.stop="deleteItem(category.id, item.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full transition-opacity">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
@@ -71,15 +68,13 @@
               </div>
             </div>
           </div>
+          <div class="flex justify-center mt-6">
+            <button @click="promptNewCategory" class="w-1/2 py-3 bg-[#17B185] text-white rounded-xl font-semibold shadow-lg hover:bg-green-600 transition-all">
+              카테고리 추가
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- Floating Add Category Button -->
-    <div v-if="activeTab === 'checklist'" class="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-sm px-4 z-10">
-        <button @click="promptNewCategory" class="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-lg hover:bg-blue-700 transition-all">
-        카테고리 추가
-        </button>
     </div>
 
     <BottomNavigationBar v-if="tripId" :trip-id="tripId" :show="!uiStore.isModalOpen" />
@@ -145,7 +140,6 @@ const loading = ref(true);
 const trip = ref({});
 const checklist = ref([]);
 const expandedCategories = ref([]);
-const isEditMode = ref(false);
 
 // Modal for text input (Category/Item creation)
 const isInputModalOpen = ref(false);
@@ -175,7 +169,10 @@ async function fetchTripData() {
   try {
     const response = await apiClient.get(`/personal-trips/${tripId.value}`);
     trip.value = response.data;
-    checklist.value = response.data.checklistCategories;
+    checklist.value = response.data.checklistCategories.map(cat => ({
+      ...cat,
+      isEditing: ref(false) // Add isEditing state to each category
+    }));
   } catch (error) {
     console.error("Failed to fetch trip data:", error);
     alert('데이터를 불러오는데 실패했습니다.');
@@ -193,9 +190,7 @@ function toggleCategory(categoryId) {
   }
 }
 
-function toggleEditMode() {
-  isEditMode.value = !isEditMode.value;
-}
+
 
 async function toggleItem(catIndex, itemIndex) {
     if (isEditMode.value) return;
