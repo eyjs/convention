@@ -62,6 +62,8 @@ public class ConventionDbContext : DbContext
     public DbSet<Flight> Flights { get; set; }
     public DbSet<Accommodation> Accommodations { get; set; }
     public DbSet<ItineraryItem> ItineraryItems { get; set; }
+    public DbSet<ChecklistCategory> ChecklistCategories { get; set; }
+    public DbSet<ChecklistItem> ChecklistItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -562,6 +564,11 @@ public class ConventionDbContext : DbContext
                   .WithOne(a => a.PersonalTrip)
                   .HasForeignKey(a => a.PersonalTripId)
                   .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.HasMany(e => e.ChecklistCategories)
+                .WithOne(c => c.PersonalTrip)
+                .HasForeignKey(c => c.PersonalTripId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Flight
@@ -594,6 +601,27 @@ public class ConventionDbContext : DbContext
 
             entity.HasIndex(e => e.PersonalTripId).HasDatabaseName("IX_ItineraryItem_PersonalTripId");
             entity.HasIndex(e => e.DayNumber).HasDatabaseName("IX_ItineraryItem_DayNumber");
+        });
+        
+        // ChecklistCategory
+        modelBuilder.Entity<ChecklistCategory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.HasIndex(e => e.PersonalTripId).HasDatabaseName("IX_ChecklistCategory_PersonalTripId");
+            
+            entity.HasMany(e => e.Items)
+                .WithOne(i => i.Category)
+                .HasForeignKey(i => i.ChecklistCategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ChecklistItem
+        modelBuilder.Entity<ChecklistItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.HasIndex(e => e.ChecklistCategoryId).HasDatabaseName("IX_ChecklistItem_ChecklistCategoryId");
         });
     }
 }

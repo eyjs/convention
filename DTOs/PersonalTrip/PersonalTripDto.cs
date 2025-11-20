@@ -1,3 +1,5 @@
+using LocalRAG.DTOs.PersonalTrip.ChecklistModels;
+
 namespace LocalRAG.DTOs.PersonalTrip
 {
     /// <summary>
@@ -26,5 +28,6 @@ namespace LocalRAG.DTOs.PersonalTrip
         public List<FlightDto> Flights { get; set; } = new();
         public List<AccommodationDto> Accommodations { get; set; } = new();
         public List<ItineraryItemDto> ItineraryItems { get; set; } = new();
+        public List<ChecklistCategoryDto> ChecklistCategories { get; set; } = new();
     }
 }

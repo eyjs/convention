@@ -494,6 +494,114 @@ namespace LocalRAG.Controllers.PersonalTrip
 
         #endregion
 
+        #region Checklist Endpoints
+
+        /// <summary>
+        /// 새 체크리스트 카테고리 추가
+        /// </summary>
+        [HttpPost("{tripId}/checklist-categories")]
+        public async Task<IActionResult> AddChecklistCategory(int tripId, [FromBody] DTOs.PersonalTrip.ChecklistModels.CreateChecklistCategoryDto dto)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var category = await _personalTripService.AddChecklistCategoryAsync(tripId, dto, userId);
+                return Ok(category);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "체크리스트 카테고리 추가에 실패했습니다.", error = ex.Message });
+            }
+        }
+        
+        /// <summary>
+        /// 체크리스트 카테고리 삭제
+        /// </summary>
+        [HttpDelete("checklist-categories/{categoryId}")]
+        public async Task<IActionResult> DeleteChecklistCategory(int categoryId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var success = await _personalTripService.DeleteChecklistCategoryAsync(categoryId, userId);
+                if (!success)
+                    return NotFound(new { message = "카테고리를 찾을 수 없거나 삭제할 권한이 없습니다." });
+                return Ok(new { message = "카테고리가 삭제되었습니다." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "카테고리 삭제에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 새 체크리스트 항목 추가
+        /// </summary>
+        [HttpPost("checklist-items")]
+        public async Task<IActionResult> AddChecklistItem([FromBody] DTOs.PersonalTrip.ChecklistModels.CreateChecklistItemDto dto)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var item = await _personalTripService.AddChecklistItemAsync(dto.ChecklistCategoryId, dto, userId);
+                return Ok(item);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "체크리스트 항목 추가에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 체크리스트 항목 수정
+        /// </summary>
+        [HttpPut("checklist-items/{itemId}")]
+        public async Task<IActionResult> UpdateChecklistItem(int itemId, [FromBody] DTOs.PersonalTrip.ChecklistModels.UpdateChecklistItemDto dto)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var item = await _personalTripService.UpdateChecklistItemAsync(itemId, dto, userId);
+                if (item == null)
+                    return NotFound(new { message = "항목을 찾을 수 없습니다." });
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "항목 수정에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 체크리스트 항목 삭제
+        /// </summary>
+        [HttpDelete("checklist-items/{itemId}")]
+        public async Task<IActionResult> DeleteChecklistItem(int itemId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var success = await _personalTripService.DeleteChecklistItemAsync(itemId, userId);
+                if (!success)
+                    return NotFound(new { message = "항목을 찾을 수 없습니다." });
+                return Ok(new { message = "항목이 삭제되었습니다." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "항목 삭제에 실패했습니다.", error = ex.Message });
+            }
+        }
+
+        #endregion
+
         #region Sharing Endpoints
 
         /// <summary>

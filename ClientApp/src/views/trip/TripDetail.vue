@@ -14,11 +14,19 @@
     <div class="relative z-10">
       <MainHeader :title="trip.title || '여행 상세'" :show-back="true">
         <template #actions>
-          <button v-if="tripId" @click="openShareModal" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-            </svg>
-          </button>
+          <template v-if="!effectiveReadonly">
+            <div class="relative">
+              <button @click="openReminderModal" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+                <BellIcon class="w-6 h-6" />
+                <span v-if="upcomingReminders.length > 0" class="absolute top-1 right-1 block h-2 w-2 rounded-full ring-2 ring-white bg-red-500"></span>
+              </button>
+            </div>
+            <button v-if="tripId" @click="openShareModal" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+              </svg>
+            </button>
+          </template>
         </template>
       </MainHeader>
 
@@ -28,36 +36,55 @@
       </div>
 
 <div v-else class="max-w-2xl mx-auto px-4 py-4 pb-24 space-y-6">
-        <section class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-xl p-6 text-white">
-          <div class="flex justify-between items-start mb-3">
-            <h1 class="text-3xl font-bold">{{ trip.title }}</h1>
-            <button @click="openTripInfoModal" class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors">
-              수정
-            </button>
-          </div>
-          <div class="flex items-center gap-2 text-white/90 mb-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span class="font-medium">{{ trip.startDate }} ~ {{ trip.endDate }}</span>
-          </div>
-          <div class="flex items-center gap-2 text-white/90 mb-4">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span class="font-medium">{{ trip.destination || '목적지 미설정' }}</span>
-          </div>
-          <p v-if="trip.description" class="text-white/90 text-sm leading-relaxed mb-4">{{ trip.description }}</p>
+        <section class="relative overflow-hidden bg-primary-500 rounded-2xl shadow-xl p-6 text-white">
+          <!-- Background Image -->
+          <div
+            v-if="trip.coverImageUrl"
+            class="absolute inset-0 bg-cover bg-center"
+            :style="{ backgroundImage: `url(${trip.coverImageUrl})` }"
+          ></div>
+          <!-- Overlay for text readability -->
+          <div class="absolute inset-0 bg-black/30"></div>
+          
+          <div class="relative z-10">
+            <div class="flex justify-between items-start mb-3">
+              <h1 class="text-3xl font-bold">{{ trip.title }}</h1>
+              <button v-if="!effectiveReadonly" @click="openTripInfoModal" class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors">
+                수정
+              </button>
+            </div>
+            <div class="flex items-center gap-2 text-white/90 mb-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span class="font-medium">{{ trip.startDate }} ~ {{ trip.endDate }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-white/90 mb-4">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span class="font-medium">{{ trip.destination || '목적지 미설정' }}</span>
+            </div>
+            <p v-if="trip.description" class="text-white/90 text-sm leading-relaxed mb-4">{{ trip.description }}</p>
 
-          <!-- D-day Display -->
-          <div class="bg-white/20 backdrop-blur-sm rounded-lg p-4 text-center">
-            <p class="text-sm text-white/80 mb-1">{{ tripStatus }}</p>
-            <p class="text-3xl font-bold">{{ dDayText }}</p>
+            <!-- D-day Display -->
+            <div class="bg-white/20 backdrop-blur-sm rounded-lg p-4 text-center">
+              <p class="text-sm text-white/80 mb-1">{{ tripStatus }}</p>
+              <p class="text-3xl font-bold">{{ dDayText }}</p>
+            </div>
           </div>
         </section>
 
-        <TripDashboardComponent :trip="trip" @open-accommodation-modal="openAccommodationManagementModal" />
+        <TripDashboardComponent
+          :trip="trip"
+          :readonly="effectiveReadonly"
+          @open-accommodation-modal="openAccommodationManagementModal"
+          @open-flight-modal="openFlightManagementModal"
+          @go-to-itinerary="handleGoToItinerary"
+          @go-to-expenses="handleGoToExpenses"
+          @go-to-notes="handleGoToNotes"
+        />
       </div>
 
           <!-- Modals -->
@@ -122,6 +149,91 @@
             </template>
           </SlideUpModal>
       
+          <!-- Transportation Modals -->
+          <FlightManagementModal
+            :is-open="isTransportationModalOpen"
+            :flights="trip.flights"
+            @close="closeTransportationModal"
+            @add="handleAddTransportation"
+            @edit="handleEditTransportation"
+            @delete="handleDeleteTransportation"
+          />
+      
+          <SlideUpModal :is-open="isTransportationEditModalOpen" @close="closeTransportationEditModal" z-index-class="z-[60]">
+            <template #header-title>{{ editingTransportation?.id ? '교통수단 수정' : '교통수단 추가' }}</template>
+            <template #body>
+              <form id="transportation-form" @submit.prevent="saveTransportation" class="space-y-4">
+                <div>
+                  <label class="label">교통수단</label>
+                  <input v-model="transportationData.category" type="text" class="input bg-gray-50" readonly />
+                </div>
+                <div v-if="transportationData.category === '택시'">
+                  <label class="label">연결된 일정 *</label>
+                  <select v-model="transportationData.itineraryItemId" class="input" required>
+                    <option :value="null" disabled>일정을 선택하세요</option>
+                    <option v-for="item in trip.itineraryItems" :key="item.id" :value="item.id">
+                      {{ item.dayNumber }}일차 - {{ item.locationName }}
+                    </option>
+                  </select>
+                </div>
+                <template v-if="transportationData.category === '항공편'">
+                  <div>
+                    <label class="label">예약번호 (선택)</label>
+                    <input v-model="transportationData.bookingReference" type="text" class="input" placeholder="예약번호" />
+                  </div>
+                  <div>
+                    <label class="label">금액 (원) *</label>
+                    <input v-model.number="transportationData.amount" type="number" class="input" placeholder="예: 150000" min="0" step="100" required />
+                  </div>
+                </template>
+                <template v-else-if="transportationData.category === '기차' || transportationData.category === '버스'">
+                  <div>
+                    <label class="label">금액 (원) *</label>
+                    <input v-model.number="transportationData.amount" type="number" class="input" placeholder="예: 50000" min="0" step="100" required />
+                  </div>
+                </template>
+                <template v-else-if="transportationData.category === '택시'">
+                  <div>
+                    <label class="label">금액 (원) *</label>
+                    <input v-model.number="transportationData.amount" type="number" class="input" placeholder="예: 10000" min="0" step="100" required />
+                  </div>
+                </template>
+                <template v-else-if="transportationData.category === '렌트카' || transportationData.category === '자가용'">
+                  <div class="bg-primary-50 border border-primary-200 rounded-lg p-3 mb-2">
+                    <p class="text-xs text-primary-700">💡 여행 전체 기간 동안 발생한 비용을 입력하세요</p>
+                  </div>
+                  <div v-if="transportationData.category === '렌트카'">
+                    <label class="label">렌트 비용 (원)</label>
+                    <input v-model.number="transportationData.rentalCost" type="number" class="input" placeholder="예: 100000" min="0" step="100" />
+                  </div>
+                  <div>
+                    <label class="label">주유비 (원)</label>
+                    <input v-model.number="transportationData.fuelCost" type="number" class="input" placeholder="예: 50000" min="0" step="100" />
+                  </div>
+                  <div>
+                    <label class="label">톨비 (원)</label>
+                    <input v-model.number="transportationData.tollFee" type="number" class="input" placeholder="예: 20000" min="0" step="100" />
+                  </div>
+                  <div>
+                    <label class="label">주차비 (원)</label>
+                    <input v-model.number="transportationData.parkingFee" type="number" class="input" placeholder="예: 15000" min="0" step="100" />
+                  </div>
+                  <div class="pt-3 border-t">
+                    <div class="flex justify-between items-center">
+                      <span class="text-sm font-medium text-gray-700">총 비용:</span>
+                      <span class="text-lg font-bold text-primary-600">₩{{ calculateTotalTransportationCost().toLocaleString('ko-KR') }}</span>
+                    </div>
+                  </div>
+                </template>
+              </form>
+            </template>
+            <template #footer>
+              <div class="flex gap-3 w-full">
+                <button type="button" @click="closeTransportationEditModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
+                <button type="submit" form="transportation-form" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 active:scale-95 transition-all">저장</button>
+              </div>
+            </template>
+          </SlideUpModal>
 
           <AccommodationManagementModal
             :is-open="isAccommodationManagementModalOpen"
@@ -289,7 +401,7 @@
             <template #footer>
               <div class="flex gap-3 w-full">
                 <button type="button" @click="closeItineraryDetailModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">닫기</button>
-                <button type="button" @click="editSelectedItinerary" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 active:scale-95 transition-all" :disabled="selectedItinerary?.isAutoGenerated">수정</button>
+                <button v-if="!effectiveReadonly" type="button" @click="editSelectedItinerary" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 active:scale-95 transition-all" :disabled="selectedItinerary?.isAutoGenerated">수정</button>
               </div>
             </template>
           </SlideUpModal>
@@ -300,7 +412,58 @@
             @close="closeAccommodationDetailModal"
             @edit="editSelectedAccommodation"
             :is-domestic="isDomestic"
+            :show-edit="!effectiveReadonly"
           />
+      
+          <!-- Reminders Modal -->
+          <SlideUpModal :is-open="isReminderModalOpen" @close="closeReminderModal" z-index-class="z-[60]">
+            <template #header-title>알림 및 리마인더</template>
+            <template #body>
+              <div v-if="upcomingReminders.length > 0" class="space-y-4">
+                <div v-for="reminder in upcomingReminders" :key="reminder.id" class="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div class="flex-shrink-0 w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    D-{{ reminder.daysUntil }}
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-medium text-gray-900">{{ reminder.title }}</p>
+                    <p class="text-sm text-gray-600">{{ reminder.description }}</p>
+                    <p class="text-xs text-blue-600 mt-1">{{ reminder.dateText }}</p>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="text-center py-8 text-gray-500">
+                <p>현재 활성화된 알림이나 리마인더가 없습니다.</p>
+              </div>
+            </template>
+            <template #footer>
+              <button type="button" @click="closeReminderModal" class="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">닫기</button>
+            </template>
+          </SlideUpModal>
+      
+          <!-- Reminders Modal -->
+          <SlideUpModal :is-open="isReminderModalOpen" @close="closeReminderModal" z-index-class="z-[60]">
+            <template #header-title>알림 및 리마인더</template>
+            <template #body>
+              <div v-if="upcomingReminders.length > 0" class="space-y-4">
+                <div v-for="reminder in upcomingReminders" :key="reminder.id" class="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div class="flex-shrink-0 w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    D-{{ reminder.daysUntil }}
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-medium text-gray-900">{{ reminder.title }}</p>
+                    <p class="text-sm text-gray-600">{{ reminder.description }}</p>
+                    <p class="text-xs text-blue-600 mt-1">{{ reminder.dateText }}</p>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="text-center py-8 text-gray-500">
+                <p>현재 활성화된 알림이나 리마인더가 없습니다.</p>
+              </div>
+            </template>
+            <template #footer>
+              <button type="button" @click="closeReminderModal" class="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">닫기</button>
+            </template>
+          </SlideUpModal>
       
           <!-- Kakao Map Search Modal -->
           <KakaoMapSearchModal
@@ -315,7 +478,12 @@
     </div>
 
     <!-- Bottom Navigation Bar -->
-    <BottomNavigationBar v-if="tripId" :trip-id="tripId" :show="!uiStore.isModalOpen" />
+    <BottomNavigationBar
+      v-if="tripId || trip.id"
+      :trip-id="tripId || trip.id"
+      :share-token="shareToken"
+      :show="!uiStore.isModalOpen"
+    />
   
 </template>
 <script setup>
@@ -335,18 +503,34 @@ import KakaoPlacesAutocomplete from '@/components/common/KakaoPlacesAutocomplete
 import KakaoMapSearchModal from '@/components/common/KakaoMapSearchModal.vue'
 import AccommodationDetailModal from '@/components/personalTrip/AccommodationDetailModal.vue'
 import AccommodationManagementModal from '@/components/personalTrip/AccommodationManagementModal.vue'
+import FlightManagementModal from '@/components/personalTrip/FlightManagementModal.vue'
 import ShareTripModal from '@/components/personalTrip/ShareTripModal.vue'
 import TripDashboardComponent from '@/components/personalTrip/TripDashboardComponent.vue'
 import apiClient from '@/services/api'
 import { useGoogleMaps } from '@/composables/useGoogleMaps'
 import { useDistance } from '@/composables/useDistance'
-import { Trash2 as Trash2Icon, Utensils, Coffee, ShoppingBag, Landmark, CircleDot, FileText, Phone } from 'lucide-vue-next'
+import { Trash2 as Trash2Icon, Utensils, Coffee, ShoppingBag, Landmark, CircleDot, FileText, Phone, BellIcon } from 'lucide-vue-next'
 import dayjs from 'dayjs'
+
+// Props for readonly mode and shared access
+const props = defineProps({
+  tripId: String,           // 일반 접근용 ID (라우터에서 전달)
+  shareToken: String,       // 공유 접근용 토큰
+  readonly: {               // Readonly 모드 플래그
+    type: Boolean,
+    default: false
+  }
+})
 
 const route = useRoute()
 const router = useRouter()
 const uiStore = useUIStore()
-const tripId = computed(() => route.params.id)
+
+// Determine tripId and readonly mode
+const tripId = computed(() => props.tripId || route.params.id)
+const shareToken = computed(() => props.shareToken || route.params.shareToken)
+const isSharedView = computed(() => !!shareToken.value)
+const effectiveReadonly = computed(() => props.readonly || isSharedView.value)
 
 const loading = ref(true)
 const trip = ref({})
@@ -354,6 +538,9 @@ const selectedDay = ref(null)
 const dayFilterContainer = ref(null)
 const showLeftDayScroll = ref(false)
 const showRightDayScroll = ref(false)
+
+// Modal states
+const isReminderModalOpen = ref(false)
 
 const handleDayFilterScroll = () => {
   if (dayFilterContainer.value) {
@@ -363,6 +550,70 @@ const handleDayFilterScroll = () => {
       dayFilterContainer.value.scrollWidth - dayFilterContainer.value.clientWidth
   }
 }
+
+const upcomingReminders = computed(() => {
+  const reminders = []
+  if (!trip.value.startDate) return reminders
+  const start = dayjs(trip.value.startDate)
+  const daysUntilTrip = start.diff(today, 'day')
+
+  if (daysUntilTrip > 0 && daysUntilTrip <= 7) {
+    reminders.push({
+      id: 'trip-start',
+      title: '여행 시작 임박',
+      description: '여행 준비를 확인하세요!',
+      dateText: trip.value.startDate,
+      daysUntil: daysUntilTrip
+    })
+  }
+
+  if (trip.value.accommodations) {
+    trip.value.accommodations.forEach(acc => {
+      if (acc.checkInTime) {
+        const checkIn = dayjs(acc.checkInTime)
+        const diff = checkIn.diff(today, 'day')
+        if (diff >= 0 && diff <= 1) {
+          reminders.push({
+            id: `checkin-${acc.id}`,
+            title: diff === 0 ? '오늘 체크인' : '내일 체크인',
+            description: acc.name,
+            dateText: checkIn.format('YYYY-MM-DD HH:mm'),
+            daysUntil: diff
+          })
+        }
+      }
+    })
+  }
+
+  if (trip.value.flights) {
+    trip.value.flights.forEach(flight => {
+      if (flight.departureTime) {
+        const departure = dayjs(flight.departureTime)
+        const diff = departure.diff(today, 'day')
+        if (diff >= 0 && diff <= 1) {
+          reminders.push({
+            id: `flight-${flight.id}`,
+            title: diff === 0 ? '오늘 출발' : '내일 출발',
+            description: `${flight.airline || ''} ${flight.flightNumber || ''} - ${flight.departureLocation} → ${flight.arrivalLocation}`,
+            dateText: departure.format('YYYY-MM-DD HH:mm'),
+            daysUntil: diff
+          })
+        }
+      }
+    })
+  }
+
+  return reminders.sort((a, b) => a.daysUntil - b.daysUntil)
+})
+
+function openReminderModal() {
+  isReminderModalOpen.value = true;
+}
+
+function closeReminderModal() {
+  isReminderModalOpen.value = false;
+}
+
 
 const scrollDayFilterLeft = () => {
   dayFilterContainer.value?.scrollBy({ left: -200, behavior: 'smooth' })
@@ -509,6 +760,12 @@ const currentKakaoSearchInitialLocation = computed(() => {
   return { latitude: null, longitude: null, name: '', address: '' }
 })
 
+// --- Transportation ---
+const isTransportationModalOpen = ref(false);
+const isTransportationEditModalOpen = ref(false);
+const editingTransportation = ref(null);
+const transportationData = ref({});
+
 // --- Lifecycle and Data Loading ---
 onMounted(async () => {
   await loadTrip()
@@ -522,8 +779,13 @@ onMounted(async () => {
 async function loadTrip() {
   loading.value = true
   try {
+    // 공유 링크로 접근하는 경우
+    if (shareToken.value) {
+      const response = await apiClient.get(`/personal-trips/public/${shareToken.value}`)
+      trip.value = response.data
+    }
     // 새 여행 생성 모드 (tripId가 없을 때)
-    if (!tripId.value) {
+    else if (!tripId.value) {
       trip.value = {
         title: '새 여행',
         description: '',
@@ -538,15 +800,21 @@ async function loadTrip() {
       // 새 여행 생성 시 바로 여행 정보 입력 모달 열기
       await nextTick()
       openTripInfoModal()
-    } else {
-      // 기존 여행 조회 모드
+    }
+    // 기존 여행 조회 모드 (인증 필요)
+    else {
       const response = await apiClient.get(`/personal-trips/${tripId.value}?_=${new Date().getTime()}`)
       trip.value = response.data
     }
   } catch (error) {
     console.error('Failed to load trip:', error)
-    alert('여행 정보를 불러오는 데 실패했습니다.')
-    router.push('/trips')
+    if (shareToken.value) {
+      alert('여행 정보를 불러오는 데 실패했습니다. 링크가 유효하지 않을 수 있습니다.')
+      router.push('/')
+    } else {
+      alert('여행 정보를 불러오는 데 실패했습니다.')
+      router.push('/trips')
+    }
   } finally {
     loading.value = false
   }
@@ -560,6 +828,7 @@ function closeShareModal() {
   isShareModalOpen.value = false;
 }
 async function handleSharingToggle(isShared) {
+  if (effectiveReadonly.value) return
   try {
     if (isShared) {
       const response = await apiClient.post(`/personal-trips/${tripId.value}/share`);
@@ -682,6 +951,7 @@ async function uploadCoverImage() {
 }
 
 async function saveTripInfo() {
+  if (effectiveReadonly.value) return
   tripData.value.destination = countryCity.value.destination
   tripData.value.countryCode = countryCity.value.countryCode
 
@@ -761,6 +1031,7 @@ function editSelectedAccommodation() { // New function
   openAccommodationEditModal(selectedAccommodation.value)
 }
 async function saveAccommodation() {
+  if (effectiveReadonly.value) return
   try {
     const payload = { 
       ...accommodationData.value, 
@@ -786,6 +1057,7 @@ async function saveAccommodation() {
   }
 }
 async function deleteAccommodation(id) { // Modified to accept id
+  if (effectiveReadonly.value) return
   if (!confirm('이 숙소를 삭제하시겠습니까?')) return
   try {
     await apiClient.delete(`/personal-trips/accommodations/${id}`)
@@ -798,6 +1070,68 @@ async function deleteAccommodation(id) { // Modified to accept id
 }
 function deleteAccommodationFromList(id) {
   deleteAccommodation(id);
+}
+
+// --- Transportation ---
+function openFlightManagementModal() {
+  isTransportationModalOpen.value = true;
+}
+function closeTransportationModal() {
+  isTransportationModalOpen.value = false;
+}
+function handleAddTransportation(category) {
+  editingTransportation.value = null;
+  transportationData.value = { category };
+  isTransportationEditModalOpen.value = true;
+}
+function handleEditTransportation(transportation) {
+  editingTransportation.value = transportation;
+  transportationData.value = { ...transportation };
+  isTransportationEditModalOpen.value = true;
+}
+async function handleDeleteTransportation(flightId) {
+  if (effectiveReadonly.value) return
+  if (!confirm('이 교통수단을 삭제하시겠습니까?')) return;
+  try {
+    await apiClient.delete(`/personal-trips/flights/${flightId}`);
+    await loadTrip();
+  } catch (error) {
+    console.error('Failed to delete transportation:', error);
+    alert('삭제에 실패했습니다.');
+  }
+}
+function closeTransportationEditModal() {
+  isTransportationEditModalOpen.value = false;
+}
+function calculateTotalTransportationCost() {
+  const toll = transportationData.value.tollFee || 0;
+  const fuel = transportationData.value.fuelCost || 0;
+  const parking = transportationData.value.parkingFee || 0;
+  const rental = transportationData.value.rentalCost || 0;
+  return toll + fuel + parking + rental;
+}
+async function saveTransportation() {
+  if (effectiveReadonly.value) return
+  try {
+    if (transportationData.value.category === '렌트카' || transportationData.value.category === '자가용') {
+      transportationData.value.amount = calculateTotalTransportationCost();
+    }
+    if (transportationData.value.category !== '택시') {
+      transportationData.value.itineraryItemId = null;
+    }
+    const payload = { ...transportationData.value, personalTripId: tripId.value };
+    if (editingTransportation.value?.id) {
+      await apiClient.put(`/personal-trips/flights/${editingTransportation.value.id}`, payload);
+    } else {
+      await apiClient.post(`/personal-trips/${tripId.value}/flights`, payload);
+    }
+    await loadTrip();
+    closeTransportationEditModal();
+    closeTransportationModal();
+  } catch (error) {
+    console.error('Failed to save transportation:', error);
+    alert('저장에 실패했습니다.');
+  }
 }
 
 // --- Itinerary ---
@@ -964,6 +1298,7 @@ function openItineraryModal(item = null, dayNumber = null) {
 }
 function closeItineraryModal() { isItineraryModalOpen.value = false }
 async function saveItineraryItem() {
+  if (effectiveReadonly.value) return
   try {
     const isNewItem = !editingItineraryItem.value?.id;
     let targetItemId = isNewItem ? null : editingItineraryItem.value.id;
@@ -996,6 +1331,7 @@ async function saveItineraryItem() {
   }
 }
 async function deleteItineraryItem(id) { // Modified to accept id
+  if (effectiveReadonly.value) return
   if (!confirm('이 일정을 삭제하시겠습니까?')) return
   try {
     await apiClient.delete(`/personal-trips/items/${id}`)
@@ -1155,6 +1491,7 @@ function onTouchEnd(targetItem, targetDayNumber, event) {
 }
 
 async function saveItineraryOrder(dayNumber) {
+  if (effectiveReadonly.value) return
   const dayItems = trip.value.itineraryItems
     .filter(item => item.dayNumber === dayNumber)
     .map((item, index) => ({
@@ -1298,6 +1635,7 @@ function toggleSelectAllForDay(dayNumber) {
 }
 
 async function bulkDeleteSelectedItems(dayNumber) {
+  if (effectiveReadonly.value) return
   const itemsToDelete = getSelectedItemsForDay(dayNumber)
   if (itemsToDelete.length === 0) return
   if (!confirm(`${itemsToDelete.length}개의 일정을 삭제하시겠습니까?`)) return
@@ -1329,6 +1667,7 @@ function closeBulkChangeDayModal() {
 }
 
 async function saveBulkChangeDay() {
+  if (effectiveReadonly.value) return
   if (selectedItineraryItems.value.length === 0) return
 
   try {
@@ -1372,5 +1711,30 @@ function handleKakaoPlaceSelection(place) {
     itineraryItemData.value.kakaoPlaceUrl = place.kakaoPlaceUrl || null
   }
   isKakaoMapSearchModalOpen.value = false
+}
+
+// --- Navigation handlers for shared mode ---
+function handleGoToItinerary() {
+  if (shareToken.value) {
+    router.push(`/trips/share/${shareToken.value}/itinerary`)
+  } else {
+    router.push(`/trips/${tripId.value}/itinerary`)
+  }
+}
+
+function handleGoToExpenses() {
+  if (shareToken.value) {
+    router.push(`/trips/share/${shareToken.value}/expenses`)
+  } else {
+    router.push(`/trips/${tripId.value}/expenses`)
+  }
+}
+
+function handleGoToNotes() {
+  if (shareToken.value) {
+    router.push(`/trips/share/${shareToken.value}/notes`)
+  } else {
+    router.push(`/trips/${tripId.value}/notes`)
+  }
 }
 </script>

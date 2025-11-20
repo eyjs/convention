@@ -101,8 +101,42 @@ const routes = [
       {
         path: '/trips/share/:shareToken',
         name: 'SharedTripDetail',
-        component: () => import('@/views/trip/SharedTripDetail.vue'),
+        component: () => import('@/views/trip/TripDetail.vue'),
+        props: route => ({
+          shareToken: route.params.shareToken,
+          readonly: true
+        }),
         meta: { requiresAuth: false, title: '공유된 여행' }
+      },
+      {
+        path: '/trips/share/:shareToken/itinerary',
+        name: 'SharedTripItinerary',
+        component: () => import('@/views/trip/TripItinerary.vue'),
+        props: route => ({
+          shareToken: route.params.shareToken,
+          readonly: true
+        }),
+        meta: { requiresAuth: false, title: '공유된 여행 일정표' }
+      },
+      {
+        path: '/trips/share/:shareToken/expenses',
+        name: 'SharedTripExpenses',
+        component: () => import('@/views/trip/TripExpenses.vue'),
+        props: route => ({
+          shareToken: route.params.shareToken,
+          readonly: true
+        }),
+        meta: { requiresAuth: false, title: '공유된 여행 가계부' }
+      },
+      {
+        path: '/trips/share/:shareToken/notes',
+        name: 'SharedTripNotes',
+        component: () => import('@/views/trip/TripNotes.vue'),
+        props: route => ({
+          shareToken: route.params.shareToken,
+          readonly: true
+        }),
+        meta: { requiresAuth: false, title: '공유된 여행 노트' }
       },
       {
         path: '/trips/:id',

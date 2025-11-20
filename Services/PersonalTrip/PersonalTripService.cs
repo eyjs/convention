@@ -1,5 +1,6 @@
 using LocalRAG.Data;
 using LocalRAG.DTOs.PersonalTrip;
+using LocalRAG.DTOs.PersonalTrip.ChecklistModels;
 using LocalRAG.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -28,6 +29,8 @@ namespace LocalRAG.Services.PersonalTrip
                 .Include(t => t.Flights)
                 .Include(t => t.Accommodations)
                 .Include(t => t.ItineraryItems)
+                .Include(t => t.ChecklistCategories)
+                    .ThenInclude(c => c.Items)
                 .OrderByDescending(t => t.StartDate)
                 .ToListAsync();
 
@@ -41,6 +44,8 @@ namespace LocalRAG.Services.PersonalTrip
                 .Include(t => t.Flights)
                 .Include(t => t.Accommodations)
                 .Include(t => t.ItineraryItems)
+                .Include(t => t.ChecklistCategories)
+                    .ThenInclude(c => c.Items)
                 .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
 
             return trip == null ? null : MapToPersonalTripDto(trip);
@@ -72,6 +77,9 @@ namespace LocalRAG.Services.PersonalTrip
 
             _context.PersonalTrips.Add(trip);
             await _context.SaveChangesAsync();
+            
+            await AddDefaultChecklistCategoriesAsync(trip.Id);
+
 
             return MapToPersonalTripDto(trip);
         }
@@ -116,6 +124,117 @@ namespace LocalRAG.Services.PersonalTrip
             if (trip == null) return false;
 
             _context.PersonalTrips.Remove(trip);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        #endregion
+        
+        #region Checklist CRUD
+
+        public async Task AddDefaultChecklistCategoriesAsync(int tripId)
+        {
+            var defaultCategories = new List<Entities.PersonalTrip.ChecklistCategory>
+            {
+                new() {
+                    PersonalTripId = tripId, Name = "필수 준비물", IsDefault = true, Order = 1,
+                    Items = new List<Entities.PersonalTrip.ChecklistItem>
+                    {
+                        new() { Task = "여권/신분증", Order = 1 },
+                        new() { Task = "항공권/교통편 예약 확인서", Order = 2 },
+                        new() { Task = "숙소 예약 확인서", Order = 3 },
+                    }
+                },
+                new() {
+                    PersonalTripId = tripId, Name = "기본 짐싸기", IsDefault = true, Order = 2,
+                    Items = new List<Entities.PersonalTrip.ChecklistItem>
+                    {
+                        new() { Task = "속옷/양말", Order = 1 },
+                        new() { Task = "의류", Order = 2 },
+                        new() { Task = "세면도구", Order = 3 },
+                        new() { Task = "상비약", Order = 4 },
+                        new() { Task = "충전기/보조배터리", Order = 5 },
+                    }
+                }
+            };
+            _context.ChecklistCategories.AddRange(defaultCategories);
+            await _context.SaveChangesAsync();
+        }
+
+
+        public async Task<ChecklistCategoryDto> AddChecklistCategoryAsync(int tripId, CreateChecklistCategoryDto dto, int userId)
+        {
+            var trip = await _context.PersonalTrips.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            if (trip == null) throw new ArgumentException("여행을 찾을 수 없거나 권한이 없습니다.");
+
+            var category = new Entities.PersonalTrip.ChecklistCategory
+            {
+                PersonalTripId = tripId,
+                Name = dto.Name,
+                IsDefault = false,
+                Order = await _context.ChecklistCategories.Where(c => c.PersonalTripId == tripId).CountAsync() + 1
+            };
+
+            _context.ChecklistCategories.Add(category);
+            await _context.SaveChangesAsync();
+            return MapToChecklistCategoryDto(category);
+        }
+
+        public async Task<ChecklistItemDto> AddChecklistItemAsync(int categoryId, CreateChecklistItemDto dto, int userId)
+        {
+            var category = await _context.ChecklistCategories.Include(c => c.PersonalTrip)
+                .FirstOrDefaultAsync(c => c.Id == categoryId && c.PersonalTrip.UserId == userId);
+            if (category == null) throw new ArgumentException("카테고리를 찾을 수 없거나 권한이 없습니다.");
+
+            var item = new Entities.PersonalTrip.ChecklistItem
+            {
+                ChecklistCategoryId = categoryId,
+                Task = dto.Task,
+                Description = dto.Description,
+                Order = await _context.ChecklistItems.Where(i => i.ChecklistCategoryId == categoryId).CountAsync() + 1
+            };
+
+            _context.ChecklistItems.Add(item);
+            await _context.SaveChangesAsync();
+            return MapToChecklistItemDto(item);
+        }
+
+        public async Task<ChecklistItemDto?> UpdateChecklistItemAsync(int itemId, UpdateChecklistItemDto dto, int userId)
+        {
+            var item = await _context.ChecklistItems
+                .Include(i => i.Category.PersonalTrip)
+                .FirstOrDefaultAsync(i => i.Id == itemId && i.Category.PersonalTrip.UserId == userId);
+            if (item == null) return null;
+
+            item.Task = dto.Task;
+            item.Description = dto.Description;
+            item.IsChecked = dto.IsChecked;
+            item.Order = dto.Order;
+
+            await _context.SaveChangesAsync();
+            return MapToChecklistItemDto(item);
+        }
+
+        public async Task<bool> DeleteChecklistCategoryAsync(int categoryId, int userId)
+        {
+            var category = await _context.ChecklistCategories
+                .Include(c => c.PersonalTrip)
+                .FirstOrDefaultAsync(c => c.Id == categoryId && !c.IsDefault && c.PersonalTrip.UserId == userId);
+            if (category == null) return false;
+
+            _context.ChecklistCategories.Remove(category);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteChecklistItemAsync(int itemId, int userId)
+        {
+            var item = await _context.ChecklistItems
+                .Include(i => i.Category.PersonalTrip)
+                .FirstOrDefaultAsync(i => i.Id == itemId && i.Category.PersonalTrip.UserId == userId);
+            if (item == null) return false;
+
+            _context.ChecklistItems.Remove(item);
             await _context.SaveChangesAsync();
             return true;
         }
@@ -580,7 +699,8 @@ namespace LocalRAG.Services.PersonalTrip
                 ShareToken = trip.ShareToken,
                 Flights = trip.Flights?.Select(MapToFlightDto).OrderBy(f => f.DepartureTime).ToList() ?? new List<FlightDto>(),
                 Accommodations = trip.Accommodations?.Select(MapToAccommodationDto).OrderBy(a => a.CheckInTime).ToList() ?? new List<AccommodationDto>(),
-                ItineraryItems = trip.ItineraryItems?.Select(MapToItineraryItemDto).OrderBy(i => i.DayNumber).ThenBy(i => i.StartTime).ToList() ?? new List<ItineraryItemDto>()
+                ItineraryItems = trip.ItineraryItems?.Select(MapToItineraryItemDto).OrderBy(i => i.DayNumber).ThenBy(i => i.StartTime).ToList() ?? new List<ItineraryItemDto>(),
+                ChecklistCategories = trip.ChecklistCategories?.Select(MapToChecklistCategoryDto).OrderBy(c => c.Order).ToList() ?? new List<ChecklistCategoryDto>()
             };
         }
 
@@ -654,6 +774,35 @@ namespace LocalRAG.Services.PersonalTrip
                 KakaoPlaceUrl = item.KakaoPlaceUrl,
                 ExpenseAmount = item.ExpenseAmount,
                 IsAutoGenerated = item.IsAutoGenerated
+            };
+        }
+        
+        private ChecklistCategoryDto MapToChecklistCategoryDto(Entities.PersonalTrip.ChecklistCategory category)
+        {
+            var items = category.Items?.Select(MapToChecklistItemDto).OrderBy(i => i.Order).ToList() ?? new List<ChecklistItemDto>();
+            return new ChecklistCategoryDto
+            {
+                Id = category.Id,
+                PersonalTripId = category.PersonalTripId,
+                Name = category.Name,
+                IsDefault = category.IsDefault,
+                Order = category.Order,
+                TotalItemsCount = items.Count,
+                CompletedItemsCount = items.Count(item => item.IsChecked),
+                Items = items
+            };
+        }
+
+        private ChecklistItemDto MapToChecklistItemDto(Entities.PersonalTrip.ChecklistItem item)
+        {
+            return new ChecklistItemDto
+            {
+                Id = item.Id,
+                ChecklistCategoryId = item.ChecklistCategoryId,
+                Task = item.Task,
+                Description = item.Description,
+                IsChecked = item.IsChecked,
+                Order = item.Order
             };
         }
 

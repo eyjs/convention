@@ -193,103 +193,6 @@
     </div>
 
     <BottomNavigationBar v-if="tripId" :trip-id="tripId" :show="!uiStore.isModalOpen" />
-
-    <!-- 교통수단 관리 모달 -->
-    <FlightManagementModal
-      :is-open="isTransportationModalOpen"
-      :flights="trip.flights"
-      @close="closeTransportationModal"
-      @add="handleAddTransportation"
-      @edit="handleEditTransportation"
-      @delete="handleDeleteTransportation"
-    />
-
-    <!-- 교통수단 추가/수정 모달 (TripDetail에서 가져온 것과 동일) -->
-    <SlideUpModal :is-open="isTransportationEditModalOpen" @close="closeTransportationEditModal" z-index-class="z-[60]">
-      <template #header-title>{{ editingTransportation?.id ? '교통수단 수정' : '교통수단 추가' }}</template>
-      <template #body>
-        <form id="transportation-form" @submit.prevent="saveTransportation" class="space-y-4">
-          <div>
-            <label class="label">교통수단</label>
-            <input v-model="transportationData.category" type="text" class="input bg-gray-50" readonly />
-          </div>
-
-          <!-- 택시는 일정 바인딩 필수 -->
-          <div v-if="transportationData.category === '택시'">
-            <label class="label">연결된 일정 *</label>
-            <select v-model="transportationData.itineraryItemId" class="input" required>
-              <option :value="null" disabled>일정을 선택하세요</option>
-              <option v-for="item in trip.itineraryItems" :key="item.id" :value="item.id">
-                {{ item.dayNumber }}일차 - {{ item.locationName }}
-              </option>
-            </select>
-          </div>
-
-          <!-- 항공편: 예약번호 + 금액 -->
-          <template v-if="transportationData.category === '항공편'">
-            <div>
-              <label class="label">예약번호 (선택)</label>
-              <input v-model="transportationData.bookingReference" type="text" class="input" placeholder="예약번호" />
-            </div>
-            <div>
-              <label class="label">금액 (원) *</label>
-              <input v-model.number="transportationData.amount" type="number" class="input" placeholder="예: 150000" min="0" step="100" required />
-            </div>
-          </template>
-
-          <!-- 기차/버스: 금액만 -->
-          <template v-else-if="transportationData.category === '기차' || transportationData.category === '버스'">
-            <div>
-              <label class="label">금액 (원) *</label>
-              <input v-model.number="transportationData.amount" type="number" class="input" placeholder="예: 50000" min="0" step="100" required />
-            </div>
-          </template>
-
-          <!-- 택시: 금액만 -->
-          <template v-else-if="transportationData.category === '택시'">
-            <div>
-              <label class="label">금액 (원) *</label>
-              <input v-model.number="transportationData.amount" type="number" class="input" placeholder="예: 10000" min="0" step="100" required />
-            </div>
-          </template>
-
-          <!-- 렌트카/자가용: 세부 비용 -->
-          <template v-else-if="transportationData.category === '렌트카' || transportationData.category === '자가용'">
-            <div class="bg-primary-50 border border-primary-200 rounded-lg p-3 mb-2">
-              <p class="text-xs text-primary-700">💡 여행 전체 기간 동안 발생한 비용을 입력하세요</p>
-            </div>
-            <div v-if="transportationData.category === '렌트카'">
-              <label class="label">렌트 비용 (원)</label>
-              <input v-model.number="transportationData.rentalCost" type="number" class="input" placeholder="예: 100000" min="0" step="100" />
-            </div>
-            <div>
-              <label class="label">주유비 (원)</label>
-              <input v-model.number="transportationData.fuelCost" type="number" class="input" placeholder="예: 50000" min="0" step="100" />
-            </div>
-            <div>
-              <label class="label">톨비 (원)</label>
-              <input v-model.number="transportationData.tollFee" type="number" class="input" placeholder="예: 20000" min="0" step="100" />
-            </div>
-            <div>
-              <label class="label">주차비 (원)</label>
-              <input v-model.number="transportationData.parkingFee" type="number" class="input" placeholder="예: 15000" min="0" step="100" />
-            </div>
-            <div class="pt-3 border-t">
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700">총 비용:</span>
-                <span class="text-lg font-bold text-primary-600">₩{{ calculateTotalTransportationCost().toLocaleString('ko-KR') }}</span>
-              </div>
-            </div>
-          </template>
-        </form>
-      </template>
-      <template #footer>
-        <div class="flex gap-3 w-full">
-          <button type="button" @click="closeTransportationEditModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
-          <button type="submit" form="transportation-form" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 active:scale-95 transition-all">저장</button>
-        </div>
-      </template>
-    </SlideUpModal>
   </div>
 </template>
 
@@ -298,8 +201,6 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import MainHeader from '@/components/common/MainHeader.vue';
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue';
-import FlightManagementModal from '@/components/personalTrip/FlightManagementModal.vue';
-import SlideUpModal from '@/components/common/SlideUpModal.vue';
 import { useUIStore } from '@/stores/ui';
 import apiClient from '@/services/api';
 import dayjs from 'dayjs';
@@ -318,10 +219,6 @@ const expandedCategories = ref({
 });
 
 const showExportMenu = ref(false);
-const isTransportationModalOpen = ref(false);
-const isTransportationEditModalOpen = ref(false);
-const editingTransportation = ref(null);
-const transportationData = ref({});
 
 // 데이터 로드
 async function loadTrip() {
@@ -448,78 +345,6 @@ const categoryStats = computed(() => {
     },
   };
 });
-
-// 교통수단 관리
-function openTransportationModal() {
-  isTransportationModalOpen.value = true;
-}
-
-function closeTransportationModal() {
-  isTransportationModalOpen.value = false;
-}
-
-function handleAddTransportation(category) {
-  editingTransportation.value = null;
-  transportationData.value = { category };
-  isTransportationEditModalOpen.value = true;
-}
-
-function handleEditTransportation(transportation) {
-  editingTransportation.value = transportation;
-  transportationData.value = { ...transportation };
-  isTransportationEditModalOpen.value = true;
-}
-
-async function handleDeleteTransportation(flightId) {
-  if (!confirm('이 교통수단을 삭제하시겠습니까?')) return;
-  try {
-    await apiClient.delete(`/personal-trips/flights/${flightId}`);
-    await loadTrip();
-  } catch (error) {
-    console.error('Failed to delete transportation:', error);
-    alert('삭제에 실패했습니다.');
-  }
-}
-
-function closeTransportationEditModal() {
-  isTransportationEditModalOpen.value = false;
-}
-
-function calculateTotalTransportationCost() {
-  const toll = transportationData.value.tollFee || 0;
-  const fuel = transportationData.value.fuelCost || 0;
-  const parking = transportationData.value.parkingFee || 0;
-  const rental = transportationData.value.rentalCost || 0;
-  return toll + fuel + parking + rental;
-}
-
-async function saveTransportation() {
-  try {
-    // 렌트카/자가용일 경우 세부 비용을 amount에 합산
-    if (transportationData.value.category === '렌트카' || transportationData.value.category === '자가용') {
-      transportationData.value.amount = calculateTotalTransportationCost();
-    }
-    // 택시가 아니면 일정 바인딩 제거
-    if (transportationData.value.category !== '택시') {
-      transportationData.value.itineraryItemId = null;
-    }
-
-    const payload = { ...transportationData.value, personalTripId: tripId.value };
-
-    if (editingTransportation.value?.id) {
-      await apiClient.put(`/personal-trips/flights/${editingTransportation.value.id}`, payload);
-    } else {
-      await apiClient.post(`/personal-trips/${tripId.value}/flights`, payload);
-    }
-
-    await loadTrip();
-    closeTransportationEditModal();
-    closeTransportationModal();
-  } catch (error) {
-    console.error('Failed to save transportation:', error);
-    alert('저장에 실패했습니다.');
-  }
-}
 
 // 유틸리티 함수
 function toggleCategory(category) {

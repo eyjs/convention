@@ -110,5 +110,6 @@ namespace LocalRAG.Entities.PersonalTrip
         public virtual ICollection<Flight> Flights { get; set; } = new List<Flight>();
         public virtual ICollection<Accommodation> Accommodations { get; set; } = new List<Accommodation>();
         public virtual ICollection<ItineraryItem> ItineraryItems { get; set; } = new List<ItineraryItem>();
+        public virtual ICollection<ChecklistCategory> ChecklistCategories { get; set; } = new List<ChecklistCategory>();
     }
 }

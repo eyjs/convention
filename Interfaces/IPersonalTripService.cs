@@ -1,4 +1,5 @@
 using LocalRAG.DTOs.PersonalTrip;
+using LocalRAG.DTOs.PersonalTrip.ChecklistModels;
 
 namespace LocalRAG.Interfaces
 {
@@ -10,6 +11,13 @@ namespace LocalRAG.Interfaces
         Task<PersonalTripDto> CreateTripAsync(CreatePersonalTripDto dto, int userId);
         Task<PersonalTripDto?> UpdateTripAsync(int tripId, UpdatePersonalTripDto dto, int userId);
         Task<bool> DeleteTripAsync(int tripId, int userId);
+
+        // Checklist CRUD
+        Task<ChecklistCategoryDto> AddChecklistCategoryAsync(int tripId, CreateChecklistCategoryDto dto, int userId);
+        Task<ChecklistItemDto> AddChecklistItemAsync(int categoryId, CreateChecklistItemDto dto, int userId);
+        Task<ChecklistItemDto?> UpdateChecklistItemAsync(int itemId, UpdateChecklistItemDto dto, int userId);
+        Task<bool> DeleteChecklistCategoryAsync(int categoryId, int userId);
+        Task<bool> DeleteChecklistItemAsync(int itemId, int userId);
 
         // Flight CRUD
         Task<FlightDto> AddFlightAsync(int tripId, CreateFlightDto dto, int userId);
