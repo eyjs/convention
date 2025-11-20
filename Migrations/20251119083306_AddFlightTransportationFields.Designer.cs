@@ -4,6 +4,7 @@ using LocalRAG.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalRAG.Migrations
 {
     [DbContext(typeof(ConventionDbContext))]
-    partial class ConventionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251119083306_AddFlightTransportationFields")]
+    partial class AddFlightTransportationFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1102,9 +1105,6 @@ namespace LocalRAG.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("getdate()");
 
-                    b.Property<decimal?>("ExpenseAmount")
-                        .HasColumnType("decimal(18, 2)");
-
                     b.Property<double?>("Latitude")
                         .HasColumnType("float");
 
@@ -1191,9 +1191,6 @@ namespace LocalRAG.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<decimal?>("FuelCost")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<int?>("ItineraryItemId")
                         .HasColumnType("int");
 
@@ -1201,21 +1198,12 @@ namespace LocalRAG.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<decimal?>("ParkingFee")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<int>("PersonalTripId")
                         .HasColumnType("int");
-
-                    b.Property<decimal?>("RentalCost")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("SeatNumber")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
-
-                    b.Property<decimal?>("TollFee")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");

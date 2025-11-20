@@ -4,6 +4,7 @@ using LocalRAG.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalRAG.Migrations
 {
     [DbContext(typeof(ConventionDbContext))]
-    partial class ConventionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251119082157_AddCategoryAndAmountToFlight")]
+    partial class AddCategoryAndAmountToFlight
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1102,9 +1105,6 @@ namespace LocalRAG.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("getdate()");
 
-                    b.Property<decimal?>("ExpenseAmount")
-                        .HasColumnType("decimal(18, 2)");
-
                     b.Property<double?>("Latitude")
                         .HasColumnType("float");
 
@@ -1156,9 +1156,6 @@ namespace LocalRAG.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<decimal?>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("ArrivalLocation")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -1169,11 +1166,6 @@ namespace LocalRAG.Migrations
                     b.Property<string>("BookingReference")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1191,31 +1183,16 @@ namespace LocalRAG.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<decimal?>("FuelCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("ItineraryItemId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<decimal?>("ParkingFee")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<int>("PersonalTripId")
                         .HasColumnType("int");
-
-                    b.Property<decimal?>("RentalCost")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("SeatNumber")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
-
-                    b.Property<decimal?>("TollFee")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1224,8 +1201,6 @@ namespace LocalRAG.Migrations
 
                     b.HasIndex("DepartureTime")
                         .HasDatabaseName("IX_Flight_DepartureTime");
-
-                    b.HasIndex("ItineraryItemId");
 
                     b.HasIndex("PersonalTripId")
                         .HasDatabaseName("IX_Flight_PersonalTripId");
@@ -2191,17 +2166,11 @@ namespace LocalRAG.Migrations
 
             modelBuilder.Entity("LocalRAG.Entities.PersonalTrip.Flight", b =>
                 {
-                    b.HasOne("LocalRAG.Entities.PersonalTrip.ItineraryItem", "ItineraryItem")
-                        .WithMany()
-                        .HasForeignKey("ItineraryItemId");
-
                     b.HasOne("LocalRAG.Entities.PersonalTrip.PersonalTrip", "PersonalTrip")
                         .WithMany("Flights")
                         .HasForeignKey("PersonalTripId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("ItineraryItem");
 
                     b.Navigation("PersonalTrip");
                 });

@@ -80,6 +80,12 @@ namespace LocalRAG.Entities.PersonalTrip
         public string? Notes { get; set; }
 
         /// <summary>
+        /// 비용
+        /// </summary>
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal? ExpenseAmount { get; set; }
+
+        /// <summary>
         /// 생성일
         /// </summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

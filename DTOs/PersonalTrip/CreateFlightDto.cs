@@ -3,10 +3,25 @@ using System.ComponentModel.DataAnnotations;
 namespace LocalRAG.DTOs.PersonalTrip
 {
     /// <summary>
-    /// 항공권 생성/수정용 DTO
+    /// 교통수단 생성/수정용 DTO
     /// </summary>
     public class CreateFlightDto
     {
+        [MaxLength(20)]
+        public string Category { get; set; } = "항공편";
+
+        public int? ItineraryItemId { get; set; }
+
+        public decimal? Amount { get; set; }
+
+        public decimal? TollFee { get; set; }
+
+        public decimal? FuelCost { get; set; }
+
+        public decimal? ParkingFee { get; set; }
+
+        public decimal? RentalCost { get; set; }
+
         [MaxLength(100)]
         public string? Airline { get; set; }
 

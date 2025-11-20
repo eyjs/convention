@@ -62,20 +62,9 @@
       </section>
 
             <!-- Quick Actions Grid -->
-            <div class="grid grid-cols-2 gap-4 mb-6">
-              <!-- 항공권 버튼 -->
-              <button @click="openFlightManagementModal" class="bg-white rounded-2xl shadow-md p-5 text-left hover:shadow-lg transition-shadow">
-                <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                  항공편 관리
-                </h2>
-                <p class="text-sm text-gray-500 mt-2">{{ trip.flights && trip.flights.length > 0 ? `${trip.flights.length}개의 항공편 등록됨` : '등록된 항공편 없음' }}</p>
-              </button>
-      
+            <div class="mb-6">
               <!-- 숙소 버튼 -->
-              <button @click="openAccommodationManagementModal" class="bg-white rounded-2xl shadow-md p-5 text-left hover:shadow-lg transition-shadow">
+              <button @click="openAccommodationManagementModal" class="w-full bg-white rounded-2xl shadow-md p-5 text-left hover:shadow-lg transition-shadow">
                 <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -85,266 +74,8 @@
                 <p class="text-sm text-gray-500 mt-2">{{ trip.accommodations && trip.accommodations.length > 0 ? `${trip.accommodations.length}개의 숙소 등록됨` : '등록된 숙소 없음' }}</p>
               </button>
             </div>
-      
-            <!-- 일정 -->
-            <section class="bg-white rounded-2xl shadow-md p-5">
-              <div class="flex justify-between items-center mb-5">
-                <h2 class="text-xl font-bold text-gray-900">일정</h2>
-              </div>
-      
-      
-      
-              <!-- Day Filter Tabs with Scroll Arrows -->
-              <div v-if="groupedItinerary.length > 0" class="relative">
-                <div
-                  ref="dayFilterContainer"
-                  class="flex gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar"
-                  @scroll="handleDayFilterScroll"
-                >
-                  <button 
-                    @click="selectedDay = null"
-                    :class="['flex items-center justify-center px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all', selectedDay === null ? 'text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']"
-                    :style="selectedDay === null ? 'background-color: rgba(23, 177, 133, 1);' : ''"
-                  >
-                    전체
-                  </button>
-                  <button 
-                    v-for="day in groupedItinerary"
-                    :key="day.dayNumber"
-                    @click="selectedDay = day.dayNumber"
-                    :class="['flex items-center justify-center px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all', selectedDay === day.dayNumber ? 'text-white shadow-lg scale-105' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']"
-                    :style="selectedDay === day.dayNumber ? 'background-color: rgba(23, 177, 133, 1);' : ''"
-                  >
-                    Day {{ day.dayNumber }}
-                  </button>
-                </div>
-                
-                <!-- Left Scroll Arrow -->
-                <div
-                  v-if="showLeftDayScroll"
-                  class="absolute left-0 top-0 bottom-2 flex items-center bg-gradient-to-r from-white to-transparent pr-4 pointer-events-none"
-                >
-                  <button
-                    @click="scrollDayFilterLeft"
-                    class="p-1.5 bg-white rounded-full shadow-md pointer-events-auto hover:bg-gray-50 transition-colors"
-                  >
-                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                </div>
-                
-                <!-- Right Scroll Arrow -->
-                <div
-                  v-if="showRightDayScroll"
-                  class="absolute right-0 top-0 bottom-2 flex items-center bg-gradient-to-l from-white to-transparent pl-4 pointer-events-none"
-                >
-                  <button
-                    @click="scrollDayFilterRight"
-                    class="p-1.5 bg-white rounded-full shadow-md pointer-events-auto hover:bg-gray-50 transition-colors"
-                  >
-                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-      
-              <div v-if="groupedItinerary.length === 0" class="text-center py-12">
-                <div class="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                  <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <p class="text-gray-500 font-medium mb-4">등록된 일정이 없습니다</p>
-                <button @click="openItineraryModal()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-500 text-white rounded-full font-semibold hover:shadow-lg transition-shadow">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                  </svg>
-                  첫 일정 추가
-                </button>
-              </div>
-      
-              <div v-else class="space-y-6">
-                <div v-for="dayGroup in filteredItinerary" :key="dayGroup.dayNumber">
-                  <!-- Day Header -->
-                  <div class="mb-4">
-                    <div class="flex items-center justify-between mb-2">
-                      <h3 class="text-lg font-bold text-gray-900">
-                        Day {{ dayGroup.dayNumber }} <span class="text-base font-medium text-gray-500">{{ formatDateWithDay(dayGroup.date) }}</span>
-                      </h3>
-                      <div class="flex items-center gap-3">
-                        <!-- 편집 모드일 때: 거리순 재정렬만 표시 -->
-                        <button v-if="isEditModeForDay(dayGroup.dayNumber)" @click="optimizeRoute(dayGroup.dayNumber)" class="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1">
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                          </svg>
-                          거리순 재정렬
-                        </button>
-                        <!-- 편집 버튼 -->
-                        <button @click="toggleEditMode(dayGroup.dayNumber)" class="text-sm font-medium transition-colors" :class="isEditModeForDay(dayGroup.dayNumber) ? 'text-blue-600 hover:text-blue-700' : 'text-gray-600 hover:text-gray-700'">
-                          {{ isEditModeForDay(dayGroup.dayNumber) ? '완료' : '편집' }}
-                        </button>
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      <span class="text-sm text-gray-500">{{ dayGroup.items.length }}개 일정</span>
-                    </div>
-                  </div>
-      
-                  <!-- Itinerary Items with Original Timeline + Improved Content -->
-                  <div>
-                    <div v-for="(item, index) in dayGroup.items" :key="item.id" class="flex gap-3">
-                      <!-- Checkbox (편집 모드일 때만) -->
-                      <div v-if="isEditModeForDay(dayGroup.dayNumber)" class="flex-shrink-0 pt-9">
-                        <button
-                          @click.stop="toggleItemSelection(item.id)"
-                          class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
-                          :class="selectedItineraryItems.includes(item.id) ? 'bg-primary-500 border-primary-500' : 'border-gray-300 bg-white hover:border-primary-400'"
-                        >
-                          <svg v-if="selectedItineraryItems.includes(item.id)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </button>
-                      </div>
-
-                      <!-- 1. Timeline Column (편집 모드가 아닐 때만 표시) -->
-                      <div v-if="!isEditModeForDay(dayGroup.dayNumber)" class="relative flex-shrink-0 w-5 flex flex-col items-center">
-                        <!-- Top line (hidden for first item) -->
-                        <div
-                          v-if="index > 0"
-                          class="absolute top-0 left-1/2 -translate-x-1/2 h-9"
-                          style="width: 0px; border-right: 1px dashed rgba(23, 177, 133, 0.5);"
-                        ></div>
-
-                        <!-- Bullet -->
-                        <div
-                          class="relative z-10 w-3 h-3 mt-9 rounded-full flex-shrink-0"
-                          style="background-color: rgba(23, 177, 133, 1);"
-                        ></div>
-
-                        <!-- Bottom line & Distance Badge Container -->
-                        <div
-                          v-if="index < dayGroup.items.length - 1"
-                          class="absolute top-9 bottom-0 left-1/2 -translate-x-1/2"
-                          style="width: 0px;"
-                        >
-                          <!-- The actual line -->
-                          <div class="absolute inset-0" style="border-right: 1px dashed rgba(23, 177, 133, 0.5);"></div>
-
-                          <!-- Distance Badge -->
-                          <div
-                            v-if="item.distanceToNext"
-                            class="absolute z-20 bottom-0 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
-                            style="background-color: rgba(23, 177, 133, 0.1); color: rgba(23, 177, 133, 1);"
-                          >
-                            {{ item.distanceToNext.formatted }}
-                          </div>
-                        </div>
-                      </div>
-      
-                      <!-- 2. Content Column (Improved) -->
-                      <div class="flex-1 pb-6">
-                        <div
-                          :ref="(el) => { if (item.id === currentItineraryItemId) currentItineraryItemRef = el }"
-                          :data-item-id="item.id"
-                          :draggable="isEditModeForDay(dayGroup.dayNumber)"
-                          @dragstart="onDragStart(item, dayGroup.dayNumber, $event)"
-                          @drag="onDrag"
-                          @dragend="onDragEnd"
-                          @dragover="onDragOver"
-                          @drop="onDrop(item, dayGroup.dayNumber)"
-                          @touchstart="onTouchStart(item, dayGroup.dayNumber, $event)"
-                          @touchmove="onTouchMove"
-                          @touchend="onTouchEnd(item, dayGroup.dayNumber, $event)"
-                          class="group relative bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all"
-                          :class="{
-                            'cursor-grab active:cursor-grabbing': isEditModeForDay(dayGroup.dayNumber),
-                            'cursor-pointer': !isEditModeForDay(dayGroup.dayNumber),
-                            'bg-blue-50 border-blue-200': item.isAutoGenerated,
-                            
-                          }"
-                          :style="currentItineraryItemId === item.id ? 'border: 2px solid rgba(23, 177, 133, 1); box-shadow: 0 4px 6px -1px rgba(23, 177, 133, 0.1);' : ''"
-                          @click="!isEditModeForDay(dayGroup.dayNumber) && openItineraryDetailModal(item)"
-                        >
-                          <div class="flex items-start justify-between gap-3">
-                            <!-- Main content -->
-                            <div class="flex-1 min-w-0">
-                              <!-- Category Badge -->
-                              <div v-if="item.category" class="mb-2">
-                                <span class="inline-flex items-center gap-1 px-2 py-1 bg-primary-50 text-primary-700 text-xs font-medium rounded-full">
-                                  <component :is="getCategoryIcon(item.category)" class="w-3 h-3" />
-                                  {{ item.category }}
-                                </span>
-                              </div>
-
-                              <!-- Place name -->
-                              <h3 class="font-bold text-gray-900 text-base mb-1">{{ item.locationName }}</h3>
-
-                              <!-- Address -->
-                              <p v-if="item.address" class="text-xs text-gray-500 mb-1">{{ item.address }}</p>
-
-                              <!-- Time range -->
-                              <div v-if="item.startTime && item.endTime" class="flex items-center gap-1 text-sm text-gray-600 mb-1">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span class="font-medium">
-                                  {{ item.startTime.substring(0, 5) }} - {{ item.endTime.substring(0, 5) }}
-                                </span>
-                              </div>
-
-                              <!-- Notes/Details -->
-                              <p v-if="item.notes && item.notes.trim() !== ''" class="text-sm text-gray-600 leading-relaxed mt-2">
-                                {{ item.notes }}
-                              </p>
-                            </div>
-
-                            <!-- Actions -->
-                            <div v-if="isEditModeForDay(dayGroup.dayNumber)" class="flex items-center gap-1 flex-shrink-0">
-                              <!-- Drag Handle (only in edit mode) -->
-                              <div class="text-gray-400 cursor-grab">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-                                </svg>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 편집 모드 하단 버튼들 -->
-                  <div v-if="isEditModeForDay(dayGroup.dayNumber)" class="space-y-3 mb-3">
-                    <!-- day 전체 선택 버튼 -->
-                    <button
-                      @click="toggleSelectAllForDay(dayGroup.dayNumber)"
-                      class="w-full py-3 border-2 rounded-xl font-semibold transition-all"
-                      :class="isAllSelectedForDay(dayGroup.dayNumber) ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-300 bg-white text-gray-700 hover:border-primary-400'"
-                    >
-                      {{ isAllSelectedForDay(dayGroup.dayNumber) ? '전체 선택 해제' : 'day 전체 선택' }}
-                    </button>
-
-                    <!-- 선택 항목 삭제 버튼 (선택된 항목이 있을 때만) -->
-                    <button
-                      v-if="getSelectedItemsForDay(dayGroup.dayNumber).length > 0"
-                      @click="bulkDeleteSelectedItems(dayGroup.dayNumber)"
-                      class="w-full py-3 border-2 border-red-500 bg-red-50 text-red-700 rounded-xl font-semibold hover:bg-red-100 transition-all"
-                    >
-                      선택 항목 삭제 ({{ getSelectedItemsForDay(dayGroup.dayNumber).length }}개)
-                    </button>
-                  </div>
-
-                  <!-- Add Itinerary Button (편집 모드가 아닐 때만) -->
-                  <button v-if="!isEditModeForDay(dayGroup.dayNumber)" @click="openItineraryModal(null, dayGroup.dayNumber)" class="w-full py-3 border-2 border-dashed rounded-xl font-medium hover:opacity-80 transition-all" style="border-color: rgba(23, 177, 133, 0.3); color: rgba(23, 177, 133, 1); background-color: rgba(23, 177, 133, 0.05);">
-                    + 일정 추가
-                  </button>
-                </div>
-              </div>
-            </section>
           </div>
-      
+
           <!-- Modals -->
           <ShareTripModal
             :is-open="isShareModalOpen"
@@ -380,7 +111,7 @@
                     </div>
                     <label class="block">
                       <input type="file" ref="coverImageInput" @change="handleCoverImageChange" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" class="hidden" />
-                      <div class="flex items-center justify-center w-full py-4 px-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors active:scale-95">
+                      <div class="flex items-center justify-center w-full py-4 px-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors active:scale-95">
                         <div class="text-center">
                           <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -397,41 +128,11 @@
             <template #footer>
               <div class="flex gap-3 w-full">
                 <button type="button" @click="closeTripInfoModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
-                <button type="submit" form="trip-info-form" :disabled="isUploadingImage" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{{ isUploadingImage ? '업로드 중...' : '저장' }}</button>
+                <button type="submit" form="trip-info-form" :disabled="isUploadingImage" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{{ isUploadingImage ? '업로드 중...' : '저장' }}</button>
               </div>
             </template>
           </SlideUpModal>
       
-          <SlideUpModal :is-open="isFlightModalOpen" @close="closeFlightModal" z-index-class="z-[60]">
-             <template #header-title>{{ editingFlight?.id ? '항공권 수정' : '항공권 추가' }}</template>
-             <template #body>
-              <form id="flight-form" @submit.prevent="saveFlight" class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><label class="label">항공사</label><input v-model="flightData.airline" type="text" class="input" /></div>
-                  <div><label class="label">편명</label><input v-model="flightData.flightNumber" type="text" class="input" /></div>
-                  <div><label class="label">출발지</label><input v-model="flightData.departureLocation" type="text" class="input" /></div>
-                  <div><label class="label">도착지</label><input v-model="flightData.arrivalLocation" type="text" class="input" /></div>
-                </div>
-                <div><label class="label">출발 일시</label><DateTimePicker v-model="flightData.departureTime" /></div>
-                <div><label class="label">도착 일시</label><DateTimePicker v-model="flightData.arrivalTime" /></div>
-              </form>
-             </template>
-             <template #footer>
-              <div class="flex gap-3 w-full">
-                <button type="button" @click="closeFlightModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
-                <button type="submit" form="flight-form" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">저장</button>
-              </div>
-             </template>
-          </SlideUpModal>
-      
-          <FlightManagementModal
-            :is-open="isFlightManagementModalOpen"
-            :flights="trip.flights"
-            @close="closeFlightManagementModal"
-            @add="handleAddFlight"
-            @edit="handleEditFlight"
-            @delete="handleDeleteFlight"
-          />
 
           <AccommodationManagementModal
             :is-open="isAccommodationManagementModalOpen"
@@ -462,7 +163,7 @@
             <template #footer>
               <div class="flex gap-3 w-full">
                 <button type="button" @click="closeAccommodationEditModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
-                <button type="submit" form="acc-form" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">저장</button>
+                <button type="submit" form="acc-form" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 active:scale-95 transition-all">저장</button>
               </div>
             </template>
           </SlideUpModal>
@@ -509,7 +210,7 @@
             <template #footer>
               <div class="flex gap-3 w-full">
                 <button type="button" @click="closeItineraryModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
-                <button type="submit" form="itinerary-form" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all">저장</button>
+                <button type="submit" form="itinerary-form" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 active:scale-95 transition-all">저장</button>
               </div>
             </template>
           </SlideUpModal>
@@ -529,7 +230,7 @@
                   <div v-else class="flex-1"></div>
 
                   <!-- Phone Call Link -->
-                  <a v-if="selectedItinerary.phoneNumber" :href="`tel:${selectedItinerary.phoneNumber}`" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  <a v-if="selectedItinerary.phoneNumber" :href="`tel:${selectedItinerary.phoneNumber}`" class="text-primary-600 hover:text-primary-700 text-sm font-medium">
                     전화걸기
                   </a>
                 </div>
@@ -543,10 +244,10 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <p class="text-gray-600 flex-1 text-sm leading-5">{{ selectedItinerary.address }}</p>
-                  <a v-if="selectedItinerary.kakaoPlaceUrl" :href="selectedItinerary.kakaoPlaceUrl" target="_blank" class="text-blue-600 hover:text-blue-700 text-sm font-medium whitespace-nowrap leading-5" title="카카오맵에서 길찾기">
+                  <a v-if="selectedItinerary.kakaoPlaceUrl" :href="selectedItinerary.kakaoPlaceUrl" target="_blank" class="text-primary-600 hover:text-primary-700 text-sm font-medium whitespace-nowrap leading-5" title="카카오맵에서 길찾기">
                     길찾기
                   </a>
-                  <a v-else-if="selectedItinerary.latitude && selectedItinerary.longitude" :href="`https://map.kakao.com/link/to/${selectedItinerary.locationName},${selectedItinerary.latitude},${selectedItinerary.longitude}`" target="_blank" class="text-blue-600 hover:text-blue-700 text-sm font-medium whitespace-nowrap leading-5" title="카카오맵에서 길찾기">
+                  <a v-else-if="selectedItinerary.latitude && selectedItinerary.longitude" :href="`https://map.kakao.com/link/to/${selectedItinerary.locationName},${selectedItinerary.latitude},${selectedItinerary.longitude}`" target="_blank" class="text-primary-600 hover:text-primary-700 text-sm font-medium whitespace-nowrap leading-5" title="카카오맵에서 길찾기">
                     길찾기
                   </a>
                 </div>
@@ -599,7 +300,7 @@
             <template #footer>
               <div class="flex gap-3 w-full">
                 <button type="button" @click="closeItineraryDetailModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">닫기</button>
-                <button type="button" @click="editSelectedItinerary" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg active:scale-95 transition-all" :disabled="selectedItinerary?.isAutoGenerated">수정</button>
+                <button type="button" @click="editSelectedItinerary" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 active:scale-95 transition-all" :disabled="selectedItinerary?.isAutoGenerated">수정</button>
               </div>
             </template>
           </SlideUpModal>
@@ -631,11 +332,9 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useUIStore } from '@/stores/ui'
 import MainHeader from '@/components/common/MainHeader.vue'
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue'
-import { useUIStore } from '@/stores/ui'
-
-const uiStore = useUIStore()
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import DateTimePicker from '@/components/common/DateTimePicker.vue'
 import DateRangePicker from '@/components/common/DateRangePicker.vue'
@@ -646,17 +345,17 @@ import GooglePlacesAutocomplete from '@/components/common/GooglePlacesAutocomple
 import KakaoPlacesAutocomplete from '@/components/common/KakaoPlacesAutocomplete.vue'
 import KakaoMapSearchModal from '@/components/common/KakaoMapSearchModal.vue'
 import AccommodationDetailModal from '@/components/personalTrip/AccommodationDetailModal.vue'
-import FlightManagementModal from '@/components/personalTrip/FlightManagementModal.vue'
 import AccommodationManagementModal from '@/components/personalTrip/AccommodationManagementModal.vue'
 import ShareTripModal from '@/components/personalTrip/ShareTripModal.vue'
 import apiClient from '@/services/api'
 import { useGoogleMaps } from '@/composables/useGoogleMaps'
 import { useDistance } from '@/composables/useDistance'
-import { Trash2 as Trash2Icon, Utensils, Coffee, ShoppingBag, Landmark, CircleDot, FileText } from 'lucide-vue-next'
+import { Trash2 as Trash2Icon, Utensils, Coffee, ShoppingBag, Landmark, CircleDot, FileText, Phone } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const route = useRoute()
 const router = useRouter()
+const uiStore = useUIStore()
 const tripId = computed(() => route.params.id)
 
 const loading = ref(true)
@@ -707,8 +406,6 @@ function getBadgeColor(index) {
 }
 // Modal states
 const isTripInfoModalOpen = ref(false)
-const isFlightModalOpen = ref(false)
-const isFlightManagementModalOpen = ref(false)
 const isAccommodationManagementModalOpen = ref(false)
 const isAccommodationEditModalOpen = ref(false)
 const isAccommodationDetailModalOpen = ref(false)
@@ -724,7 +421,6 @@ const bulkChangeDayTargetDay = ref(1) // Default to day 1
 // Data for modals
 const tripData = ref({})
 const countryCity = ref({ destination: '', countryCode: '' })
-const flightData = ref({})
 const accommodationData = ref({ name: '', address: '', postalCode: null, latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null })
 const itineraryItemData = ref({ locationName: '', address: '', latitude: null, longitude: null, googlePlaceId: null, kakaoPlaceId: null, phoneNumber: null, kakaoPlaceUrl: null, expenseAmount: null })
 const presetCategories = ['음식점', '카페', '쇼핑', '관광', '기타'];
@@ -761,7 +457,6 @@ const coverImagePreview = ref(null)
 const isUploadingImage = ref(false)
 
 // Editing items
-const editingFlight = ref(null)
 const editingAccommodation = ref(null)
 const editingItineraryItem = ref(null)
 const selectedItinerary = ref(null)
@@ -995,59 +690,6 @@ async function saveTripInfo() {
     console.error('Failed to save trip info:', error)
     alert('저장에 실패했습니다.')
   }
-}
-
-// --- Flights ---
-function openFlightManagementModal() { isFlightManagementModalOpen.value = true; }
-function closeFlightManagementModal() { isFlightManagementModalOpen.value = false; }
-
-function handleAddFlight() {
-  openFlightModal();
-}
-
-function handleEditFlight(flight) {
-  openFlightModal(flight);
-}
-
-function handleDeleteFlight(flightId) {
-  deleteFlightFromList(flightId);
-}
-
-function openFlightModal(flight = null) {
-  editingFlight.value = flight
-  flightData.value = flight ? { ...flight } : {}
-  isFlightModalOpen.value = true
-}
-function closeFlightModal() { isFlightModalOpen.value = false }
-async function saveFlight() {
-  try {
-    const payload = { ...flightData.value, personalTripId: tripId.value }
-    if (editingFlight.value?.id) {
-      await apiClient.put(`/personal-trips/flights/${editingFlight.value.id}`, payload)
-    } else {
-      await apiClient.post(`/personal-trips/${tripId.value}/flights`, payload)
-    }
-    await loadTrip()
-    closeFlightModal()
-    // Keep management modal open
-  } catch (error) {
-    console.error('Failed to save flight:', error)
-    alert('저장에 실패했습니다.')
-  }
-}
-async function deleteFlight(id) { // Modified to accept id
-  if (!confirm('이 항공권을 삭제하시겠습니까?')) return
-  try {
-    await apiClient.delete(`/personal-trips/flights/${id}`)
-    await loadTrip()
-    // Do not close management modal
-  } catch (error) {
-    console.error('Failed to delete flight:', error)
-    alert('삭제에 실패했습니다.')
-  }
-}
-async function deleteFlightFromList(id) {
-  deleteFlight(id);
 }
 
 // --- Accommodations ---
@@ -1303,7 +945,7 @@ function closeItineraryModal() { isItineraryModalOpen.value = false }
 async function saveItineraryItem() {
   try {
     const isNewItem = !editingItineraryItem.value?.id;
-    let newItemId = null;
+    let targetItemId = isNewItem ? null : editingItineraryItem.value.id;
 
     const payload = { 
       ...itineraryItemData.value, 
@@ -1312,7 +954,7 @@ async function saveItineraryItem() {
 
     if (isNewItem) {
       const response = await apiClient.post(`/personal-trips/${tripId.value}/items`, payload);
-      newItemId = response.data.id;
+      targetItemId = response.data.id;
     } else {
       await apiClient.put(`/personal-trips/items/${editingItineraryItem.value.id}`, payload);
     }
@@ -1320,11 +962,11 @@ async function saveItineraryItem() {
     await loadTrip();
     closeItineraryModal();
 
-    if (isNewItem && newItemId) {
+    if (targetItemId) {
       await nextTick();
-      const newItemElement = document.querySelector(`[data-item-id="${newItemId}"]`);
-      if (newItemElement) {
-        newItemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const itemElement = document.querySelector(`[data-item-id="${targetItemId}"]`);
+      if (itemElement) {
+        itemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
   } catch (error) {

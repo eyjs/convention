@@ -130,6 +130,13 @@ namespace LocalRAG.Services.PersonalTrip
             var flight = new Entities.PersonalTrip.Flight
             {
                 PersonalTripId = tripId,
+                Category = dto.Category,
+                ItineraryItemId = dto.ItineraryItemId,
+                Amount = dto.Amount,
+                TollFee = dto.TollFee,
+                FuelCost = dto.FuelCost,
+                ParkingFee = dto.ParkingFee,
+                RentalCost = dto.RentalCost,
                 Airline = dto.Airline,
                 FlightNumber = dto.FlightNumber,
                 DepartureLocation = dto.DepartureLocation,
@@ -152,6 +159,13 @@ namespace LocalRAG.Services.PersonalTrip
             var flight = await _context.Flights.Include(f => f.PersonalTrip).FirstOrDefaultAsync(f => f.Id == flightId && f.PersonalTrip.UserId == userId);
             if (flight == null) return null;
 
+            flight.Category = dto.Category;
+            flight.ItineraryItemId = dto.ItineraryItemId;
+            flight.Amount = dto.Amount;
+            flight.TollFee = dto.TollFee;
+            flight.FuelCost = dto.FuelCost;
+            flight.ParkingFee = dto.ParkingFee;
+            flight.RentalCost = dto.RentalCost;
             flight.Airline = dto.Airline;
             flight.FlightNumber = dto.FlightNumber;
             flight.DepartureLocation = dto.DepartureLocation;
@@ -573,6 +587,8 @@ namespace LocalRAG.Services.PersonalTrip
             {
                 Id = flight.Id,
                 PersonalTripId = flight.PersonalTripId,
+                Category = flight.Category,
+                ItineraryItemId = flight.ItineraryItemId,
                 Airline = flight.Airline,
                 FlightNumber = flight.FlightNumber,
                 DepartureLocation = flight.DepartureLocation,
@@ -581,6 +597,11 @@ namespace LocalRAG.Services.PersonalTrip
                 ArrivalTime = flight.ArrivalTime,
                 BookingReference = flight.BookingReference,
                 SeatNumber = flight.SeatNumber,
+                Amount = flight.Amount,
+                TollFee = flight.TollFee,
+                FuelCost = flight.FuelCost,
+                ParkingFee = flight.ParkingFee,
+                RentalCost = flight.RentalCost,
                 Notes = flight.Notes,
                 CreatedAt = flight.CreatedAt,
                 UpdatedAt = flight.UpdatedAt
@@ -604,6 +625,7 @@ namespace LocalRAG.Services.PersonalTrip
                 BookingReference = accommodation.BookingReference,
                 ContactNumber = accommodation.ContactNumber,
                 Notes = accommodation.Notes,
+                ExpenseAmount = accommodation.ExpenseAmount,
                 CreatedAt = accommodation.CreatedAt,
                 UpdatedAt = accommodation.UpdatedAt
             };

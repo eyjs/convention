@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace LocalRAG.Entities.PersonalTrip
 {
     /// <summary>
-    /// 항공권 정보
+    /// 교통수단 정보 (항공편, 기차, 버스, 택시, 자가용, 렌트카)
     /// </summary>
     public class Flight
     {
@@ -18,7 +18,19 @@ namespace LocalRAG.Entities.PersonalTrip
         public int PersonalTripId { get; set; }
 
         /// <summary>
-        /// 항공사
+        /// 교통수단 카테고리 (항공편, 기차, 버스, 택시, 자가용, 렌트카)
+        /// </summary>
+        [Required]
+        [MaxLength(20)]
+        public string Category { get; set; } = "항공편";
+
+        /// <summary>
+        /// 연결된 일정 항목 (통계 및 비용 추적용)
+        /// </summary>
+        public int? ItineraryItemId { get; set; }
+
+        /// <summary>
+        /// 항공사 / 버스회사 / 택시회사
         /// </summary>
         [MaxLength(100)]
         public string? Airline { get; set; }
@@ -64,6 +76,36 @@ namespace LocalRAG.Entities.PersonalTrip
         public string? SeatNumber { get; set; }
 
         /// <summary>
+        /// 금액 (총액)
+        /// </summary>
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? Amount { get; set; }
+
+        /// <summary>
+        /// 톨비 (자가용, 렌트카)
+        /// </summary>
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? TollFee { get; set; }
+
+        /// <summary>
+        /// 유류비/주유비 (자가용, 렌트카)
+        /// </summary>
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? FuelCost { get; set; }
+
+        /// <summary>
+        /// 주차비 (자가용, 렌트카)
+        /// </summary>
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? ParkingFee { get; set; }
+
+        /// <summary>
+        /// 렌트비용 (렌트카)
+        /// </summary>
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? RentalCost { get; set; }
+
+        /// <summary>
         /// 메모
         /// </summary>
         [MaxLength(500)]
@@ -82,5 +124,8 @@ namespace LocalRAG.Entities.PersonalTrip
         // Navigation properties
         [ForeignKey(nameof(PersonalTripId))]
         public virtual PersonalTrip PersonalTrip { get; set; } = null!;
+
+        [ForeignKey(nameof(ItineraryItemId))]
+        public virtual ItineraryItem? ItineraryItem { get; set; }
     }
 }

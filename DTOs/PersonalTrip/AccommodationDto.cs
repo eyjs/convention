@@ -18,6 +18,7 @@ namespace LocalRAG.DTOs.PersonalTrip
         public string? BookingReference { get; set; }
         public string? ContactNumber { get; set; }
         public string? Notes { get; set; }
+        public decimal? ExpenseAmount { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
