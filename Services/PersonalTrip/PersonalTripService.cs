@@ -65,6 +65,7 @@ namespace LocalRAG.Services.PersonalTrip
                 CountryCode = dto.CountryCode,
                 Latitude = dto.Latitude,
                 Longitude = dto.Longitude,
+                Budget = dto.Budget,
                 UserId = userId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -101,6 +102,7 @@ namespace LocalRAG.Services.PersonalTrip
             trip.Latitude = dto.Latitude;
             trip.Longitude = dto.Longitude;
             trip.CoverImageUrl = dto.CoverImageUrl;
+            trip.Budget = dto.Budget;
             trip.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -570,6 +572,7 @@ namespace LocalRAG.Services.PersonalTrip
                 Latitude = trip.Latitude,
                 Longitude = trip.Longitude,
                 CoverImageUrl = trip.CoverImageUrl,
+                Budget = trip.Budget,
                 UserId = trip.UserId,
                 CreatedAt = trip.CreatedAt,
                 UpdatedAt = trip.UpdatedAt,

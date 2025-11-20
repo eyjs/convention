@@ -35,5 +35,7 @@ namespace LocalRAG.DTOs.PersonalTrip
 
         [MaxLength(500)]
         public string? CoverImageUrl { get; set; }
+
+        public decimal? Budget { get; set; }
     }
 }

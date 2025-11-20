@@ -16,6 +16,7 @@ namespace LocalRAG.DTOs.PersonalTrip
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
         public string? CoverImageUrl { get; set; }
+        public decimal? Budget { get; set; }
         public bool IsShared { get; set; }
         public string? ShareToken { get; set; }
         public int UserId { get; set; }

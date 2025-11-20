@@ -27,54 +27,38 @@
         <p class="mt-4 text-gray-600 font-medium">여행 정보를 불러오는 중...</p>
       </div>
 
-      <div v-else class="max-w-2xl mx-auto px-4 py-4 pb-24">
-      <!-- Hero Section with Trip Info -->
-      <section class="relative overflow-hidden bg-primary-500 rounded-2xl shadow-xl p-6 mb-6 text-white">
-        <div class="relative z-10">
-          <div class="flex justify-between items-start mb-4">
-            <div class="flex-1">
-              <h2 class="text-2xl font-bold mb-2">{{ trip.title }}</h2>
-              <div class="flex items-center gap-2 text-white/90 mb-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span class="font-medium">{{ trip.startDate }} ~ {{ trip.endDate }}</span>
-              </div>
-              <div class="flex items-center gap-2 text-white/90">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span class="font-medium">{{ trip.destination }}</span>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button @click="openTripInfoModal" class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors">
-                수정
-              </button>
-            </div>
+<div v-else class="max-w-2xl mx-auto px-4 py-4 pb-24 space-y-6">
+        <section class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-xl p-6 text-white">
+          <div class="flex justify-between items-start mb-3">
+            <h1 class="text-3xl font-bold">{{ trip.title }}</h1>
+            <button @click="openTripInfoModal" class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors">
+              수정
+            </button>
           </div>
-          <p v-if="trip.description" class="text-white/90 text-sm leading-relaxed">{{ trip.description }}</p>
-        </div>
-        <!-- Decorative elements -->
-        <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-        <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
-      </section>
+          <div class="flex items-center gap-2 text-white/90 mb-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span class="font-medium">{{ trip.startDate }} ~ {{ trip.endDate }}</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/90 mb-4">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span class="font-medium">{{ trip.destination || '목적지 미설정' }}</span>
+          </div>
+          <p v-if="trip.description" class="text-white/90 text-sm leading-relaxed mb-4">{{ trip.description }}</p>
 
-            <!-- Quick Actions Grid -->
-            <div class="mb-6">
-              <!-- 숙소 버튼 -->
-              <button @click="openAccommodationManagementModal" class="w-full bg-white rounded-2xl shadow-md p-5 text-left hover:shadow-lg transition-shadow">
-                <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  숙소 관리
-                </h2>
-                <p class="text-sm text-gray-500 mt-2">{{ trip.accommodations && trip.accommodations.length > 0 ? `${trip.accommodations.length}개의 숙소 등록됨` : '등록된 숙소 없음' }}</p>
-              </button>
-            </div>
+          <!-- D-day Display -->
+          <div class="bg-white/20 backdrop-blur-sm rounded-lg p-4 text-center">
+            <p class="text-sm text-white/80 mb-1">{{ tripStatus }}</p>
+            <p class="text-3xl font-bold">{{ dDayText }}</p>
           </div>
+        </section>
+
+        <TripDashboardComponent :trip="trip" @open-accommodation-modal="openAccommodationManagementModal" />
+      </div>
 
           <!-- Modals -->
           <ShareTripModal
@@ -97,6 +81,11 @@
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">도시/국가</label>
                   <CountryCitySearch v-model="countryCity" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">예산 (원)</label>
+                  <input v-model.number="tripData.budget" type="number" step="1" min="0" placeholder="예산을 입력하세요 (선택사항)" class="w-full input" />
+                  <p class="text-xs text-gray-500 mt-1">여행 예산을 입력하면 대시보드에서 지출 현황을 추적할 수 있습니다.</p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">커버 이미지</label>
@@ -347,6 +336,7 @@ import KakaoMapSearchModal from '@/components/common/KakaoMapSearchModal.vue'
 import AccommodationDetailModal from '@/components/personalTrip/AccommodationDetailModal.vue'
 import AccommodationManagementModal from '@/components/personalTrip/AccommodationManagementModal.vue'
 import ShareTripModal from '@/components/personalTrip/ShareTripModal.vue'
+import TripDashboardComponent from '@/components/personalTrip/TripDashboardComponent.vue'
 import apiClient from '@/services/api'
 import { useGoogleMaps } from '@/composables/useGoogleMaps'
 import { useDistance } from '@/composables/useDistance'
@@ -384,6 +374,37 @@ const scrollDayFilterRight = () => {
 
 const isDomestic = computed(() => trip.value.countryCode === 'KR')
 const now = ref(new Date())
+
+const today = dayjs()
+const tripStatus = computed(() => {
+  if (!trip.value.startDate) return ''
+  const start = dayjs(trip.value.startDate)
+  const end = dayjs(trip.value.endDate)
+
+  if (today.isBefore(start, 'day')) return '여행 시작까지'
+  if (today.isAfter(end, 'day')) return '여행 종료 후'
+  return '여행 중'
+})
+
+const dDayText = computed(() => {
+  if (!trip.value.startDate) return 'D-?'
+  const start = dayjs(trip.value.startDate)
+  const end = dayjs(trip.value.endDate)
+
+  if (today.isBefore(start, 'day')) {
+    const diff = start.diff(today, 'day')
+    return `D-${diff}`
+  }
+  if (today.isAfter(end, 'day')) {
+    const diff = today.diff(end, 'day')
+    return `D+${diff}`
+  }
+  // 여행 중
+  const currentDay = today.diff(start, 'day') + 1
+  const totalDays = end.diff(start, 'day') + 1
+  return `${currentDay}일차 / ${totalDays}일`
+})
+
 
 const categoryIconMap = {
   '음식점': Utensils,

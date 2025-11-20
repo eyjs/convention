@@ -97,6 +97,12 @@ namespace LocalRAG.Entities.PersonalTrip
         [MaxLength(36)]
         public string? ShareToken { get; set; }
 
+        /// <summary>
+        /// 여행 예산 (원)
+        /// </summary>
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal? Budget { get; set; }
+
         // Navigation properties
         [ForeignKey(nameof(UserId))]
         public virtual User User { get; set; } = null!;

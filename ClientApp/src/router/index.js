@@ -110,6 +110,7 @@ const routes = [
         component: () => import('@/views/trip/TripDetail.vue'),
         meta: { requiresAuth: true, title: '여행 상세' }
       },
+      
       {
         path: '/trips/:id/itinerary',
         name: 'TripItinerary',
