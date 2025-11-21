@@ -431,7 +431,7 @@
     </div>
 
     <!-- Bottom Navigation Bar -->
-    <BottomNavigationBar v-if="tripId" :trip-id="tripId" :show="!uiStore.isModalOpen" />
+    <BottomNavigationBar v-if="tripId" :trip-id="tripId" :show="!uiStore.isModalOpen" :readonly="readonly" />
   </div>
 </template>
 
@@ -446,7 +446,7 @@ import KakaoMap from '@/components/common/KakaoMap.vue'
 import GoogleMapPlaceholder from '@/components/common/GoogleMapPlaceholder.vue'
 import GooglePlacesAutocomplete from '@/components/common/GooglePlacesAutocomplete.vue'
 import KakaoMapSearchModal from '@/components/common/KakaoMapSearchModal.vue'
-import apiClient from '@/services/api'
+import apiClient, { publicApiClient } from '@/services/api'
 import { useGoogleMaps } from '@/composables/useGoogleMaps'
 import { useDistance } from '@/composables/useDistance'
 import { Utensils, Coffee, ShoppingBag, Landmark, CircleDot, Phone } from 'lucide-vue-next'
@@ -455,7 +455,7 @@ import dayjs from 'dayjs'
 const route = useRoute()
 const router = useRouter()
 const uiStore = useUIStore()
-const tripId = computed(() => route.params.id)
+const tripId = computed(() => props.shareToken || route.params.id)
 
 const loading = ref(true)
 const trip = ref({})
@@ -538,16 +538,26 @@ onMounted(async () => {
 })
 
 async function loadTrip() {
-  loading.value = true
+  loading.value = true;
   try {
-    const response = await apiClient.get(`/personal-trips/${tripId.value}?_=${new Date().getTime()}`)
-    trip.value = response.data
+    let response;
+    if (props.shareToken) {
+      response = await publicApiClient.get(`/personal-trips/public/${props.shareToken}?_=${new Date().getTime()}`);
+    } else {
+      response = await apiClient.get(`/personal-trips/${tripId.value}?_=${new Date().getTime()}`);
+    }
+    trip.value = response.data;
   } catch (error) {
-    console.error('Failed to load trip:', error)
-    alert('여행 정보를 불러오는 데 실패했습니다.')
-    router.push('/trips')
+    console.error('Failed to load trip:', error);
+    if (props.shareToken) {
+      alert('공유된 여행 정보를 불러오는 데 실패했습니다. 유효하지 않은 링크이거나 삭제된 정보일 수 있습니다.');
+      router.push('/');
+    } else {
+      alert('여행 정보를 불러오는 데 실패했습니다.');
+      router.push('/trips');
+    }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 

@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <MainHeader :title="'체크리스트'" :subtitle="trip.title" :show-back="true" />
+    <MainHeader :title="props.readonly ? '공유된 여행 정보' : '체크리스트'" :subtitle="trip.title" :show-back="true" />
     
     <div class="max-w-2xl mx-auto px-4 py-4 pb-28">
       <!-- Tab Navigation -->
@@ -34,10 +34,10 @@
             <div @click="toggleCategory(category.id)" class="flex justify-between items-center p-4 cursor-pointer">
               <h2 class="font-bold text-lg">{{ category.name }} <span class="text-gray-500 text-sm font-medium ml-2">({{ category.completedItemsCount }}/{{ category.totalItemsCount }})</span></h2>
                <div class="flex items-center gap-2">
-                <button @click.stop="category.isEditing = !category.isEditing" class="text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors">
+                <button v-if="!props.readonly" @click.stop="category.isEditing = !category.isEditing" class="text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors">
                   {{ category.isEditing ? '완료' : '편집' }}
                 </button>
-                <button v-if="category.isEditing && !category.isDefault" @click.stop="deleteCategory(category.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full">
+                <button v-if="!props.readonly && category.isEditing && !category.isDefault" @click.stop="deleteCategory(category.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
                 <svg class="w-6 h-6 text-gray-400 transition-transform" :class="{'rotate-180': expandedCategories.includes(category.id)}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -52,23 +52,27 @@
                        :class="item.isChecked ? '' : 'border-2 border-dashed border-gray-300'">
                     <Check v-if="item.isChecked" class="w-5 h-5 text-primary-500" :stroke-width="3" />
                   </div>
-                  <div class="flex-1" @click.stop="openItemEditModal(item)">
+                  <div v-if="!props.readonly" class="flex-1" @click.stop="openItemEditModal(item)">
                     <p class="text-gray-800">{{ item.task }}</p>
                     <p v-if="item.description" class="text-xs text-gray-500">{{ item.description }}</p>
                   </div>
-                  <button v-if="category.isEditing" @click.stop="deleteItem(category.id, item.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full transition-opacity">
+                  <div v-else class="flex-1">
+                    <p class="text-gray-800">{{ item.task }}</p>
+                    <p v-if="item.description" class="text-xs text-gray-500">{{ item.description }}</p>
+                  </div>
+                  <button v-if="!props.readonly && category.isEditing" @click.stop="deleteItem(category.id, item.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full transition-opacity">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
                 
-                <div class="flex items-center gap-3 cursor-pointer" @click.stop="promptNewItem(category.id)">
+                <div v-if="!props.readonly" class="flex items-center gap-3 cursor-pointer" @click.stop="promptNewItem(categoryId)">
                    <div class="flex-shrink-0 w-5 h-5 rounded-full border-2 border-dashed border-primary-500 group-hover:border-primary-400"></div>
                    <p class="text-primary-500 font-medium">아이템 추가</p>
                 </div>
               </div>
             </div>
           </div>
-          <div class="flex justify-center mt-6">
+          <div v-if="!props.readonly" class="flex justify-center mt-6">
             <button @click="promptNewCategory" class="w-1/2 py-3 bg-[#17B185] text-white rounded-xl font-semibold shadow-lg hover:bg-green-600 transition-all">
               카테고리 추가
             </button>
@@ -77,7 +81,7 @@
       </div>
     </div>
 
-    <BottomNavigationBar v-if="tripId" :trip-id="tripId" :show="!uiStore.isModalOpen" />
+    <BottomNavigationBar v-if="tripId" :trip-id="tripId" :show="!uiStore.isModalOpen" :readonly="readonly" />
 
     <!-- Generic Input Modal -->
     <SlideUpModal :is-open="isInputModalOpen" @close="closeInputModal">
@@ -91,7 +95,7 @@
       <template #footer>
         <div class="flex gap-3 w-full">
           <button @click="closeInputModal" type="button" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold">취소</button>
-          <button @click="handleInputConfirm" type="button" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold">확인</button>
+          <button v-if="!props.readonly" @click="handleInputConfirm" type="button" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold">확인</button>
         </div>
       </template>
     </SlideUpModal>
@@ -114,7 +118,7 @@
         <template #footer>
             <div class="flex gap-3 w-full">
                 <button @click="closeItemEditModal" type="button" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold">취소</button>
-                <button type="submit" form="item-edit-form" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold">저장</button>
+                <button v-if="!props.readonly" type="submit" form="item-edit-form" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold">저장</button>
             </div>
         </template>
     </SlideUpModal>
@@ -123,17 +127,29 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router'; // useRouter 추가
 import MainHeader from '@/components/common/MainHeader.vue';
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue';
 import SlideUpModal from '@/components/common/SlideUpModal.vue';
 import { useUIStore } from '@/stores/ui';
-import apiClient from '@/services/api';
+import apiClient, { publicApiClient } from '@/services/api'; // publicApiClient import
 import { Check } from 'lucide-vue-next';
+
+const props = defineProps({
+  shareToken: {
+    type: String,
+    default: null,
+  },
+  readonly: {
+    type: Boolean,
+    default: false,
+  },
+});
 
 const uiStore = useUIStore();
 const route = useRoute();
-const tripId = computed(() => route.params.id);
+const router = useRouter(); // useRouter 인스턴스 생성
+const tripId = computed(() => props.shareToken || route.params.id); // tripId 수정
 const activeTab = ref('checklist');
 
 const loading = ref(true);
@@ -167,7 +183,12 @@ onMounted(async () => {
 async function fetchTripData() {
   loading.value = true;
   try {
-    const response = await apiClient.get(`/personal-trips/${tripId.value}`);
+    let response;
+    if (props.shareToken) {
+      response = await publicApiClient.get(`/personal-trips/public/${props.shareToken}?_=${new Date().getTime()}`);
+    } else {
+      response = await apiClient.get(`/personal-trips/${tripId.value}?_=${new Date().getTime()}`);
+    }
     trip.value = response.data;
     checklist.value = response.data.checklistCategories.map(cat => ({
       ...cat,
@@ -175,7 +196,13 @@ async function fetchTripData() {
     }));
   } catch (error) {
     console.error("Failed to fetch trip data:", error);
-    alert('데이터를 불러오는데 실패했습니다.');
+    if (props.shareToken) {
+      alert('공유된 여행 정보를 불러오는 데 실패했습니다. 유효하지 않은 링크이거나 삭제된 정보일 수 있습니다.');
+      router.push('/'); // 공유 모드 에러 시 메인 페이지로 이동
+    } else {
+      alert('데이터를 불러오는데 실패했습니다.');
+      router.push('/trips'); // 일반 모드 에러 시 여행 목록으로 이동
+    }
   } finally {
     loading.value = false;
   }
@@ -193,7 +220,7 @@ function toggleCategory(categoryId) {
 
 
 async function toggleItem(catIndex, itemIndex) {
-    if (isEditMode.value) return;
+    if (props.readonly) return; // 읽기 전용 모드일 경우 동작 중단
 
     const item = checklist.value[catIndex].items[itemIndex];
     item.isChecked = !item.isChecked;
@@ -228,6 +255,7 @@ async function toggleItem(catIndex, itemIndex) {
 
 // --- Item Edit Modal ---
 function openItemEditModal(item) {
+    if (props.readonly) return; // 읽기 전용 모드일 경우 동작 중단
     // Need to clone the object to avoid reactive changes before saving
     editingItem.value = { ...item };
     isItemEditModalOpen.value = true;
@@ -239,6 +267,7 @@ function closeItemEditModal() {
 }
 
 async function saveItemChanges() {
+    if (props.readonly) return; // 읽기 전용 모드일 경우 동작 중단
     if (!editingItem.value) return;
 
     const itemToSave = editingItem.value;
@@ -270,6 +299,7 @@ async function saveItemChanges() {
 
 // --- Generic Input Modal for Creation ---
 function openInputModal(title, label, callback) {
+  if (props.readonly) return; // 읽기 전용 모드일 경우 동작 중단
   inputModalData.value = {
     title,
     label,
@@ -284,6 +314,7 @@ function closeInputModal() {
 }
 
 function handleInputConfirm() {
+  if (props.readonly) return; // 읽기 전용 모드일 경우 동작 중단
   if (inputModalData.value.callback) {
     inputModalData.value.callback(inputModalData.value.value);
   }
@@ -291,6 +322,7 @@ function handleInputConfirm() {
 }
 
 function promptNewCategory() {
+  if (props.readonly) return; // 읽기 전용 모드일 경우 동작 중단
   openInputModal('새 카테고리 추가', '카테고리 이름', async (name) => {
     if (name && name.trim()) {
       try {
@@ -308,6 +340,7 @@ function promptNewCategory() {
 }
 
 async function deleteCategory(categoryId) {
+    if (props.readonly) return; // 읽기 전용 모드일 경우 동작 중단
     if (!confirm("이 카테고리와 모든 항목을 삭제하시겠습니까?")) return;
     try {
         await apiClient.delete(`/personal-trips/checklist-categories/${categoryId}`);
@@ -319,6 +352,7 @@ async function deleteCategory(categoryId) {
 }
 
 function promptNewItem(categoryId) {
+    if (props.readonly) return; // 읽기 전용 모드일 경우 동작 중단
     openInputModal('새 항목 추가', '항목 내용', async (task) => {
         if (task && task.trim()) {
             try {
@@ -338,6 +372,7 @@ function promptNewItem(categoryId) {
 }
 
 async function deleteItem(categoryId, itemId) {
+    if (props.readonly) return; // 읽기 전용 모드일 경우 동작 중단
     if (!confirm("이 항목을 삭제하시겠습니까?")) return;
     try {
         await apiClient.delete(`/personal-trips/checklist-items/${itemId}`);

@@ -60,6 +60,14 @@ apiClient.interceptors.response.use(
   },
 )
 
+// 인증 인터셉터가 없는 Public API Client
+export const publicApiClient = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 // Auth API
 export const authAPI = {
   register: (data) => apiClient.post('/auth/register', data),

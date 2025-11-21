@@ -154,16 +154,28 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import MainHeader from '@/components/common/MainHeader.vue';
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue';
 import { useUIStore } from '@/stores/ui';
-import apiClient from '@/services/api';
+import apiClient, { publicApiClient } from '@/services/api'; // publicApiClient import
 import dayjs from 'dayjs';
+
+const props = defineProps({
+  shareToken: {
+    type: String,
+    default: null,
+  },
+  readonly: {
+    type: Boolean,
+    default: false,
+  },
+});
 
 const uiStore = useUIStore();
 const route = useRoute();
-const tripId = computed(() => route.params.id);
+const router = useRouter(); // useRouter 추가
+const tripId = computed(() => props.shareToken || route.params.id); // tripId 수정
 
 const loading = ref(true);
 const trip = ref({});
@@ -180,11 +192,22 @@ const showExportMenu = ref(false);
 async function loadTrip() {
   try {
     loading.value = true;
-    const response = await apiClient.get(`/personal-trips/${tripId.value}`);
+    let response;
+    if (props.shareToken) {
+      response = await publicApiClient.get(`/personal-trips/public/${props.shareToken}?_=${new Date().getTime()}`);
+    } else {
+      response = await apiClient.get(`/personal-trips/${tripId.value}?_=${new Date().getTime()}`);
+    }
     trip.value = response.data;
   } catch (error) {
     console.error('Failed to load trip:', error);
-    alert('여행 정보를 불러오는데 실패했습니다.');
+    if (props.shareToken) {
+      alert('공유된 여행 정보를 불러오는 데 실패했습니다. 유효하지 않은 링크이거나 삭제된 정보일 수 있습니다.');
+      router.push('/'); // 공유 모드 에러 시 메인 페이지로 이동
+    } else {
+      alert('여행 정보를 불러오는데 실패했습니다.');
+      router.push('/trips'); // 일반 모드 에러 시 여행 목록으로 이동
+    }
   } finally {
     loading.value = false;
   }
