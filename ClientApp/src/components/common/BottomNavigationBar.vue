@@ -7,51 +7,21 @@
           <Home class="w-6 h-6" />
           <span class="text-xs mt-1">홈</span>
         </router-link>
-
-        <!-- 일정표 -->
-        <template v-if="props.readonly">
-          <div @click="alertReadOnly" class="flex flex-col items-center justify-center p-2 text-gray-400 cursor-not-allowed">
-            <CalendarDays class="w-6 h-6" />
-            <span class="text-xs mt-1">일정표</span>
-          </div>
-        </template>
-        <template v-else>
-          <router-link :to="itineraryUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
-                       :class="{ 'text-primary-600 font-semibold': isItineraryActive }">
-            <CalendarDays class="w-6 h-6" />
-            <span class="text-xs mt-1">일정표</span>
-          </router-link>
-        </template>
-
-        <!-- 가계부 -->
-        <template v-if="props.readonly">
-          <div @click="alertReadOnly" class="flex flex-col items-center justify-center p-2 text-gray-400 cursor-not-allowed">
-            <Receipt class="w-6 h-6" />
-            <span class="text-xs mt-1">가계부</span>
-          </div>
-        </template>
-        <template v-else>
-          <router-link :to="expensesUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
-                       :class="{ 'text-primary-600 font-semibold': isExpensesActive }">
-            <Receipt class="w-6 h-6" />
-            <span class="text-xs mt-1">가계부</span>
-          </router-link>
-        </template>
-
-        <!-- 노트 -->
-        <template v-if="props.readonly">
-          <div @click="alertReadOnly" class="flex flex-col items-center justify-center p-2 text-gray-400 cursor-not-allowed">
-            <NotebookText class="w-6 h-6" />
-            <span class="text-xs mt-1">노트</span>
-          </div>
-        </template>
-        <template v-else>
-          <router-link :to="notesUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
-                       :class="{ 'text-primary-600 font-semibold': isNotesActive }">
-            <NotebookText class="w-6 h-6" />
-            <span class="text-xs mt-1">노트</span>
-          </router-link>
-        </template>
+        <router-link :to="itineraryUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
+                     :class="{ 'text-primary-600 font-semibold': isItineraryActive }">
+          <CalendarDays class="w-6 h-6" />
+          <span class="text-xs mt-1">일정표</span>
+        </router-link>
+        <router-link :to="expensesUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
+                     :class="{ 'text-primary-600 font-semibold': isExpensesActive }">
+          <Receipt class="w-6 h-6" />
+          <span class="text-xs mt-1">가계부</span>
+        </router-link>
+        <router-link :to="notesUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
+                     :class="{ 'text-primary-600 font-semibold': isNotesActive }">
+          <NotebookText class="w-6 h-6" />
+          <span class="text-xs mt-1">노트</span>
+        </router-link>
       </div>
     </nav>
   </Transition>
@@ -61,10 +31,6 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { Home, CalendarDays, Receipt, NotebookText } from 'lucide-vue-next';
-
-function alertReadOnly() {
-  alert('공유된 여행 정보는 읽기 전용입니다. 모든 기능을 이용하려면 로그인해주세요.');
-}
 
 const props = defineProps({
   tripId: {
@@ -78,10 +44,6 @@ const props = defineProps({
   show: {
     type: Boolean,
     default: true,
-  },
-  readonly: {
-    type: Boolean,
-    default: false,
   }
 });
 
