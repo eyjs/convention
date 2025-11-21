@@ -25,6 +25,13 @@
         </div>
       </div>
       <div v-if="activeTab === 'checklist'">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-gray-800">체크리스트</h2>
+          <button @click="isEditMode = !isEditMode" class="text-sm font-medium text-primary-600 hover:text-primary-500 transition-colors">
+            {{ isEditMode ? '완료' : '편집' }}
+          </button>
+        </div>
+
         <div v-if="loading" class="text-center py-20">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
         </div>
@@ -34,10 +41,7 @@
             <div @click="toggleCategory(category.id)" class="flex justify-between items-center p-4 cursor-pointer">
               <h2 class="font-bold text-lg">{{ category.name }} <span class="text-gray-500 text-sm font-medium ml-2">({{ category.completedItemsCount }}/{{ category.totalItemsCount }})</span></h2>
                <div class="flex items-center gap-2">
-                <button @click.stop="category.isEditing = !category.isEditing" class="text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors">
-                  {{ category.isEditing ? '완료' : '편집' }}
-                </button>
-                <button v-if="category.isEditing && !category.isDefault" @click.stop="deleteCategory(category.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full">
+                <button v-if="isEditMode && !category.isDefault" @click.stop="deleteCategory(category.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
                 <svg class="w-6 h-6 text-gray-400 transition-transform" :class="{'rotate-180': expandedCategories.includes(category.id)}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -47,16 +51,20 @@
             <div v-if="expandedCategories.includes(category.id)">
               <div class="border-t border-gray-200 mt-4 pt-4"></div> <!-- Separator line -->
               <div class="px-4 pb-4 space-y-3">
-                <div v-for="(item, itemIndex) in category.items" :key="item.id" @click="toggleItem(catIndex, itemIndex)" class="flex items-center gap-3 group cursor-pointer">
+                <div v-if="category.items.length === 0" class="text-center py-8">
+                    <p class="text-gray-500">체크리스트 항목이 없습니다.</p>
+                    <p class="text-sm text-gray-400 mt-1">'아이템 추가'를 눌러 새 항목을 만드세요.</p>
+                </div>
+                <div v-for="(item, itemIndex) in category.items" :key="item.id" @click="!isEditMode && toggleItem(catIndex, itemIndex)" class="flex items-center gap-3 group" :class="{'cursor-pointer': !isEditMode}">
                   <div class="flex-shrink-0 w-5 h-5 rounded-full transition-all flex items-center justify-center"
                        :class="item.isChecked ? '' : 'border-2 border-dashed border-gray-300'">
                     <Check v-if="item.isChecked" class="w-5 h-5 text-primary-500" :stroke-width="3" />
                   </div>
-                  <div class="flex-1" @click.stop="openItemEditModal(item)">
+                  <div class="flex-1" @click.stop="isEditMode && openItemEditModal(item)">
                     <p class="text-gray-800">{{ item.task }}</p>
                     <p v-if="item.description" class="text-xs text-gray-500">{{ item.description }}</p>
                   </div>
-                  <button v-if="category.isEditing" @click.stop="deleteItem(category.id, item.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full transition-opacity">
+                  <button v-if="isEditMode" @click.stop="deleteItem(category.id, item.id)" class="p-1 text-red-500 hover:bg-red-100 rounded-full transition-opacity">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
@@ -150,6 +158,8 @@ const isItemEditModalOpen = ref(false);
 const editingItem = ref(null);
 
 
+const isEditMode = ref(false);
+
 const vFocus = {
   mounted: (el) => el.focus()
 }
@@ -169,10 +179,7 @@ async function fetchTripData() {
   try {
     const response = await apiClient.get(`/personal-trips/${tripId.value}`);
     trip.value = response.data;
-    checklist.value = response.data.checklistCategories.map(cat => ({
-      ...cat,
-      isEditing: ref(false) // Add isEditing state to each category
-    }));
+    checklist.value = response.data.checklistCategories;
   } catch (error) {
     console.error("Failed to fetch trip data:", error);
     alert('데이터를 불러오는데 실패했습니다.');
@@ -193,8 +200,6 @@ function toggleCategory(categoryId) {
 
 
 async function toggleItem(catIndex, itemIndex) {
-    if (isEditMode.value) return;
-
     const item = checklist.value[catIndex].items[itemIndex];
     item.isChecked = !item.isChecked;
     

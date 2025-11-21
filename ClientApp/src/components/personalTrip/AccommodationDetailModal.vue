@@ -57,10 +57,10 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:isOpen', 'edit'])
+const emit = defineEmits(['close', 'edit'])
 
 const closeModal = () => {
-  emit('update:isOpen', false)
+  emit('close')
 }
 
 const editAccommodation = () => {

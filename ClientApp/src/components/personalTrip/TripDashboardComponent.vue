@@ -227,24 +227,16 @@ const todayItineraries = computed(() => {
       return a.startTime.localeCompare(b.startTime)
     });
 
-  // Add isCurrent status
-  let nextUpcomingFound = false;
+  // Add isCurrent status - only highlight currently active item
   return filtered.map(item => {
     const itemStartTime = dayjs(`${currentTripDate.format('YYYY-MM-DD')}T${item.startTime}`);
     const itemEndTime = dayjs(`${currentTripDate.format('YYYY-MM-DD')}T${item.endTime}`);
     
     const isCurrent = now.isBetween(itemStartTime, itemEndTime, null, '[]'); // [] includes start and end
     
-    // Highlight the very next upcoming item if no current item is found
-    let isNextUpcoming = false;
-    if (!isCurrent && !nextUpcomingFound && itemStartTime.isAfter(now)) {
-        isNextUpcoming = true;
-        nextUpcomingFound = true; // Mark that we found the next upcoming
-    }
-
     return {
       ...item,
-      isCurrent: isCurrent || isNextUpcoming, // Highlight current or next upcoming
+      isCurrent: isCurrent, // Only highlight if currently active
     };
   });
 })

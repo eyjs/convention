@@ -349,10 +349,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <p class="text-gray-600 flex-1 text-sm leading-5">{{ selectedItinerary.address }}</p>
-                  <a v-if="selectedItinerary.kakaoPlaceUrl" :href="selectedItinerary.kakaoPlaceUrl" target="_blank" class="text-primary-600 hover:text-primary-700 text-sm font-medium whitespace-nowrap leading-5" title="카카오맵에서 길찾기">
-                    길찾기
-                  </a>
-                  <a v-else-if="selectedItinerary.latitude && selectedItinerary.longitude" :href="`https://map.kakao.com/link/to/${selectedItinerary.locationName},${selectedItinerary.latitude},${selectedItinerary.longitude}`" target="_blank" class="text-primary-600 hover:text-primary-700 text-sm font-medium whitespace-nowrap leading-5" title="카카오맵에서 길찾기">
+                  <a v-if="selectedItinerary.latitude && selectedItinerary.longitude" :href="`https://map.kakao.com/link/to/${selectedItinerary.locationName},${selectedItinerary.latitude},${selectedItinerary.longitude}`" target="_blank" class="text-primary-600 hover:text-primary-700 text-sm font-medium whitespace-nowrap leading-5" title="카카오맵에서 길찾기">
                     길찾기
                   </a>
                 </div>
