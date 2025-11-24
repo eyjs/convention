@@ -57,6 +57,26 @@
           </svg>
           속성 일괄 매핑
         </button>
+        <!-- 그룹 단위 일정 배정 버튼 -->
+        <button
+          @click="openGroupAssignModal"
+          class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+            />
+          </svg>
+          그룹별 일정 배정
+        </button>
         <button
           @click="showCreateModal = true"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center justify-center whitespace-nowrap overflow-hidden text-ellipsis"
@@ -807,6 +827,114 @@
         </button>
       </template>
     </BaseModal>
+
+    <!-- 그룹 단위 일정 배정 모달 -->
+    <BaseModal
+      :is-open="showGroupAssignModal"
+      @close="closeGroupAssignModal"
+      max-width="2xl"
+    >
+      <template #header>
+        <h2 class="text-xl font-semibold">그룹별 일정 배정</h2>
+      </template>
+      <template #body>
+        <div class="space-y-6">
+          <!-- 그룹 선택 -->
+          <div>
+            <label class="block text-sm font-medium mb-2">그룹 선택 *</label>
+            <div v-if="availableGroups.length === 0" class="text-sm text-gray-500 p-3 bg-gray-50 rounded">
+              등록된 그룹이 없습니다. 참석자 업로드 시 그룹 정보를 포함해주세요.
+            </div>
+            <div v-else class="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+              <label
+                v-for="group in availableGroups"
+                :key="group"
+                class="flex items-center gap-3 p-3 border rounded hover:bg-gray-50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :value="group"
+                  v-model="selectedGroupsForAssign"
+                  class="rounded"
+                />
+                <div class="flex-1">
+                  <div class="font-medium">{{ group }}</div>
+                  <div class="text-xs text-gray-500">
+                    {{ getGuestCountByGroup(group) }}명
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 선택된 그룹 요약 -->
+          <div v-if="selectedGroupsForAssign.length > 0" class="p-4 bg-orange-50 rounded-lg">
+            <p class="text-sm font-medium text-orange-900">
+              선택된 그룹: {{ selectedGroupsForAssign.length }}개
+              (총 {{ getTotalGuestCountForSelectedGroups }}명)
+            </p>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <span
+                v-for="group in selectedGroupsForAssign"
+                :key="group"
+                class="px-2 py-1 bg-white text-sm rounded"
+              >
+                {{ group }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 일정 선택 -->
+          <div>
+            <label class="block text-sm font-medium mb-2">배정할 일정 선택 *</label>
+            <div
+              v-if="availableTemplates.length === 0"
+              class="text-sm text-gray-500 p-3 bg-gray-50 rounded"
+            >
+              일정 템플릿이 없습니다. 먼저 일정 관리에서 템플릿을 생성하세요.
+            </div>
+            <div v-else class="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
+              <label
+                v-for="template in availableTemplates"
+                :key="template.id"
+                class="flex items-start gap-2 p-3 border rounded hover:bg-gray-50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :value="template.id"
+                  v-model="groupAssignTemplateIds"
+                  class="rounded mt-1"
+                />
+                <div class="flex-1">
+                  <div class="font-medium">{{ template.courseName }}</div>
+                  <div v-if="template.description" class="text-sm text-gray-600">
+                    {{ template.description }}
+                  </div>
+                  <div class="text-xs text-gray-500 mt-1">
+                    일정 {{ template.scheduleItems?.length || 0 }}개
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <button
+          @click="closeGroupAssignModal"
+          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+        >
+          취소
+        </button>
+        <button
+          @click="executeGroupAssign"
+          :disabled="selectedGroupsForAssign.length === 0 || groupAssignTemplateIds.length === 0 || groupAssigning"
+          class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap overflow-hidden text-ellipsis"
+        >
+          {{ groupAssigning ? '배정 중...' : '그룹에 일정 배정' }}
+        </button>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -836,6 +964,13 @@ const bulkAssignReplace = ref(false)
 const showBulkAttributeModal = ref(false)
 const bulkAttributeForm = ref({})
 const submittingAttribute = ref(false)
+
+// 그룹 단위 일정 배정 관련
+const showGroupAssignModal = ref(false)
+const availableGroups = ref([])
+const selectedGroupsForAssign = ref([])
+const groupAssignTemplateIds = ref([])
+const groupAssigning = ref(false)
 
 const guestForm = ref({
   guestName: '',
@@ -1195,6 +1330,96 @@ const submitBulkAttribute = async () => {
 const formatDate = (dateStr) => {
   const date = new Date(dateStr)
   return `${date.getMonth() + 1}/${date.getDate()}`
+}
+
+// 그룹 단위 일정 배정 관련 함수들
+const loadGroups = () => {
+  // guests 데이터에서 그룹 추출 (groupName 필드 사용)
+  const groups = [...new Set(
+    guests.value
+      .filter((g) => g.groupName && g.groupName.trim() !== '')
+      .map((g) => g.groupName)
+  )].sort()
+
+  availableGroups.value = groups
+  console.log('✅ Groups extracted from guests:', availableGroups.value)
+}
+
+const getGuestCountByGroup = (groupName) => {
+  return guests.value.filter((g) => g.groupName === groupName).length
+}
+
+const getTotalGuestCountForSelectedGroups = computed(() => {
+  return selectedGroupsForAssign.value.reduce((total, groupName) => {
+    return total + getGuestCountByGroup(groupName)
+  }, 0)
+})
+
+const openGroupAssignModal = () => {
+  loadGroups()
+  showGroupAssignModal.value = true
+}
+
+const closeGroupAssignModal = () => {
+  showGroupAssignModal.value = false
+  selectedGroupsForAssign.value = []
+  groupAssignTemplateIds.value = []
+}
+
+const executeGroupAssign = async () => {
+  if (selectedGroupsForAssign.value.length === 0) {
+    alert('그룹을 선택해주세요.')
+    return
+  }
+  if (groupAssignTemplateIds.value.length === 0) {
+    alert('배정할 일정을 선택해주세요.')
+    return
+  }
+
+  const totalGuests = getTotalGuestCountForSelectedGroups.value
+  if (!confirm(`선택된 ${selectedGroupsForAssign.value.length}개 그룹 (총 ${totalGuests}명)에게 일정을 배정하시겠습니까?`)) {
+    return
+  }
+
+  groupAssigning.value = true
+
+  try {
+    let successCount = 0
+    let failCount = 0
+
+    // 선택된 그룹에 속한 참석자들 찾기
+    const guestsInSelectedGroups = guests.value.filter((g) =>
+      selectedGroupsForAssign.value.includes(g.groupName)
+    )
+
+    // 각 참석자에 대해 일정 배정
+    for (const guest of guestsInSelectedGroups) {
+      try {
+        // 기존 일정 + 새 일정 병합
+        const existingIds = guest.scheduleTemplates?.map((st) => st.scheduleTemplateId) || []
+        const mergedIds = [...new Set([...existingIds, ...groupAssignTemplateIds.value])]
+
+        await apiClient.post(`/admin/conventions/${props.conventionId}/guests/${guest.id}/schedules`, {
+          scheduleTemplateIds: mergedIds,
+        })
+        successCount++
+      } catch (error) {
+        console.error(`Failed to assign schedules to guest ${guest.id}:`, error)
+        failCount++
+      }
+    }
+
+    await loadGuests()
+    await loadTemplates()
+    closeGroupAssignModal()
+
+    alert(`그룹 일정 배정 완료!\n성공: ${successCount}명\n실패: ${failCount}명`)
+  } catch (error) {
+    console.error('Group assign failed:', error)
+    alert('그룹 일정 배정 실패: ' + (error.response?.data?.message || error.message))
+  } finally {
+    groupAssigning.value = false
+  }
 }
 
 onMounted(() => {

@@ -71,7 +71,7 @@ public class UserUploadService : IUserUploadService
                     var userName = sheet.Cells[row, 3].Text?.Trim();
                     var residentNumber = sheet.Cells[row, 4].Text?.Trim();
                     var telephone = sheet.Cells[row, 5].Text?.Trim();
-                    // F열(6)은 그룹 정보였으나, 이제 사용하지 않음
+                    var groupName = sheet.Cells[row, 6].Text?.Trim(); // F열(6): 그룹
                     var remarks = sheet.Cells[row, 7].Text?.Trim(); // G열(7): 비고
 
                     // 필수값 검증 (이름만 필수)
@@ -81,8 +81,11 @@ public class UserUploadService : IUserUploadService
                         continue;
                     }
 
-                    // 그룹명은 이제 엑셀에서 읽지 않으므로 null로 설정
-                    string? groupName = null;
+                    // 빈 문자열을 null로 변환
+                    if (string.IsNullOrWhiteSpace(groupName))
+                    {
+                        groupName = null;
+                    }
 
                     // 전화번호 검증 및 포맷팅 (선택사항)
                     string? formattedPhone = null;
