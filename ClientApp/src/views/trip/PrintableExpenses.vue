@@ -86,7 +86,10 @@
 
       <!-- Trip-wide Expenses -->
       <section class="break-inside-avoid" v-if="tripWideExpenses.items.length > 0">
-          <h3 class="text-xl font-semibold text-gray-800 mb-4">전체 기간 지출</h3>
+          <h3 class="text-xl font-semibold bg-gray-100 p-3 rounded-t-lg flex justify-between mb-4">
+              <span>공통 경비 (숙소, 교통 등)</span>
+              <span>합계: ₩{{ tripWideExpenses.total.toLocaleString() }}</span>
+          </h3>
           <table class="w-full text-sm text-left text-gray-600">
               <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                   <tr>
@@ -100,12 +103,6 @@
                       <td class="px-6 py-4 text-right">₩{{ item.amount.toLocaleString() }}</td>
                   </tr>
               </tbody>
-              <tfoot class="font-bold text-gray-900 bg-gray-100">
-                  <tr>
-                      <td class="px-6 py-3 text-base">합계</td>
-                      <td class="px-6 py-3 text-right text-base">₩{{ tripWideExpenses.total.toLocaleString() }}</td>
-                  </tr>
-              </tfoot>
           </table>
       </section>
     </main>

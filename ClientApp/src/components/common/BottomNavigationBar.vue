@@ -2,28 +2,23 @@
   <Transition name="slide-up">
     <nav v-if="show" class="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0_-4px_6px_-1px_rgb(0_0_0_/_0.1),_0_-2px_4px_-2px_rgb(0_0_0_/_0.1)] py-2">
       <div class="max-w-xl mx-auto flex justify-around items-center h-full">
-        <router-link :to="homeUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
-                     :class="{ 'text-primary-600 font-semibold': isHomeActive }">
+        <router-link :to="homeUrl" class="nav-link">
           <Home class="w-6 h-6" />
           <span class="text-xs mt-1">홈</span>
         </router-link>
-        <router-link :to="itineraryUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
-                     :class="{ 'text-primary-600 font-semibold': isItineraryActive }">
+        <router-link :to="itineraryUrl" class="nav-link">
           <CalendarDays class="w-6 h-6" />
           <span class="text-xs mt-1">일정표</span>
         </router-link>
-        <router-link :to="expensesUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
-                     :class="{ 'text-primary-600 font-semibold': isExpensesActive }">
+        <router-link :to="expensesUrl" class="nav-link">
           <Receipt class="w-6 h-6" />
           <span class="text-xs mt-1">가계부</span>
         </router-link>
-        <router-link :to="notesUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
-                     :class="{ 'text-primary-600 font-semibold': isNotesActive }">
+        <router-link :to="notesUrl" class="nav-link">
           <NotebookText class="w-6 h-6" />
           <span class="text-xs mt-1">노트</span>
         </router-link>
-        <router-link :to="transportationUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
-                     :class="{ 'text-primary-600 font-semibold': isTransportationActive }">
+        <router-link :to="transportationUrl" class="nav-link">
           <Car class="w-6 h-6" />
           <span class="text-xs mt-1">교통편</span>
         </router-link>
@@ -34,7 +29,6 @@
 
 <script setup>
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
 import { Home, CalendarDays, Receipt, NotebookText, Car } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -52,68 +46,34 @@ const props = defineProps({
   }
 });
 
-const route = useRoute();
+// A helper function to create safe URLs.
+const createUrl = (path) => {
+  if (!props.tripId && !props.shareToken) return '#'; // Return a non-functional link if IDs are missing.
+
+  if (props.shareToken) {
+    return `/trips/share/${props.shareToken}${path}`;
+  }
+  return `/trips/${props.tripId}${path}`;
+};
 
 // Computed URLs based on share mode
-const homeUrl = computed(() => {
-  return props.shareToken ? `/trips/share/${props.shareToken}` : `/trips/${props.tripId}`;
-});
-
-const itineraryUrl = computed(() => {
-  return props.shareToken ? `/trips/share/${props.shareToken}/itinerary` : `/trips/${props.tripId}/itinerary`;
-});
-
-const expensesUrl = computed(() => {
-  return props.shareToken ? `/trips/share/${props.shareToken}/expenses` : `/trips/${props.tripId}/expenses`;
-});
-
-const notesUrl = computed(() => {
-  return props.shareToken ? `/trips/share/${props.shareToken}/notes` : `/trips/${props.tripId}/notes`;
-});
-
-const transportationUrl = computed(() => {
-  return props.shareToken ? `/trips/share/${props.shareToken}/transportation` : `/trips/${props.tripId}/transportation`;
-});
-
-// Active states
-const isHomeActive = computed(() => {
-  if (props.shareToken) {
-    return route.path === `/trips/share/${props.shareToken}`;
-  }
-  return route.path === `/trips/${props.tripId}`;
-});
-
-const isItineraryActive = computed(() => {
-  if (props.shareToken) {
-    return route.path === `/trips/share/${props.shareToken}/itinerary`;
-  }
-  return route.path === `/trips/${props.tripId}/itinerary`;
-});
-
-const isExpensesActive = computed(() => {
-  if (props.shareToken) {
-    return route.path === `/trips/share/${props.shareToken}/expenses`;
-  }
-  return route.path === `/trips/${props.tripId}/expenses`;
-});
-
-const isNotesActive = computed(() => {
-  if (props.shareToken) {
-    return route.path === `/trips/share/${props.shareToken}/notes`;
-  }
-  return route.path === `/trips/${props.tripId}/notes`;
-});
-
-const isTransportationActive = computed(() => {
-  if (props.shareToken) {
-    return route.path === `/trips/share/${props.shareToken}/transportation`;
-  }
-  return route.path === `/trips/${props.tripId}/transportation`;
-});
+const homeUrl = computed(() => createUrl(''));
+const itineraryUrl = computed(() => createUrl('/itinerary'));
+const expensesUrl = computed(() => createUrl('/expenses'));
+const notesUrl = computed(() => createUrl('/notes'));
+const transportationUrl = computed(() => createUrl('/transportation'));
 
 </script>
 
 <style scoped>
+.nav-link {
+  @apply flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors;
+}
+
+.router-link-exact-active {
+  @apply text-primary-600 font-semibold;
+}
+
 .slide-up-enter-active,
 .slide-up-leave-active {
   transition: transform 0.3s ease-out;
