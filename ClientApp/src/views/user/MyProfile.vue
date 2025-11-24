@@ -62,32 +62,33 @@
     <SlideUpModal :is-open="isProfileEditModalOpen" @close="closeProfileEditModal">
       <template #header-title>프로필 편집</template>
       <template #body>
-        <form id="profile-edit-form" @submit.prevent="handleProfileSave" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">영문 이름 (First Name)</label>
-            <input v-model="tempProfileData.firstName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">영문 성 (Last Name)</label>
-            <input v-model="tempProfileData.lastName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">휴대폰 번호</label>
-            <input v-model="tempProfileData.phone" type="tel" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">소속</label>
-            <input v-model="tempProfileData.affiliation" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">여권 번호</label>
-            <input v-model="tempProfileData.passportNumber" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">여권 만료일</label>
-            <input v-model="tempProfileData.passportExpiryDate" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-          </div>
-        </form>
+          <form id="profile-edit-form" @submit.prevent="handleProfileSave" class="space-y-4">
+
+              <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">휴대폰 번호</label>
+                  <input v-model="tempProfileData.phone" type="tel" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">소속</label>
+                  <input v-model="tempProfileData.affiliation" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">영문 이름 (First Name)</label>
+                  <input v-model="tempProfileData.firstName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">영문 성 (Last Name)</label>
+                  <input v-model="tempProfileData.lastName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">여권 번호</label>
+                  <input v-model="tempProfileData.passportNumber" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">여권 만료일</label>
+                  <input v-model="tempProfileData.passportExpiryDate" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+          </form>
       </template>
       <template #footer>
         <div class="flex gap-3 w-full">

@@ -84,20 +84,6 @@
               </div>
             </div>
 
-            <!-- 숙소 비용 -->
-            <div v-if="day.accommodations.length > 0">
-              <p class="text-xs font-semibold text-gray-500 mb-2">숙소</p>
-              <div class="space-y-2">
-                <div v-for="item in day.accommodations" :key="'acc-' + item.id" class="flex justify-between items-center text-sm bg-blue-50 rounded-lg px-3 py-2">
-                  <div>
-                    <p class="font-medium text-gray-800">{{ item.name }}</p>
-                    <p class="text-xs text-gray-500">{{ formatDate(item.checkInTime) }} ~ {{ formatDate(item.checkOutTime) }}</p>
-                  </div>
-                  <p class="font-semibold text-blue-700">₩{{ item.expenseAmount.toLocaleString('ko-KR') }}</p>
-                </div>
-              </div>
-            </div>
-
             <!-- 교통 비용 -->
             <div v-if="day.transportations.length > 0">
               <p class="text-xs font-semibold text-gray-500 mb-2">교통</p>
@@ -112,7 +98,7 @@
               </div>
             </div>
 
-            <div v-if="day.itineraryItems.length === 0 && day.accommodations.length === 0 && day.transportations.length === 0" class="text-center py-4 text-gray-400">
+            <div v-if="day.itineraryItems.length === 0 && day.transportations.length === 0" class="text-center py-4 text-gray-400">
               지출 내역이 없습니다
             </div>
           </div>
@@ -148,6 +134,7 @@
           <h3 class="font-bold text-gray-900 mb-4 text-center">지출 분포</h3>
           <div class="relative">
             <VueApexCharts
+              ref="chart"
               type="donut"
               height="320"
               :options="chartOptions"
@@ -215,7 +202,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, createApp } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import MainHeader from '@/components/common/MainHeader.vue';
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue';
@@ -224,9 +211,10 @@ import apiClient from '@/services/api';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import '@/utils/NanumGothic-Regular-normal.js';
+import html2canvas from 'html2canvas';
 import VueApexCharts from 'vue3-apexcharts';
+import PrintableExpenses from './PrintableExpenses.vue';
+
 
 const props = defineProps({
   shareToken: String,
@@ -248,7 +236,7 @@ const expandedCategories = ref({ itinerary: false, accommodation: false, transpo
 const expandedDays = ref([]);
 const showTripWide = ref(false);
 const showExportMenu = ref(false);
-const chart = ref(null); // ApexCharts 인스턴스를 위한 ref
+const chart = ref(null);
 
 async function loadTrip() {
   try {
@@ -260,7 +248,6 @@ async function loadTrip() {
       const response = await apiClient.get(`/personal-trips/${tripId.value}`);
       trip.value = response.data;
     }
-    // 기본으로 첫 번째 일자 펼치기
     if (dailyExpensesDetailed.value.length > 0) {
       expandedDays.value = [dailyExpensesDetailed.value[0].dayNumber];
     }
@@ -273,7 +260,6 @@ async function loadTrip() {
   }
 }
 
-// 교통편 총액 계산
 function getFlightAmount(flight) {
   if (flight.category === '렌트카' || flight.category === '자가용') {
     return (flight.rentalCost || 0) + (flight.fuelCost || 0) + (flight.tollFee || 0) + (flight.parkingFee || 0);
@@ -281,7 +267,6 @@ function getFlightAmount(flight) {
   return flight.amount || 0;
 }
 
-// 총 지출 계산
 const totalExpenses = computed(() => {
   let total = 0;
   if (trip.value.itineraryItems) {
@@ -296,44 +281,25 @@ const totalExpenses = computed(() => {
   return total;
 });
 
-// 일자별 상세 통계
 const dailyExpensesDetailed = computed(() => {
-  if (!trip.value.itineraryItems && !trip.value.flights) return [];
+  if (!trip.value.startDate) return [];
 
   const days = new Map();
   const tripStartDate = dayjs(trip.value.startDate);
-  
-  const allItems = [
-    ...(trip.value.itineraryItems || []),
-    ...(trip.value.accommodations || []),
-    ...(trip.value.flights || []),
-  ];
+  const tripEndDate = dayjs(trip.value.endDate);
+  const numDays = tripEndDate.diff(tripStartDate, 'day') + 1;
 
-  if (allItems.length === 0) return [];
-
-  const maxDayNumber = allItems.reduce((max, item) => {
-    if (item.dayNumber) return Math.max(max, item.dayNumber);
-    if (item.checkInTime) {
-        const day = dayjs(item.checkInTime).diff(tripStartDate, 'day') + 1;
-        return Math.max(max, day);
-    }
-    return max;
-  }, 0);
-
-
-  for (let i = 1; i <= Math.max(maxDayNumber, 1); i++) {
+  for (let i = 1; i <= numDays; i++) {
     days.set(i, {
       dayNumber: i,
       itineraryItems: [],
-      accommodations: [],
       transportations: [],
       total: 0,
     });
   }
 
-  // 일정 비용
   trip.value.itineraryItems?.forEach(item => {
-    if (item.expenseAmount > 0) {
+    if (item.expenseAmount > 0 && item.dayNumber) {
       const day = days.get(item.dayNumber);
       if (day) {
         day.itineraryItems.push(item);
@@ -341,11 +307,10 @@ const dailyExpensesDetailed = computed(() => {
       }
     }
   });
-  
-  // 택시 비용 (일정에 연결된 것만)
+
   trip.value.flights?.filter(f => f.category === '택시' && f.itineraryItemId).forEach(taxi => {
     const itinerary = trip.value.itineraryItems?.find(i => i.id === taxi.itineraryItemId);
-    if (itinerary) {
+    if (itinerary && itinerary.dayNumber) {
       const day = days.get(itinerary.dayNumber);
       if (day) {
         day.transportations.push(taxi);
@@ -354,24 +319,21 @@ const dailyExpensesDetailed = computed(() => {
     }
   });
 
-  return Array.from(days.values()).filter(day => day.total > 0);
+  return Array.from(days.values()).filter(day => day.total > 0 );
 });
 
-
-// 여행 전체 비용
 const tripWideExpenses = computed(() => {
   const items = [];
   const categories = ['항공편', '기차', '버스', '렌트카', '자가용'];
 
   categories.forEach(category => {
-    const categoryFlights = trip.value.flights?.filter(f => f.category === category) || [];
+    const categoryFlights = trip.value.flights?.filter(f => f.category === category && !f.itineraryItemId) || [];
     const total = categoryFlights.reduce((sum, f) => sum + getFlightAmount(f), 0);
     if (total > 0) {
       items.push({ category, amount: total, count: categoryFlights.length });
     }
   });
 
-  // 숙소 비용 추가
   const accommodationTotal = trip.value.accommodations?.reduce((sum, acc) => sum + (acc.expenseAmount || 0), 0) || 0;
   if (accommodationTotal > 0) {
     items.push({
@@ -384,369 +346,176 @@ const tripWideExpenses = computed(() => {
   return { items, total: items.reduce((sum, item) => sum + item.amount, 0) };
 });
 
-// 카테고리별 통계
 const categoryStats = computed(() => {
   const itineraryItems = trip.value.itineraryItems?.filter(i => i.expenseAmount > 0) || [];
   const accommodationItems = trip.value.accommodations?.filter(a => a.expenseAmount > 0) || [];
   const transportationItems = trip.value.flights?.filter(f => getFlightAmount(f) > 0) || [];
 
   return [
-    {
-      name: '일정비용',
-      key: 'itinerary',
-      total: itineraryItems.reduce((sum, i) => sum + i.expenseAmount, 0),
-      count: itineraryItems.length,
-      icon: '🍽️',
-      color: '#FF6384',
-    },
-    {
-      name: '숙소비용',
-      key: 'accommodation',
-      total: accommodationItems.reduce((sum, a) => sum + (a.expenseAmount || 0), 0),
-      count: accommodationItems.length,
-      icon: '🏨',
-      color: '#36A2EB',
-    },
-    {
-      name: '교통비용',
-      key: 'transportation',
-      total: transportationItems.reduce((sum, f) => sum + getFlightAmount(f), 0),
-      count: transportationItems.length,
-      icon: '🚗',
-      color: '#4BC0C0',
-    },
+    { name: '일정비용', key: 'itinerary', total: itineraryItems.reduce((sum, i) => sum + i.expenseAmount, 0), count: itineraryItems.length, icon: '🍽️' },
+    { name: '숙소비용', key: 'accommodation', total: accommodationItems.reduce((sum, a) => sum + (a.expenseAmount || 0), 0), count: accommodationItems.length, icon: '🏨' },
+    { name: '교통비용', key: 'transportation', total: transportationItems.reduce((sum, f) => sum + getFlightAmount(f), 0), count: transportationItems.length, icon: '🚗' },
   ].sort((a, b) => b.total - a.total);
 });
 
-// 도넛 차트 데이터 (ApexCharts)
-const chartSeries = computed(() =>
-  categoryStats.value.filter(c => c.total > 0).map(c => c.total)
-);
-
+const chartSeries = computed(() => categoryStats.value.filter(c => c.total > 0).map(c => c.total));
 const chartOptions = computed(() => ({
-  chart: {
-    type: 'donut',
-    fontFamily: 'inherit',
-    toolbar: {
-      show: false
-    }
-  },
-  labels: categoryStats.value.filter(c => c.total > 0).map(c => c.name),
-  colors: ['#FF6384', '#36A2EB', '#4BC0C0', '#FFCE56', '#9966FF'],
-  legend: {
-    position: 'bottom',
-    fontSize: '14px',
-    fontFamily: 'NanumGothic',
-    markers: {
-      width: 12,
-      height: 12,
-      radius: 6,
-    },
-    itemMargin: {
-      horizontal: 12,
-      vertical: 8,
-    },
-    formatter: (seriesName, opts) => {
-      const total = opts.w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-      const val = opts.w.globals.series[opts.seriesIndex];
-      const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-      return `${seriesName} (${pct}%)`;
-    },
-  },
-  plotOptions: {
-    pie: {
-      donut: {
-        size: '65%',
-        labels: {
-          show: true,
-          name: {
-            show: true,
-            fontSize: '16px',
-            fontWeight: 600,
-            color: '#374151',
-          },
-          value: {
-            show: true,
-            fontSize: '24px',
-            fontWeight: 700,
-            color: '#111827',
-            formatter: (val) => `₩${Number(val).toLocaleString('ko-KR')}`,
-          },
-          total: {
-            show: true,
-            label: '총 지출',
-            fontSize: '14px',
-            fontWeight: 500,
-            color: '#6B7280',
-            formatter: () => `₩${totalExpenses.value.toLocaleString('ko-KR')}`,
-          },
-        },
-      },
-    },
-  },
-  dataLabels: {
-    enabled: false,
-  },
-  tooltip: {
-    y: {
-      formatter: (val) => `₩${val.toLocaleString('ko-KR')}`,
-    },
-  },
-  stroke: {
-    show: true,
-    width: 3,
-    colors: ['#fff'],
-  },
-  responsive: [{
-    breakpoint: 480,
-    options: {
-      chart: { height: 280 },
-      legend: { position: 'bottom' },
-    },
-  }],
+    chart: { type: 'donut', fontFamily: 'inherit', toolbar: { show: false } },
+    labels: categoryStats.value.filter(c => c.total > 0).map(c => c.name),
+    colors: ['#FF6384', '#36A2EB', '#4BC0C0', '#FFCE56', '#9966FF'],
+    legend: { position: 'bottom', fontSize: '14px', fontFamily: 'inherit' },
+    plotOptions: { pie: { donut: { size: '65%', labels: { show: true, total: { show: true, label: '총 지출', formatter: () => `₩${totalExpenses.value.toLocaleString('ko-KR')}` } } } } },
+    dataLabels: { enabled: false },
+    tooltip: { y: { formatter: (val) => `₩${val.toLocaleString('ko-KR')}` } },
 }));
 
-// 유틸리티 함수
-function toggleCategory(category) {
-  expandedCategories.value[category] = !expandedCategories.value[category];
-}
-
+function toggleCategory(category) { expandedCategories.value[category] = !expandedCategories.value[category]; }
 function toggleDay(dayNumber) {
   const index = expandedDays.value.indexOf(dayNumber);
-  if (index > -1) {
-    expandedDays.value.splice(index, 1);
-  } else {
-    expandedDays.value.push(dayNumber);
-  }
+  if (index > -1) expandedDays.value.splice(index, 1);
+  else expandedDays.value.push(dayNumber);
 }
-
-function getCategoryIcon(category) {
-  const icons = { '항공편': '✈️', '기차': '🚂', '버스': '🚌', '택시': '🚕', '렌트카': '🚗', '자가용': '🚙', '숙소': '🏨' };
-  return icons[category] || '📍';
-}
-
+function getCategoryIcon(category) { return { '항공편': '✈️', '기차': '🚂', '버스': '🚌', '택시': '🚕', '렌트카': '🚗', '자가용': '🚙', '숙소': '🏨' }[category] || '📍'; }
 function formatDayDate(dayNumber) {
   if (!trip.value.startDate) return '';
   const date = dayjs(trip.value.startDate).add(dayNumber - 1, 'day');
-  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${date.format('M/D')}(${weekdays[date.day()]})`;
+  return `${date.format('M/D')}(${['일', '월', '화', '수', '목', '금', '토'][date.day()]})`;
 }
+function formatDate(dateStr) { return dateStr ? dayjs(dateStr).format('M/D') : ''; }
 
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  return dayjs(dateStr).format('M/D');
-}
-
-// Excel 내보내기
 function exportToExcel() {
-  showExportMenu.value = false;
+    showExportMenu.value = false;
+    const wb = XLSX.utils.book_new();
 
-  const workbook = XLSX.utils.book_new();
+    const dailyData = [['일자', '구분', '내용', '카테고리', '금액']];
+    const tripStartDate = dayjs(trip.value.startDate);
+    const numDays = dayjs(trip.value.endDate).diff(tripStartDate, 'day') + 1;
 
-  // 요약 시트
-  const summaryData = [
-    ['여행명', trip.value.title || ''],
-    ['기간', `${trip.value.startDate} ~ ${trip.value.endDate}`],
-    ['총 지출', totalExpenses.value],
-    [],
-    ['카테고리', '금액', '건수'],
-    ...categoryStats.value.map(c => [c.name, c.total, c.count]),
-  ];
-  const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-  XLSX.utils.book_append_sheet(workbook, summarySheet, '요약');
+    for (let i = 1; i <= numDays; i++) {
+        const dateStr = tripStartDate.add(i - 1, 'day').format('YYYY-MM-DD');
+        let dailyTotal = 0;
+        const dayItems = [];
 
-  // 일정 비용 시트
-  const itineraryData = [
-    ['일자', '장소명', '카테고리', '금액', '메모'],
-    ...(trip.value.itineraryItems?.filter(i => i.expenseAmount > 0).map(i => [
-      `Day ${i.dayNumber}`,
-      i.locationName,
-      i.category || '',
-      i.expenseAmount,
-      i.notes || '',
-    ]) || []),
-  ];
-  const itinerarySheet = XLSX.utils.aoa_to_sheet(itineraryData);
-  XLSX.utils.book_append_sheet(workbook, itinerarySheet, '일정비용');
+        trip.value.itineraryItems?.filter(item => item.dayNumber === i && item.expenseAmount > 0).forEach(item => {
+            dayItems.push([`Day ${i}`, '일정', item.locationName, item.category || '기타', item.expenseAmount]);
+            dailyTotal += item.expenseAmount;
+        });
 
-  // 숙소 비용 시트
-  const accommodationData = [
-    ['숙소명', '체크인', '체크아웃', '주소', '금액', '메모'],
-    ...(trip.value.accommodations?.filter(a => a.expenseAmount > 0).map(a => [
-      a.name,
-      a.checkInTime ? dayjs(a.checkInTime).format('YYYY-MM-DD HH:mm') : '',
-      a.checkOutTime ? dayjs(a.checkOutTime).format('YYYY-MM-DD HH:mm') : '',
-      a.address || '',
-      a.expenseAmount,
-      a.notes || '',
-    ]) || []),
-  ];
-  const accommodationSheet = XLSX.utils.aoa_to_sheet(accommodationData);
-  XLSX.utils.book_append_sheet(workbook, accommodationSheet, '숙소비용');
+        trip.value.flights?.filter(f => f.category === '택시' && f.itineraryItemId).forEach(taxi => {
+            const itinerary = trip.value.itineraryItems?.find(item => item.id === taxi.itineraryItemId);
+            if (itinerary && itinerary.dayNumber === i) {
+                const amount = getFlightAmount(taxi);
+                dayItems.push([`Day ${i}`, '교통', `택시: ${taxi.departureLocation || ''} → ${taxi.arrivalLocation || ''}`, '교통', amount]);
+                dailyTotal += amount;
+            }
+        });
+        if (dayItems.length > 0) {
+            dailyData.push([`${dateStr} (Day ${i})`, '', '', '일계', dailyTotal]);
+            dailyData.push(...dayItems);
+        }
+    }
+    
+    const tripWideItems = [];
+     trip.value.accommodations?.filter(a => a.expenseAmount > 0).forEach(acc => {
+        tripWideItems.push(['전체', '숙소', acc.name, acc.type || '숙소', acc.expenseAmount]);
+    });
+     trip.value.flights?.filter(f => f.category !== '택시' && getFlightAmount(f) > 0).forEach(f => {
+        tripWideItems.push(['전체', '교통', `${f.category}: ${f.departureLocation || ''} → ${f.arrivalLocation || ''}`, '교통', getFlightAmount(f)]);
+    });
+    if (tripWideItems.length > 0) {
+        dailyData.push([]);
+        dailyData.push(['여행 전체 비용', '', '', '합계', tripWideExpenses.value.total]);
+        dailyData.push(...tripWideItems);
+    }
+    const dailySheet = XLSX.utils.aoa_to_sheet(dailyData);
+    XLSX.utils.book_append_sheet(wb, dailySheet, '일자별 상세');
 
-  // 교통 비용 시트
-  const transportationData = [
-    ['카테고리', '출발지', '도착지', '출발일시', '회사/편명', '예약번호', '금액', '렌트비', '유류비', '톨비', '주차비', '메모'],
-    ...(trip.value.flights?.filter(f => getFlightAmount(f) > 0).map(f => [
-      f.category,
-      f.departureLocation || '',
-      f.arrivalLocation || '',
-      f.departureTime ? dayjs(f.departureTime).format('YYYY-MM-DD HH:mm') : '',
-      f.airline ? `${f.airline} ${f.flightNumber || ''}` : '',
-      f.bookingReference || '',
-      f.amount || 0,
-      f.rentalCost || 0,
-      f.fuelCost || 0,
-      f.tollFee || 0,
-      f.parkingFee || 0,
-      f.notes || '',
-    ]) || []),
-  ];
-  const transportationSheet = XLSX.utils.aoa_to_sheet(transportationData);
-  XLSX.utils.book_append_sheet(workbook, transportationSheet, '교통비용');
-
-  // 일자별 시트
-  const dailyData = [
-    ['일자', '날짜', '일정비용', '숙소비용', '교통비용', '합계'],
-    ...dailyExpensesDetailed.value.map(d => [
-      `Day ${d.dayNumber}`,
-      formatDayDate(d.dayNumber),
-      d.itineraryItems.reduce((sum, i) => sum + i.expenseAmount, 0),
-      d.accommodations.reduce((sum, a) => sum + a.expenseAmount, 0),
-      d.transportations.reduce((sum, t) => sum + getFlightAmount(t), 0),
-      d.total,
-    ]),
-  ];
-  const dailySheet = XLSX.utils.aoa_to_sheet(dailyData);
-  XLSX.utils.book_append_sheet(workbook, dailySheet, '일자별요약');
-
-  XLSX.writeFile(workbook, `${trip.value.title || '여행'}_가계부.xlsx`);
+    const categoryData = [['대분류', '소분류', '내용', '금액']];
+    categoryStats.value.forEach(cat => {
+        if (cat.total > 0) {
+            categoryData.push([cat.name, '', '합계', cat.total]);
+            if (cat.key === 'itinerary') {
+                trip.value.itineraryItems?.filter(i => i.expenseAmount > 0).forEach(item => {
+                    categoryData.push(['', item.category || '기타', item.locationName, item.expenseAmount]);
+                });
+            } else if (cat.key === 'accommodation') {
+                trip.value.accommodations?.filter(a => a.expenseAmount > 0).forEach(acc => {
+                    categoryData.push(['', acc.type || '숙소', acc.name, acc.expenseAmount]);
+                });
+            } else if (cat.key === 'transportation') {
+                trip.value.flights?.filter(f => getFlightAmount(f) > 0).forEach(flight => {
+                    categoryData.push(['', flight.category, `${flight.departureLocation || ''} → ${flight.arrivalLocation || ''}`, getFlightAmount(flight)]);
+                });
+            }
+        }
+    });
+    const categorySheet = XLSX.utils.aoa_to_sheet(categoryData);
+    XLSX.utils.book_append_sheet(wb, categorySheet, '카테고리별 상세');
+    
+    XLSX.writeFile(wb, `${trip.value.title || '여행'}_가계부_상세.xlsx`);
 }
 
-// PDF 내보내기
 async function exportToPDF() {
   showExportMenu.value = false;
 
-  const doc = new jsPDF();
-  doc.setFont('NanumGothic', 'normal');
-
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 15;
-  let y = margin;
-
-  // 1. 제목
-  doc.setFontSize(22);
-  doc.text(`${trip.value.title || '여행'} 가계부`, pageWidth / 2, y, { align: 'center' });
-  y += 8;
-  doc.setFontSize(12);
-  doc.setTextColor(100);
-  doc.text(`${trip.value.startDate} ~ ${trip.value.endDate}`, pageWidth / 2, y, { align: 'center' });
-  y += 15;
-
-  // 2. 요약 정보
-  doc.setFontSize(16);
-  doc.text('여행 경비 요약', margin, y);
-  y += 8;
-  autoTable(doc, {
-    startY: y,
-    body: [
-      ['총 지출', `${totalExpenses.value.toLocaleString('ko-KR')}원`],
-      ['예산', `${(trip.value.budget || 0).toLocaleString('ko-KR')}원`],
-      ['남은 예산', `${((trip.value.budget || 0) - totalExpenses.value).toLocaleString('ko-KR')}원`],
-    ],
-    theme: 'grid',
-    styles: { font: 'NanumGothic', fontSize: 11 },
-    columnStyles: { 0: { fontStyle: 'bold' } },
+  const printContainer = document.createElement('div');
+  printContainer.style.position = 'fixed';
+  printContainer.style.left = '-9999px';
+  document.body.appendChild(printContainer);
+  
+  const printApp = createApp(PrintableExpenses, {
+    trip: trip.value,
   });
-  y = doc.lastAutoTable.finalY + 15;
+  
+  printApp.mount(printContainer);
 
-  // 3. 지출 분포 차트
-  if (chart.value && totalExpenses.value > 0) {
-    doc.setFontSize(16);
-    doc.text('지출 분포', margin, y);
-    y += 8;
-    try {
-      const chartImage = await chart.value.dataURI();
-      const imgWidth = 120;
-      const imgHeight = (chartImage.height * imgWidth) / chartImage.width;
-      const xPos = (pageWidth - imgWidth) / 2;
-      doc.addImage(chartImage.imgURI, 'PNG', xPos, y, imgWidth, imgHeight);
-      y += imgHeight + 15;
-    } catch (e) {
-      console.error("차트 이미지 생성 실패:", e);
+  // Wait for component to render
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  try {
+    const canvas = await html2canvas(printContainer.firstElementChild, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4',
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / pdfWidth;
+    const scaledHeight = imgHeight / ratio;
+
+    let heightLeft = scaledHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
+    heightLeft -= pdf.internal.pageSize.getHeight();
+
+    while (heightLeft > 0) {
+        position -= pdf.internal.pageSize.getHeight();
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
+        heightLeft -= pdf.internal.pageSize.getHeight();
     }
+    
+    pdf.save(`${trip.value.title || '여행'}_지출_레포트.pdf`);
+
+  } catch (e) {
+    console.error("PDF 생성에 실패했습니다.", e);
+    alert("PDF 생성 중 오류가 발생했습니다.");
+  } finally {
+    printApp.unmount();
+    document.body.removeChild(printContainer);
   }
-  
-  // 4. 카테고리별 지출 상세
-  if (y > pageHeight - 40) { y = margin; doc.addPage(); }
-  doc.setFontSize(16);
-  doc.text('카테고리별 지출 상세', margin, y);
-  y += 8;
-
-  const categoryBody = categoryStats.value.map(c => [c.name, `${c.total.toLocaleString()}원`, `${c.count}건`]);
-  autoTable(doc, {
-    startY: y,
-    head: [['카테고리', '총액', '건수']],
-    body: categoryBody,
-    theme: 'striped',
-    styles: { font: 'NanumGothic' },
-    headStyles: { fillColor: [63, 162, 225] },
-  });
-  y = doc.lastAutoTable.finalY + 15;
-
-  // 5. 일자별 지출 상세
-  if (dailyExpensesDetailed.value.length > 0) {
-      if (y > pageHeight - 40) { y = margin; doc.addPage(); }
-      doc.setFontSize(16);
-      doc.text('일자별 지출 상세', margin, y);
-      y += 8;
-
-      const dailyBody = [];
-      dailyExpensesDetailed.value.forEach(day => {
-          dailyBody.push([
-              { content: `Day ${day.dayNumber} (${formatDayDate(day.dayNumber)})`, colSpan: 3, styles: { fontStyle: 'bold', fillColor: '#f0f0f0' } }
-          ]);
-          day.itineraryItems.forEach(item => {
-              dailyBody.push(['일정', item.locationName, `${item.expenseAmount.toLocaleString()}원`]);
-          });
-          day.transportations.forEach(item => {
-              dailyBody.push(['교통', `${item.category}: ${item.departureLocation || ''} -> ${item.arrivalLocation || ''}`, `${getFlightAmount(item).toLocaleString()}원`]);
-          });
-      });
-
-      autoTable(doc, {
-          startY: y,
-          head: [['구분', '내용', '금액']],
-          body: dailyBody,
-          theme: 'striped',
-          styles: { font: 'NanumGothic' },
-          headStyles: { fillColor: [63, 162, 225] },
-      });
-      y = doc.lastAutoTable.finalY + 15;
-  }
-  
-  // 6. 여행 전체 비용 상세
-  if (tripWideExpenses.value.items.length > 0) {
-      if (y > pageHeight - 40) { y = margin; doc.addPage(); }
-      doc.setFontSize(16);
-      doc.text('여행 전체 지출 상세 (일자 무관)', margin, y);
-      y += 8;
-
-      const tripWideBody = tripWideExpenses.value.items.map(item => [item.category, `${item.count}건`, `${item.amount.toLocaleString()}원`]);
-      autoTable(doc, {
-          startY: y,
-          head: [['구분', '건수', '금액']],
-          body: tripWideBody,
-          theme: 'striped',
-          styles: { font: 'NanumGothic' },
-          headStyles: { fillColor: [63, 162, 225] },
-      });
-  }
-
-  doc.save(`${trip.value.title || '여행'}_가계부_상세.pdf`);
 }
-
 
 onMounted(() => {
   loadTrip();
