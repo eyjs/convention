@@ -186,7 +186,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { conventionAPI } from '@/services/api'
@@ -204,11 +204,15 @@ import FormBuilderManagement from '@/components/admin/FormBuilderManagement.vue'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const conventionId = ref(parseInt(route.params.id))
+const conventionId = computed(() => {
+  const id = parseInt(route.params.id)
+  return isNaN(id) ? null : id
+})
 const convention = ref(null)
 const activeTab = ref('dashboard')
 const showMenu = ref(false)
 const showUserMenu = ref(false)
+const loading = ref(true)
 
 const showGuestFromDashboard = (guestId) => {
   activeTab.value = 'guests'
@@ -235,6 +239,13 @@ const tabs = [
 ]
 
 onMounted(async () => {
+  // conventionId가 유효한지 확인
+  if (!conventionId.value) {
+    alert('행사 ID가 유효하지 않습니다.')
+    router.push('/admin')
+    return
+  }
+
   // 행사 정보 로드
   try {
     const response = await conventionAPI.getConvention(conventionId.value)
@@ -243,6 +254,8 @@ onMounted(async () => {
     console.error('Failed to load convention:', error)
     alert('행사 정보를 불러오는데 실패했습니다.')
     router.push('/admin')
+  } finally {
+    loading.value = false
   }
 })
 </script>

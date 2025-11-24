@@ -77,6 +77,46 @@
           </svg>
           그룹별 일정 배정
         </button>
+        <!-- 그룹 단위 일정 해제 버튼 -->
+        <button
+          @click="openGroupRemoveModal"
+          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+          그룹별 일정 해제
+        </button>
+        <!-- 그룹별 속성 초기화 버튼 -->
+        <button
+          @click="openGroupAttributeResetModal"
+          class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          그룹별 속성 초기화
+        </button>
         <button
           @click="showCreateModal = true"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center justify-center whitespace-nowrap overflow-hidden text-ellipsis"
@@ -935,6 +975,199 @@
         </button>
       </template>
     </BaseModal>
+
+    <!-- 그룹 단위 일정 해제 모달 -->
+    <BaseModal
+      :is-open="showGroupRemoveModal"
+      @close="closeGroupRemoveModal"
+      max-width="2xl"
+    >
+      <template #header>
+        <h2 class="text-xl font-semibold text-red-600">그룹별 일정 해제</h2>
+      </template>
+      <template #body>
+        <div class="space-y-6">
+          <!-- 그룹 선택 -->
+          <div>
+            <label class="block text-sm font-medium mb-2">그룹 선택 *</label>
+            <div v-if="availableGroups.length === 0" class="text-sm text-gray-500 p-3 bg-gray-50 rounded">
+              등록된 그룹이 없습니다.
+            </div>
+            <div v-else class="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+              <label
+                v-for="group in availableGroups"
+                :key="group"
+                class="flex items-center gap-3 p-3 border rounded hover:bg-red-50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :value="group"
+                  v-model="selectedGroupsForRemove"
+                  class="rounded text-red-600"
+                />
+                <div class="flex-1">
+                  <div class="font-medium">{{ group }}</div>
+                  <div class="text-xs text-gray-500">
+                    {{ getGuestCountByGroup(group) }}명
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 선택된 그룹 요약 -->
+          <div v-if="selectedGroupsForRemove.length > 0" class="p-4 bg-red-50 rounded-lg">
+            <p class="text-sm font-medium text-red-900">
+              선택된 그룹: {{ selectedGroupsForRemove.length }}개
+              (총 {{ getTotalGuestCountForSelectedGroupsRemove }}명)
+            </p>
+          </div>
+
+          <!-- 해제할 일정 선택 -->
+          <div>
+            <label class="block text-sm font-medium mb-2">해제할 일정 선택 *</label>
+            <div v-if="availableTemplates.length === 0" class="text-sm text-gray-500 p-3 bg-gray-50 rounded">
+              일정 템플릿이 없습니다.
+            </div>
+            <div v-else class="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
+              <label
+                v-for="template in availableTemplates"
+                :key="template.id"
+                class="flex items-start gap-2 p-3 border rounded hover:bg-red-50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :value="template.id"
+                  v-model="groupRemoveTemplateIds"
+                  class="rounded mt-1 text-red-600"
+                />
+                <div class="flex-1">
+                  <div class="font-medium">{{ template.courseName }}</div>
+                  <div v-if="template.description" class="text-sm text-gray-600">
+                    {{ template.description }}
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p class="text-sm text-yellow-800">
+              ⚠️ 선택한 그룹의 참석자들에게서 선택한 일정이 해제됩니다. 이 작업은 되돌릴 수 없습니다.
+            </p>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <button
+          @click="closeGroupRemoveModal"
+          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+        >
+          취소
+        </button>
+        <button
+          @click="executeGroupRemove"
+          :disabled="selectedGroupsForRemove.length === 0 || groupRemoveTemplateIds.length === 0 || groupRemoving"
+          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          {{ groupRemoving ? '해제 중...' : '일정 해제' }}
+        </button>
+      </template>
+    </BaseModal>
+
+    <!-- 그룹별 속성 초기화 모달 -->
+    <BaseModal
+      :is-open="showGroupAttributeResetModal"
+      @close="closeGroupAttributeResetModal"
+      max-width="2xl"
+    >
+      <template #header>
+        <h2 class="text-xl font-semibold text-gray-700">그룹별 속성 초기화</h2>
+      </template>
+      <template #body>
+        <div class="space-y-6">
+          <!-- 그룹 선택 -->
+          <div>
+            <label class="block text-sm font-medium mb-2">그룹 선택 *</label>
+            <div v-if="availableGroups.length === 0" class="text-sm text-gray-500 p-3 bg-gray-50 rounded">
+              등록된 그룹이 없습니다.
+            </div>
+            <div v-else class="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+              <label
+                v-for="group in availableGroups"
+                :key="group"
+                class="flex items-center gap-3 p-3 border rounded hover:bg-gray-100 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :value="group"
+                  v-model="selectedGroupsForAttributeReset"
+                  class="rounded"
+                />
+                <div class="flex-1">
+                  <div class="font-medium">{{ group }}</div>
+                  <div class="text-xs text-gray-500">
+                    {{ getGuestCountByGroup(group) }}명
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 선택된 그룹 요약 -->
+          <div v-if="selectedGroupsForAttributeReset.length > 0" class="p-4 bg-gray-100 rounded-lg">
+            <p class="text-sm font-medium text-gray-900">
+              선택된 그룹: {{ selectedGroupsForAttributeReset.length }}개
+              (총 {{ getTotalGuestCountForSelectedGroupsAttributeReset }}명)
+            </p>
+          </div>
+
+          <!-- 삭제할 속성 선택 -->
+          <div>
+            <label class="block text-sm font-medium mb-2">삭제할 속성 선택 *</label>
+            <div v-if="availableAttributeKeys.length === 0" class="text-sm text-gray-500 p-3 bg-gray-50 rounded">
+              등록된 속성이 없습니다.
+            </div>
+            <div v-else class="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
+              <label
+                v-for="attrKey in availableAttributeKeys"
+                :key="attrKey"
+                class="flex items-center gap-2 p-3 border rounded hover:bg-gray-100 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :value="attrKey"
+                  v-model="selectedAttributeKeysForReset"
+                  class="rounded"
+                />
+                <span class="font-medium">{{ attrKey }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p class="text-sm text-yellow-800">
+              ⚠️ 선택한 그룹의 참석자들에게서 선택한 속성이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+            </p>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <button
+          @click="closeGroupAttributeResetModal"
+          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+        >
+          취소
+        </button>
+        <button
+          @click="executeGroupAttributeReset"
+          :disabled="selectedGroupsForAttributeReset.length === 0 || selectedAttributeKeysForReset.length === 0 || attributeResetting"
+          class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          {{ attributeResetting ? '삭제 중...' : '속성 삭제' }}
+        </button>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -971,6 +1204,19 @@ const availableGroups = ref([])
 const selectedGroupsForAssign = ref([])
 const groupAssignTemplateIds = ref([])
 const groupAssigning = ref(false)
+
+// 그룹 단위 일정 해제 관련
+const showGroupRemoveModal = ref(false)
+const selectedGroupsForRemove = ref([])
+const groupRemoveTemplateIds = ref([])
+const groupRemoving = ref(false)
+
+// 그룹별 속성 초기화 관련
+const showGroupAttributeResetModal = ref(false)
+const selectedGroupsForAttributeReset = ref([])
+const selectedAttributeKeysForReset = ref([])
+const attributeResetting = ref(false)
+const availableAttributeKeys = ref([])
 
 const guestForm = ref({
   guestName: '',
@@ -1419,6 +1665,167 @@ const executeGroupAssign = async () => {
     alert('그룹 일정 배정 실패: ' + (error.response?.data?.message || error.message))
   } finally {
     groupAssigning.value = false
+  }
+}
+
+// 그룹 단위 일정 해제 관련 함수들
+const getTotalGuestCountForSelectedGroupsRemove = computed(() => {
+  return selectedGroupsForRemove.value.reduce((total, groupName) => {
+    return total + getGuestCountByGroup(groupName)
+  }, 0)
+})
+
+const openGroupRemoveModal = () => {
+  loadGroups()
+  showGroupRemoveModal.value = true
+}
+
+const closeGroupRemoveModal = () => {
+  showGroupRemoveModal.value = false
+  selectedGroupsForRemove.value = []
+  groupRemoveTemplateIds.value = []
+}
+
+const executeGroupRemove = async () => {
+  if (selectedGroupsForRemove.value.length === 0) {
+    alert('그룹을 선택해주세요.')
+    return
+  }
+  if (groupRemoveTemplateIds.value.length === 0) {
+    alert('해제할 일정을 선택해주세요.')
+    return
+  }
+
+  const totalGuests = getTotalGuestCountForSelectedGroupsRemove.value
+  if (!confirm(`선택된 ${selectedGroupsForRemove.value.length}개 그룹 (총 ${totalGuests}명)의 일정을 해제하시겠습니까?`)) {
+    return
+  }
+
+  groupRemoving.value = true
+
+  try {
+    let successCount = 0
+    let failCount = 0
+
+    // 선택된 그룹에 속한 참석자들 찾기
+    const guestsInSelectedGroups = guests.value.filter((g) =>
+      selectedGroupsForRemove.value.includes(g.groupName)
+    )
+
+    // 각 참석자에 대해 일정 해제
+    for (const guest of guestsInSelectedGroups) {
+      try {
+        // 기존 일정에서 해제할 일정 제거
+        const existingIds = guest.scheduleTemplates?.map((st) => st.scheduleTemplateId) || []
+        const remainingIds = existingIds.filter((id) => !groupRemoveTemplateIds.value.includes(id))
+
+        await apiClient.post(`/admin/conventions/${props.conventionId}/guests/${guest.id}/schedules`, {
+          scheduleTemplateIds: remainingIds,
+        })
+        successCount++
+      } catch (error) {
+        console.error(`Failed to remove schedules from guest ${guest.id}:`, error)
+        failCount++
+      }
+    }
+
+    await loadGuests()
+    await loadTemplates()
+    closeGroupRemoveModal()
+
+    alert(`그룹 일정 해제 완료!\n성공: ${successCount}명\n실패: ${failCount}명`)
+  } catch (error) {
+    console.error('Group remove failed:', error)
+    alert('그룹 일정 해제 실패: ' + (error.response?.data?.message || error.message))
+  } finally {
+    groupRemoving.value = false
+  }
+}
+
+// 그룹별 속성 초기화 관련 함수들
+const getTotalGuestCountForSelectedGroupsAttributeReset = computed(() => {
+  return selectedGroupsForAttributeReset.value.reduce((total, groupName) => {
+    return total + getGuestCountByGroup(groupName)
+  }, 0)
+})
+
+const loadAttributeKeys = () => {
+  // guests 데이터에서 사용 중인 속성 키 추출
+  const keys = new Set()
+  guests.value.forEach((guest) => {
+    if (guest.attributes && Array.isArray(guest.attributes)) {
+      guest.attributes.forEach((attr) => {
+        if (attr.attributeKey) {
+          keys.add(attr.attributeKey)
+        }
+      })
+    }
+  })
+  availableAttributeKeys.value = [...keys].sort()
+  console.log('✅ Attribute keys extracted:', availableAttributeKeys.value)
+}
+
+const openGroupAttributeResetModal = () => {
+  loadGroups()
+  loadAttributeKeys()
+  showGroupAttributeResetModal.value = true
+}
+
+const closeGroupAttributeResetModal = () => {
+  showGroupAttributeResetModal.value = false
+  selectedGroupsForAttributeReset.value = []
+  selectedAttributeKeysForReset.value = []
+}
+
+const executeGroupAttributeReset = async () => {
+  if (selectedGroupsForAttributeReset.value.length === 0) {
+    alert('그룹을 선택해주세요.')
+    return
+  }
+  if (selectedAttributeKeysForReset.value.length === 0) {
+    alert('삭제할 속성을 선택해주세요.')
+    return
+  }
+
+  const totalGuests = getTotalGuestCountForSelectedGroupsAttributeReset.value
+  if (!confirm(`선택된 ${selectedGroupsForAttributeReset.value.length}개 그룹 (총 ${totalGuests}명)의 속성을 삭제하시겠습니까?\n\n삭제할 속성: ${selectedAttributeKeysForReset.value.join(', ')}`)) {
+    return
+  }
+
+  attributeResetting.value = true
+
+  try {
+    let successCount = 0
+    let failCount = 0
+
+    // 선택된 그룹에 속한 참석자들 찾기
+    const guestsInSelectedGroups = guests.value.filter((g) =>
+      selectedGroupsForAttributeReset.value.includes(g.groupName)
+    )
+
+    // 각 참석자에 대해 속성 삭제
+    for (const guest of guestsInSelectedGroups) {
+      try {
+        // 선택된 속성 키들 삭제
+        for (const attrKey of selectedAttributeKeysForReset.value) {
+          await apiClient.delete(`/admin/guests/${guest.id}/attributes/${encodeURIComponent(attrKey)}`)
+        }
+        successCount++
+      } catch (error) {
+        console.error(`Failed to reset attributes for guest ${guest.id}:`, error)
+        failCount++
+      }
+    }
+
+    await loadGuests()
+    closeGroupAttributeResetModal()
+
+    alert(`그룹 속성 삭제 완료!\n성공: ${successCount}명\n실패: ${failCount}명`)
+  } catch (error) {
+    console.error('Group attribute reset failed:', error)
+    alert('그룹 속성 삭제 실패: ' + (error.response?.data?.message || error.message))
+  } finally {
+    attributeResetting.value = false
   }
 }
 

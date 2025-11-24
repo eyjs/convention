@@ -411,9 +411,11 @@ function navigateTo(route) {
   router.push(route)
 }
 
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/login')
+const handleLogout = async () => {
+  if (confirm('로그아웃하시겠습니까?')) {
+    await authStore.logout()
+    router.push('/login')
+  }
 }
 
 function openNotice(notice) {

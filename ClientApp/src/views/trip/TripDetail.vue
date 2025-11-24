@@ -1097,6 +1097,10 @@ function deleteAccommodationFromList(id) {
 // --- Transportation ---
 function openFlightManagementModal() {
   // 교통편 페이지로 리다이렉트
+  if (!tripId.value) {
+    alert('여행을 먼저 저장해주세요.')
+    return
+  }
   router.push(`/trips/${tripId.value}/transportation`);
 }
 function closeTransportationModal() {
@@ -1740,24 +1744,30 @@ function handleKakaoPlaceSelection(place) {
 function handleGoToItinerary() {
   if (shareToken.value) {
     router.push(`/trips/share/${shareToken.value}/itinerary`)
-  } else {
+  } else if (tripId.value) {
     router.push(`/trips/${tripId.value}/itinerary`)
+  } else {
+    alert('여행을 먼저 저장해주세요.')
   }
 }
 
 function handleGoToExpenses() {
   if (shareToken.value) {
     router.push(`/trips/share/${shareToken.value}/expenses`)
-  } else {
+  } else if (tripId.value) {
     router.push(`/trips/${tripId.value}/expenses`)
+  } else {
+    alert('여행을 먼저 저장해주세요.')
   }
 }
 
 function handleGoToNotes() {
   if (shareToken.value) {
     router.push(`/trips/share/${shareToken.value}/notes`)
-  } else {
+  } else if (tripId.value) {
     router.push(`/trips/${tripId.value}/notes`)
+  } else {
+    alert('여행을 먼저 저장해주세요.')
   }
 }
 </script>

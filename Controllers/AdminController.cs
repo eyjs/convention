@@ -650,6 +650,26 @@ public class AdminController : ControllerBase
         return Ok();
     }
 
+    /// <summary>
+    /// 참석자의 특정 속성 삭제
+    /// </summary>
+    [HttpDelete("guests/{guestId}/attributes/{attributeKey}")]
+    public async Task<IActionResult> DeleteGuestAttribute(int guestId, string attributeKey)
+    {
+        var decodedKey = Uri.UnescapeDataString(attributeKey);
+
+        var attribute = await _context.GuestAttributes
+            .FirstOrDefaultAsync(ga => ga.UserId == guestId && ga.AttributeKey == decodedKey);
+
+        if (attribute == null)
+            return NotFound(new { message = $"속성 '{decodedKey}'을 찾을 수 없습니다." });
+
+        _context.GuestAttributes.Remove(attribute);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = $"속성 '{decodedKey}'이 삭제되었습니다." });
+    }
+
     [HttpGet("conventions/{conventionId}/schedules")]
     public async Task<IActionResult> GetAllSchedules(int conventionId)
     {
