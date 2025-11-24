@@ -193,6 +193,10 @@
               <label class="label">예약번호</label>
               <input v-model="flightData.bookingReference" type="text" class="input" placeholder="예약번호 (선택)" />
             </div>
+            <div>
+              <label class="label">금액 (원)</label>
+              <input v-model.number="flightData.amount" type="number" class="input" placeholder="예: 150000" min="0" step="100" />
+            </div>
           </template>
 
           <!-- 기차 전용 필드 (간소화) -->
@@ -211,6 +215,10 @@
               <label class="label">출발 일시</label>
               <input v-model="flightData.departureTime" type="datetime-local" class="input" />
             </div>
+            <div>
+              <label class="label">금액 (원)</label>
+              <input v-model.number="flightData.amount" type="number" class="input" placeholder="예: 50000" min="0" step="100" />
+            </div>
           </template>
 
           <!-- 버스 전용 필드 (간소화) -->
@@ -228,6 +236,10 @@
             <div>
               <label class="label">출발 날짜</label>
               <input v-model="flightData.departureDate" type="date" class="input" />
+            </div>
+            <div>
+              <label class="label">금액 (원)</label>
+              <input v-model.number="flightData.amount" type="number" class="input" placeholder="예: 30000" min="0" step="100" />
             </div>
           </template>
 
@@ -252,6 +264,10 @@
                 <input v-model="flightData.arrivalLocation" type="text" class="input" placeholder="도착지" />
               </div>
             </div>
+            <div>
+              <label class="label">금액 (원)</label>
+              <input v-model.number="flightData.amount" type="number" class="input" placeholder="예: 15000" min="0" step="100" />
+            </div>
           </template>
 
           <!-- 렌트카 전용 필드 -->
@@ -269,6 +285,44 @@
                 <label class="label">반납 일시</label>
                 <input v-model="flightData.arrivalTime" type="datetime-local" class="input" />
               </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="label">렌트비 (원)</label>
+                <input v-model.number="flightData.rentalCost" type="number" class="input" placeholder="예: 100000" min="0" step="100" />
+              </div>
+              <div>
+                <label class="label">유류비 (원)</label>
+                <input v-model.number="flightData.fuelCost" type="number" class="input" placeholder="예: 50000" min="0" step="100" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="label">톨비 (원)</label>
+                <input v-model.number="flightData.tollFee" type="number" class="input" placeholder="예: 20000" min="0" step="100" />
+              </div>
+              <div>
+                <label class="label">주차비 (원)</label>
+                <input v-model.number="flightData.parkingFee" type="number" class="input" placeholder="예: 15000" min="0" step="100" />
+              </div>
+            </div>
+          </template>
+
+          <!-- 자가용 전용 필드 -->
+          <template v-else-if="flightData.category === '자가용'">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="label">유류비 (원)</label>
+                <input v-model.number="flightData.fuelCost" type="number" class="input" placeholder="예: 50000" min="0" step="100" />
+              </div>
+              <div>
+                <label class="label">톨비 (원)</label>
+                <input v-model.number="flightData.tollFee" type="number" class="input" placeholder="예: 20000" min="0" step="100" />
+              </div>
+            </div>
+            <div>
+              <label class="label">주차비 (원)</label>
+              <input v-model.number="flightData.parkingFee" type="number" class="input" placeholder="예: 15000" min="0" step="100" />
             </div>
           </template>
 
@@ -503,8 +557,25 @@ async function saveTransportation() {
       flightData.value.departureTime = flightData.value.departureDate + 'T00:00';
     }
 
-    const payload = { ...flightData.value, personalTripId: tripId.value };
-    delete payload.departureDate; // API에는 보내지 않음
+    // 페이로드 생성 및 데이터 정리
+    const payload = {
+      category: flightData.value.category,
+      itineraryItemId: flightData.value.itineraryItemId || null,
+      amount: flightData.value.amount || null,
+      tollFee: flightData.value.tollFee || null,
+      fuelCost: flightData.value.fuelCost || null,
+      parkingFee: flightData.value.parkingFee || null,
+      rentalCost: flightData.value.rentalCost || null,
+      airline: flightData.value.airline || null,
+      flightNumber: flightData.value.flightNumber || null,
+      departureLocation: flightData.value.departureLocation || null,
+      arrivalLocation: flightData.value.arrivalLocation || null,
+      departureTime: flightData.value.departureTime || null,
+      arrivalTime: flightData.value.arrivalTime || null,
+      bookingReference: flightData.value.bookingReference || null,
+      seatNumber: flightData.value.seatNumber || null,
+      notes: flightData.value.notes || null,
+    };
 
     if (editingFlight.value?.id) {
       await apiClient.put(`/personal-trips/flights/${editingFlight.value.id}`, payload);

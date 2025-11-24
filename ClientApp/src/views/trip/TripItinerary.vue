@@ -732,9 +732,28 @@ async function saveItineraryItem() {
     const isNewItem = !editingItineraryItem.value?.id;
     let targetItemId = isNewItem ? null : editingItineraryItem.value.id;
 
+    // 금액이 빈값이면 0으로 설정
+    if (itineraryItemData.value.expenseAmount === null || itineraryItemData.value.expenseAmount === '' || itineraryItemData.value.expenseAmount === undefined) {
+      itineraryItemData.value.expenseAmount = 0;
+    }
+
+    // 페이로드 생성 및 빈 문자열을 null로 변환
     const payload = {
-      ...itineraryItemData.value,
       personalTripId: tripId.value,
+      dayNumber: itineraryItemData.value.dayNumber,
+      locationName: itineraryItemData.value.locationName || null,
+      address: itineraryItemData.value.address || null,
+      latitude: itineraryItemData.value.latitude || null,
+      longitude: itineraryItemData.value.longitude || null,
+      googlePlaceId: itineraryItemData.value.googlePlaceId || null,
+      kakaoPlaceId: itineraryItemData.value.kakaoPlaceId || null,
+      phoneNumber: itineraryItemData.value.phoneNumber || null,
+      category: itineraryItemData.value.category || null,
+      kakaoPlaceUrl: itineraryItemData.value.kakaoPlaceUrl || null,
+      expenseAmount: itineraryItemData.value.expenseAmount,
+      startTime: itineraryItemData.value.startTime || null,
+      endTime: itineraryItemData.value.endTime || null,
+      notes: itineraryItemData.value.notes || null,
     };
 
     if (isNewItem) {
