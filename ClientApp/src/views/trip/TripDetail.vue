@@ -1096,7 +1096,8 @@ function deleteAccommodationFromList(id) {
 
 // --- Transportation ---
 function openFlightManagementModal() {
-  isTransportationModalOpen.value = true;
+  // 교통편 페이지로 리다이렉트
+  router.push(`/trips/${tripId.value}/transportation`);
 }
 function closeTransportationModal() {
   isTransportationModalOpen.value = false;

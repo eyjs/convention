@@ -148,22 +148,37 @@
       </div>
     </div>
 
-    <BottomNavigationBar v-if="tripId" :trip-id="tripId" :show="!uiStore.isModalOpen" />
+    <BottomNavigationBar v-if="tripId || trip.id" :trip-id="tripId || trip.id" :share-token="shareToken" :show="!uiStore.isModalOpen" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import MainHeader from '@/components/common/MainHeader.vue';
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue';
 import { useUIStore } from '@/stores/ui';
 import apiClient from '@/services/api';
 import dayjs from 'dayjs';
 
+// Props for readonly mode and shared access
+const props = defineProps({
+  shareToken: String,       // 공유 접근용 토큰
+  readonly: {               // Readonly 모드 플래그
+    type: Boolean,
+    default: false
+  }
+})
+
 const uiStore = useUIStore();
 const route = useRoute();
+const router = useRouter();
+
+// Determine tripId and readonly mode
 const tripId = computed(() => route.params.id);
+const shareToken = computed(() => props.shareToken || route.params.shareToken);
+const isSharedView = computed(() => !!shareToken.value);
+const effectiveReadonly = computed(() => props.readonly || isSharedView.value);
 
 const loading = ref(true);
 const trip = ref({});
@@ -180,11 +195,24 @@ const showExportMenu = ref(false);
 async function loadTrip() {
   try {
     loading.value = true;
-    const response = await apiClient.get(`/personal-trips/${tripId.value}`);
-    trip.value = response.data;
+    // 공유 링크로 접근하는 경우
+    if (shareToken.value) {
+      const response = await apiClient.get(`/personal-trips/public/${shareToken.value}`);
+      trip.value = response.data;
+    }
+    // 일반 접근 (인증 필요)
+    else {
+      const response = await apiClient.get(`/personal-trips/${tripId.value}`);
+      trip.value = response.data;
+    }
   } catch (error) {
     console.error('Failed to load trip:', error);
     alert('여행 정보를 불러오는데 실패했습니다.');
+    if (isSharedView.value) {
+      router.push('/home');
+    } else {
+      router.push('/trips');
+    }
   } finally {
     loading.value = false;
   }

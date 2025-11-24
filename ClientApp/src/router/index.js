@@ -139,6 +139,16 @@ const routes = [
         meta: { requiresAuth: false, title: '공유된 여행 노트' }
       },
       {
+        path: '/trips/share/:shareToken/transportation',
+        name: 'SharedTripTransportation',
+        component: () => import('@/views/trip/TripTransportation.vue'),
+        props: route => ({
+          shareToken: route.params.shareToken,
+          readonly: true
+        }),
+        meta: { requiresAuth: false, title: '공유된 여행 교통편' }
+      },
+      {
         path: '/trips/:id',
         name: 'TripDetail',
         component: () => import('@/views/trip/TripDetail.vue'),
@@ -162,6 +172,12 @@ const routes = [
         name: 'TripNotes',
         component: () => import('@/views/trip/TripNotes.vue'),
         meta: { requiresAuth: true, title: '여행 노트' }
+      },
+      {
+        path: '/trips/:id/transportation',
+        name: 'TripTransportation',
+        component: () => import('@/views/trip/TripTransportation.vue'),
+        meta: { requiresAuth: true, title: '여행 교통편' }
       },
       // ----------------------------------------------------------------
       // 동적 라우팅

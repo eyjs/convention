@@ -22,6 +22,11 @@
           <NotebookText class="w-6 h-6" />
           <span class="text-xs mt-1">노트</span>
         </router-link>
+        <router-link :to="transportationUrl" class="flex flex-col items-center justify-center p-2 text-gray-500 hover:text-primary-600 transition-colors"
+                     :class="{ 'text-primary-600 font-semibold': isTransportationActive }">
+          <Car class="w-6 h-6" />
+          <span class="text-xs mt-1">교통편</span>
+        </router-link>
       </div>
     </nav>
   </Transition>
@@ -30,7 +35,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { Home, CalendarDays, Receipt, NotebookText } from 'lucide-vue-next';
+import { Home, CalendarDays, Receipt, NotebookText, Car } from 'lucide-vue-next';
 
 const props = defineProps({
   tripId: {
@@ -66,6 +71,10 @@ const notesUrl = computed(() => {
   return props.shareToken ? `/trips/share/${props.shareToken}/notes` : `/trips/${props.tripId}/notes`;
 });
 
+const transportationUrl = computed(() => {
+  return props.shareToken ? `/trips/share/${props.shareToken}/transportation` : `/trips/${props.tripId}/transportation`;
+});
+
 // Active states
 const isHomeActive = computed(() => {
   if (props.shareToken) {
@@ -94,6 +103,14 @@ const isNotesActive = computed(() => {
   }
   return route.path === `/trips/${props.tripId}/notes`;
 });
+
+const isTransportationActive = computed(() => {
+  if (props.shareToken) {
+    return route.path === `/trips/share/${props.shareToken}/transportation`;
+  }
+  return route.path === `/trips/${props.tripId}/transportation`;
+});
+
 </script>
 
 <style scoped>

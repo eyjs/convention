@@ -27,7 +27,7 @@
       <div v-if="activeTab === 'checklist'">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-bold text-gray-800">체크리스트</h2>
-          <button @click="isEditMode = !isEditMode" class="text-sm font-medium text-primary-600 hover:text-primary-500 transition-colors">
+          <button v-if="!effectiveReadonly" @click="isEditMode = !isEditMode" class="text-sm font-medium text-primary-600 hover:text-primary-500 transition-colors">
             {{ isEditMode ? '완료' : '편집' }}
           </button>
         </div>
@@ -69,14 +69,14 @@
                   </button>
                 </div>
                 
-                <div class="flex items-center gap-3 cursor-pointer" @click.stop="promptNewItem(category.id)">
+                <div v-if="!effectiveReadonly" class="flex items-center gap-3 cursor-pointer" @click.stop="promptNewItem(category.id)">
                    <div class="flex-shrink-0 w-5 h-5 rounded-full border-2 border-dashed border-primary-500 group-hover:border-primary-400"></div>
                    <p class="text-primary-500 font-medium">아이템 추가</p>
                 </div>
               </div>
             </div>
           </div>
-          <div class="flex justify-center mt-6">
+          <div v-if="!effectiveReadonly" class="flex justify-center mt-6">
             <button @click="promptNewCategory" class="w-1/2 py-3 bg-[#17B185] text-white rounded-xl font-semibold shadow-lg hover:bg-green-600 transition-all">
               카테고리 추가
             </button>
@@ -85,7 +85,7 @@
       </div>
     </div>
 
-    <BottomNavigationBar v-if="tripId" :trip-id="tripId" :show="!uiStore.isModalOpen" />
+    <BottomNavigationBar v-if="tripId || trip.id" :trip-id="tripId || trip.id" :share-token="shareToken" :show="!uiStore.isModalOpen" />
 
     <!-- Generic Input Modal -->
     <SlideUpModal :is-open="isInputModalOpen" @close="closeInputModal">
@@ -131,7 +131,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import MainHeader from '@/components/common/MainHeader.vue';
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue';
 import SlideUpModal from '@/components/common/SlideUpModal.vue';
@@ -139,9 +139,24 @@ import { useUIStore } from '@/stores/ui';
 import apiClient from '@/services/api';
 import { Check } from 'lucide-vue-next';
 
+// Props for readonly mode and shared access
+const props = defineProps({
+  shareToken: String,       // 공유 접근용 토큰
+  readonly: {               // Readonly 모드 플래그
+    type: Boolean,
+    default: false
+  }
+})
+
 const uiStore = useUIStore();
 const route = useRoute();
+const router = useRouter();
+
+// Determine tripId and readonly mode
 const tripId = computed(() => route.params.id);
+const shareToken = computed(() => props.shareToken || route.params.shareToken);
+const isSharedView = computed(() => !!shareToken.value);
+const effectiveReadonly = computed(() => props.readonly || isSharedView.value);
 const activeTab = ref('checklist');
 
 const loading = ref(true);
@@ -177,12 +192,26 @@ onMounted(async () => {
 async function fetchTripData() {
   loading.value = true;
   try {
-    const response = await apiClient.get(`/personal-trips/${tripId.value}`);
-    trip.value = response.data;
-    checklist.value = response.data.checklistCategories;
+    // 공유 링크로 접근하는 경우
+    if (shareToken.value) {
+      const response = await apiClient.get(`/personal-trips/public/${shareToken.value}`);
+      trip.value = response.data;
+      checklist.value = response.data.checklistCategories || [];
+    }
+    // 일반 접근 (인증 필요)
+    else {
+      const response = await apiClient.get(`/personal-trips/${tripId.value}`);
+      trip.value = response.data;
+      checklist.value = response.data.checklistCategories || [];
+    }
   } catch (error) {
     console.error("Failed to fetch trip data:", error);
     alert('데이터를 불러오는데 실패했습니다.');
+    if (isSharedView.value) {
+      router.push('/home');
+    } else {
+      router.push('/trips');
+    }
   } finally {
     loading.value = false;
   }

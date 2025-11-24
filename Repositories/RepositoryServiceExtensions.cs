@@ -1,4 +1,5 @@
 using LocalRAG.Data;
+using LocalRAG.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Repositories;
@@ -43,6 +44,7 @@ public static class RepositoryServiceExtensions
         services.AddScoped<ISectionRepository, SectionRepository>();
         services.AddScoped<IOwnerRepository, OwnerRepository>();
         services.AddScoped<IVectorStoreRepository, VectorStoreRepository>();
+        // services.AddScoped<ITransportationRepository, TransportationRepository>();
 
         return services;
     }

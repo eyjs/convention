@@ -669,6 +669,8 @@ namespace LocalRAG.Services.PersonalTrip
                 .Include(t => t.Flights)
                 .Include(t => t.Accommodations)
                 .Include(t => t.ItineraryItems)
+                .Include(t => t.ChecklistCategories)
+                    .ThenInclude(c => c.Items)
                 .FirstOrDefaultAsync();
 
             return trip == null ? null : MapToPersonalTripDto(trip);
