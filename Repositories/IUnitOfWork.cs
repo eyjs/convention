@@ -1,28 +1,19 @@
 using LocalRAG.Entities;
-using LocalRAG.Repositories;
+using LocalRAG.DTOs.ScheduleModels;
 
 namespace LocalRAG.Repositories;
 
 /// <summary>
 /// Unit of Work 인터페이스
-/// 
-/// Unit of Work 패턴이란?
-/// - 여러 Repository의 작업을 하나의 트랜잭션으로 묶어서 관리하는 패턴
-/// - 비즈니스 로직 단위로 트랜잭션을 관리할 수 있어 데이터 일관성 보장
-/// 
-/// 사용 예시:
-/// await _unitOfWork.Conventions.AddAsync(convention);
-/// await _unitOfWork.Users.AddAsync(user);
-/// await _unitOfWork.SaveChangesAsync(); // 한 번의 호출로 모든 변경사항을 커밋
 /// </summary>
 public interface IUnitOfWork : IDisposable
 {
     // --- Repository Properties ---
-    // 각 엔티티별 Repository에 접근할 수 있는 속성
     IConventionRepository Conventions { get; }
     IUserRepository Users { get; }
     IUserConventionRepository UserConventions { get; }
-    IScheduleRepository Schedules { get; }
+    ICommentRepository Comments { get; }
+    ISurveyRepository Surveys { get; }
     IGuestAttributeRepository GuestAttributes { get; }
     IFeatureRepository Features { get; }
     IMenuRepository Menus { get; }
@@ -31,34 +22,12 @@ public interface IUnitOfWork : IDisposable
     IVectorStoreRepository VectorStores { get; }
     IRepository<Entities.Action.ConventionAction> ConventionActions { get; }
     IRepository<UserActionStatus> UserActionStatuses { get; }
-
+    IRepository<ScheduleTemplate> ScheduleTemplates { get; }
 
     // --- Transaction Methods ---
-
-    /// <summary>
-    /// 모든 변경사항을 데이터베이스에 저장합니다.
-    /// 
-    /// 작동 원리:
-    /// 1. Change Tracker에 등록된 모든 변경사항 확인
-    /// 2. 하나의 트랜잭션으로 모든 변경사항 커밋
-    /// 3. 성공 시 변경된 행의 수 반환, 실패 시 롤백
-    /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 트랜잭션을 시작합니다.
-    /// 복잡한 비즈니스 로직에서 명시적인 트랜잭션 제어가 필요할 때 사용
-    /// </summary>
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 트랜잭션을 커밋합니다.
-    /// </summary>
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 트랜잭션을 롤백합니다.
-    /// </summary>
     Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
 }
 
@@ -66,83 +35,17 @@ public interface IUnitOfWork : IDisposable
 // 각 엔티티별 Repository 인터페이스
 // ============================================================
 
-
-/// <summary>
-/// Schedule Repository 인터페이스
-/// </summary>
-public interface IScheduleRepository : IRepository<Schedule>
-{
-    /// <summary>
-    /// 특정 행사의 모든 일정을 순서대로 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Schedule>> GetSchedulesByConventionIdAsync(
-        int conventionId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 특정 날짜의 일정을 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Schedule>> GetSchedulesByDateAsync(
-        DateTime date,
-        int? conventionId = null,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 일정 그룹별로 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Schedule>> GetSchedulesByGroupAsync(
-        string group,
-        int conventionId,
-        CancellationToken cancellationToken = default);
-}
-
 /// <summary>
 /// UserConvention Repository 인터페이스
 /// </summary>
 public interface IUserConventionRepository : IRepository<UserConvention>
 {
-    /// <summary>
-    /// 특정 행사의 모든 참석자를 조회합니다.
-    /// </summary>
-    Task<IEnumerable<UserConvention>> GetByConventionIdAsync(
-        int conventionId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 특정 사용자의 모든 행사 참여 정보를 조회합니다.
-    /// </summary>
-    Task<IEnumerable<UserConvention>> GetByUserIdAsync(
-        int userId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 특정 사용자의 특정 행사 참여 정보를 조회합니다.
-    /// </summary>
-    Task<UserConvention?> GetByUserAndConventionAsync(
-        int userId,
-        int conventionId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// AccessToken으로 참여 정보를 조회합니다.
-    /// </summary>
-    Task<UserConvention?> GetByAccessTokenAsync(
-        string accessToken,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 특정 그룹의 참석자들을 조회합니다.
-    /// </summary>
-    Task<IEnumerable<UserConvention>> GetByGroupNameAsync(
-        int conventionId,
-        string groupName,
-        CancellationToken cancellationToken = default);
-
-    Task<UserConvention?> GetUserConventionWithUserAsync(
-        int conventionId,
-        string userName,
-        string userPhone,
-        CancellationToken cancellationToken = default);
+    Task<IEnumerable<UserConvention>> GetByConventionIdAsync(int conventionId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<UserConvention>> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default);
+    Task<UserConvention?> GetByUserAndConventionAsync(int userId, int conventionId, CancellationToken cancellationToken = default);
+    Task<UserConvention?> GetByAccessTokenAsync(string accessToken, CancellationToken cancellationToken = default);
+    Task<IEnumerable<UserConvention>> GetByGroupNameAsync(int conventionId, string groupName, CancellationToken cancellationToken = default);
+    Task<UserConvention?> GetUserConventionWithUserAsync(int conventionId, string userName, string userPhone, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -150,29 +53,9 @@ public interface IUserConventionRepository : IRepository<UserConvention>
 /// </summary>
 public interface IGuestAttributeRepository : IRepository<GuestAttribute>
 {
-    /// <summary>
-    /// 특정 사용자의 모든 속성을 조회합니다.
-    /// </summary>
-    Task<IEnumerable<GuestAttribute>> GetAttributesByUserIdAsync(
-        int userId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 특정 키의 속성 값을 조회합니다.
-    /// </summary>
-    Task<GuestAttribute?> GetAttributeByKeyAsync(
-        int userId,
-        string attributeKey,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 사용자의 속성을 Upsert(있으면 수정, 없으면 추가)합니다.
-    /// </summary>
-    Task UpsertAttributeAsync(
-        int userId,
-        string attributeKey,
-        string attributeValue,
-        CancellationToken cancellationToken = default);
+    Task<IEnumerable<GuestAttribute>> GetAttributesByUserIdAsync(int userId, CancellationToken cancellationToken = default);
+    Task<GuestAttribute?> GetAttributeByKeyAsync(int userId, string attributeKey, CancellationToken cancellationToken = default);
+    Task UpsertAttributeAsync(int userId, string attributeKey, string attributeValue, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -180,27 +63,9 @@ public interface IGuestAttributeRepository : IRepository<GuestAttribute>
 /// </summary>
 public interface IFeatureRepository : IRepository<Feature>
 {
-    /// <summary>
-    /// 특정 행사의 모든 기능을 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Feature>> GetFeaturesByConventionIdAsync(
-        int conventionId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 활성화된 기능만 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Feature>> GetEnabledFeaturesAsync(
-        int conventionId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 특정 기능이 활성화되어 있는지 확인합니다.
-    /// </summary>
-    Task<bool> IsFeatureEnabledAsync(
-        int conventionId,
-        string featureName,
-        CancellationToken cancellationToken = default);
+    Task<IEnumerable<Feature>> GetFeaturesByConventionIdAsync(int conventionId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Feature>> GetEnabledFeaturesAsync(int conventionId, CancellationToken cancellationToken = default);
+    Task<bool> IsFeatureEnabledAsync(int conventionId, string featureName, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -208,19 +73,8 @@ public interface IFeatureRepository : IRepository<Feature>
 /// </summary>
 public interface IMenuRepository : IRepository<Menu>
 {
-    /// <summary>
-    /// 특정 행사의 모든 메뉴를 순서대로 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Menu>> GetMenusByConventionIdAsync(
-        int conventionId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 메뉴와 섹션을 함께 조회합니다.
-    /// </summary>
-    Task<Menu?> GetMenuWithSectionsAsync(
-        int menuId,
-        CancellationToken cancellationToken = default);
+    Task<IEnumerable<Menu>> GetMenusByConventionIdAsync(int conventionId, CancellationToken cancellationToken = default);
+    Task<Menu?> GetMenuWithSectionsAsync(int menuId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -228,12 +82,7 @@ public interface IMenuRepository : IRepository<Menu>
 /// </summary>
 public interface ISectionRepository : IRepository<Section>
 {
-    /// <summary>
-    /// 특정 메뉴의 모든 섹션을 순서대로 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Section>> GetSectionsByMenuIdAsync(
-        int menuId,
-        CancellationToken cancellationToken = default);
+    Task<IEnumerable<Section>> GetSectionsByMenuIdAsync(int menuId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -241,12 +90,7 @@ public interface ISectionRepository : IRepository<Section>
 /// </summary>
 public interface IOwnerRepository : IRepository<Owner>
 {
-    /// <summary>
-    /// 특정 행사의 모든 담당자를 조회합니다.
-    /// </summary>
-    Task<IEnumerable<Owner>> GetOwnersByConventionIdAsync(
-        int conventionId,
-        CancellationToken cancellationToken = default);
+    Task<IEnumerable<Owner>> GetOwnersByConventionIdAsync(int conventionId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -254,18 +98,23 @@ public interface IOwnerRepository : IRepository<Owner>
 /// </summary>
 public interface IVectorStoreRepository : IRepository<VectorStore>
 {
-    /// <summary>
-    /// 특정 행사의 모든 벡터 데이터를 조회합니다.
-    /// </summary>
-    Task<IEnumerable<VectorStore>> GetVectorsByConventionIdAsync(
-        int conventionId,
-        CancellationToken cancellationToken = default);
+    Task<IEnumerable<VectorStore>> GetVectorsByConventionIdAsync(int conventionId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<VectorStore>> GetVectorsBySourceAsync(string sourceTable, string sourceId, CancellationToken cancellationToken = default);
+}
 
-    /// <summary>
-    /// 특정 소스 테이블의 벡터 데이터를 조회합니다.
-    /// </summary>
-    Task<IEnumerable<VectorStore>> GetVectorsBySourceAsync(
-        string sourceTable,
-        string sourceId,
-        CancellationToken cancellationToken = default);
+/// <summary>
+/// Comment Repository 인터페이스
+/// </summary>
+public interface ICommentRepository : IRepository<Comment>
+{
+    Task<IEnumerable<Comment>> GetCommentsByNoticeIdAsync(int noticeId, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Survey Repository 인터페이스
+/// </summary>
+public interface ISurveyRepository : IRepository<Survey>
+{
+    Task<Survey?> GetSurveyWithQuestionsAndOptionsAsync(int surveyId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Survey>> GetSurveysByConventionIdAsync(int conventionId, CancellationToken cancellationToken = default);
 }

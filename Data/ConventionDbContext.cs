@@ -17,7 +17,6 @@ public class ConventionDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Convention> Conventions { get; set; }
     public DbSet<UserConvention> UserConventions { get; set; }
-    public DbSet<Schedule> Schedules { get; set; }
     public DbSet<GuestAttribute> GuestAttributes { get; set; }
     public DbSet<AttributeDefinition> AttributeDefinitions { get; set; }
     public DbSet<Feature> Features { get; set; }
@@ -151,14 +150,6 @@ public class ConventionDbContext : DbContext
                   .WithMany(c => c.UserConventions)
                   .HasForeignKey(uc => uc.ConventionId)
                   .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<Schedule>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.OrderNum).HasDefaultValue(0);
-            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_Schedule_ConventionId");
         });
 
         modelBuilder.Entity<GuestAttribute>(entity =>

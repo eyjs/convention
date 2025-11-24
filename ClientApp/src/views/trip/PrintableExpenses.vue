@@ -184,7 +184,7 @@ const dailyExpenses = computed(() => {
 });
 
 const tripWideExpenses = computed(() => {
-  const items = [];
+  let items = [];
   const categories = ['항공편', '기차', '버스', '렌트카', '자가용'];
   categories.forEach(category => {
     const categoryFlights = props.trip.flights?.filter(f => f.category === category && !f.itineraryItemId) || [];
@@ -196,6 +196,9 @@ const tripWideExpenses = computed(() => {
   if (accommodationTotal > 0) {
     items.push({ category: '숙소', amount: accommodationTotal });
   }
+  
+  items = items.filter(item => item && item.category && item.amount > 0);
+
   return { items, total: items.reduce((sum, item) => sum + item.amount, 0) };
 });
 

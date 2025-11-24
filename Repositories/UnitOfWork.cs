@@ -1,5 +1,6 @@
 using LocalRAG.Data;
 using LocalRAG.Entities;
+using LocalRAG.DTOs.ScheduleModels; // Added
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace LocalRAG.Repositories;
@@ -29,7 +30,8 @@ public class UnitOfWork : IUnitOfWork
     private IConventionRepository? _conventions;
     private IUserRepository? _users;
     private IUserConventionRepository? _userConventions;
-    private IScheduleRepository? _schedules;
+    private ICommentRepository? _comments;
+    private ISurveyRepository? _surveys;
     private IGuestAttributeRepository? _guestAttributes;
     private IFeatureRepository? _features;
     private IMenuRepository? _menus;
@@ -38,6 +40,7 @@ public class UnitOfWork : IUnitOfWork
     private IVectorStoreRepository? _vectorStores;
     private IRepository<Entities.Action.ConventionAction>? _conventionActions;
     private IRepository<UserActionStatus>? _userActionStatuses;
+    private IRepository<ScheduleTemplate>? _scheduleTemplates;
 
     public UnitOfWork(ConventionDbContext context)
     {
@@ -67,8 +70,11 @@ public class UnitOfWork : IUnitOfWork
     public IUserConventionRepository UserConventions =>
         _userConventions ??= new UserConventionRepository(_context);
 
-    public IScheduleRepository Schedules =>
-        _schedules ??= new ScheduleRepository(_context);
+    public ICommentRepository Comments =>
+        _comments ??= new CommentRepository(_context);
+
+    public ISurveyRepository Surveys =>
+        _surveys ??= new SurveyRepository(_context);
 
     public IGuestAttributeRepository GuestAttributes =>
         _guestAttributes ??= new GuestAttributeRepository(_context);
@@ -93,6 +99,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IRepository<UserActionStatus> UserActionStatuses =>
         _userActionStatuses ??= new Repository<UserActionStatus>(_context);
+
+    public IRepository<ScheduleTemplate> ScheduleTemplates =>
+        _scheduleTemplates ??= new Repository<ScheduleTemplate>(_context);
 
     // ============================================================
     // Transaction Methods

@@ -339,8 +339,8 @@ public class ConventionService
             uc => uc.ConventionId == conventionId);
 
         // 3. 일정 수
-        var scheduleCount = await _unitOfWork.Schedules.CountAsync(
-            s => s.ConventionId == conventionId);
+        var scheduleCount = await _unitOfWork.ScheduleTemplates.CountAsync(
+            st => st.ConventionId == conventionId);
 
         // 4. 활성화된 기능 수
         var enabledFeatureCount = await _unitOfWork.Features.CountAsync(

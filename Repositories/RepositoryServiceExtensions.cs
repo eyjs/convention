@@ -37,8 +37,10 @@ public static class RepositoryServiceExtensions
         services.AddScoped<IConventionRepository, ConventionRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
 
-        services.AddScoped<IScheduleRepository, ScheduleRepository>();
-        services.AddScoped<IGuestAttributeRepository, GuestAttributeRepository>();
+            services.AddScoped<IUserConventionRepository, UserConventionRepository>();
+            services.AddScoped<ICommentRepository, CommentRepository>();
+            services.AddScoped<ISurveyRepository, SurveyRepository>();
+            services.AddScoped<IGuestAttributeRepository, GuestAttributeRepository>();
         services.AddScoped<IFeatureRepository, FeatureRepository>();
         services.AddScoped<IMenuRepository, MenuRepository>();
         services.AddScoped<ISectionRepository, SectionRepository>();

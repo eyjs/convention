@@ -130,7 +130,9 @@ public class AdminController : ControllerBase
                 AccessToken = uc.AccessToken,
                 IsRegisteredUser = !string.IsNullOrEmpty(uc.User.LoginId),
                 user = new { uc.User.Id, uc.User.LoginId, uc.User.Role },
-                scheduleTemplates = uc.User.GuestScheduleTemplates.Select(gst => new
+                scheduleTemplates = uc.User.GuestScheduleTemplates
+                    .Where(gst => gst.ScheduleTemplate.ConventionId == conventionId)
+                    .Select(gst => new
                 {
                     gst.ScheduleTemplateId,
                     gst.ScheduleTemplate!.CourseName
@@ -317,14 +319,15 @@ public class AdminController : ControllerBase
         }
     }
 
-    [HttpPost("guests/{guestId}/schedules")]
-    public async Task<IActionResult> AssignSchedules(int guestId, [FromBody] AssignSchedulesDto dto)
+    [HttpPost("conventions/{conventionId}/guests/{guestId}/schedules")]
+    public async Task<IActionResult> AssignSchedules(int conventionId, int guestId, [FromBody] AssignSchedulesDto dto)
     {
         var user = await _context.Users.FindAsync(guestId);
         if (user == null) return NotFound();
 
+        // This is the critical fix: Filter by ConventionId as well.
         var existing = await _context.Set<GuestScheduleTemplate>()
-            .Where(gst => gst.UserId == guestId)
+            .Where(gst => gst.UserId == guestId && gst.ScheduleTemplate.ConventionId == conventionId)
             .ToListAsync();
         _context.Set<GuestScheduleTemplate>().RemoveRange(existing);
 

@@ -30,9 +30,8 @@ namespace LocalRAG.Entities
         public string DeleteYn { get; set; } = string.Empty;
         public string CompleteYn { get; set; } = "N";
 
-        public ICollection<UserConvention> UserConventions { get; set; } = new List<UserConvention>();
-        public ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
-        public ICollection<ScheduleTemplate> ScheduleTemplates { get; set; } = new List<ScheduleTemplate>();
+    public ICollection<UserConvention> UserConventions { get; set; } = new List<UserConvention>();
+    public ICollection<ScheduleTemplate> ScheduleTemplates { get; set; } = new List<ScheduleTemplate>();
         public ICollection<Menu> Menus { get; set; } = new List<Menu>();
         public ICollection<Owner> Owners { get; set; } = new List<Owner>();
         public ICollection<Feature> Features { get; set; } = new List<Feature>();

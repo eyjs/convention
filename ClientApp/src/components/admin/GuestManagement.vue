@@ -995,7 +995,7 @@ const saveGuest = async () => {
     }
 
     // 일정 배정
-    await apiClient.post(`/admin/guests/${guestId}/schedules`, {
+    await apiClient.post(`/admin/conventions/${props.conventionId}/guests/${guestId}/schedules`, {
       scheduleTemplateIds: guestForm.value.scheduleTemplateIds,
     })
 
@@ -1087,7 +1087,7 @@ const executeBulkAssign = async () => {
       try {
         if (bulkAssignReplace.value) {
           // 대체 모드: 기존 일정 삭제 후 새 일정 배정
-          await apiClient.post(`/admin/guests/${guestId}/schedules`, {
+          await apiClient.post(`/admin/conventions/${props.conventionId}/guests/${guestId}/schedules`, {
             scheduleTemplateIds: bulkAssignTemplateIds.value,
           })
         } else {
@@ -1099,7 +1099,7 @@ const executeBulkAssign = async () => {
             ...new Set([...existingIds, ...bulkAssignTemplateIds.value]),
           ]
 
-          await apiClient.post(`/admin/guests/${guestId}/schedules`, {
+          await apiClient.post(`/admin/conventions/${props.conventionId}/guests/${guestId}/schedules`, {
             scheduleTemplateIds: mergedIds,
           })
         }
