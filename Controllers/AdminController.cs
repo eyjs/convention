@@ -319,6 +319,89 @@ public class AdminController : ControllerBase
         }
     }
 
+    [HttpGet("users")]
+    public async Task<IActionResult> GetUsers([FromQuery] string? searchTerm, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var query = _context.Users
+            .Where(u => u.Role == "Admin" || u.Role == "User")
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.ToLower();
+            query = query.Where(u => 
+                (u.Name != null && u.Name.ToLower().Contains(term)) ||
+                (u.LoginId != null && u.LoginId.ToLower().Contains(term)) ||
+                (u.Phone != null && u.Phone.Contains(term))
+            );
+        }
+
+        var totalCount = await query.CountAsync();
+        var users = await query
+            .OrderByDescending(u => u.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(u => new 
+            {
+                u.Id,
+                u.Name,
+                u.LoginId,
+                u.Phone,
+                u.Role,
+                u.IsActive,
+                u.CreatedAt,
+                u.UpdatedAt
+            })
+            .ToListAsync();
+
+        return Ok(new 
+        {
+            Items = users,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+        });
+    }
+
+    [HttpPut("users/{id}/status")]
+    public async Task<IActionResult> UpdateUserStatus(int id, [FromBody] UpdateUserStatusDto dto)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        user.IsActive = dto.IsActive;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = $"사용자 상태가 {(dto.IsActive ? "활성" : "비활성")}으로 변경되었습니다." });
+    }
+
+    [HttpPut("users/{id}/role")]
+    public async Task<IActionResult> UpdateUserRole(int id, [FromBody] UpdateUserRoleDto dto)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+        {
+            return NotFound();
+        }
+        
+        if (string.IsNullOrWhiteSpace(dto.Role) || (dto.Role != "Admin" && dto.Role != "User" && dto.Role != "Guest"))
+        {
+            return BadRequest(new { message = "유효하지 않은 역할입니다. 'Admin', 'User', 'Guest' 중 하나여야 합니다." });
+        }
+
+        user.Role = dto.Role;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = $"사용자 역할이 '{dto.Role}'(으)로 변경되었습니다." });
+    }
+
+
     [HttpPost("conventions/{conventionId}/guests/{guestId}/schedules")]
     public async Task<IActionResult> AssignSchedules(int conventionId, int guestId, [FromBody] AssignSchedulesDto dto)
     {

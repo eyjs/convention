@@ -193,6 +193,11 @@
         </div>
       </div>
 
+      <!-- 회원 관리 탭 -->
+      <div v-if="activeTab === 'users'">
+        <UserManagement />
+      </div>
+
       <!-- 챗봇 관리 탭 -->
       <div v-if="activeTab === 'chatbot'">
         <!-- 챗봇 통계 카드 -->
@@ -561,17 +566,6 @@
         </div>
       </div>
 
-      <!-- 회원 관리 탭 -->
-      <div v-if="activeTab === 'users'">
-        <div class="mb-6">
-          <h2 class="text-xl font-bold text-gray-900">회원 관리</h2>
-          <p class="text-sm text-gray-600 mt-1">전체 회원 조회 및 관리</p>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <p class="text-gray-600">회원 관리 기능 구현 예정</p>
-        </div>
-      </div>
-
       <!-- 통계 탭 -->
       <div v-if="activeTab === 'statistics'">
         <div class="mb-6">
@@ -937,6 +931,7 @@ import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
 import { chatbotAdminAPI } from '@/services/chatbotAdminService'
 
+import UserManagement from '@/components/admin/UserManagement.vue'
 import LlmProviderManagement from '@/components/admin/LlmProviderManagement.vue'
 import ConventionFormModal from '@/components/admin/ConventionFormModal.vue'
 
