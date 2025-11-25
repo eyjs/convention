@@ -39,93 +39,161 @@
             <div class="p-4 space-y-3">
               <!-- 교통편 목록 -->
               <div v-if="getFlightsByCategory(category.name).length > 0">
-                <div
-                  v-for="flight in getFlightsByCategory(category.name)"
-                  :key="flight.id"
-                  @click="!effectiveReadonly && openDetailModal(flight)"
-                  class="border rounded-xl p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
-                  :class="{ 'cursor-pointer': !effectiveReadonly }"
-                >
-                  <div class="flex justify-between items-start">
-                    <div class="flex-1 min-w-0">
-                      <!-- 항공편 -->
-                      <template v-if="flight.category === '항공편'">
-                        <div class="flex items-center gap-2 mb-1">
-                          <span v-if="flight.airline" class="font-semibold text-gray-900">{{ flight.airline }}</span>
-                          <span v-if="flight.flightNumber" class="text-sm text-gray-600">{{ flight.flightNumber }}</span>
+                <template v-if="category.name === '항공편'">
+                  <div
+                    v-for="flight in getFlightsByCategory(category.name)"
+                    :key="flight.id"
+                    @click="!effectiveReadonly && openDetailModal(flight)"
+                    class="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden mb-5 border border-gray-100 relative group w-full"
+                    :class="{ 'cursor-pointer': !effectiveReadonly }"
+                  >
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-0">
+                      <img src="/images/logo_w.png" alt="Airline Logo" class="w-64 h-64 text-indigo-900 opacity-5 transform -rotate-12" />
+                    </div>
+                    <div class="h-1.5 w-full relative z-10" :class="getStatusConfig(flight).bg"></div>
+                    <div class="p-5 relative z-10">
+                      <div class="flex justify-between items-start mb-6">
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-xs font-bold text-gray-700 shadow-sm border border-gray-100">
+                            {{ getAirlineLogoText(flight) }}
+                          </div>
+                          <div>
+                            <h3 class="font-bold text-gray-900 text-sm tracking-tight">{{ flight.airline }}</h3>
+                            <div class="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                              <span class="font-medium text-gray-600">{{ flight.flightNumber }}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div v-if="flight.departureLocation || flight.arrivalLocation" class="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                          <span>{{ flight.departureLocation || '출발지' }}</span>
-                          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                          </svg>
-                          <span>{{ flight.arrivalLocation || '도착지' }}</span>
+                        <div class="px-2.5 py-1 rounded-full text-[11px] font-bold tracking-tight flex items-center gap-1.5 shadow-sm" :class="[getStatusConfig(flight).badgeBg, getStatusConfig(flight).text]">
+                          <component :is="getStatusConfig(flight).icon" class="w-3 h-3" />
+                          {{ getStatusConfig(flight).label }}
                         </div>
-                        <div v-if="flight.departureTime" class="text-xs text-gray-500">
-                          {{ formatDateTime(flight.departureTime) }}
-                          <span v-if="flight.arrivalTime"> ~ {{ formatDateTime(flight.arrivalTime) }}</span>
-                        </div>
-                        <div v-if="flight.bookingReference" class="text-xs text-gray-500 mt-1">
-                          예약번호: {{ flight.bookingReference }}
-                        </div>
-                      </template>
+                      </div>
 
-                      <!-- 기차 (간소화) -->
-                      <template v-else-if="flight.category === '기차'">
-                        <div v-if="flight.departureLocation || flight.arrivalLocation" class="flex items-center gap-2 text-sm text-gray-700 mb-1">
-                          <span>{{ flight.departureLocation || '출발역' }}</span>
-                          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                          </svg>
-                          <span>{{ flight.arrivalLocation || '도착역' }}</span>
+                      <div class="flex items-center justify-between mb-6 px-1">
+                        <div class="text-left">
+                          <div class="text-3xl font-black text-gray-800 tracking-tight">{{ flight.departureAirportCode || (flight.departureLocation ? flight.departureLocation.substring(0,3).toUpperCase() : 'N/A') }}</div>
+                          <div class="text-xs font-bold text-gray-500 mt-1">{{ formatTime(flight.departureTime) }}</div>
                         </div>
-                        <div v-if="flight.departureTime" class="text-xs text-gray-500">
-                          {{ formatDateTime(flight.departureTime) }}
-                        </div>
-                      </template>
 
-                      <!-- 버스 (간소화) -->
-                      <template v-else-if="flight.category === '버스'">
-                        <div v-if="flight.departureLocation || flight.arrivalLocation" class="flex items-center gap-2 text-sm text-gray-700 mb-1">
-                          <span>{{ flight.departureLocation || '출발지' }}</span>
-                          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                          </svg>
-                          <span>{{ flight.arrivalLocation || '도착지' }}</span>
+                        <div class="flex-1 px-4 flex flex-col items-center">
+                          <div class="text-[10px] text-gray-400 font-medium mb-1">직항</div>
+                          <div class="w-full h-px bg-gray-200 relative flex items-center justify-center">
+                            <Plane class="w-5 h-5 text-indigo-400 rotate-90 absolute z-0" />
+                            <div class="w-1.5 h-1.5 rounded-full bg-gray-300 absolute left-0"></div>
+                            <div class="w-1.5 h-1.5 rounded-full bg-gray-300 absolute right-0"></div>
+                          </div>
+                          <div class="text-[10px] text-gray-400 font-medium mt-1">비행 시간</div>
                         </div>
-                        <div v-if="flight.departureTime" class="text-xs text-gray-500">
-                          {{ formatDate(flight.departureTime) }}
-                        </div>
-                      </template>
 
-                      <!-- 택시 -->
-                      <template v-else-if="flight.category === '택시'">
-                        <div v-if="flight.departureLocation || flight.arrivalLocation" class="flex items-center gap-2 text-sm text-gray-700 mb-1">
-                          <span>{{ flight.departureLocation || '출발지' }}</span>
-                          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                          </svg>
-                          <span>{{ flight.arrivalLocation || '도착지' }}</span>
+                        <div class="text-right">
+                          <div class="text-3xl font-black tracking-tight" :class="isDelayed(flight) ? 'text-red-500' : 'text-indigo-600'">
+                            {{ flight.arrivalAirportCode || (flight.arrivalLocation ? flight.arrivalLocation.substring(0,3).toUpperCase() : 'N/A') }}
+                          </div>
+                          <div class="flex flex-col items-end mt-1">
+                            <span class="text-xs font-bold" :class="isDelayed(flight) ? 'text-red-500 animate-pulse' : 'text-gray-800'">
+                               {{ isDelayed(flight) ? formatTime(flight.estimatedTime) : formatTime(flight.arrivalTime) }}
+                            </span>
+                            <span v-if="isDelayed(flight)" class="text-[10px] text-gray-400 line-through">{{ formatTime(flight.arrivalTime) }}</span>
+                          </div>
                         </div>
-                        <div v-if="getLinkedItinerary(flight.itineraryItemId)" class="text-xs text-gray-500">
-                          연결된 일정: {{ getLinkedItinerary(flight.itineraryItemId)?.locationName }}
-                        </div>
-                      </template>
+                      </div>
 
-                      <!-- 렌트카/자가용 -->
-                      <template v-else-if="['렌트카', '자가용'].includes(flight.category)">
-                        <div v-if="flight.airline" class="font-semibold text-gray-900 mb-1">{{ flight.airline }}</div>
-                        <div v-if="flight.departureTime" class="text-xs text-gray-500">
-                          {{ formatDate(flight.departureTime) }}
-                          <span v-if="flight.arrivalTime"> ~ {{ formatDate(flight.arrivalTime) }}</span>
+                      <div class="bg-gray-50/80 backdrop-blur-[2px] rounded-2xl p-4 grid grid-cols-2 gap-y-4 gap-x-2 border border-gray-100/50">
+                        <div class="flex flex-col">
+                          <span class="text-[10px] text-gray-400 font-bold mb-1 flex items-center gap-1"><Calendar class="w-3 h-3" /> 날짜</span>
+                          <span class="text-sm font-bold text-gray-700">{{ formatDate(getFlightType(flight) === 'Arrival' ? flight.arrivalTime : flight.departureTime) }}</span>
                         </div>
-                      </template>
-
-                      <!-- 메모 -->
-                      <p v-if="flight.notes" class="text-xs text-gray-500 mt-2 italic">{{ flight.notes }}</p>
+                        <div class="flex flex-col border-l border-gray-200 pl-4">
+                          <span class="text-[10px] text-gray-400 font-bold mb-1 flex items-center gap-1"><DoorOpen class="w-3 h-3" /> 탑승구</span>
+                          <span class="text-sm font-bold text-indigo-600">{{ flight.gate || '미정' }}</span>
+                        </div>
+                        <div class="flex flex-col">
+                          <span class="text-[10px] text-gray-400 font-bold mb-1 flex items-center gap-1"><Building2 class="w-3 h-3" /> 터미널</span>
+                          <span class="text-sm font-bold text-gray-700">{{ flight.terminal || 'N/A' }}</span>
+                        </div>
+                        <div class="flex flex-col border-l border-gray-200 pl-4">
+                           <span class="text-[10px] text-gray-400 font-bold mb-1 flex items-center gap-1"><MapPin class="w-3 h-3" /> 예약번호</span>
+                           <span class="text-sm font-bold text-gray-700">{{ flight.bookingReference || '없음' }}</span>
+                        </div>
+                      </div>
+                      
+                      <div class="mt-4 flex items-center justify-center">
+                        <div class="text-xs text-gray-500 font-medium bg-white/90 px-3 py-1 rounded-full border border-gray-100 shadow-sm flex items-center gap-1 backdrop-blur-sm">
+                          <MapPin class="w-3 h-3 text-indigo-400" />
+                          {{ getArrivalCity(flight) }} 도착
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </template>
+                <template v-else>
+                   <div
+                    v-for="flight in getFlightsByCategory(category.name)"
+                    :key="flight.id"
+                    @click="!effectiveReadonly && openDetailModal(flight)"
+                    class="border rounded-xl p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                    :class="{ 'cursor-pointer': !effectiveReadonly }"
+                  >
+                    <div class="flex justify-between items-start">
+                      <div class="flex-1 min-w-0">
+                        <!-- 기차 (간소화) -->
+                        <template v-if="flight.category === '기차'">
+                          <div v-if="flight.departureLocation || flight.arrivalLocation" class="flex items-center gap-2 text-sm text-gray-700 mb-1">
+                            <span>{{ flight.departureLocation || '출발역' }}</span>
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            </svg>
+                            <span>{{ flight.arrivalLocation || '도착역' }}</span>
+                          </div>
+                          <div v-if="flight.departureTime" class="text-xs text-gray-500">
+                            {{ formatDateTime(flight.departureTime) }}
+                          </div>
+                        </template>
+
+                        <!-- 버스 (간소화) -->
+                        <template v-else-if="flight.category === '버스'">
+                          <div v-if="flight.departureLocation || flight.arrivalLocation" class="flex items-center gap-2 text-sm text-gray-700 mb-1">
+                            <span>{{ flight.departureLocation || '출발지' }}</span>
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            </svg>
+                            <span>{{ flight.arrivalLocation || '도착지' }}</span>
+                          </div>
+                          <div v-if="flight.departureTime" class="text-xs text-gray-500">
+                            {{ formatDate(flight.departureTime) }}
+                          </div>
+                        </template>
+
+                        <!-- 택시 -->
+                        <template v-else-if="flight.category === '택시'">
+                          <div v-if="flight.departureLocation || flight.arrivalLocation" class="flex items-center gap-2 text-sm text-gray-700 mb-1">
+                            <span>{{ flight.departureLocation || '출발지' }}</span>
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            </svg>
+                            <span>{{ flight.arrivalLocation || '도착지' }}</span>
+                          </div>
+                          <div v-if="getLinkedItinerary(flight.itineraryItemId)" class="text-xs text-gray-500">
+                            연결된 일정: {{ getLinkedItinerary(flight.itineraryItemId)?.locationName }}
+                          </div>
+                        </template>
+
+                        <!-- 렌트카/자가용 -->
+                        <template v-else-if="['렌트카', '자가용'].includes(flight.category)">
+                          <div v-if="flight.airline" class="font-semibold text-gray-900 mb-1">{{ flight.airline }}</div>
+                          <div v-if="flight.departureTime" class="text-xs text-gray-500">
+                            {{ formatDate(flight.departureTime) }}
+                            <span v-if="flight.arrivalTime"> ~ {{ formatDate(flight.arrivalTime) }}</span>
+                          </div>
+                        </template>
+
+                        <!-- 메모 -->
+                        <p v-if="flight.notes" class="text-xs text-gray-500 mt-2 italic">{{ flight.notes }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </template>
               </div>
               <div v-else class="text-center py-6 text-gray-400">
                 등록된 {{ category.name }} 없습니다
@@ -159,34 +227,59 @@
 
           <!-- 항공편 전용 필드 -->
           <template v-if="flightData.category === '항공편'">
+            <!-- 항공편 조회 버튼 -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3" v-if="!isApiSourcedFlight">
+              <button
+                type="button"
+                @click="openFlightSearchModal"
+                class="w-full py-2 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                인천공항 항공편 조회
+              </button>
+              <p class="text-xs text-blue-700 mt-2 text-center">실시간 항공편 정보를 자동으로 입력합니다</p>
+            </div>
+
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">항공사</label>
-                <input v-model="flightData.airline" type="text" class="input" placeholder="대한항공, 아시아나 등" />
+                <input v-model="flightData.airline" type="text" class="input" :class="{'bg-gray-100': isApiSourcedFlight}" placeholder="대한항공, 아시아나 등" :readonly="isApiSourcedFlight" />
               </div>
               <div>
                 <label class="label">편명</label>
-                <input v-model="flightData.flightNumber" type="text" class="input" placeholder="KE123" />
+                <input v-model="flightData.flightNumber" type="text" class="input" :class="{'bg-gray-100': isApiSourcedFlight}" placeholder="KE123" :readonly="isApiSourcedFlight" />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">출발지</label>
-                <input v-model="flightData.departureLocation" type="text" class="input" placeholder="출발 공항" />
+                <input v-model="flightData.departureLocation" type="text" class="input" :class="{'bg-gray-100': isApiSourcedFlight}" placeholder="출발 공항 코드" :readonly="isApiSourcedFlight" />
               </div>
               <div>
                 <label class="label">도착지</label>
-                <input v-model="flightData.arrivalLocation" type="text" class="input" placeholder="도착 공항" />
+                <input v-model="flightData.arrivalLocation" type="text" class="input" :class="{'bg-gray-100': isApiSourcedFlight}" placeholder="도착 공항 코드" :readonly="isApiSourcedFlight" />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">출발 일시</label>
-                <input v-model="flightData.departureTime" type="datetime-local" class="input" />
+                <input v-model="flightData.departureTime" type="datetime-local" class="input" :class="{'bg-gray-100': isApiSourcedFlight && getFlightType(editingFlight) === 'Departure'}" :readonly="isApiSourcedFlight && getFlightType(editingFlight) === 'Departure'" />
               </div>
               <div>
                 <label class="label">도착 일시</label>
-                <input v-model="flightData.arrivalTime" type="datetime-local" class="input" />
+                <input v-model="flightData.arrivalTime" type="datetime-local" class="input" :class="{'bg-gray-100': isApiSourcedFlight && getFlightType(editingFlight) === 'Arrival'}" :readonly="isApiSourcedFlight && getFlightType(editingFlight) === 'Arrival'" />
+              </div>
+            </div>
+             <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="label">터미널</label>
+                <input v-model="flightData.terminal" type="text" class="input" :class="{'bg-gray-100': isApiSourcedFlight}" placeholder="T1 / T2" :readonly="isApiSourcedFlight" />
+              </div>
+              <div>
+                <label class="label">탑승구</label>
+                <input v-model="flightData.gate" type="text" class="input" :class="{'bg-gray-100': isApiSourcedFlight}" placeholder="탑승구 번호" :readonly="isApiSourcedFlight" />
               </div>
             </div>
             <div>
@@ -348,6 +441,20 @@
       </template>
     </SlideUpModal>
 
+    <!-- 항공편 추가 모달 (새로운 방식) -->
+    <FlightAddEditModal
+      :show="showFlightAddModal"
+      @close="showFlightAddModal = false"
+      @save="saveFlightsFromModal"
+    />
+
+    <!-- 항공편 조회 모달 (기존 방식 - 수기 입력용) -->
+    <FlightSearchModal
+      :show="showFlightSearchModal"
+      @close="showFlightSearchModal = false"
+      @apply="applyFlightInfo"
+    />
+
     <!-- Bottom Navigation Bar -->
     <BottomNavigationBar v-if="tripId || trip.id" :trip-id="tripId || trip.id" :share-token="shareToken" :show="!uiStore.isModalOpen" />
   </div>
@@ -359,10 +466,12 @@ import { useRoute, useRouter } from 'vue-router';
 import MainHeader from '@/components/common/MainHeader.vue';
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue';
 import SlideUpModal from '@/components/common/SlideUpModal.vue';
+import FlightSearchModal from '@/components/trip/FlightSearchModal.vue';
+import FlightAddEditModal from '@/components/personalTrip/FlightAddEditModal.vue';
 import { useUIStore } from '@/stores/ui';
 import apiClient from '@/services/api';
 import dayjs from 'dayjs';
-import { Plane, Train, Bus, Car } from 'lucide-vue-next';
+import { Plane, Train, Bus, Car, Clock, AlertCircle, CheckCircle, DoorOpen, Building2, MapPin, Calendar } from 'lucide-vue-next';
 
 // Props for readonly mode and shared access
 const props = defineProps({
@@ -372,6 +481,41 @@ const props = defineProps({
     default: false
   }
 })
+
+const getFlightType = (flight) => {
+  if (flight.arrivalLocation?.toUpperCase().includes('ICN') || flight.arrivalLocation?.includes('인천')) {
+    return 'Arrival';
+  }
+  return 'Departure';
+};
+
+const getStatusConfig = (flight) => {
+  const status = flight.status?.toLowerCase() || '';
+  
+  switch (status) {
+    case 'boarding':
+      return { label: '탑승중', bg: 'bg-green-500', text: 'text-green-600', badgeBg: 'bg-green-100', icon: DoorOpen };
+    case 'delayed':
+      return { label: '지연', bg: 'bg-red-500', text: 'text-red-600', badgeBg: 'bg-red-100', icon: AlertCircle };
+    case 'on time': case 'ontime':
+      return { label: '정시', bg: 'bg-blue-500', text: 'text-blue-600', badgeBg: 'bg-blue-100', icon: CheckCircle };
+    case 'cancelled':
+      return { label: '결항', bg: 'bg-gray-500', text: 'text-gray-600', badgeBg: 'bg-gray-200', icon: AlertCircle };
+    case 'scheduled':
+      return { label: '예정', bg: 'bg-indigo-500', text: 'text-indigo-600', badgeBg: 'bg-indigo-100', icon: Clock };
+    default:
+      return { label: flight.status || '정보 없음', bg: 'bg-gray-500', text: 'text-gray-600', badgeBg: 'bg-gray-100', icon: Clock };
+  }
+};
+
+const getAirlineLogoText = (flight) => flight.airline ? flight.airline.substring(0, 2).toUpperCase() : '';
+const isDelayed = (flight) => flight.status?.toLowerCase() === 'delayed';
+const getArrivalCity = (flight) => flight.arrivalLocation ? flight.arrivalLocation.split('(')[0].trim() : '';
+
+const formatTime = (time) => time ? dayjs(time).format('HH:mm') : '--:--';
+const formatDate = (date) => date ? dayjs(date).format('YYYY-MM-DD') : '날짜 정보 없음';
+const formatDateTime = (dateTime) => dateTime ? dayjs(dateTime).format('YYYY-MM-DD HH:mm') : '';
+
 
 const uiStore = useUIStore();
 const route = useRoute();
@@ -391,6 +535,9 @@ const expandedCategories = ref(['항공편']); // 기본으로 항공편 펼침
 const isEditModalOpen = ref(false);
 const editingFlight = ref(null);
 const flightData = ref({});
+const showFlightSearchModal = ref(false);
+const showFlightAddModal = ref(false);
+const isApiSourcedFlight = ref(false);
 
 // 카테고리 정의
 const categories = [
@@ -470,7 +617,31 @@ const totalTransportationCost = computed(() => {
 
 function getFlightsByCategory(category) {
   if (!trip.value.flights) return [];
-  return trip.value.flights.filter(f => f.category === category);
+  const flights = trip.value.flights.filter(f => f.category === category);
+
+  if (category === '항공편') {
+    flights.sort((a, b) => {
+      const typeA = getFlightType(a);
+      const typeB = getFlightType(b);
+
+      if (typeA === 'Departure' && typeB === 'Arrival') {
+        return -1; // Departures first
+      }
+      if (typeA === 'Arrival' && typeB === 'Departure') {
+        return 1; // Arrivals second
+      }
+
+      // For same type, sort chronologically
+      const timeA = a.departureTime || a.arrivalTime;
+      const timeB = b.departureTime || b.arrivalTime;
+      if (timeA && timeB) {
+        return new Date(timeA) - new Date(timeB);
+      }
+      return 0;
+    });
+  }
+
+  return flights;
 }
 
 function getCategoryTotal(category) {
@@ -501,6 +672,13 @@ function toggleCategory(category) {
 
 // 모달 관련
 function openAddModal(category) {
+  // 항공편 카테고리는 새로운 FlightAddEditModal 사용
+  if (category === '항공편') {
+    showFlightAddModal.value = true;
+    return;
+  }
+
+  // 다른 카테고리는 기존 모달 사용
   editingFlight.value = null;
   flightData.value = {
     category,
@@ -526,11 +704,17 @@ function openAddModal(category) {
 
 function openDetailModal(flight) {
   editingFlight.value = flight;
+  isApiSourcedFlight.value = !!flight.flightNumber; // 편명이 있으면 API 조회로 간주
+
   flightData.value = {
     ...flight,
+    departureLocation: flight.departureAirportCode || flight.departureLocation,
+    arrivalLocation: flight.arrivalAirportCode || flight.arrivalLocation,
+    terminal: flight.terminal || '',
+    gate: flight.gate || '',
     departureTime: flight.departureTime ? dayjs(flight.departureTime).format('YYYY-MM-DDTHH:mm') : '',
     arrivalTime: flight.arrivalTime ? dayjs(flight.arrivalTime).format('YYYY-MM-DDTHH:mm') : '',
-    departureDate: flight.departureTime ? dayjs(flight.departureTime).format('YYYY-MM-DD') : '' // 버스용 날짜
+    departureDate: flight.departureTime ? dayjs(flight.departureTime).format('YYYY-MM-DD') : ''
   };
   isEditModalOpen.value = true;
 }
@@ -538,6 +722,45 @@ function openDetailModal(flight) {
 function closeEditModal() {
   isEditModalOpen.value = false;
   editingFlight.value = null;
+}
+
+// 항공편 조회 모달 열기
+function openFlightSearchModal() {
+  showFlightSearchModal.value = true;
+}
+
+// 항공편 정보 적용
+function applyFlightInfo(info) {
+  if (!info) return;
+
+  // FlightSearchModal에서 받은 정보를 flightData에 적용
+  flightData.value.airline = info.airline || '';
+  flightData.value.flightNumber = info.flightNumber || '';
+  flightData.value.departureLocation = info.departureAirport || '';
+  flightData.value.arrivalLocation = info.arrivalAirport || '';
+  flightData.value.departureAirportCode = info.departureAirportCode || '';
+  flightData.value.arrivalAirportCode = info.arrivalAirportCode || '';
+
+  // 날짜/시간 정보 (이미 YYYY-MM-DDTHH:mm 형식)
+  if (info.departureTime) {
+    flightData.value.departureTime = info.departureTime;
+  }
+  if (info.arrivalTime) {
+    flightData.value.arrivalTime = info.arrivalTime;
+  }
+
+  // 터미널, 게이트, 상태 정보
+  if (info.terminal) {
+    flightData.value.terminal = info.terminal;
+  }
+  if (info.gate) {
+    flightData.value.gate = info.gate;
+  }
+  if (info.status) {
+    flightData.value.status = info.status;
+  }
+
+  console.log('항공편 정보 적용:', flightData.value);
 }
 
 async function saveTransportation() {
@@ -603,17 +826,20 @@ async function deleteTransportation() {
   }
 }
 
-
-// 날짜 포맷팅
-function formatDateTime(dateTime) {
-  if (!dateTime) return '';
-  return dayjs(dateTime).format('YYYY-MM-DD HH:mm');
+// 새로운 항공편 모달에서 여러 항공편 저장
+async function saveFlightsFromModal(flights) {
+  try {
+    for (const flight of flights) {
+      await apiClient.post(`/personal-trips/${tripId.value}/flights`, flight);
+    }
+    await loadTrip();
+    showFlightAddModal.value = false;
+  } catch (error) {
+    console.error('Failed to save flights:', error);
+    alert('항공편 저장에 실패했습니다.');
+  }
 }
 
-function formatDate(date) {
-  if (!date) return '';
-  return dayjs(date).format('YYYY-MM-DD');
-}
 
 onMounted(() => {
   loadTrip();

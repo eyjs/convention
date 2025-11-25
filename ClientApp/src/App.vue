@@ -39,8 +39,14 @@ onMounted(() => {
 
 // 로그인 상태 변경 감지 및 글로벌 SignalR 연결 관리
 watch(
-  () => authStore.isAuthenticated,
-  async (isAuthenticated) => {
+  () => [authStore.isAuthenticated, route.path],
+  async ([isAuthenticated, currentPath]) => {
+    // 개인 여행 페이지에서는 SignalR 연결을 시도하지 않음
+    if (currentPath && currentPath.startsWith('/trips')) {
+      globalChatNotificationService.disconnect();
+      return;
+    }
+
     if (isAuthenticated && authStore.user && authStore.accessToken) {
       try {
         // 글로벌 SignalR 연결 시작

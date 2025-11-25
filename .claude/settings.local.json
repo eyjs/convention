@@ -6,7 +6,17 @@
       "Bash(dotnet ef database update:*)",
       "Bash(dotnet build:*)",
       "Bash(npm install:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(npm run dev:*)",
+      "Bash(if [ ! -d \"Services\" ])",
+      "Bash(then mkdir Services)",
+      "Bash(fi)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(dotnet build:migrations:*)",
+      "Bash(curl:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

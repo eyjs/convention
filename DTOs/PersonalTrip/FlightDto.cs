@@ -15,6 +15,11 @@ namespace LocalRAG.DTOs.PersonalTrip
         public string? ArrivalLocation { get; set; }
         public DateTime? DepartureTime { get; set; }
         public DateTime? ArrivalTime { get; set; }
+        public string? Terminal { get; set; }
+        public string? Gate { get; set; }
+        public string? Status { get; set; }
+        public string? DepartureAirportCode { get; set; }
+        public string? ArrivalAirportCode { get; set; }
         public string? BookingReference { get; set; }
         public string? SeatNumber { get; set; }
         public decimal? Amount { get; set; }

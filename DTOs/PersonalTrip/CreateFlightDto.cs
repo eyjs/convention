@@ -38,6 +38,21 @@ namespace LocalRAG.DTOs.PersonalTrip
 
         public DateTime? ArrivalTime { get; set; }
 
+        [MaxLength(50)]
+        public string? Terminal { get; set; }
+
+        [MaxLength(20)]
+        public string? Gate { get; set; }
+        
+        [MaxLength(50)]
+        public string? Status { get; set; }
+
+        [MaxLength(10)]
+        public string? DepartureAirportCode { get; set; }
+
+        [MaxLength(10)]
+        public string? ArrivalAirportCode { get; set; }
+
         [MaxLength(100)]
         public string? BookingReference { get; set; }
 

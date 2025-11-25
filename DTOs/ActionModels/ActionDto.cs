@@ -19,7 +19,7 @@ public class ConventionActionDto
     public int OrderNum { get; set; }
     public string? ActionCategory { get; set; }
     public string? TargetLocation { get; set; }
-    public string BehaviorType { get; set; }
+    public string BehaviorType { get; set; } = string.Empty;
 
     /// <summary>
     /// BehaviorType=ModuleLink일 경우, 대상 모듈의 ID (예: Survey.Id)

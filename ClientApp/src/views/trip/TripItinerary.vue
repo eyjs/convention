@@ -311,7 +311,7 @@
             </div>
             <div>
               <label class="label">금액 (원)</label>
-              <input type="number" v-model.number="itineraryItemData.expenseAmount" placeholder="예: 50000" class="input" min="0" step="100" />
+              <input v-model.number="itineraryItemData.expenseAmount" v-number-format type="text" inputmode="numeric" placeholder="예: 50000" class="input" />
             </div>
             <div><label class="label">메모</label><textarea v-model="itineraryItemData.notes" rows="3" class="input"></textarea></div>
           </form>

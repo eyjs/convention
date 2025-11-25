@@ -4,6 +4,7 @@ using LocalRAG.Entities;
 using LocalRAG.Entities.Action;
 using LocalRAG.Entities.FormBuilder;
 using LocalRAG.Entities.PersonalTrip;
+using LocalRAG.Entities.Flight;
 using LocalRAG.DTOs.ScheduleModels;
 
 namespace LocalRAG.Data;
@@ -63,6 +64,9 @@ public class ConventionDbContext : DbContext
     public DbSet<ItineraryItem> ItineraryItems { get; set; }
     public DbSet<ChecklistCategory> ChecklistCategories { get; set; }
     public DbSet<ChecklistItem> ChecklistItems { get; set; }
+
+    // Incheon Flight Data
+    public DbSet<IncheonFlightData> IncheonFlightData { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -613,6 +617,24 @@ public class ConventionDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.HasIndex(e => e.ChecklistCategoryId).HasDatabaseName("IX_ChecklistItem_ChecklistCategoryId");
+        });
+
+        // IncheonFlightData
+        modelBuilder.Entity<IncheonFlightData>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+
+            // 인덱스 설정: FlightId + ScheduleDate + FlightType 조합으로 빠른 조회
+            entity.HasIndex(e => new { e.FlightId, e.ScheduleDate, e.FlightType })
+                  .HasDatabaseName("IX_IncheonFlightData_FlightId_ScheduleDate_FlightType");
+
+            entity.HasIndex(e => e.ScheduleDate)
+                  .HasDatabaseName("IX_IncheonFlightData_ScheduleDate");
+
+            entity.HasIndex(e => e.FlightId)
+                  .HasDatabaseName("IX_IncheonFlightData_FlightId");
         });
     }
 }

@@ -64,6 +64,36 @@ namespace LocalRAG.Entities.PersonalTrip
         public DateTime? ArrivalTime { get; set; }
 
         /// <summary>
+        /// 터미널
+        /// </summary>
+        [MaxLength(50)]
+        public string? Terminal { get; set; }
+
+        /// <summary>
+        /// 게이트
+        /// </summary>
+        [MaxLength(20)]
+        public string? Gate { get; set; }
+
+        /// <summary>
+        /// 운항 상태 (예: 출발, 지연, 결항)
+        /// </summary>
+        [MaxLength(50)]
+        public string? Status { get; set; }
+        
+        /// <summary>
+        /// 출발 공항 코드 (IATA)
+        /// </summary>
+        [MaxLength(10)]
+        public string? DepartureAirportCode { get; set; }
+
+        /// <summary>
+        /// 도착 공항 코드 (IATA)
+        /// </summary>
+        [MaxLength(10)]
+        public string? ArrivalAirportCode { get; set; }
+
+        /// <summary>
         /// 예약 번호
         /// </summary>
         [MaxLength(100)]

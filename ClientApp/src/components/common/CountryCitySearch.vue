@@ -5,6 +5,7 @@
         type="text"
         v-model="searchTerm"
         @input="onInput"
+        @compositionend="onCompositionEnd"
         @focus="onFocus"
         @blur="onBlur"
         @keydown.down.prevent="onArrowDown"
@@ -145,6 +146,11 @@ function onInput() {
 
   // 입력 중에는 countryCode를 null로
   emit('update:modelValue', { destination: searchTerm.value, countryCode: null })
+}
+
+// 한글 조합 완료 시 즉시 검색
+function onCompositionEnd() {
+  performSearch()
 }
 
 function onFocus() {

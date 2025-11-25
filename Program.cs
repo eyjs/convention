@@ -9,7 +9,7 @@ using LocalRAG.Services.Ai;
 using LocalRAG.Services.Auth;
 using LocalRAG.Services.Chat;
 using LocalRAG.Services.Convention;
-
+using LocalRAG.Services.Flight; // Added
 using LocalRAG.Services.Shared;
 using LocalRAG.Services.Shared.Builders;
 using LocalRAG.Storage;
@@ -154,7 +154,26 @@ builder.Services.AddScoped<UserContextualDataProvider>();
 builder.Services.AddScoped<ConventionAccessService>();
 
 // --- 5. 인증 및 기타 서비스 등록 ---
-var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
+var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings(); // Moved declaration here
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+    };
+});
 
 builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -171,52 +190,9 @@ builder.Services.AddSingleton<IVerificationService, VerificationService>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextFactory, UserContextFactory>();
+builder.Services.AddHttpClient<IFlightService, FlightService>();
 
-// --- Excel 업로드 서비스 등록 (리팩토링된 업로드 시스템) ---
-builder.Services.AddScoped<IUserUploadService, LocalRAG.Services.Upload.UserUploadService>();
-builder.Services.AddScoped<IScheduleTemplateUploadService, LocalRAG.Services.Upload.ScheduleUploadService>();
-builder.Services.AddScoped<IAttributeUploadService, LocalRAG.Services.Upload.AttributeUploadService>();
-builder.Services.AddScoped<IGroupScheduleMappingService, LocalRAG.Services.Upload.GroupScheduleMappingService>();
-
-// --- Admin 서비스 등록 ---
-builder.Services.AddScoped<LocalRAG.Services.Admin.MigrationAnalyzer>();
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
-        ValidateIssuer = true,
-        ValidIssuer = jwtSettings.Issuer,
-        ValidateAudience = true,
-        ValidAudience = jwtSettings.Audience,
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
-    };
-    options.Events = new JwtBearerEvents
-    {
-        OnMessageReceived = context =>
-        {
-            var accessToken = context.Request.Query["access_token"];
-            var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
-            {
-                context.Token = accessToken;
-            }
-            return Task.CompletedTask;
-        }
-    };
-});
-builder.Services.AddAuthorization();
-
-
-// --- 6. 상태 확인(Health Check) 설정 ---
+// HealthChecks
 builder.Services.AddHealthChecks()
     .AddCheck<LlmProviderHealthCheck>("llm_provider")
     .AddCheck<VectorStoreHealthCheck>("vector_store")

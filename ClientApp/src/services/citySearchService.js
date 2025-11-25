@@ -210,124 +210,242 @@ const cityNameKr = {
   // 한국 - 주요 도시
   'Seoul': '서울',
   'Busan': '부산',
+  'Busan-gwangyeoksi': '부산',
   'Jeju': '제주',
+  'Jeju City': '제주',
+  'Jeju-si': '제주',
   'Incheon': '인천',
+  'Incheon-gwangyeoksi': '인천',
   'Daegu': '대구',
+  'Daegu-gwangyeoksi': '대구',
   'Daejeon': '대전',
+  'Daejeon-gwangyeoksi': '대전',
   'Gwangju': '광주',
+  'Gwangju-gwangyeoksi': '광주',
   'Ulsan': '울산',
+  'Ulsan-gwangyeoksi': '울산',
   'Sejong': '세종',
+  'Sejong-si': '세종',
   // 한국 - 관광지/소도시
   'Gyeongju': '경주',
+  'Gyeongju-si': '경주',
   'Gangneung': '강릉',
+  'Gangneung-si': '강릉',
   'Sokcho': '속초',
+  'Sokcho-si': '속초',
   'Jeonju': '전주',
+  'Jeonju-si': '전주',
   'Yeosu': '여수',
+  'Yeosu-si': '여수',
   'Suwon': '수원',
+  'Suwon-si': '수원',
   'Jeongseon': '정선',
+  'Jeongseon-gun': '정선',
   'Pyeongchang': '평창',
+  'Pyeongchang-gun': '평창',
   'Chuncheon': '춘천',
+  'Chuncheon-si': '춘천',
   'Wonju': '원주',
+  'Wonju-si': '원주',
   'Donghae': '동해',
+  'Donghae-si': '동해',
   'Samcheok': '삼척',
+  'Samcheok-si': '삼척',
   'Taebaek': '태백',
+  'Taebaek-si': '태백',
   'Yangyang': '양양',
+  'Yangyang-gun': '양양',
   'Goseong': '고성',
+  'Goseong-gun': '고성',
   'Inje': '인제',
+  'Inje-gun': '인제',
   'Hongcheon': '홍천',
+  'Hongcheon-gun': '홍천',
   'Hoengseong': '횡성',
+  'Hoengseong-gun': '횡성',
   'Cheorwon': '철원',
+  'Cheorwon-gun': '철원',
   'Hwacheon': '화천',
+  'Hwacheon-gun': '화천',
   'Yanggu': '양구',
+  'Yanggu-gun': '양구',
   'Andong': '안동',
+  'Andong-si': '안동',
   'Pohang': '포항',
+  'Pohang-si': '포항',
   'Gimhae': '김해',
+  'Gimhae-si': '김해',
   'Changwon': '창원',
+  'Changwon-si': '창원',
   'Jinju': '진주',
+  'Jinju-si': '진주',
   'Tongyeong': '통영',
+  'Tongyeong-si': '통영',
   'Geoje': '거제',
+  'Geoje-si': '거제',
   'Namhae': '남해',
+  'Namhae-gun': '남해',
   'Hadong': '하동',
+  'Hadong-gun': '하동',
   'Sancheong': '산청',
+  'Sancheong-gun': '산청',
   'Hamyang': '함양',
+  'Hamyang-gun': '함양',
   'Gurye': '구례',
+  'Gurye-gun': '구례',
   'Suncheon': '순천',
+  'Suncheon-si': '순천',
   'Gwangyang': '광양',
+  'Gwangyang-si': '광양',
   'Mokpo': '목포',
+  'Mokpo-si': '목포',
   'Naju': '나주',
+  'Naju-si': '나주',
   'Damyang': '담양',
+  'Damyang-gun': '담양',
   'Boseong': '보성',
+  'Boseong-gun': '보성',
   'Goheung': '고흥',
+  'Goheung-gun': '고흥',
   'Wando': '완도',
+  'Wando-gun': '완도',
   'Jindo': '진도',
+  'Jindo-gun': '진도',
   'Haenam': '해남',
+  'Haenam-gun': '해남',
   'Gochang': '고창',
+  'Gochang-gun': '고창',
   'Buan': '부안',
+  'Buan-gun': '부안',
   'Gunsan': '군산',
+  'Gunsan-si': '군산',
   'Iksan': '익산',
+  'Iksan-si': '익산',
   'Gimje': '김제',
+  'Gimje-si': '김제',
   'Namwon': '남원',
+  'Namwon-si': '남원',
   'Muju': '무주',
+  'Muju-gun': '무주',
   'Jinan': '진안',
+  'Jinan-gun': '진안',
   'Jangsu': '장수',
+  'Jangsu-gun': '장수',
   'Imsil': '임실',
+  'Imsil-gun': '임실',
   'Sunchang': '순창',
+  'Sunchang-gun': '순창',
   'Gongju': '공주',
+  'Gongju-si': '공주',
   'Buyeo': '부여',
+  'Buyeo-gun': '부여',
   'Boryeong': '보령',
+  'Boryeong-si': '보령',
   'Seosan': '서산',
+  'Seosan-si': '서산',
   'Taean': '태안',
+  'Taean-gun': '태안',
   'Danyang': '단양',
+  'Danyang-gun': '단양',
   'Jecheon': '제천',
+  'Jecheon-si': '제천',
   'Chungju': '충주',
+  'Chungju-si': '충주',
   'Yeongju': '영주',
+  'Yeongju-si': '영주',
   'Bonghwa': '봉화',
+  'Bonghwa-gun': '봉화',
   'Uljin': '울진',
+  'Uljin-gun': '울진',
   'Yeongdeok': '영덕',
+  'Yeongdeok-gun': '영덕',
   'Cheongdo': '청도',
+  'Cheongdo-gun': '청도',
   'Gyeongsan': '경산',
+  'Gyeongsan-si': '경산',
   'Yeongcheon': '영천',
+  'Yeongcheon-si': '영천',
   'Mungyeong': '문경',
+  'Mungyeong-si': '문경',
   'Sangju': '상주',
+  'Sangju-si': '상주',
   'Gimcheon': '김천',
+  'Gimcheon-si': '김천',
   'Gumi': '구미',
+  'Gumi-si': '구미',
   'Chilgok': '칠곡',
+  'Chilgok-gun': '칠곡',
   'Seongju': '성주',
+  'Seongju-gun': '성주',
   'Goryeong': '고령',
+  'Goryeong-gun': '고령',
   'Hapcheon': '합천',
+  'Hapcheon-gun': '합천',
   'Uiseong': '의성',
+  'Uiseong-gun': '의성',
   'Cheongsong': '청송',
+  'Cheongsong-gun': '청송',
   'Yeongyang': '영양',
+  'Yeongyang-gun': '영양',
   'Ulleung': '울릉',
+  'Ulleung-gun': '울릉',
   'Paju': '파주',
+  'Paju-si': '파주',
   'Goyang': '고양',
+  'Goyang-si': '고양',
   'Gimpo': '김포',
+  'Gimpo-si': '김포',
   'Bucheon': '부천',
+  'Bucheon-si': '부천',
   'Ansan': '안산',
+  'Ansan-si': '안산',
   'Siheung': '시흥',
+  'Siheung-si': '시흥',
   'Gwangmyeong': '광명',
+  'Gwangmyeong-si': '광명',
   'Anyang': '안양',
+  'Anyang-si': '안양',
   'Gunpo': '군포',
+  'Gunpo-si': '군포',
   'Uiwang': '의왕',
+  'Uiwang-si': '의왕',
   'Seongnam': '성남',
+  'Seongnam-si': '성남',
   'Hanam': '하남',
+  'Hanam-si': '하남',
   'Gwacheon': '과천',
+  'Gwacheon-si': '과천',
   'Yongin': '용인',
+  'Yongin-si': '용인',
   'Hwaseong': '화성',
+  'Hwaseong-si': '화성',
   'Osan': '오산',
+  'Osan-si': '오산',
   'Pyeongtaek': '평택',
+  'Pyeongtaek-si': '평택',
   'Anseong': '안성',
+  'Anseong-si': '안성',
   'Icheon': '이천',
+  'Icheon-si': '이천',
   'Yeoju': '여주',
+  'Yeoju-si': '여주',
   'Gwangju-si': '광주시',
   'Yangpyeong': '양평',
+  'Yangpyeong-gun': '양평',
   'Gapyeong': '가평',
+  'Gapyeong-gun': '가평',
   'Pocheon': '포천',
+  'Pocheon-si': '포천',
   'Dongducheon': '동두천',
+  'Dongducheon-si': '동두천',
   'Uijeongbu': '의정부',
+  'Uijeongbu-si': '의정부',
   'Yangju': '양주',
+  'Yangju-si': '양주',
   'Namyangju': '남양주',
+  'Namyangju-si': '남양주',
   'Guri': '구리',
+  'Guri-si': '구리',
 
   // 홍콩/마카오
   'Hong Kong': '홍콩',
@@ -488,10 +606,19 @@ export function searchCities(keyword, limit = 10) {
   const query = keyword.trim()
   const queryLower = query.toLowerCase()
   const results = []
-  const addedCities = new Set() // 중복 방지
+  const addedCities = new Set() // 중복 방지 (displayName 기준)
 
-  // 1. 한국어 국가명으로 검색한 경우 -> 해당 국가의 인기 도시 반환
-  const countryCode = countryNameEnFromKr[query]
+  // 1. 한국어 국가명으로 검색한 경우 -> 해당 국가의 인기 도시 반환 (부분 일치 지원)
+  let countryCode = null
+
+  // 한국어 국가명 부분 일치 검색
+  for (const [code, koreanName] of Object.entries(countryNameKr)) {
+    if (koreanName.includes(query)) {
+      countryCode = code
+      break
+    }
+  }
+
   if (countryCode) {
     const popularCities = popularCitiesByCountry[countryCode] || []
     const country = Country.getCountryByCode(countryCode)
@@ -500,10 +627,10 @@ export function searchCities(keyword, limit = 10) {
       const cities = City.getCitiesOfCountry(countryCode)
       const city = cities?.find(c => c.name === cityName)
       if (city) {
-        const key = `${city.name}-${city.countryCode}`
-        if (!addedCities.has(key)) {
-          addedCities.add(key)
-          results.push(formatCityResult(city, country))
+        const formatted = formatCityResult(city, country)
+        if (!addedCities.has(formatted.displayName)) {
+          addedCities.add(formatted.displayName)
+          results.push(formatted)
         }
       }
     })
@@ -542,12 +669,12 @@ export function searchCities(keyword, limit = 10) {
     for (const { englishName } of matchingKoreanCities) {
       const matchedCities = allCities.filter(c => c.name === englishName)
       for (const city of matchedCities) {
-        const key = `${city.name}-${city.countryCode}`
-        if (!addedCities.has(key)) {
-          addedCities.add(key)
-          const country = Country.getCountryByCode(city.countryCode)
-          if (country) {
-            results.push(formatCityResult(city, country))
+        const country = Country.getCountryByCode(city.countryCode)
+        if (country) {
+          const formatted = formatCityResult(city, country)
+          if (!addedCities.has(formatted.displayName)) {
+            addedCities.add(formatted.displayName)
+            results.push(formatted)
           }
         }
         if (results.length >= limit) break
@@ -560,10 +687,10 @@ export function searchCities(keyword, limit = 10) {
     }
   }
 
-  // 3. 영어 국가명으로 검색
+  // 3. 영어 국가명으로 검색 (부분 일치 지원)
   const allCountries = Country.getAllCountries()
   const matchedCountry = allCountries.find(c =>
-    c.name.toLowerCase() === queryLower
+    c.name.toLowerCase().includes(queryLower)
   )
   if (matchedCountry) {
     const popularCities = popularCitiesByCountry[matchedCountry.isoCode] || []
@@ -571,10 +698,10 @@ export function searchCities(keyword, limit = 10) {
       const cities = City.getCitiesOfCountry(matchedCountry.isoCode)
       const city = cities?.find(c => c.name === cityName)
       if (city) {
-        const key = `${city.name}-${city.countryCode}`
-        if (!addedCities.has(key)) {
-          addedCities.add(key)
-          results.push(formatCityResult(city, matchedCountry))
+        const formatted = formatCityResult(city, matchedCountry)
+        if (!addedCities.has(formatted.displayName)) {
+          addedCities.add(formatted.displayName)
+          results.push(formatted)
         }
       }
     })
@@ -607,12 +734,12 @@ export function searchCities(keyword, limit = 10) {
   })
 
   for (const city of matchedCities) {
-    const key = `${city.name}-${city.countryCode}`
-    if (!addedCities.has(key)) {
-      addedCities.add(key)
-      const country = Country.getCountryByCode(city.countryCode)
-      if (country) {
-        results.push(formatCityResult(city, country))
+    const country = Country.getCountryByCode(city.countryCode)
+    if (country) {
+      const formatted = formatCityResult(city, country)
+      if (!addedCities.has(formatted.displayName)) {
+        addedCities.add(formatted.displayName)
+        results.push(formatted)
       }
     }
     if (results.length >= limit) break
@@ -671,11 +798,21 @@ export function getPopularCities(countryCode) {
   if (!country) return []
 
   const cities = City.getCitiesOfCountry(countryCode) || []
+  const addedNames = new Set()
+  const results = []
 
-  return popularCities
-    .map(cityName => cities.find(c => c.name === cityName))
-    .filter(Boolean)
-    .map(city => formatCityResult(city, country))
+  popularCities.forEach(cityName => {
+    const city = cities.find(c => c.name === cityName)
+    if (city) {
+      const formatted = formatCityResult(city, country)
+      if (!addedNames.has(formatted.displayName)) {
+        addedNames.add(formatted.displayName)
+        results.push(formatted)
+      }
+    }
+  })
+
+  return results
 }
 
 export default {

@@ -267,6 +267,11 @@ namespace LocalRAG.Services.PersonalTrip
                 BookingReference = dto.BookingReference,
                 SeatNumber = dto.SeatNumber,
                 Notes = dto.Notes,
+                Terminal = dto.Terminal,
+                Gate = dto.Gate,
+                Status = dto.Status,
+                DepartureAirportCode = dto.DepartureAirportCode,
+                ArrivalAirportCode = dto.ArrivalAirportCode,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -296,6 +301,11 @@ namespace LocalRAG.Services.PersonalTrip
             flight.BookingReference = dto.BookingReference;
             flight.SeatNumber = dto.SeatNumber;
             flight.Notes = dto.Notes;
+            flight.Terminal = dto.Terminal;
+            flight.Gate = dto.Gate;
+            flight.Status = dto.Status;
+            flight.DepartureAirportCode = dto.DepartureAirportCode;
+            flight.ArrivalAirportCode = dto.ArrivalAirportCode;
             flight.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -730,6 +740,11 @@ namespace LocalRAG.Services.PersonalTrip
                 ParkingFee = flight.ParkingFee,
                 RentalCost = flight.RentalCost,
                 Notes = flight.Notes,
+                Terminal = flight.Terminal,
+                Gate = flight.Gate,
+                Status = flight.Status,
+                DepartureAirportCode = flight.DepartureAirportCode,
+                ArrivalAirportCode = flight.ArrivalAirportCode,
                 CreatedAt = flight.CreatedAt,
                 UpdatedAt = flight.UpdatedAt
             };

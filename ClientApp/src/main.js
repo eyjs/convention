@@ -16,6 +16,9 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 dayjs.extend(duration);
 
+// Directives
+import numberFormat from './directives/numberFormat'
+
 const app = createApp(App)
 const pinia = createPinia()
 
@@ -23,6 +26,9 @@ app.use(pinia)
 app.use(router)
 app.use(Viewer)
 app.use(VCalendar, {})
+
+// Directives 등록
+app.directive('number-format', numberFormat)
 
 // Quill 전역 설정
 setupQuill()
