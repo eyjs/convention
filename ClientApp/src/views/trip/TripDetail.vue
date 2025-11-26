@@ -18,14 +18,9 @@
             <div class="relative">
               <button @click="openReminderModal" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
                 <BellIcon class="w-6 h-6" />
-                <span v-if="upcomingReminders.length > 0" class="absolute top-1 right-1 block h-2 w-2 rounded-full ring-2 ring-white bg-red-500"></span>
+                <span v-if="hasNewReminders" class="absolute top-1 right-1 block h-2 w-2 rounded-full ring-2 ring-white bg-red-500"></span>
               </button>
             </div>
-            <button v-if="tripId" @click="openShareModal" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-              </svg>
-            </button>
           </template>
         </template>
       </MainHeader>
@@ -49,9 +44,17 @@
           <div class="relative z-10">
             <div class="flex justify-between items-start mb-3">
               <h1 class="text-3xl font-bold">{{ trip.title }}</h1>
-              <button v-if="!effectiveReadonly" @click="openTripInfoModal" class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors">
-                수정
-              </button>
+              <div v-if="!effectiveReadonly" class="flex gap-2">
+                <button v-if="tripId" @click="openShareModal" class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                  </svg>
+                  공유
+                </button>
+                <button @click="openTripInfoModal" class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors">
+                  수정
+                </button>
+              </div>
             </div>
             <div class="flex items-center gap-2 text-white/90 mb-2">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -542,6 +545,7 @@ const showRightDayScroll = ref(false)
 
 // Modal states
 const isReminderModalOpen = ref(false)
+const lastCheckedReminders = ref(null) // 마지막으로 확인한 알림 개수와 시간
 
 const handleDayFilterScroll = () => {
   if (dayFilterContainer.value) {
@@ -607,8 +611,31 @@ const upcomingReminders = computed(() => {
   return reminders.sort((a, b) => a.daysUntil - b.daysUntil)
 })
 
+// 새로운 알림이 있는지 확인
+const hasNewReminders = computed(() => {
+  if (upcomingReminders.value.length === 0) return false
+  if (!lastCheckedReminders.value) return true // 한 번도 확인하지 않았으면 새 알림
+
+  // 알림 ID 목록 비교
+  const currentIds = upcomingReminders.value.map(r => r.id).sort().join(',')
+  const checkedIds = lastCheckedReminders.value.reminderIds || ''
+
+  return currentIds !== checkedIds
+})
+
 function openReminderModal() {
   isReminderModalOpen.value = true;
+
+  // 알림 확인 기록 저장
+  const tripIdValue = tripId.value || shareToken.value
+  if (tripIdValue) {
+    const reminderData = {
+      reminderIds: upcomingReminders.value.map(r => r.id).sort().join(','),
+      checkedAt: new Date().toISOString()
+    }
+    localStorage.setItem(`reminders_checked_${tripIdValue}`, JSON.stringify(reminderData))
+    lastCheckedReminders.value = reminderData
+  }
 }
 
 function closeReminderModal() {
@@ -778,6 +805,15 @@ onMounted(async () => {
   setInterval(() => { now.value = new Date() }, 60000) // Update time every minute for highlight
   await nextTick()
   handleDayFilterScroll()
+
+  // 마지막 확인 시점 로드 (localStorage)
+  const tripIdValue = tripId.value || shareToken.value
+  if (tripIdValue) {
+    const stored = localStorage.getItem(`reminders_checked_${tripIdValue}`)
+    if (stored) {
+      lastCheckedReminders.value = JSON.parse(stored)
+    }
+  }
 })
 
 

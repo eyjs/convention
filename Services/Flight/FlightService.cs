@@ -89,6 +89,10 @@ namespace LocalRAG.Services.Flight
                  urlBuilder.Append($"&searchday={searchDate.Replace("-", "")}");
             }
             
+            // fromTime과 toTime이 null이거나 공백인 경우 기본값 설정
+            fromTime = string.IsNullOrWhiteSpace(fromTime) ? "0000" : fromTime;
+            toTime = string.IsNullOrWhiteSpace(toTime) ? "2359" : toTime;
+
             if (!string.IsNullOrWhiteSpace(fromTime))
                 urlBuilder.Append($"&from_time={fromTime.Replace(":", "")}");
             
@@ -146,7 +150,7 @@ namespace LocalRAG.Services.Flight
             var match = Regex.Match(cleaned, @"^([A-Z0-9]{2,3})(\d{1,4})$");
             if (!match.Success) return null;
             var airlineCode = match.Groups[1].Value;
-            var flightNumber = match.Groups[2].Value.PadLeft(3, '0');
+            var flightNumber = match.Groups[2].Value;
             return $"{airlineCode}{flightNumber}";
         }
 
@@ -233,7 +237,7 @@ namespace LocalRAG.Services.Flight
             var formattedDate = searchDate.Replace("-", "");
 
             var flights = await _dbContext.IncheonFlightData
-                .Where(f => f.FlightId == formattedFlightId && f.ScheduleDate == formattedDate)
+                .Where(f => (f.FlightId == formattedFlightId || f.MasterFlightId == formattedFlightId) && f.ScheduleDate == formattedDate)
                 .OrderBy(f => f.FlightType)
                 .ToListAsync();
 

@@ -31,10 +31,10 @@
       <button @click="$emit('select', accommodation)" class="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors">
         숙소 상세
       </button>
-      <button @click="copyAddressToClipboard(accommodation.address)" class="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors">
-        주소 복사
+      <button @click="openNavigation" class="flex-1 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+        길찾기
       </button>
-      <button @click="$emit('delete', accommodation.id)" class="p-2.5 bg-red-100 text-red-600 rounded-lg font-semibold hover:bg-red-200 transition-colors">
+      <button @click="$emit('delete', accommodation.id)" class="p-2.5 bg-red-100 text-red-600 rounded-lg font-semibold hover:bg-red-200 transition-colors" title="삭제">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
       </button>
     </div>
@@ -164,5 +164,24 @@ const fallbackCopyTextToClipboard = (text) => {
     alert('주소 복사에 실패했습니다.');
   }
   document.body.removeChild(textArea);
+};
+
+const openNavigation = () => {
+  const acc = props.accommodation;
+
+  // 위도/경도가 있으면 좌표로 검색, 없으면 주소로 검색
+  let url = '';
+  if (acc.latitude && acc.longitude) {
+    // 카카오맵 좌표 기반 길찾기
+    url = `https://map.kakao.com/link/to/${encodeURIComponent(acc.name)},${acc.latitude},${acc.longitude}`;
+  } else if (acc.address) {
+    // 카카오맵 주소 기반 검색
+    url = `https://map.kakao.com/link/search/${encodeURIComponent(acc.address)}`;
+  } else {
+    alert('주소 정보가 없습니다.');
+    return;
+  }
+
+  window.open(url, '_blank');
 };
 </script>

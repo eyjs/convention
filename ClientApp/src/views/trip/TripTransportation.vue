@@ -265,11 +265,39 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">출발 일시</label>
-                <input v-model="flightData.departureTime" type="datetime-local" class="input" :class="{'bg-gray-100': isApiSourcedFlight && getFlightType(editingFlight) === 'Departure'}" :readonly="isApiSourcedFlight && getFlightType(editingFlight) === 'Departure'" />
+                <DatePicker
+                  v-model:value="flightData.departureTime"
+                  type="datetime"
+                  format="YYYY-MM-DD HH:mm"
+                  value-type="YYYY-MM-DDTHH:mm:ss"
+                  placeholder="날짜와 시간을 선택하세요"
+                  :show-second="false"
+                  lang="ko"
+                  confirm
+                  append-to-body
+                  :popup-style="{ zIndex: 9999 }"
+                  :disabled="isApiSourcedFlight && getFlightType(editingFlight) === 'Departure'"
+                  :class="{'bg-gray-100': isApiSourcedFlight && getFlightType(editingFlight) === 'Departure'}"
+                  class="w-full"
+                />
               </div>
               <div>
                 <label class="label">도착 일시</label>
-                <input v-model="flightData.arrivalTime" type="datetime-local" class="input" :class="{'bg-gray-100': isApiSourcedFlight && getFlightType(editingFlight) === 'Arrival'}" :readonly="isApiSourcedFlight && getFlightType(editingFlight) === 'Arrival'" />
+                <DatePicker
+                  v-model:value="flightData.arrivalTime"
+                  type="datetime"
+                  format="YYYY-MM-DD HH:mm"
+                  value-type="YYYY-MM-DDTHH:mm:ss"
+                  placeholder="날짜와 시간을 선택하세요"
+                  :show-second="false"
+                  lang="ko"
+                  confirm
+                  append-to-body
+                  :popup-style="{ zIndex: 9999 }"
+                  :disabled="isApiSourcedFlight && getFlightType(editingFlight) === 'Arrival'"
+                  :class="{'bg-gray-100': isApiSourcedFlight && getFlightType(editingFlight) === 'Arrival'}"
+                  class="w-full"
+                />
               </div>
             </div>
              <div class="grid grid-cols-2 gap-3">
@@ -306,7 +334,19 @@
             </div>
             <div>
               <label class="label">출발 일시</label>
-              <input v-model="flightData.departureTime" type="datetime-local" class="input" />
+              <DatePicker
+                v-model:value="flightData.departureTime"
+                type="datetime"
+                format="YYYY-MM-DD HH:mm"
+                value-type="YYYY-MM-DDTHH:mm:ss"
+                placeholder="날짜와 시간을 선택하세요"
+                :show-second="false"
+                lang="ko"
+                confirm
+                append-to-body
+                :popup-style="{ zIndex: 9999 }"
+                class="w-full"
+              />
             </div>
             <div>
               <label class="label">금액 (원)</label>
@@ -372,11 +412,35 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">대여 일시</label>
-                <input v-model="flightData.departureTime" type="datetime-local" class="input" />
+                <DatePicker
+                  v-model:value="flightData.departureTime"
+                  type="datetime"
+                  format="YYYY-MM-DD HH:mm"
+                  value-type="YYYY-MM-DDTHH:mm:ss"
+                  placeholder="날짜와 시간을 선택하세요"
+                  :show-second="false"
+                  lang="ko"
+                  confirm
+                  append-to-body
+                  :popup-style="{ zIndex: 9999 }"
+                  class="w-full"
+                />
               </div>
               <div>
                 <label class="label">반납 일시</label>
-                <input v-model="flightData.arrivalTime" type="datetime-local" class="input" />
+                <DatePicker
+                  v-model:value="flightData.arrivalTime"
+                  type="datetime"
+                  format="YYYY-MM-DD HH:mm"
+                  value-type="YYYY-MM-DDTHH:mm:ss"
+                  placeholder="날짜와 시간을 선택하세요"
+                  :show-second="false"
+                  lang="ko"
+                  confirm
+                  append-to-body
+                  :popup-style="{ zIndex: 9999 }"
+                  class="w-full"
+                />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
@@ -468,6 +532,9 @@ import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue';
 import SlideUpModal from '@/components/common/SlideUpModal.vue';
 import FlightSearchModal from '@/components/trip/FlightSearchModal.vue';
 import FlightAddEditModal from '@/components/personalTrip/FlightAddEditModal.vue';
+import DatePicker from 'vue-datepicker-next';
+import 'vue-datepicker-next/index.css';
+import 'vue-datepicker-next/locale/ko';
 import { useUIStore } from '@/stores/ui';
 import apiClient from '@/services/api';
 import dayjs from 'dayjs';
@@ -712,8 +779,8 @@ function openDetailModal(flight) {
     arrivalLocation: flight.arrivalAirportCode || flight.arrivalLocation,
     terminal: flight.terminal || '',
     gate: flight.gate || '',
-    departureTime: flight.departureTime ? dayjs(flight.departureTime).format('YYYY-MM-DDTHH:mm') : '',
-    arrivalTime: flight.arrivalTime ? dayjs(flight.arrivalTime).format('YYYY-MM-DDTHH:mm') : '',
+    departureTime: flight.departureTime ? dayjs(flight.departureTime).format('YYYY-MM-DDTHH:mm:ss') : '',
+    arrivalTime: flight.arrivalTime ? dayjs(flight.arrivalTime).format('YYYY-MM-DDTHH:mm:ss') : '',
     departureDate: flight.departureTime ? dayjs(flight.departureTime).format('YYYY-MM-DD') : ''
   };
   isEditModalOpen.value = true;

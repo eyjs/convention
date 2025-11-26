@@ -1,74 +1,74 @@
 import * as signalR from '@microsoft/signalr'
 
 /**
- * ê¸€ë¡œë²Œ ì±„íŒ… ì•Œë¦¼ ì„œë¹„ìŠ¤
- * ì‚¬ìš©ìžê°€ ë¡œê·¸ì¸í•˜ë©´ ìžì‹ ì˜ ê°œì¸ ê·¸ë£¹(user-{userId})ì— ê°€ìž…í•˜ì—¬
- * ì‹¤ì‹œê°„ìœ¼ë¡œ unread count ì—…ë°ì´íŠ¸ë¥¼ ë°›ìŠµë‹ˆë‹¤.
+ * ±Û·Î¹ú Ã¤ÆÃ ¾Ë¸² ¼­ºñ½º
+ * »ç¿ëÀÚ°¡ ·Î±×ÀÎÇÏ¸é ÀÚ½ÅÀÇ °³ÀÎ ±×·ì(user-{userId})¿¡ °¡ÀÔÇÏ¿©
+ * ½Ç½Ã°£À¸·Î unread count ¾÷µ¥ÀÌÆ®¸¦ ¹Þ½À´Ï´Ù.
  */
 class GlobalChatNotificationService {
-  constructor() {
-    this.connection = null
-    this.isConnecting = false
-  }
-
-  async connect(userId, token) {
-    if (this.connection || this.isConnecting) {
-      console.log('Global SignalR connection already exists or is connecting.')
-      return
+    constructor() {
+        this.connection = null
+        this.isConnecting = false
     }
 
-    this.isConnecting = true
+    async connect(userId, token) {
+        if (this.connection || this.isConnecting) {
+            console.log('Global SignalR connection already exists or is connecting.')
+            return
+        }
 
-    this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(`/chathub?userId=${userId}`, {
-        accessTokenFactory: () => token,
-      })
-      .withAutomaticReconnect()
-      .build()
+        this.isConnecting = true
 
-    try {
-      await this.connection.start()
-      console.log('Global SignalR Connected.')
-      this.isConnecting = false
+        this.connection = new signalR.HubConnectionBuilder()
+            .withUrl(`/chathub?userId=${userId}`, {
+                accessTokenFactory: () => token,
+            })
+            .withAutomaticReconnect()
+            .build()
 
-      // OnConnectedAsyncì—ì„œ ê°œì¸ ê·¸ë£¹ ê°€ìž…ì„ ì²˜ë¦¬í•˜ì§€ë§Œ, ë§Œì•½ì„ ìœ„í•´ í´ë¼ì´ì–¸íŠ¸ì—ì„œë„ í˜¸ì¶œ
-      this.connection.invoke('JoinUserGroup', userId).catch((err) => {
-        return console.error('Failed to join user group:', err.toString())
-      })
-    } catch (error) {
-      console.error('Global SignalR connection failed: ', error)
-      this.isConnecting = false
-      // 5ì´ˆ í›„ ìž¬ì—°ê²° ì‹œë„
-      setTimeout(() => this.connect(userId, token), 5000)
+        try {
+            await this.connection.start()
+            console.log('Global SignalR Connected.')
+            this.isConnecting = false
+
+            // OnConnectedAsync¿¡¼­ °³ÀÎ ±×·ì °¡ÀÔÀ» Ã³¸®ÇÏÁö¸¸, ¸¸¾àÀ» À§ÇØ Å¬¶óÀÌ¾ðÆ®¿¡¼­µµ È£Ãâ
+            this.connection.invoke('JoinUserGroup', userId).catch((err) => {
+                return console.error('Failed to join user group:', err.toString())
+            })
+        } catch (error) {
+            console.error('Global SignalR connection failed: ', error)
+            this.isConnecting = false
+            // 5ÃÊ ÈÄ Àç¿¬°á ½Ãµµ
+            setTimeout(() => this.connect(userId, token), 5000)
+        }
     }
-  }
 
-  disconnect() {
-    if (this.connection) {
-      this.connection.stop()
-      this.connection = null
-      console.log('Global SignalR Disconnected.')
+    disconnect() {
+        if (this.connection) {
+            this.connection.stop()
+            this.connection = null
+            console.log('Global SignalR Disconnected.')
+        }
     }
-  }
 
-  onUnreadCountIncrement(callback) {
-    if (!this.connection) return
-    this.connection.on('UnreadCountIncrement', (data) => {
-      callback(data.conventionId)
-    })
-  }
+    onUnreadCountIncrement(callback) {
+        if (!this.connection) return
+        this.connection.on('UnreadCountIncrement', (data) => {
+            callback(data.conventionId)
+        })
+    }
 
-  onReconnected(callback) {
-    if (!this.connection) return
-    this.connection.onreconnected(callback)
-  }
+    onReconnected(callback) {
+        if (!this.connection) return
+        this.connection.onreconnected(callback)
+    }
 
-  get isConnected() {
-    return (
-      this.connection &&
-      this.connection.state === signalR.HubConnectionState.Connected
-    )
-  }
+    get isConnected() {
+        return (
+            this.connection &&
+            this.connection.state === signalR.HubConnectionState.Connected
+        )
+    }
 }
 
 const service = new GlobalChatNotificationService()

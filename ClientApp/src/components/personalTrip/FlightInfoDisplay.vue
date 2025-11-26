@@ -4,7 +4,13 @@
         <p class="font-semibold text-gray-900">{{ flight.airline }} {{ flight.flightNumber }}</p>
         <button @click="emit('clear')" class="text-gray-500 hover:text-red-600 text-xs font-medium">변경</button>
     </div>
-    <p class="text-gray-600">{{ flight.departureLocation }} → {{ flight.arrivalLocation }}</p>
+    <p class="text-gray-600">
+      <span v-if="type === 'departure'" class="font-bold text-blue-700">{{ flight.departureLocation }}</span>
+      <span v-else>{{ flight.departureLocation }}</span>
+      <span class="mx-1">→</span>
+      <span v-if="type === 'arrival'" class="font-bold text-green-700">{{ flight.arrivalLocation }}</span>
+      <span v-else>{{ flight.arrivalLocation }}</span>
+    </p>
     <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-500">
         <div v-if="flight.departureTime" class="flex items-center gap-1.5">
             <span class="font-semibold w-12 inline-block">출발시간:</span>

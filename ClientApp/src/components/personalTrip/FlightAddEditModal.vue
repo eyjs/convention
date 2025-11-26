@@ -24,7 +24,23 @@
             <FlightInfoDisplay :flight="roundTrip.departure" type="departure" @clear="roundTrip.departure = null" />
             <div>
               <label class="label text-sm text-gray-600">도착 시간 (직접 입력)</label>
-              <input v-model="roundTrip.departure.arrivalTime" type="datetime-local" class="input" />
+              <DatePicker
+                v-model:value="roundTrip.departure.arrivalTime"
+                type="datetime"
+                format="YYYY-MM-DD HH:mm"
+                value-type="YYYY-MM-DDTHH:mm:ss"
+                placeholder="날짜와 시간을 선택하세요"
+                :show-second="false"
+                lang="ko"
+                confirm
+                append-to-body
+                :popup-style="{ zIndex: 9999 }"
+                class="w-full"
+              />
+            </div>
+            <div>
+              <label class="label">금액 (원)</label>
+              <input v-model.number="roundTrip.departure.amount" type="number" inputmode="numeric" class="input" placeholder="예: 150000" />
             </div>
           </div>
         </div>
@@ -50,25 +66,28 @@
             <FlightInfoDisplay :flight="roundTrip.arrival" type="arrival" @clear="roundTrip.arrival = null" />
             <div>
               <label class="label text-sm text-gray-600">출발 시간 (직접 입력)</label>
-              <input v-model="roundTrip.arrival.departureTime" type="datetime-local" class="input" />
+              <DatePicker
+                v-model:value="roundTrip.arrival.departureTime"
+                type="datetime"
+                format="YYYY-MM-DD HH:mm"
+                value-type="YYYY-MM-DDTHH:mm:ss"
+                placeholder="날짜와 시간을 선택하세요"
+                :show-second="false"
+                lang="ko"
+                confirm
+                append-to-body
+                :popup-style="{ zIndex: 9999 }"
+                class="w-full"
+              />
+            </div>
+            <div>
+              <label class="label">금액 (원)</label>
+              <input v-model.number="roundTrip.arrival.amount" type="number" inputmode="numeric" class="input" placeholder="예: 150000" />
             </div>
           </div>
         </div>
 
-        <!-- 비용 및 메모 -->
-        <div v-if="roundTrip.departure || roundTrip.arrival" class="border-2 border-gray-200 rounded-xl p-4">
-          <h3 class="font-bold text-gray-900 mb-3">추가 정보</h3>
-          <div class="space-y-3">
-            <div>
-              <label class="label">왕복 총 금액 (원)</label>
-              <input v-model.number="roundTrip.totalCost" v-number-format type="text" inputmode="numeric" class="input" placeholder="예: 300000" />
-            </div>
-            <div>
-              <label class="label">메모</label>
-              <textarea v-model="roundTrip.notes" rows="2" class="input" placeholder="예약번호, 좌석번호 등"></textarea>
-            </div>
-          </div>
-        </div>
+
 
       </div>
     </template>
@@ -89,6 +108,9 @@ import { ref, reactive, watch } from 'vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import FlightSearchModal from '@/components/trip/FlightSearchModal.vue'
 import FlightInfoDisplay from '@/components/personalTrip/FlightInfoDisplay.vue'
+import DatePicker from 'vue-datepicker-next'
+import 'vue-datepicker-next/index.css'
+import 'vue-datepicker-next/locale/ko'
 import dayjs from 'dayjs'
 
 const props = defineProps({
@@ -100,8 +122,6 @@ const emit = defineEmits(['close', 'save'])
 const roundTrip = reactive({
   departure: null,
   arrival: null,
-  totalCost: null,
-  notes: ''
 });
 
 const showFlightSearchModal = ref(false)
@@ -114,11 +134,8 @@ watch(() => props.show, (newVal) => {
       // Logic to populate from existing flights if needed (for edit mode)
       const dep = props.existingFlights.find(f => f.departureLocation?.includes('인천') || f.departureAirportCode === 'ICN');
       const arr = props.existingFlights.find(f => f.arrivalLocation?.includes('인천') || f.arrivalAirportCode === 'ICN');
-      if(dep) roundTrip.departure = {...dep};
-      if(arr) roundTrip.arrival = {...arr};
-      // Simple cost/notes logic for now
-      roundTrip.totalCost = (dep?.amount || 0) + (arr?.amount || 0);
-      roundTrip.notes = dep?.notes || arr?.notes || '';
+      if(dep) roundTrip.departure = {...dep, amount: dep.amount || null};
+      if(arr) roundTrip.arrival = {...arr, amount: arr.amount || null};
     }
   }
 })
@@ -126,8 +143,6 @@ watch(() => props.show, (newVal) => {
 function resetForm() {
     roundTrip.departure = null;
     roundTrip.arrival = null;
-    roundTrip.totalCost = null;
-    roundTrip.notes = '';
 }
 
 function openFlightSearch(type) {
@@ -146,24 +161,30 @@ function handleFlightSelect(flightInfo) {
   };
   
   if (currentSearchType.value === 'departure') {
+    const departureDateTime = dayjs(`${formatDate(flightInfo.scheduleDate)} ${flightInfo.estimatedTime || flightInfo.scheduleTime}`);
+    const searchDate = formatDate(flightInfo.scheduleDate);
     roundTrip.departure = {
       ...commonData,
       departureLocation: '인천국제공항',
       arrivalLocation: flightInfo.airport,
-      departureTime: dayjs(`${formatDate(flightInfo.scheduleDate)} ${flightInfo.estimatedTime || flightInfo.scheduleTime}`).format('YYYY-MM-DDTHH:mm'),
-      arrivalTime: null, // User input
+      departureTime: departureDateTime.format('YYYY-MM-DDTHH:mm:ss'),
+      arrivalTime: `${searchDate}T00:00:00`, // 검색한 날짜의 00:00으로 초기화
       departureAirportCode: 'ICN',
       arrivalAirportCode: flightInfo.airportCode,
+      amount: null, // Add amount field
     };
   } else {
+    const arrivalDateTime = dayjs(`${formatDate(flightInfo.scheduleDate)} ${flightInfo.estimatedTime || flightInfo.scheduleTime}`);
+    const searchDate = formatDate(flightInfo.scheduleDate);
     roundTrip.arrival = {
       ...commonData,
       departureLocation: flightInfo.airport,
       arrivalLocation: '인천국제공항',
-      departureTime: null, // User input
-      arrivalTime: dayjs(`${formatDate(flightInfo.scheduleDate)} ${flightInfo.estimatedTime || flightInfo.scheduleTime}`).format('YYYY-MM-DDTHH:mm'),
+      departureTime: `${searchDate}T00:00:00`, // 검색한 날짜의 00:00으로 초기화
+      arrivalTime: arrivalDateTime.format('YYYY-MM-DDTHH:mm:ss'),
       departureAirportCode: flightInfo.airportCode,
       arrivalAirportCode: 'ICN',
+      amount: null, // Add amount field
     };
   }
   showFlightSearchModal.value = false;
@@ -176,8 +197,7 @@ function saveFlights() {
     flightsToSave.push({
       ...roundTrip.departure,
       category: '항공편',
-      amount: roundTrip.totalCost / (roundTrip.arrival ? 2 : 1), // Split cost
-      notes: roundTrip.notes
+      amount: roundTrip.departure.amount,
     });
   }
   
@@ -185,8 +205,7 @@ function saveFlights() {
     flightsToSave.push({
       ...roundTrip.arrival,
       category: '항공편',
-      amount: roundTrip.totalCost / (roundTrip.departure ? 2 : 1), // Split cost
-      notes: roundTrip.notes
+      amount: roundTrip.arrival.amount,
     });
   }
   
