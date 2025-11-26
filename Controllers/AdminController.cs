@@ -320,10 +320,15 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("users")]
-    public async Task<IActionResult> GetUsers([FromQuery] string? searchTerm, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetUsers([FromQuery] string? searchTerm, [FromQuery] string? role, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var query = _context.Users
             .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            query = query.Where(u => u.Role == role);
+        }
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
