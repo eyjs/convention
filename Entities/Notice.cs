@@ -9,6 +9,7 @@ public class Notice
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public bool IsPinned { get; set; } = false;
+    public int DisplayOrder { get; set; } = 0;
     public int ViewCount { get; set; } = 0;
     public int AuthorId { get; set; }
     public int ConventionId { get; set; }

@@ -12,16 +12,14 @@
     </div>
 
     <div class="relative z-10">
-      <MainHeader :title="trip.title || '여행 상세'" :show-back="true">
+      <MainHeader :title="trip.title || '여행 상세'" :show-back="true" :show-menu="!effectiveReadonly">
         <template #actions>
-          <template v-if="!effectiveReadonly">
-            <div class="relative">
-              <button @click="openReminderModal" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
-                <BellIcon class="w-6 h-6" />
-                <span v-if="hasNewReminders" class="absolute top-1 right-1 block h-2 w-2 rounded-full ring-2 ring-white bg-red-500"></span>
-              </button>
-            </div>
-          </template>
+          <div class="relative">
+            <button @click="openReminderModal" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+              <BellIcon class="w-6 h-6" />
+              <span v-if="hasNewReminders" class="absolute top-1 right-1 block h-2 w-2 rounded-full ring-2 ring-white bg-red-500"></span>
+            </button>
+          </div>
         </template>
       </MainHeader>
 
@@ -530,9 +528,15 @@ const route = useRoute()
 const router = useRouter()
 const uiStore = useUIStore()
 
-// Determine tripId and readonly mode
-const tripId = computed(() => props.tripId || route.params.id)
-const shareToken = computed(() => props.shareToken || route.params.shareToken)
+// Determine tripId and readonly mode (filter out undefined strings)
+const tripId = computed(() => {
+  const id = props.tripId || route.params.id
+  return (id && id !== 'undefined') ? id : null
+})
+const shareToken = computed(() => {
+  const token = props.shareToken || route.params.shareToken
+  return (token && token !== 'undefined') ? token : null
+})
 const isSharedView = computed(() => !!shareToken.value)
 const effectiveReadonly = computed(() => props.readonly || isSharedView.value)
 
@@ -1133,11 +1137,13 @@ function deleteAccommodationFromList(id) {
 // --- Transportation ---
 function openFlightManagementModal() {
   // 교통편 페이지로 리다이렉트
-  if (!tripId.value) {
+  if (shareToken.value) {
+    router.push(`/trips/share/${shareToken.value}/transportation`)
+  } else if (tripId.value) {
+    router.push(`/trips/${tripId.value}/transportation`)
+  } else {
     alert('여행을 먼저 저장해주세요.')
-    return
   }
-  router.push(`/trips/${tripId.value}/transportation`);
 }
 function closeTransportationModal() {
   isTransportationModalOpen.value = false;

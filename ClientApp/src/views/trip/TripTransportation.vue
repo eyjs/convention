@@ -534,7 +534,6 @@ import FlightSearchModal from '@/components/trip/FlightSearchModal.vue';
 import FlightAddEditModal from '@/components/personalTrip/FlightAddEditModal.vue';
 import DatePicker from 'vue-datepicker-next';
 import 'vue-datepicker-next/index.css';
-import 'vue-datepicker-next/locale/ko';
 import { useUIStore } from '@/stores/ui';
 import apiClient from '@/services/api';
 import dayjs from 'dayjs';
@@ -588,9 +587,15 @@ const uiStore = useUIStore();
 const route = useRoute();
 const router = useRouter();
 
-// Determine tripId and readonly mode
-const tripId = computed(() => route.params.id);
-const shareToken = computed(() => props.shareToken || route.params.shareToken);
+// Determine tripId and readonly mode (filter out undefined strings)
+const tripId = computed(() => {
+  const id = route.params.id
+  return (id && id !== 'undefined') ? id : null
+});
+const shareToken = computed(() => {
+  const token = props.shareToken || route.params.shareToken
+  return (token && token !== 'undefined') ? token : null
+});
 const isSharedView = computed(() => !!shareToken.value);
 const effectiveReadonly = computed(() => props.readonly || isSharedView.value);
 

@@ -42,7 +42,7 @@
           <!-- Slot for additional action buttons -->
           <slot name="actions"></slot>
 
-          <div class="relative">
+          <div v-if="showMenu" class="relative">
             <button
               @click="isSidebarOpen = true"
               class="p-2 -mr-2 rounded-lg"
@@ -90,6 +90,10 @@ defineProps({
   transparent: {
     type: Boolean,
     default: false,
+  },
+  showMenu: {
+    type: Boolean,
+    default: true,
   },
 })
 

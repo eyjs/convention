@@ -225,8 +225,14 @@ const uiStore = useUIStore();
 const route = useRoute();
 const router = useRouter();
 
-const tripId = computed(() => route.params.id);
-const shareToken = computed(() => props.shareToken || route.params.shareToken);
+const tripId = computed(() => {
+  const id = route.params.id
+  return (id && id !== 'undefined') ? id : null
+});
+const shareToken = computed(() => {
+  const token = props.shareToken || route.params.shareToken
+  return (token && token !== 'undefined') ? token : null
+});
 const isSharedView = computed(() => !!shareToken.value);
 
 const loading = ref(true);

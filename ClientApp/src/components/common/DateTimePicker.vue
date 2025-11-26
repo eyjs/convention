@@ -18,7 +18,6 @@
 <script setup>
 import DatePicker from 'vue-datepicker-next'
 import 'vue-datepicker-next/index.css'
-import 'vue-datepicker-next/locale/ko'
 
 const props = defineProps({
   modelValue: {

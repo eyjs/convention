@@ -48,12 +48,20 @@ const props = defineProps({
 
 // A helper function to create safe URLs.
 const createUrl = (path) => {
-  if (!props.tripId && !props.shareToken) return '#'; // Return a non-functional link if IDs are missing.
+  // Check if both tripId and shareToken are missing or undefined
+  if ((!props.tripId || props.tripId === 'undefined') && (!props.shareToken || props.shareToken === 'undefined')) {
+    return '#'; // Return a non-functional link if IDs are missing or undefined
+  }
 
-  if (props.shareToken) {
+  if (props.shareToken && props.shareToken !== 'undefined') {
     return `/trips/share/${props.shareToken}${path}`;
   }
-  return `/trips/${props.tripId}${path}`;
+
+  if (props.tripId && props.tripId !== 'undefined') {
+    return `/trips/${props.tripId}${path}`;
+  }
+
+  return '#'; // Fallback
 };
 
 // Computed URLs based on share mode

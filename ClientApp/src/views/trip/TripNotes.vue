@@ -152,9 +152,15 @@ const uiStore = useUIStore();
 const route = useRoute();
 const router = useRouter();
 
-// Determine tripId and readonly mode
-const tripId = computed(() => route.params.id);
-const shareToken = computed(() => props.shareToken || route.params.shareToken);
+// Determine tripId and readonly mode (filter out undefined strings)
+const tripId = computed(() => {
+  const id = route.params.id
+  return (id && id !== 'undefined') ? id : null
+});
+const shareToken = computed(() => {
+  const token = props.shareToken || route.params.shareToken
+  return (token && token !== 'undefined') ? token : null
+});
 const isSharedView = computed(() => !!shareToken.value);
 const effectiveReadonly = computed(() => props.readonly || isSharedView.value);
 const activeTab = ref('checklist');

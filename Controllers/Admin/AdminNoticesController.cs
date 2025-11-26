@@ -76,6 +76,14 @@ namespace LocalRAG.Controllers.Admin
             return Ok(notice);
         }
 
+        [HttpPut("update-order")]
+        public async Task<IActionResult> UpdateNoticeOrder([FromBody] UpdateNoticeOrderRequest request)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            await _noticeService.UpdateNoticeOrderAsync(request.Orders, userId);
+            return NoContent();
+        }
+
         [HttpDelete("comments/{commentId}")]
         public async Task<IActionResult> HardDeleteComment(int commentId)
         {

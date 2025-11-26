@@ -110,7 +110,6 @@ import FlightSearchModal from '@/components/trip/FlightSearchModal.vue'
 import FlightInfoDisplay from '@/components/personalTrip/FlightInfoDisplay.vue'
 import DatePicker from 'vue-datepicker-next'
 import 'vue-datepicker-next/index.css'
-import 'vue-datepicker-next/locale/ko'
 import dayjs from 'dayjs'
 
 const props = defineProps({

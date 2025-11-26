@@ -46,9 +46,10 @@ public class NoticeService : INoticeService
 
         var totalCount = await query.CountAsync();
 
-        // 정렬: 고정 공지사항 우선, 그 다음 최신순
+        // 정렬: 고정 공지사항 우선, DisplayOrder, 그 다음 최신순
         var notices = await query
             .OrderByDescending(n => n.IsPinned)
+            .ThenBy(n => n.DisplayOrder)
             .ThenByDescending(n => n.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -57,6 +58,7 @@ public class NoticeService : INoticeService
                 Id = n.Id,
                 Title = n.Title,
                 IsPinned = n.IsPinned,
+                DisplayOrder = n.DisplayOrder,
                 ViewCount = n.ViewCount,
                 AuthorName = n.Author.Name ?? "관리자",
                 NoticeCategoryId = n.NoticeCategoryId,
@@ -252,5 +254,26 @@ public class NoticeService : INoticeService
         await _context.SaveChangesAsync();
 
         return await GetNoticeAsync(id);
+    }
+
+    public async Task UpdateNoticeOrderAsync(List<NoticeOrderItem> orders, int userId)
+    {
+        // 권한 확인
+        var user = await _context.Users.FindAsync(userId);
+        if (user?.Role != "Admin")
+            throw new UnauthorizedAccessException("관리자만 순서를 변경할 수 있습니다.");
+
+        // 각 공지사항의 DisplayOrder 업데이트
+        foreach (var order in orders)
+        {
+            var notice = await _context.Notices.FindAsync(order.Id);
+            if (notice != null && !notice.IsDeleted)
+            {
+                notice.DisplayOrder = order.DisplayOrder;
+                notice.UpdatedAt = DateTime.Now;
+            }
+        }
+
+        await _context.SaveChangesAsync();
     }
 }

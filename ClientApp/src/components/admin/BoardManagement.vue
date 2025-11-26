@@ -154,6 +154,23 @@
             <thead class="bg-gray-50">
               <tr>
                 <th
+                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 8h16M4 16h16"
+                    />
+                  </svg>
+                </th>
+                <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   상태
@@ -190,80 +207,102 @@
                 </th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr
-                v-for="notice in notices"
-                :key="notice.id"
-                class="hover:bg-gray-50"
-              >
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span
-                    v-if="notice.isPinned"
-                    class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-bold"
-                    >필독</span
+            <draggable
+              v-model="notices"
+              tag="tbody"
+              item-key="id"
+              handle=".drag-handle"
+              @end="onDragEnd"
+              class="bg-white divide-y divide-gray-200"
+            >
+              <template #item="{ element: notice }">
+                <tr class="hover:bg-gray-50">
+                  <td class="px-3 py-4 whitespace-nowrap">
+                    <div class="drag-handle cursor-move">
+                      <svg
+                        class="w-5 h-5 text-gray-400 hover:text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 8h16M4 16h16"
+                        />
+                      </svg>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      v-if="notice.isPinned"
+                      class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-bold"
+                      >필독</span
+                    >
+                    <span
+                      v-else
+                      class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs"
+                      >일반</span
+                    >
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      v-if="notice.categoryName"
+                      class="px-2 py-1 rounded text-xs font-medium"
+                      :style="{
+                        backgroundColor: notice.categoryColor + '20',
+                        color: notice.categoryColor || '#6B7280',
+                      }"
+                    >
+                      {{ notice.categoryName }}
+                    </span>
+                    <span v-else class="text-gray-400 text-xs">미분류</span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <button
+                      @click="viewNotice(notice)"
+                      class="font-medium text-gray-900 hover:text-primary-600 text-left"
+                    >
+                      {{ notice.title }}
+                    </button>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ notice.authorName }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ formatDate(notice.createdAt) }}
+                  </td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500"
                   >
-                  <span
-                    v-else
-                    class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs"
-                    >일반</span
+                    {{ notice.viewCount }}
+                  </td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                   >
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span
-                    v-if="notice.categoryName"
-                    class="px-2 py-1 rounded text-xs font-medium"
-                    :style="{
-                      backgroundColor: notice.categoryColor + '20',
-                      color: notice.categoryColor || '#6B7280',
-                    }"
-                  >
-                    {{ notice.categoryName }}
-                  </span>
-                  <span v-else class="text-gray-400 text-xs">미분류</span>
-                </td>
-                <td class="px-6 py-4">
-                  <button
-                    @click="viewNotice(notice)"
-                    class="font-medium text-gray-900 hover:text-primary-600 text-left"
-                  >
-                    {{ notice.title }}
-                  </button>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ notice.authorName }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ formatDate(notice.createdAt) }}
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500"
-                >
-                  {{ notice.viewCount }}
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-                >
-                  <button
-                    @click="togglePin(notice)"
-                    class="text-yellow-600 hover:text-yellow-900 mr-3"
-                  >
-                    {{ notice.isPinned ? '고정해제' : '고정' }}
-                  </button>
-                  <button
-                    @click="editNotice(notice)"
-                    class="text-blue-600 hover:text-blue-900 mr-3"
-                  >
-                    수정
-                  </button>
-                  <button
-                    @click="deleteNotice(notice.id)"
-                    class="text-red-600 hover:text-red-900"
-                  >
-                    삭제
-                  </button>
-                </td>
-              </tr>
-            </tbody>
+                    <button
+                      @click="togglePin(notice)"
+                      class="text-yellow-600 hover:text-yellow-900 mr-3"
+                    >
+                      {{ notice.isPinned ? '고정해제' : '고정' }}
+                    </button>
+                    <button
+                      @click="editNotice(notice)"
+                      class="text-blue-600 hover:text-blue-900 mr-3"
+                    >
+                      수정
+                    </button>
+                    <button
+                      @click="deleteNotice(notice.id)"
+                      class="text-red-600 hover:text-red-900"
+                    >
+                      삭제
+                    </button>
+                  </td>
+                </tr>
+              </template>
+            </draggable>
           </table>
         </div>
       </div>
@@ -601,6 +640,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import apiClient from '@/services/api'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
+import draggable from 'vuedraggable'
 import 'quill/dist/quill.snow.css'
 
 const props = defineProps({
@@ -767,6 +807,24 @@ async function togglePin(notice) {
   } catch (error) {
     console.error('Failed to toggle pin:', error)
     alert('고정 상태 변경에 실패했습니다')
+  }
+}
+
+async function onDragEnd() {
+  try {
+    // Update display order based on current array order
+    const orders = notices.value.map((notice, index) => ({
+      id: notice.id,
+      displayOrder: index,
+    }))
+
+    await apiClient.put('/admin/notices/update-order', { orders })
+    console.log('Notice order updated successfully')
+  } catch (error) {
+    console.error('Failed to update notice order:', error)
+    alert('순서 변경에 실패했습니다')
+    // Reload to revert to server state
+    await loadNotices()
   }
 }
 

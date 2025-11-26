@@ -12,4 +12,5 @@ public interface INoticeService
     Task DeleteNoticeAsync(int id, int userId);
     Task IncrementViewCountAsync(int id);
     Task<NoticeResponse> TogglePinAsync(int id, int userId);
+    Task UpdateNoticeOrderAsync(List<NoticeOrderItem> orders, int userId);
 }

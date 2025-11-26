@@ -53,6 +53,7 @@ public class NoticeListItemResponse
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;
     public bool IsPinned { get; set; }
+    public int DisplayOrder { get; set; }
     public int ViewCount { get; set; }
     public string AuthorName { get; set; } = string.Empty;
     public int? NoticeCategoryId { get; set; }
@@ -110,4 +111,18 @@ public class FileUploadResponse
     public string OriginalName { get; set; } = string.Empty;
     public long Size { get; set; }
     public string ContentType { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 공지사항 순서 업데이트 요청 DTO
+/// </summary>
+public class UpdateNoticeOrderRequest
+{
+    public List<NoticeOrderItem> Orders { get; set; } = new();
+}
+
+public class NoticeOrderItem
+{
+    public int Id { get; set; }
+    public int DisplayOrder { get; set; }
 }
