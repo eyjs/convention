@@ -323,7 +323,6 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> GetUsers([FromQuery] string? searchTerm, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var query = _context.Users
-            .Where(u => u.Role == "Admin" || u.Role == "User")
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
