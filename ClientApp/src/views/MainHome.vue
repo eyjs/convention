@@ -17,11 +17,21 @@
       <div class="max-w-2xl mx-auto px-4 py-4">
       <!-- 환영 메시지 (Hero Section) -->
       <div class="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
+        <!-- Background decorative elements -->
+        <div class="absolute inset-0 overflow-hidden">
+          <div class="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-pink-200/15 to-violet-200/15 rounded-full blur-3xl"></div>
+          <div class="absolute bottom-1/3 left-1/4 w-56 h-56 bg-gradient-to-br from-purple-200/12 to-fuchsia-200/12 rounded-full blur-3xl"></div>
+
+          <!-- Subtle dot pattern -->
+          <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;20&quot; height=&quot;20&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;%23FFFFFF&quot; fill-opacity=&quot;1&quot;%3E%3Ccircle cx=&quot;2&quot; cy=&quot;2&quot; r=&quot;1&quot;/%3E%3C/g%3E%3C/svg%3E');"></div>
+        </div>
+
         <div class="relative z-10">
           <h2 class="text-3xl font-bold mb-2">안녕하세요,<br/>{{ userName }}님! ✈️</h2>
           <p class="text-lg text-white/90">다음 여행을 계획해보세요</p>
         </div>
-        <!-- Decorative elements -->
+
+        <!-- Decorative circles -->
         <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
         <div class="absolute bottom-0 right-8 w-24 h-24 bg-white/10 rounded-full -mb-12"></div>
       </div>

@@ -45,6 +45,7 @@ public class User
 
     [MaxLength(512)]
     public string? ProfileImageUrl { get; set; }
+    public string? PassportImageUrl { get; set; }
 
     // ===== Guest 엔티티로부터 병합된 속성들 =====
 

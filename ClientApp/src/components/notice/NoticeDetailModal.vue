@@ -1,5 +1,6 @@
 <template>
-  <SlideUpModal :is-open="true" @close="closeModal">
+  <SlideUpModal :is-open="isOpen" @close="closeModal">
+
     <template #header-title>공지사항 상세보기</template>
     <template #body>
       <!-- 로딩 상태 -->
@@ -128,6 +129,10 @@ export default {
       type: Number,
       required: true,
     },
+    isOpen: { // Add this prop
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['close'],
   setup(props, { emit }) {
@@ -189,11 +194,15 @@ export default {
     }
 
     // 생명주기
-    onMounted(() => {
-      console.log('[NoticeDetailModal] onMounted 호출됨')
-      console.log('[NoticeDetailModal] props:', props)
-      fetchNotice()
-    })
+    watch(
+      () => props.noticeId,
+      (newId) => {
+        if (newId) {
+          fetchNotice()
+        }
+      },
+      { immediate: true },
+    )
 
     return {
       noticeId: props.noticeId,

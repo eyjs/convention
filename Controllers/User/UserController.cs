@@ -570,6 +570,72 @@ public class UserController : ControllerBase // Changed from GuestController
     }
 
     /// <summary>
+    /// 내 정보 단일 필드 수정
+    /// </summary>
+    [HttpPatch("profile/field")]
+    public async Task<IActionResult> UpdateProfileField([FromBody] UpdateProfileFieldRequest request)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return NotFound(new { message = "사용자 정보를 찾을 수 없습니다." });
+        }
+
+        switch (request.FieldName)
+        {
+            case "phone":
+                user.Phone = request.FieldValue;
+                break;
+            case "email":
+                // 이메일 유효성 검사 (간단한 예시)
+                if (!string.IsNullOrEmpty(request.FieldValue) && !request.FieldValue.Contains("@"))
+                {
+                    return BadRequest(new { message = "유효하지 않은 이메일 형식입니다." });
+                }
+                user.Email = request.FieldValue;
+                break;
+            case "affiliation":
+                user.Affiliation = request.FieldValue;
+                break;
+            case "firstName":
+                user.FirstName = request.FieldValue;
+                break;
+            case "lastName":
+                user.LastName = request.FieldValue;
+                break;
+            case "passportNumber":
+                user.PassportNumber = request.FieldValue;
+                break;
+            case "passportExpiryDate":
+                if (!string.IsNullOrEmpty(request.FieldValue))
+                {
+                    if (DateOnly.TryParseExact(request.FieldValue, "yyyy-MM-dd", out var parsedDate))
+                    {
+                        user.PassportExpiryDate = parsedDate;
+                    }
+                    else
+                    {
+                        return BadRequest(new { message = "여권 만료일 형식이 올바르지 않습니다. (yyyy-MM-dd)" });
+                    }
+                }
+                else
+                {
+                    user.PassportExpiryDate = null;
+                }
+                break;
+            default:
+                return BadRequest(new { message = $"알 수 없는 필드명입니다: {request.FieldName}" });
+        }
+
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "정보가 수정되었습니다." });
+    }
+
+    /// <summary>
     /// 비밀번호 변경
     /// </summary>
     [HttpPut("password")]
@@ -650,6 +716,48 @@ public class UserController : ControllerBase // Changed from GuestController
         {
             _logger.LogError(ex, "프로필 사진 업로드 실패");
             return StatusCode(500, new { message = "프로필 사진 업로드 중 오류가 발생했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 여권 사진 업로드
+    /// </summary>
+    [HttpPost("profile/passport-image")]
+    public async Task<IActionResult> UploadPassportImage(IFormFile file)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return NotFound(new { message = "사용자 정보를 찾을 수 없습니다." });
+        }
+
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { message = "파일이 비어있습니다." });
+        }
+
+        try
+        {
+            var uploadResult = await _fileUploadService.UploadImageAsync(file, "passport_images");
+
+            if (string.IsNullOrEmpty(uploadResult.Url))
+            {
+                return StatusCode(500, new { message = "여권 사진 업로드에 실패했습니다." });
+            }
+
+            user.PassportImageUrl = uploadResult.Url;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "여권 사진이 성공적으로 업로드되었습니다.", passportImageUrl = user.PassportImageUrl });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "여권 사진 업로드 실패");
+            return StatusCode(500, new { message = "여권 사진 업로드 중 오류가 발생했습니다." });
         }
     }
 

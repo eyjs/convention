@@ -37,7 +37,6 @@ public class ActionManagementController : ControllerBase
                 Title = a.Title,
                 Deadline = a.Deadline,
                 MapsTo = a.MapsTo,
-                ConfigJson = a.ConfigJson,
                 IsActive = a.IsActive,
                 OrderNum = a.OrderNum,
                 ActionCategory = a.ActionCategory,
@@ -60,7 +59,6 @@ public class ActionManagementController : ControllerBase
             MapsTo = request.MapsTo ?? string.Empty,
             Deadline = request.Deadline,
             OrderNum = request.OrderNum,
-            ConfigJson = request.ConfigJson,
             IsActive = request.IsActive,
             ActionCategory = request.ActionCategory,
             TargetLocation = request.TargetLocation,
@@ -112,7 +110,6 @@ public class ActionManagementController : ControllerBase
         action.MapsTo = request.MapsTo ?? string.Empty;
         action.Deadline = request.Deadline;
         action.OrderNum = request.OrderNum;
-        action.ConfigJson = request.ConfigJson;
         action.IsActive = request.IsActive;
         action.ActionCategory = request.ActionCategory;
         action.TargetLocation = request.TargetLocation;

@@ -21,7 +21,7 @@ const { editorRef, setContent } = useQuillEditor({
   theme: 'bubble',
   placeholder: '',
   modules: {
-    blotFormatter: false,
+    toolbar: false, // 읽기 전용이므로 toolbar 비활성화
   },
 })
 

@@ -24,17 +24,12 @@
             <FlightInfoDisplay :flight="roundTrip.departure" type="departure" @clear="roundTrip.departure = null" />
             <div>
               <label class="label text-sm text-gray-600">도착 시간 (직접 입력)</label>
-              <DatePicker
+              <CommonDatePicker
                 v-model:value="roundTrip.departure.arrivalTime"
                 type="datetime"
                 format="YYYY-MM-DD HH:mm"
                 value-type="YYYY-MM-DDTHH:mm:ss"
                 placeholder="날짜와 시간을 선택하세요"
-                :show-second="false"
-                lang="ko"
-                confirm
-                append-to-body
-                :popup-style="{ zIndex: 9999 }"
                 class="w-full"
               />
             </div>
@@ -66,17 +61,12 @@
             <FlightInfoDisplay :flight="roundTrip.arrival" type="arrival" @clear="roundTrip.arrival = null" />
             <div>
               <label class="label text-sm text-gray-600">출발 시간 (직접 입력)</label>
-              <DatePicker
+              <CommonDatePicker
                 v-model:value="roundTrip.arrival.departureTime"
                 type="datetime"
                 format="YYYY-MM-DD HH:mm"
                 value-type="YYYY-MM-DDTHH:mm:ss"
                 placeholder="날짜와 시간을 선택하세요"
-                :show-second="false"
-                lang="ko"
-                confirm
-                append-to-body
-                :popup-style="{ zIndex: 9999 }"
                 class="w-full"
               />
             </div>
@@ -108,7 +98,7 @@ import { ref, reactive, watch } from 'vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import FlightSearchModal from '@/components/trip/FlightSearchModal.vue'
 import FlightInfoDisplay from '@/components/personalTrip/FlightInfoDisplay.vue'
-import DatePicker from 'vue-datepicker-next'
+import CommonDatePicker from '@/components/common/CommonDatePicker.vue'
 import 'vue-datepicker-next/index.css'
 import dayjs from 'dayjs'
 

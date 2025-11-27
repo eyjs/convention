@@ -11,7 +11,6 @@ public class ActionTemplateDto
     public string Category { get; set; } = string.Empty;
     public string? IconClass { get; set; }
     public string DefaultRoute { get; set; } = string.Empty;
-    public string? DefaultConfigJson { get; set; }
     public string? RequiredFields { get; set; }
     public bool IsActive { get; set; } = true;
     public int OrderNum { get; set; }
@@ -25,7 +24,6 @@ public class ApplyTemplateDto
     public string? Title { get; set; }       // null이면 템플릿 기본값 사용
     public DateTime? Deadline { get; set; }
     public string? MapsTo { get; set; }      // null이면 템플릿 기본값 사용
-    public string? ConfigJson { get; set; }   // null이면 템플릿 기본값 사용
     public string? IconClass { get; set; }    // null이면 템플릿 기본값 사용
     public string? Category { get; set; }     // null이면 템플릿 기본값 사용
     public bool IsActive { get; set; } = true;

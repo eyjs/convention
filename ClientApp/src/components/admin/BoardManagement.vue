@@ -207,7 +207,7 @@
                 </th>
               </tr>
             </thead>
-            <draggable
+            <VueDraggable
               v-model="notices"
               tag="tbody"
               item-key="id"
@@ -302,7 +302,7 @@
                   </td>
                 </tr>
               </template>
-            </draggable>
+            </VueDraggable>
           </table>
         </div>
       </div>
@@ -640,7 +640,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import apiClient from '@/services/api'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
-import draggable from 'vuedraggable'
+import VueDraggable from 'vuedraggable'
 import 'quill/dist/quill.snow.css'
 
 const props = defineProps({

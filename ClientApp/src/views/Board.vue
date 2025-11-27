@@ -285,232 +285,198 @@
     </div>
 
     <!-- 공지 상세 모달 -->
-    <Transition name="modal-slide">
-      <div
-        v-if="selectedNotice"
-        @click="closeNotice"
-        class="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-      >
-        <div
-          @click.stop
-          class="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto"
-        >
-          <!-- 헤더 -->
-          <div
-            class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between"
-          >
-            <h2 class="text-lg font-bold text-gray-900">공지사항</h2>
-            <button
-              @click="closeNotice"
-              class="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+    <SlideUpModal :is-open="!!selectedNotice" @close="closeNotice">
+      <template #header-title>공지사항</template>
+      <template #body>
+        <div v-if="selectedNotice" class="p-6">
+          <!-- 제목 & 메타 -->
+          <div class="mb-6">
+            <div class="flex items-center space-x-2 mb-3">
+              <span
+                v-if="selectedNotice.isPinned"
+                class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold"
+                >필독</span
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+              <span
+                class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium"
+                >{{ selectedNotice.category }}</span
+              >
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-3">
+              {{ selectedNotice.title }}
+            </h1>
+            <div class="flex items-center space-x-4 text-sm text-gray-500">
+              <span class="flex items-center space-x-1">
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+                <span>{{ selectedNotice.author }}</span>
+              </span>
+              <span>{{ formatDateTime(selectedNotice.createdAt) }}</span>
+              <span class="flex items-center space-x-1">
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+                <span>{{ selectedNotice.views }}</span>
+              </span>
+            </div>
           </div>
 
-          <!-- 내용 -->
-          <div class="p-6">
-            <!-- 제목 & 메타 -->
-            <div class="mb-6">
-              <div class="flex items-center space-x-2 mb-3">
-                <span
-                  v-if="selectedNotice.isPinned"
-                  class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold"
-                  >필독</span
+          <!-- 본문 -->
+          <div class="mb-6" v-viewer ref="viewer">
+            <QuillViewer
+              :content="selectedNotice.content"
+              @image-clicked="openImageViewer"
+            />
+          </div>
+
+          <!-- 첨부파일 -->
+          <div
+            v-if="
+              selectedNotice.attachments &&
+              selectedNotice.attachments.length > 0
+            "
+            class="border-t pt-4 mb-6"
+          >
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">첨부파일</h3>
+            <div class="space-y-2">
+              <a
+                v-for="file in selectedNotice.attachments"
+                :key="file.id"
+                :href="file.url"
+                target="_blank"
+                class="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <svg
+                  class="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                <span
-                  class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium"
-                  >{{ selectedNotice.category }}</span
-                >
-              </div>
-              <h1 class="text-2xl font-bold text-gray-900 mb-3">
-                {{ selectedNotice.title }}
-              </h1>
-              <div class="flex items-center space-x-4 text-sm text-gray-500">
-                <span class="flex items-center space-x-1">
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  <span>{{ selectedNotice.author }}</span>
-                </span>
-                <span>{{ formatDateTime(selectedNotice.createdAt) }}</span>
-                <span class="flex items-center space-x-1">
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                  <span>{{ selectedNotice.views }}</span>
-                </span>
-              </div>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                <span class="text-sm text-gray-700 flex-1">{{
+                  file.name
+                }}</span>
+                <span class="text-xs text-gray-500">{{ file.size }}</span>
+              </a>
             </div>
+          </div>
 
-            <!-- 본문 -->
-            <div class="mb-6" v-viewer ref="viewer">
-              <QuillViewer
-                :content="selectedNotice.content"
-                @image-clicked="openImageViewer"
-              />
-            </div>
+          <!-- 댓글 섹션 -->
+          <div class="border-t pt-6">
+            <h3 class="font-semibold text-gray-900 mb-4">
+              댓글 {{ selectedNotice.comments?.length || 0 }}
+            </h3>
 
-            <!-- 첨부파일 -->
-            <div
-              v-if="
-                selectedNotice.attachments &&
-                selectedNotice.attachments.length > 0
-              "
-              class="border-t pt-4 mb-6"
-            >
-              <h3 class="text-sm font-semibold text-gray-900 mb-3">첨부파일</h3>
-              <div class="space-y-2">
-                <a
-                  v-for="file in selectedNotice.attachments"
-                  :key="file.id"
-                  :href="file.url"
-                  target="_blank"
-                  class="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <svg
-                    class="w-5 h-5 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  <span class="text-sm text-gray-700 flex-1">{{
-                    file.name
-                  }}</span>
-                  <span class="text-xs text-gray-500">{{ file.size }}</span>
-                </a>
-              </div>
-            </div>
-
-            <!-- 댓글 섹션 -->
-            <div class="border-t pt-6">
-              <h3 class="font-semibold text-gray-900 mb-4">
-                댓글 {{ selectedNotice.comments?.length || 0 }}
-              </h3>
-
-              <!-- 댓글 목록 -->
-              <div class="space-y-4 mb-6">
+            <!-- 댓글 목록 -->
+            <div class="space-y-4 mb-6">
+              <div
+                v-for="comment in selectedNotice.comments"
+                :key="comment.id"
+                class="flex space-x-3"
+              >
                 <div
-                  v-for="comment in selectedNotice.comments"
-                  :key="comment.id"
-                  class="flex space-x-3"
-                >
-                  <div
-                    class="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0"
-                  ></div>
-                  <div class="flex-1">
-                    <div class="flex items-center space-x-2 mb-1">
-                      <span class="text-sm font-semibold text-gray-900">{{
-                        comment.authorName
-                      }}</span>
-                      <span class="text-xs text-gray-500">{{
-                        formatDateTime(comment.createdAt)
-                      }}</span>
-                      <div
-                        v-if="
-                          comment.authorId === authStore.user?.id &&
-                          !comment.isDeleted
-                        "
-                        class="flex-grow flex justify-end"
-                      >
-                        <button
-                          @click.stop="deleteComment(comment.id)"
-                          class="p-1 hover:bg-gray-100 rounded-full"
-                        >
-                          <svg
-                            class="w-5 h-5 text-gray-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            ></path>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <p class="text-sm text-gray-700">{{ comment.content }}</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 댓글 작성 -->
-              <div class="flex space-x-3">
-                <div
-                  class="w-8 h-8 bg-primary-200 rounded-full flex-shrink-0"
+                  class="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0"
                 ></div>
                 <div class="flex-1">
-                  <textarea
-                    v-model="newComment"
-                    placeholder="댓글을 입력하세요..."
-                    rows="3"
-                    class="w-full px-3 py-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  ></textarea>
-                  <div class="flex justify-end mt-2">
-                    <button
-                      @click="submitComment"
-                      :disabled="!newComment.trim()"
-                      class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  <div class="flex items-center space-x-2 mb-1">
+                    <span class="text-sm font-semibold text-gray-900">{{
+                      comment.authorName
+                    }}</span>
+                    <span class="text-xs text-gray-500">{{
+                      formatDateTime(comment.createdAt)
+                    }}</span>
+                    <div
+                      v-if="
+                        comment.authorId === authStore.user?.id &&
+                        !comment.isDeleted
+                      "
+                      class="flex-grow flex justify-end"
                     >
-                      댓글 작성
-                    </button>
+                      <button
+                        @click.stop="deleteComment(comment.id)"
+                        class="p-1 hover:bg-gray-100 rounded-full"
+                      >
+                        <svg
+                          class="w-5 h-5 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          ></path>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
+                  <p class="text-sm text-gray-700">{{ comment.content }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 댓글 작성 -->
+            <div class="flex space-x-3">
+              <div
+                class="w-8 h-8 bg-primary-200 rounded-full flex-shrink-0"
+              ></div>
+              <div class="flex-1">
+                <textarea
+                  v-model="newComment"
+                  placeholder="댓글을 입력하세요..."
+                  rows="3"
+                  class="w-full px-3 py-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                ></textarea>
+                <div class="flex justify-end mt-2">
+                  <button
+                    @click="submitComment"
+                    :disabled="!newComment.trim()"
+                    class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    댓글 작성
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </Transition>
+      </template>
+    </SlideUpModal>
 
     <!-- 글쓰기 모달 (관리자용) -->
     <div
@@ -620,7 +586,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
@@ -629,6 +595,7 @@ import { useQuillEditor } from '@/composables/useQuillEditor'
 import QuillViewer from '@/components/common/QuillViewer.vue'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 import MainHeader from '@/components/common/MainHeader.vue'
+import SlideUpModal from '@/components/common/SlideUpModal.vue'
 
 const router = useRouter()
 const viewer = ref(null)
@@ -875,7 +842,6 @@ const handleScroll = () => {
   if (categoryContainer.value) {
     showLeftScroll.value = categoryContainer.value.scrollLeft > 0
     showRightScroll.value =
-      categoryContainer.value.scrollLeft <
       categoryContainer.value.scrollWidth - categoryContainer.value.clientWidth
   }
 }
@@ -930,21 +896,43 @@ async function loadDynamicActions() {
   }
 }
 
-onMounted(() => {
-  loadCategories()
-  loadNotices().then(() => {
+onMounted(async () => {
+  try {
+    // 1. Ensure stores are ready
+    if (!authStore.user) {
+      await authStore.fetchCurrentUser()
+    }
+    if (!conventionStore.currentConvention) {
+      const selectedConventionId = localStorage.getItem('selectedConventionId')
+      if (selectedConventionId) {
+        await conventionStore.setCurrentConvention(
+          parseInt(selectedConventionId),
+        )
+      }
+    }
+
+    // 2. Load data
+    await loadCategories()
+    await loadNotices()
+
     // router state에서 selectedNoticeId를 확인
     const state = history.state
     if (state?.selectedNoticeId) {
       const notice = notices.value.find((n) => n.id === state.selectedNoticeId)
       if (notice) {
-        openNotice(notice)
+        await openNotice(notice)
       }
       // state 초기화
       history.replaceState({}, document.title)
     }
-  })
-  loadDynamicActions()
+
+    await loadDynamicActions()
+  } catch (error) {
+    console.error('Failed to initialize Board:', error)
+  }
+})
+
+onUnmounted(() => {
 })
 </script>
 <style>

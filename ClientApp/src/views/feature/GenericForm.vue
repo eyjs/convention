@@ -322,17 +322,31 @@ async function handleSubmit() {
 }
 
 onMounted(async () => {
-  if (!conventionId.value) {
-    error.value = '행사를 선택해주세요.'
-    loading.value = false
-    return
-  }
+  try {
+    // Ensure convention store is ready
+    if (!conventionStore.currentConvention) {
+      const selectedConventionId = localStorage.getItem('selectedConventionId')
+      if (selectedConventionId) {
+        await conventionStore.setCurrentConvention(parseInt(selectedConventionId))
+      }
+    }
 
-  await loadAction()
-  if (!error.value) {
-    await loadExistingSubmission()
+    if (!conventionId.value) {
+      error.value = '행사를 선택해주세요.'
+      loading.value = false
+      return
+    }
+
+    await loadAction()
+    if (!error.value) {
+      await loadExistingSubmission()
+    }
+  } catch (err) {
+    console.error('Failed to initialize GenericForm:', err)
+    error.value = '초기화 중 오류가 발생했습니다.'
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 })
 </script>
 

@@ -54,6 +54,24 @@ class ConventionChatService {
     }
   }
 
+  onReconnecting(callback) {
+    if (this.connection) {
+      this.connection.onreconnecting((error) => {
+        console.log('SignalR reconnecting...', error)
+        callback(error)
+      })
+    }
+  }
+
+  onReconnected(callback) {
+    if (this.connection) {
+      this.connection.onreconnected((connectionId) => {
+        console.log('SignalR reconnected.', connectionId)
+        callback(connectionId)
+      })
+    }
+  }
+
   sendMessage(message) {
     if (
       this.connection &&

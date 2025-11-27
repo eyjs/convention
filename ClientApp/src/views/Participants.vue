@@ -153,7 +153,19 @@ const fetchParticipants = async () => {
   }
 }
 
-onMounted(() => {
-  fetchParticipants()
+onMounted(async () => {
+  try {
+    // Ensure convention store is ready
+    if (!conventionStore.currentConvention) {
+      const selectedConventionId = localStorage.getItem('selectedConventionId')
+      if (selectedConventionId) {
+        await conventionStore.setCurrentConvention(parseInt(selectedConventionId))
+      }
+    }
+
+    await fetchParticipants()
+  } catch (error) {
+    console.error('Failed to initialize Participants:', error)
+  }
 })
 </script>

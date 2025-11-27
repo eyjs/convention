@@ -101,7 +101,6 @@ public class ActionTemplateController : ControllerBase
             Category = dto.Category,
             IconClass = dto.IconClass,
             DefaultRoute = dto.DefaultRoute,
-            DefaultConfigJson = dto.DefaultConfigJson,
             RequiredFields = dto.RequiredFields,
             IsActive = dto.IsActive,
             OrderNum = dto.OrderNum,
@@ -131,7 +130,6 @@ public class ActionTemplateController : ControllerBase
         template.Category = dto.Category;
         template.IconClass = dto.IconClass;
         template.DefaultRoute = dto.DefaultRoute;
-        template.DefaultConfigJson = dto.DefaultConfigJson;
         template.RequiredFields = dto.RequiredFields;
         template.IsActive = dto.IsActive;
         template.OrderNum = dto.OrderNum;
@@ -195,7 +193,6 @@ public class ActionTemplateController : ControllerBase
             Title = dto.Title ?? template.TemplateName,
             Deadline = dto.Deadline,
             MapsTo = dto.MapsTo ?? template.DefaultRoute,
-            ConfigJson = dto.ConfigJson ?? template.DefaultConfigJson,
             IsActive = dto.IsActive,
             IsRequired = dto.IsRequired,
             OrderNum = dto.OrderNum,

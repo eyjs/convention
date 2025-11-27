@@ -1,66 +1,30 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- 헤더 -->
-    <header class="bg-white shadow-sm sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <h1 class="text-2xl font-bold text-gray-900">관리자 대시보드</h1>
+    <AdminHeader title="관리자 대시보드">
+      <!-- 탭 메뉴 -->
+      <div class="border-t">
+        <nav class="-mb-px flex space-x-8">
           <button
-            @click="handleLogout"
-            class="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            v-for="tab in tabs"
+            :key="tab.id"
+            @click="activeTab = tab.id"
+            :class="[
+              'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
+              activeTab === tab.id
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+            ]"
           >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-            <span>로그아웃</span>
+            <div class="flex items-center space-x-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="tab.icon" />
+              </svg>
+              <span>{{ tab.label }}</span>
+            </div>
           </button>
-        </div>
-
-        <!-- 탭 메뉴 -->
-        <div class="border-t">
-          <nav class="-mb-px flex space-x-8">
-            <button
-              v-for="tab in tabs"
-              :key="tab.id"
-              @click="activeTab = tab.id"
-              :class="[
-                'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
-                activeTab === tab.id
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              ]"
-            >
-              <div class="flex items-center space-x-2">
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    :d="tab.icon"
-                  />
-                </svg>
-                <span>{{ tab.label }}</span>
-              </div>
-            </button>
-          </nav>
-        </div>
+        </nav>
       </div>
-    </header>
+    </AdminHeader>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- 행사 관리 탭 -->
@@ -72,25 +36,33 @@
               전체 {{ conventions.length }}개 행사
             </p>
           </div>
-          <button
-            @click="showCreateModal = true"
-            class="flex items-center space-x-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors shadow-sm"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div class="flex items-center space-x-2">
+            <router-link to="/admin/name-tag-printing"
+              class="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors shadow-sm"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            <span>새 행사 만들기</span>
-          </button>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+              <span>명찰 일괄 인쇄</span>
+            </router-link>
+            <button
+              @click="showCreateModal = true"
+              class="flex items-center space-x-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors shadow-sm"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              <span>새 행사 만들기</span>
+            </button>
+          </div>
         </div>
 
         <!-- 로딩 -->
@@ -927,16 +899,15 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
 import { chatbotAdminAPI } from '@/services/chatbotAdminService'
 
+import AdminHeader from '@/components/admin/AdminHeader.vue'
 import UserManagement from '@/components/admin/UserManagement.vue'
 import LlmProviderManagement from '@/components/admin/LlmProviderManagement.vue'
 import ConventionFormModal from '@/components/admin/ConventionFormModal.vue'
 
 const router = useRouter()
-const authStore = useAuthStore()
 
 const activeTab = ref('conventions')
 const conventions = ref([])
@@ -1045,13 +1016,6 @@ const totalGuests = computed(() => {
 const totalSchedules = computed(() => {
   return conventions.value.reduce((sum, c) => sum + (c.scheduleCount || 0), 0)
 })
-
-const handleLogout = async () => {
-  if (confirm('로그아웃하시겠습니까?')) {
-    await authStore.logout()
-    router.push('/login')
-  }
-}
 
 async function loadConventions() {
   loading.value = true

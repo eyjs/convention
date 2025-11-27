@@ -258,8 +258,14 @@
                   <GooglePlacesAutocomplete v-else v-model="accommodationData" placeholder="숙소명 검색 (구글맵)" />
                 </div>
                 <div><label class="label">주소</label><input v-model="accommodationData.address" type="text" class="input" readonly /></div>
-                <div><label class="label">체크인</label><DateTimePicker v-model="accommodationData.checkInTime" /></div>
-                <div><label class="label">체크아웃</label><DateTimePicker v-model="accommodationData.checkOutTime" /></div>
+                <div>
+                  <label class="label">체크인</label>
+                  <CommonDatePicker v-model:value="accommodationData.checkInTime" type="datetime" format="YYYY-MM-DD HH:mm" value-type="YYYY-MM-DDTHH:mm:ss" />
+                </div>
+                <div>
+                  <label class="label">체크아웃</label>
+                  <CommonDatePicker v-model:value="accommodationData.checkOutTime" type="datetime" format="YYYY-MM-DD HH:mm" value-type="YYYY-MM-DDTHH:mm:ss" />
+                </div>
                 <div> <!-- Added expenseAmount input -->
                   <label class="label">비용 (원)</label>
                   <input v-model.number="accommodationData.expenseAmount" type="number" class="input" placeholder="예: 100000" min="0" step="100" />
@@ -495,7 +501,7 @@ import { useUIStore } from '@/stores/ui'
 import MainHeader from '@/components/common/MainHeader.vue'
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
-import DateTimePicker from '@/components/common/DateTimePicker.vue'
+import CommonDatePicker from '@/components/common/CommonDatePicker.vue';
 import DateRangePicker from '@/components/common/DateRangePicker.vue'
 import CountryCitySearch from '@/components/common/CountryCitySearch.vue'
 import KakaoMap from '@/components/common/KakaoMap.vue'

@@ -138,7 +138,26 @@ export const uploadAPI = {
       onUploadProgress: onProgress,
     })
   },
+  uploadNameTags: (conventionId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post(`/upload/conventions/${conventionId}/name-tags`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
   deleteFile: (fileId) => apiClient.delete(`/upload/${fileId}`),
+}
+
+export const userAPI = {
+    updateProfileField: (fieldName, fieldValue) => 
+        apiClient.patch('/users/profile/field', { fieldName, fieldValue }),
+    uploadPassportImage: (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return apiClient.post('/users/profile/passport-image', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+    }
 }
 
 export default apiClient

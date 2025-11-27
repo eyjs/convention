@@ -400,7 +400,6 @@ public class ConventionDbContext : DbContext
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Description).HasMaxLength(4000); // 상세 설명 (HTML 지원)
             entity.Property(e => e.MapsTo).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.ConfigJson).HasMaxLength(4000); // JSON 설정
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("getdate()");
             entity.Property(e => e.IsActive).HasDefaultValue(true);

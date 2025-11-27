@@ -155,6 +155,12 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "참석자 정보를 찾을 수 없습니다. 이름과 연락처를 확인해주세요." });
             }
 
+            if (userConvention.User == null || userConvention.Convention == null)
+            {
+                _logger.LogWarning("Guest login failed due to partial data. User: {User}, Convention: {Convention}", userConvention.User, userConvention.Convention);
+                return Unauthorized(new { message = "참석자 또는 행사 정보를 찾을 수 없습니다." });
+            }
+
             var user = userConvention.User;
 
             // 회원으로 전환된 경우 (LoginId가 있는 경우)

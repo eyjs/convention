@@ -31,6 +31,12 @@
     </div>
     <div class="messages-area" ref="messagesArea">
       <div
+        v-if="isReconnecting"
+        class="reconnecting-banner"
+      >
+        채팅 서버에 다시 연결하는 중입니다...
+      </div>
+      <div
         v-for="(msg, index) in messages"
         :key="index"
         class="message-wrapper"
@@ -139,6 +145,7 @@ const uiStore = useUIStore()
 const messages = ref([])
 const newMessage = ref('')
 const isConnected = ref(false)
+const isReconnecting = ref(false)
 const participantCount = ref(0)
 const participantList = ref([])
 const showParticipantList = ref(false)
@@ -177,6 +184,18 @@ onMounted(async () => {
       await chatService.connect()
       isConnected.value = true
       console.log('Chat service connected successfully.')
+
+      chatService.onReconnecting(() => {
+        console.log('Chat service is reconnecting...')
+        isConnected.value = false
+        isReconnecting.value = true
+      })
+
+      chatService.onReconnected(() => {
+        console.log('Chat service has reconnected.')
+        isConnected.value = true
+        isReconnecting.value = false
+      })
 
       chatService.onReceiveMessage((messageData) => {
         messages.value.push(messageData)
@@ -306,5 +325,14 @@ const formatTime = (isoString) => {
   padding: 1rem;
   border-top: 1px solid #e2e8f0;
   background-color: #ffffff;
+}
+
+.reconnecting-banner {
+  padding: 0.5rem 1rem;
+  background-color: #fefcbf; /* yellow-100 */
+  color: #92400e; /* amber-800 */
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 </style>

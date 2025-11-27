@@ -119,9 +119,11 @@ export function useQuillEditor(options = {}) {
       // Quill 인스턴스 생성
       quillInstance.value = new Quill(newEl, finalOptions)
 
-      // 커스텀 이미지 핸들러 등록
+      // 커스텀 이미지 핸들러 등록 (toolbar가 있는 경우에만)
       const toolbar = quillInstance.value.getModule('toolbar')
-      toolbar.addHandler('image', imageHandler)
+      if (toolbar) {
+        toolbar.addHandler('image', imageHandler)
+      }
 
       // 에디터 내용 변경 감지
       quillInstance.value.on('text-change', () => {

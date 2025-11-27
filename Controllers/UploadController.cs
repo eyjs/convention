@@ -21,6 +21,7 @@ public class UploadController : ControllerBase
     private readonly IScheduleTemplateUploadService _scheduleTemplateUploadService;
     private readonly IAttributeUploadService _attributeUploadService;
     private readonly IGroupScheduleMappingService _groupScheduleMappingService;
+    private readonly INameTagUploadService _nameTagUploadService;
     private readonly ILogger<UploadController> _logger;
 
     public UploadController(
@@ -28,12 +29,14 @@ public class UploadController : ControllerBase
         IScheduleTemplateUploadService scheduleTemplateUploadService,
         IAttributeUploadService attributeUploadService,
         IGroupScheduleMappingService groupScheduleMappingService,
+        INameTagUploadService nameTagUploadService,
         ILogger<UploadController> logger)
     {
         _userUploadService = userUploadService;
         _scheduleTemplateUploadService = scheduleTemplateUploadService;
         _attributeUploadService = attributeUploadService;
         _groupScheduleMappingService = groupScheduleMappingService;
+        _nameTagUploadService = nameTagUploadService;
         _logger = logger;
     }
 
@@ -211,6 +214,47 @@ public class UploadController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get groups");
+            return StatusCode(500, new { error = "서버 오류가 발생했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 명찰 인쇄용 데이터 업로드
+    /// Excel 형식: [번호|테이블명(Group)|이름1|직책1|이름2|직책2|...]
+    /// 이 엔드포인트는 데이터를 DB에 저장하지 않고, 파싱된 결과를 바로 반환하여 인쇄 미리보기 생성에 사용됩니다.
+    /// </summary>
+    [HttpPost("conventions/{conventionId}/name-tags")]
+    [ProducesResponseType(typeof(NameTagUploadResult), 200)]
+    public async Task<IActionResult> UploadNameTagsForPrinting(int conventionId, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { error = "파일이 비어있습니다." });
+        }
+
+        if (!file.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { error = "Excel 파일(.xlsx)만 업로드 가능합니다." });
+        }
+
+        _logger.LogInformation("Uploading name tags for printing for convention {ConventionId}, file: {FileName}",
+            conventionId, file.FileName);
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var result = await _nameTagUploadService.UploadNameTagsAsync(stream);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to upload name tags for printing");
             return StatusCode(500, new { error = "서버 오류가 발생했습니다." });
         }
     }

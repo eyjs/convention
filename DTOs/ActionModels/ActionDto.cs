@@ -14,7 +14,6 @@ public class ConventionActionDto
     [JsonConverter(typeof(EmptyStringToNullDateTimeConverter))]
     public DateTime? Deadline { get; set; }
     public string? MapsTo { get; set; }
-    public string? ConfigJson { get; set; }
     public bool IsActive { get; set; } = true;
     public int OrderNum { get; set; }
     public string? ActionCategory { get; set; }

@@ -77,6 +77,17 @@
 
     <!-- 일정 리스트 -->
     <div v-if="!showCalendarView" class="px-4 py-6 space-y-4">
+      <!-- 빈 상태 -->
+      <div v-if="groupedSchedules.length === 0" class="text-center py-12">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <p class="text-gray-500 font-medium">등록된 일정이 없습니다</p>
+        <p class="text-gray-400 text-sm mt-2">새로운 일정이 추가되면 여기에 표시됩니다</p>
+      </div>
+
       <!-- 날짜별 그룹 -->
       <div
         v-for="dateGroup in groupedSchedules"

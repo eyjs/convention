@@ -12,7 +12,7 @@
       >
         <!-- Header -->
         <header
-          class="relative px-4 py-4 md:px-6 md:py-4 border-b flex items-center justify-between flex-shrink-0"
+          class="relative bg-white px-4 py-4 md:px-6 md:py-4 border-b flex items-center justify-between flex-shrink-0"
         >
           <div class="w-8 md:w-10">
             <slot name="header-left"></slot>

@@ -255,6 +255,18 @@ const routes = [
       showNav: false,
     },
   },
+  {
+    path: '/admin/name-tag-printing',
+    name: 'NameTagPrinting',
+    component: () => import('@/views/admin/NameTagPrintingView.vue'),
+    meta: {
+      title: '명찰 인쇄',
+      requiresAuth: true,
+      requiresAdmin: true,
+      layout: null, // No layout for this special page
+      showNav: false,
+    },
+  },
 
   // === Convention Features ===
   {

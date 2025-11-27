@@ -1,92 +1,12 @@
 <template>
   <div class="min-h-screen min-h-dvh bg-gray-50">
-    <!-- 헤더 -->
-    <header class="bg-white shadow-sm sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <div class="flex items-center gap-2">
-            <button
-              @click="router.push('/admin')"
-              class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="행사 목록으로"
-            >
-              <svg
-                class="w-5 h-5 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-            </button>
-            <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-              행사 관리
-            </h1>
-            <span
-              v-if="convention"
-              class="ml-2 sm:ml-4 text-xs sm:text-sm text-gray-500"
-              >{{ convention.title }}</span
-            >
-          </div>
-          <div class="relative">
-            <button
-              @click="showUserMenu = !showUserMenu"
-              class="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 5v.01M12 12v.01M12 19v.01"
-                />
-              </svg>
-            </button>
-
-            <Transition name="fade-down">
-              <div
-                v-if="showUserMenu"
-                class="fixed inset-0 z-50"
-                @click="showUserMenu = false"
-              >
-                <div
-                  class="absolute top-16 right-4 w-56 bg-white rounded-md shadow-lg border"
-                >
-                  <ul>
-                    <li>
-                      <router-link
-                        to="/"
-                        class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        사용자 홈으로
-                      </router-link>
-                    </li>
-                    <li>
-                      <button
-                        @click="handleLogout"
-                        class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-100"
-                      >
-                        로그아웃
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </Transition>
-          </div>
-        </div>
-      </div>
-    </header>
+    <AdminHeader 
+      title="행사 관리" 
+      :subtitle="convention ? convention.title : ''"
+      show-back-button 
+      back-path="/admin"
+      back-button-title="행사 목록으로"
+    />
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <!-- 탭 네비게이션 -->
@@ -188,8 +108,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import { conventionAPI } from '@/services/api'
+import AdminHeader from '@/components/admin/AdminHeader.vue'
 import DashboardOverview from '@/components/admin/DashboardOverview.vue'
 import GuestManagement from '@/components/admin/GuestManagement.vue'
 import DatabaseMigration from '@/components/admin/DatabaseMigration.vue'
@@ -203,7 +123,6 @@ import FormBuilderManagement from '@/components/admin/FormBuilderManagement.vue'
 
 const router = useRouter()
 const route = useRoute()
-const authStore = useAuthStore()
 const conventionId = computed(() => {
   const id = parseInt(route.params.id)
   return isNaN(id) ? null : id
@@ -211,19 +130,11 @@ const conventionId = computed(() => {
 const convention = ref(null)
 const activeTab = ref('dashboard')
 const showMenu = ref(false)
-const showUserMenu = ref(false)
 const loading = ref(true)
 
 const showGuestFromDashboard = (guestId) => {
   activeTab.value = 'guests'
   // GuestManagement 컴포넌트에서 상세 표시하도록 이벤트 전달 필요
-}
-
-const handleLogout = async () => {
-  if (confirm('로그아웃하시겠습니까?')) {
-    await authStore.logout()
-    router.push('/login')
-  }
 }
 
 const tabs = [

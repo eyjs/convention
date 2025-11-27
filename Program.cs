@@ -12,6 +12,7 @@ using LocalRAG.Services.Convention;
 using LocalRAG.Services.Flight; // Added
 using LocalRAG.Services.Shared;
 using LocalRAG.Services.Shared.Builders;
+using LocalRAG.Services.Upload;
 using LocalRAG.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -173,6 +174,20 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) &&
+                (path.StartsWithSegments("/chathub")))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.AddSingleton(jwtSettings);
@@ -188,6 +203,11 @@ builder.Services.AddSingleton<IVerificationService, VerificationService>();
 
 // 파일 업로드 서비스 등록
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+builder.Services.AddScoped<IUserUploadService, UserUploadService>();
+builder.Services.AddScoped<IScheduleTemplateUploadService, ScheduleUploadService>();
+builder.Services.AddScoped<IAttributeUploadService, AttributeUploadService>();
+builder.Services.AddScoped<IGroupScheduleMappingService, GroupScheduleMappingService>();
+builder.Services.AddScoped<INameTagUploadService, NameTagUploadService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextFactory, UserContextFactory>();
 builder.Services.AddHttpClient<IFlightService, FlightService>();
