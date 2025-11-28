@@ -50,7 +50,7 @@ namespace LocalRAG.Controllers.Convention
                         {
                             userId = chatMessage.UserId,
                             userName = chatMessage.IsAdmin
-                                ? $"[관리자] {user.Name}"
+                                ? $"{user.Name}"
                                 : user.Name,
                             profileImageUrl = user.ProfileImageUrl,
                             message = chatMessage.Message,

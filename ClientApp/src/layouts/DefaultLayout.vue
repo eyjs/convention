@@ -70,7 +70,7 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
@@ -129,10 +129,13 @@ const navItems = computed(() => [
 
 watch(
   () => uiStore.isChatOpen,
-  (isOpen) => {
-    if (isOpen && (!conventionId.value || !token.value)) {
-      uiStore.isChatOpen = false
-      alert('채팅 기능이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.')
+  (isOpen, wasOpen) => {
+    if (isOpen && !wasOpen) {
+      // 채팅 모달이 열릴 때
+      if (!conventionId.value || !token.value) {
+        uiStore.isChatOpen = false
+        alert('채팅 기능이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.')
+      }
     }
   },
 )
@@ -140,8 +143,13 @@ watch(
 function navigateTo(path) {
   if (path === '/chat') {
     uiStore.toggleChat()
+  } else if (path) {
+    // path가 유효한 경우에만 router.push 호출
+    router.push(path).catch(err => {
+      console.error('Navigation error:', err)
+    })
   } else {
-    router.push(path)
+    console.error('Invalid path:', path)
   }
 }
 </script>

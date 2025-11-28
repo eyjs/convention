@@ -112,7 +112,7 @@
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">예산 (원)</label>
-                  <input v-model.number="tripData.budget" type="number" step="1" min="0" placeholder="예산을 입력하세요 (선택사항)" class="w-full input" />
+                  <input v-model.number="tripData.budget" v-number-format type="text" step="1" min="0" placeholder="예산을 입력하세요 (선택사항)" class="w-full input" />
                   <p class="text-xs text-gray-500 mt-1">여행 예산을 입력하면 대시보드에서 지출 현황을 추적할 수 있습니다.</p>
                 </div>
                 <div>
@@ -184,19 +184,19 @@
                   </div>
                   <div>
                     <label class="label">금액 (원) *</label>
-                    <input v-model.number="transportationData.amount" type="number" class="input" placeholder="예: 150000" min="0" step="100" required />
+                    <input v-model.number="transportationData.amount" v-number-format type="text" class="input" placeholder="예: 150000" min="0" step="100" required />
                   </div>
                 </template>
                 <template v-else-if="transportationData.category === '기차' || transportationData.category === '버스'">
                   <div>
                     <label class="label">금액 (원) *</label>
-                    <input v-model.number="transportationData.amount" type="number" class="input" placeholder="예: 50000" min="0" step="100" required />
+                    <input v-model.number="transportationData.amount" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" required />
                   </div>
                 </template>
                 <template v-else-if="transportationData.category === '택시'">
                   <div>
                     <label class="label">금액 (원) *</label>
-                    <input v-model.number="transportationData.amount" type="number" class="input" placeholder="예: 10000" min="0" step="100" required />
+                    <input v-model.number="transportationData.amount" v-number-format type="text" class="input" placeholder="예: 10000" min="0" step="100" required />
                   </div>
                 </template>
                 <template v-else-if="transportationData.category === '렌트카' || transportationData.category === '자가용'">
@@ -205,19 +205,19 @@
                   </div>
                   <div v-if="transportationData.category === '렌트카'">
                     <label class="label">렌트 비용 (원)</label>
-                    <input v-model.number="transportationData.rentalCost" type="number" class="input" placeholder="예: 100000" min="0" step="100" />
+                    <input v-model.number="transportationData.rentalCost" v-number-format type="text" class="input" placeholder="예: 100000" min="0" step="100" />
                   </div>
                   <div>
                     <label class="label">주유비 (원)</label>
-                    <input v-model.number="transportationData.fuelCost" type="number" class="input" placeholder="예: 50000" min="0" step="100" />
+                    <input v-model.number="transportationData.fuelCost" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
                   </div>
                   <div>
                     <label class="label">톨비 (원)</label>
-                    <input v-model.number="transportationData.tollFee" type="number" class="input" placeholder="예: 20000" min="0" step="100" />
+                    <input v-model.number="transportationData.tollFee" v-number-format type="text" class="input" placeholder="예: 20000" min="0" step="100" />
                   </div>
                   <div>
                     <label class="label">주차비 (원)</label>
-                    <input v-model.number="transportationData.parkingFee" type="number" class="input" placeholder="예: 15000" min="0" step="100" />
+                    <input v-model.number="transportationData.parkingFee" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
                   </div>
                   <div class="pt-3 border-t">
                     <div class="flex justify-between items-center">
@@ -268,7 +268,7 @@
                 </div>
                 <div> <!-- Added expenseAmount input -->
                   <label class="label">비용 (원)</label>
-                  <input v-model.number="accommodationData.expenseAmount" type="number" class="input" placeholder="예: 100000" min="0" step="100" />
+                  <input v-model.number="accommodationData.expenseAmount" v-number-format type="text" class="input" placeholder="예: 100000" min="0" step="100" />
                 </div>
               </form>
             </template>
@@ -314,7 +314,7 @@
                 </div>
                 <div>
                   <label class="label">금액 (원)</label>
-                  <input type="number" v-model.number="itineraryItemData.expenseAmount" placeholder="예: 50000" class="input" min="0" step="100" />
+                  <input v-model.number="itineraryItemData.expenseAmount" v-number-format type="text" placeholder="예: 50000" class="input" min="0" step="100" />
                 </div>
                 <div><label class="label">메모</label><textarea v-model="itineraryItemData.notes" rows="3" class="input"></textarea></div>
               </form>
@@ -810,19 +810,36 @@ const transportationData = ref({});
 
 // --- Lifecycle and Data Loading ---
 onMounted(async () => {
-  await loadTrip()
-  loadScript()
-  setInterval(() => { now.value = new Date() }, 60000) // Update time every minute for highlight
-  await nextTick()
-  handleDayFilterScroll()
+  try {
+    // 1. Ensure tripId or shareToken is valid
+    // tripId와 shareToken이 모두 없고, route에서도 'undefined' 문자열이 온 경우
+    const routeId = route.params.id
+    const routeToken = route.params.shareToken
 
-  // 마지막 확인 시점 로드 (localStorage)
-  const tripIdValue = tripId.value || shareToken.value
-  if (tripIdValue) {
-    const stored = localStorage.getItem(`reminders_checked_${tripIdValue}`)
-    if (stored) {
-      lastCheckedReminders.value = JSON.parse(stored)
+    // undefined 문자열이 온 경우 trips 목록으로 리다이렉트
+    if (routeId === 'undefined' || routeToken === 'undefined') {
+      console.warn('Invalid route params detected:', { routeId, routeToken })
+      router.push('/trips')
+      return
     }
+
+    // 2. Load trip data
+    await loadTrip()
+    loadScript()
+    setInterval(() => { now.value = new Date() }, 60000) // Update time every minute for highlight
+    await nextTick()
+    handleDayFilterScroll()
+
+    // 3. Load reminders from localStorage
+    const tripIdValue = tripId.value || shareToken.value
+    if (tripIdValue) {
+      const stored = localStorage.getItem(`reminders_checked_${tripIdValue}`)
+      if (stored) {
+        lastCheckedReminders.value = JSON.parse(stored)
+      }
+    }
+  } catch (error) {
+    console.error('Failed to initialize TripDetail:', error)
   }
 })
 

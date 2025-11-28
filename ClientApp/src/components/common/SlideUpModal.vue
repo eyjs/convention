@@ -68,6 +68,10 @@ const props = defineProps({
     type: String,
     default: 'z-50',
   },
+  disableHistoryManagement: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['close'])
@@ -77,9 +81,12 @@ const historyPushed = ref(false)
 
 // 뒤로가기 이벤트 핸들러
 const handlePopState = (event) => {
+  // 모달이 열려있고, 히스토리를 우리가 관리하고 있는 경우
   if (props.isOpen && historyPushed.value) {
-    event.preventDefault()
-    close(true) // true = 히스토리에서 닫힘
+    // historyPushed 플래그 먼저 해제 (중복 처리 방지)
+    historyPushed.value = false
+    // 모달 닫기 이벤트 발생
+    emit('close')
   }
 }
 
@@ -91,8 +98,8 @@ watch(() => props.isOpen, (newValue, oldValue) => {
     document.body.style.overflow = 'hidden'
     document.body.style.touchAction = 'none'
 
-    // 히스토리에 가상 엔트리 추가
-    if (!historyPushed.value) {
+    // 히스토리 관리가 활성화된 경우에만 히스토리에 가상 엔트리 추가
+    if (!props.disableHistoryManagement && !historyPushed.value) {
       window.history.pushState({ modal: 'open' }, '')
       historyPushed.value = true
     }
@@ -135,13 +142,13 @@ const onMouseUp = (e) => {
   }
 }
 
-const close = (fromHistory = false) => {
-  // 히스토리에서 닫힌 경우가 아니면 뒤로가기 실행
-  if (!fromHistory && historyPushed.value) {
+const close = () => {
+  // X 버튼이나 외부 클릭으로 닫는 경우, 히스토리를 추가했으면 뒤로가기
+  if (historyPushed.value) {
     historyPushed.value = false
     window.history.back()
   } else {
-    historyPushed.value = false
+    // 히스토리 관리를 안 하는 경우 (또는 이미 처리된 경우)
     emit('close')
   }
 }

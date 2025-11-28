@@ -115,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/api'
 
@@ -127,20 +127,29 @@ const error = ref(null)
 const responses = reactive({})
 const isSubmitting = ref(false)
 
-onMounted(async () => {
-  const surveyId = route.params.id
-  if (!surveyId) {
-    error.value = 'Survey ID not found.'
-    loading.value = false
-    return
-  }
+// Computed: surveyId with validation
+const surveyId = computed(() => {
+  const id = route.params.id
+  return (id && id !== 'undefined') ? id : null
+})
 
+onMounted(async () => {
   try {
-    const response = await api.get(`/surveys/${surveyId}`)
+    // 1. Validate surveyId
+    if (!surveyId.value) {
+      console.warn('Invalid surveyId detected:', route.params.id)
+      error.value = 'Survey ID not found.'
+      loading.value = false
+      return
+    }
+
+    // 2. Load survey data
+    const response = await api.get(`/surveys/${surveyId.value}`)
     survey.value = response.data
+
     // Initialize responses object and fetch previous response if exists
     const userResponse = await api
-      .get(`/surveys/${surveyId}/responses/me`)
+      .get(`/surveys/${surveyId.value}/responses/me`)
       .catch(() => null)
 
     survey.value.questions.forEach((q) => {
@@ -184,8 +193,8 @@ onMounted(async () => {
       }
     })
   } catch (err) {
+    console.error('Failed to initialize Survey:', err)
     error.value = 'Failed to load survey.'
-    console.error(err)
   } finally {
     loading.value = false
   }

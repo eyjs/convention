@@ -587,9 +587,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
+import { useNoticeNavigation } from '@/composables/useNoticeNavigation'
 import apiClient from '@/services/api'
 import { useQuillEditor } from '@/composables/useQuillEditor'
 import QuillViewer from '@/components/common/QuillViewer.vue'
@@ -598,9 +599,11 @@ import MainHeader from '@/components/common/MainHeader.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 
 const router = useRouter()
+const route = useRoute()
 const viewer = ref(null)
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
+const { getPendingNotice } = useNoticeNavigation()
 const isAdmin = computed(() => authStore.user?.role === 'Admin')
 
 const selectedCategory = ref('all')
@@ -683,6 +686,7 @@ function formatDateTime(dateStr) {
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
+// 게시글 클릭 시 호출
 async function openNotice(notice) {
   try {
     const response = await apiClient.get(`/notices/${notice.id}`)
@@ -915,18 +919,16 @@ onMounted(async () => {
     await loadCategories()
     await loadNotices()
 
-    // router state에서 selectedNoticeId를 확인
-    const state = history.state
-    if (state?.selectedNoticeId) {
-      const notice = notices.value.find((n) => n.id === state.selectedNoticeId)
+    await loadDynamicActions()
+
+    // ConventionHome에서 composable로 전달된 noticeId 확인 (TripDetail 패턴)
+    const pendingNoticeId = getPendingNotice()
+    if (pendingNoticeId) {
+      const notice = notices.value.find((n) => n.id === pendingNoticeId)
       if (notice) {
         await openNotice(notice)
       }
-      // state 초기화
-      history.replaceState({}, document.title)
     }
-
-    await loadDynamicActions()
   } catch (error) {
     console.error('Failed to initialize Board:', error)
   }

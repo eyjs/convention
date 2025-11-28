@@ -14,8 +14,19 @@
   >
     <!-- 헤더 배너 -->
     <div class="relative h-48 overflow-hidden" :style="headerGradientStyle">
-      <!-- 배경 패턴 -->
-      <div class="absolute inset-0 opacity-10">
+      <!-- 배경 이미지 (있는 경우) -->
+      <div
+        v-if="convention.conventionImg"
+        class="absolute inset-0 bg-cover bg-center"
+        :style="{ backgroundImage: `url(${convention.conventionImg})` }"
+      ></div>
+      <!-- 어두운 오버레이 (배경 이미지가 있을 때 텍스트 가독성 확보) -->
+      <div
+        v-if="convention.conventionImg"
+        class="absolute inset-0 bg-black/40"
+      ></div>
+      <!-- 배경 패턴 (배경 이미지가 없을 때만) -->
+      <div v-else class="absolute inset-0 opacity-10">
         <div
           class="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-32 -translate-y-32"
         ></div>
@@ -340,6 +351,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
+import { useNoticeNavigation } from '@/composables/useNoticeNavigation'
 import apiClient from '@/services/api'
 import DeadlineCountdown from '@/components/common/DeadlineCountdown.vue'
 import ChecklistProgress from '@/components/common/ChecklistProgress.vue'
@@ -349,6 +361,7 @@ import MainHeader from '@/components/common/MainHeader.vue'
 const router = useRouter()
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
+const { setPendingNotice } = useNoticeNavigation()
 
 const loading = ref(true)
 const convention = computed(() => conventionStore.currentConvention)
@@ -362,6 +375,11 @@ const brandColor = computed(() => {
 
 // 헤더 그라데이션 스타일 계산
 const headerGradientStyle = computed(() => {
+  // 배경 이미지가 있으면 그라데이션 사용 안 함
+  if (convention.value?.conventionImg) {
+    return {}
+  }
+
   const color = brandColor.value
   // 16진수 색상을 RGB로 변환
   const r = parseInt(color.slice(1, 3), 16)
@@ -419,11 +437,9 @@ const handleLogout = async () => {
 }
 
 function openNotice(notice) {
-  // 공지사항 목록 페이지로 이동하면서 noticeId를 state로 전달
-  router.push({
-    path: '/notices',
-    state: { selectedNoticeId: notice.id },
-  })
+  // TripDetail처럼 composable로 noticeId 전달
+  setPendingNotice(notice.id)
+  router.push('/notices')
 }
 
 function formatDate(dateStr) {

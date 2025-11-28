@@ -8,9 +8,35 @@
     </div>
 
     <div v-else class="max-w-2xl mx-auto px-4 py-4 pb-24">
+      <!-- 카테고리 필터 버튼 (등록된 항목이 있는 것만) -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button
+          @click="selectedCategoryFilter = null"
+          class="px-3 py-1.5 rounded-full text-sm font-semibold transition-all"
+          :class="selectedCategoryFilter === null
+            ? 'bg-primary-500 text-white shadow-md'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+        >
+          전체
+        </button>
+        <button
+          v-for="category in categoriesWithData"
+          :key="category.name"
+          @click="selectCategoryFilter(category.name)"
+          class="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold transition-all"
+          :class="selectedCategoryFilter === category.name
+            ? 'bg-primary-500 text-white shadow-md'
+            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'"
+        >
+          <component :is="category.icon" class="w-3.5 h-3.5" />
+          {{ category.name }}
+          <span class="text-xs opacity-80">{{ getFlightsByCategory(category.name).length }}</span>
+        </button>
+      </div>
+
       <!-- 카테고리별 섹션 -->
       <div class="space-y-4">
-        <div v-for="category in categories" :key="category.name" class="bg-white rounded-2xl shadow-md overflow-hidden">
+        <div v-for="category in filteredCategories" :key="category.name" class="bg-white rounded-2xl shadow-md overflow-hidden">
           <!-- 카테고리 헤더 -->
           <button
             @click="toggleCategory(category.name)"
@@ -128,7 +154,77 @@
                   </div>
                 </template>
                 <template v-else>
+                  <!-- 기차 티켓 스타일 -->
+                  <template v-if="category.name === '기차'">
+                    <div
+                      v-for="flight in getFlightsByCategory(category.name)"
+                      :key="flight.id"
+                      @click="!effectiveReadonly && openDetailModal(flight)"
+                      class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl shadow-lg overflow-hidden mb-4 border-2 border-green-200 relative"
+                      :class="{ 'cursor-pointer hover:shadow-xl': !effectiveReadonly }"
+                    >
+                      <div class="p-6">
+                        <!-- Header -->
+                        <div class="flex justify-between items-center mb-6">
+                          <div class="flex items-center gap-2">
+                            <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
+                              <Train class="w-7 h-7 text-white" />
+                            </div>
+                            <div>
+                              <div class="text-sm font-semibold text-green-700">{{ flight.flightNumber || 'KTX' }}</div>
+                              <div class="text-xs text-gray-600">기차</div>
+                            </div>
+                          </div>
+                          <div class="text-right">
+                            <div class="text-sm text-gray-600">{{ formatDate(flight.departureTime) }}</div>
+                          </div>
+                        </div>
+
+                        <!-- Route -->
+                        <div class="bg-white rounded-xl p-5 mb-4 shadow-sm">
+                          <div class="flex items-center justify-between gap-4">
+                            <div class="flex-1">
+                              <div class="text-xs text-gray-500 mb-1">출발</div>
+                              <div class="text-2xl font-black text-gray-900">{{ flight.departureLocation || '출발역' }}</div>
+                              <div class="text-base font-bold text-green-600 mt-1">{{ formatTime(flight.departureTime) }}</div>
+                            </div>
+
+                            <div class="flex flex-col items-center px-2">
+                              <Train class="w-6 h-6 text-green-500 mb-1" />
+                              <div class="w-16 h-0.5 bg-green-300"></div>
+                            </div>
+
+                            <div class="flex-1 text-right">
+                              <div class="text-xs text-gray-500 mb-1">도착</div>
+                              <div class="text-2xl font-black text-gray-900">{{ flight.arrivalLocation || '도착역' }}</div>
+                              <div class="text-base font-bold text-green-600 mt-1">{{ formatTime(flight.arrivalTime) }}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Info -->
+                        <div class="flex items-center justify-between">
+                          <div>
+                            <div class="text-xs text-gray-600 mb-1">운임</div>
+                            <div class="text-xl font-bold text-green-700">{{ (flight.amount || 0).toLocaleString() }}원</div>
+                          </div>
+                          <div v-if="flight.bookingReference" class="text-right">
+                            <div class="text-xs text-gray-600 mb-1">예약번호</div>
+                            <div class="text-sm font-semibold text-gray-900">{{ flight.bookingReference }}</div>
+                          </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div v-if="flight.notes" class="mt-4 p-3 bg-white rounded-lg border border-green-200">
+                          <p class="text-sm text-gray-700">{{ flight.notes }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- 기타 교통수단 -->
                    <div
+                    v-else
                     v-for="flight in getFlightsByCategory(category.name)"
                     :key="flight.id"
                     @click="!effectiveReadonly && openDetailModal(flight)"
@@ -137,22 +233,9 @@
                   >
                     <div class="flex justify-between items-start">
                       <div class="flex-1 min-w-0">
-                        <!-- 기차 (간소화) -->
-                        <template v-if="flight.category === '기차'">
-                          <div v-if="flight.departureLocation || flight.arrivalLocation" class="flex items-center gap-2 text-sm text-gray-700 mb-1">
-                            <span>{{ flight.departureLocation || '출발역' }}</span>
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                            </svg>
-                            <span>{{ flight.arrivalLocation || '도착역' }}</span>
-                          </div>
-                          <div v-if="flight.departureTime" class="text-xs text-gray-500">
-                            {{ formatDateTime(flight.departureTime) }}
-                          </div>
-                        </template>
 
                         <!-- 버스 (간소화) -->
-                        <template v-else-if="flight.category === '버스'">
+                        <template v-if="flight.category === '버스'">
                           <div v-if="flight.departureLocation || flight.arrivalLocation" class="flex items-center gap-2 text-sm text-gray-700 mb-1">
                             <span>{{ flight.departureLocation || '출발지' }}</span>
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,7 +387,7 @@
             </div>
             <div>
               <label class="label">금액 (원)</label>
-              <input v-model.number="flightData.amount" type="number" class="input" placeholder="예: 150000" min="0" step="100" />
+              <input v-model.number="flightData.amount" v-number-format type="text" class="input" placeholder="예: 150000" min="0" step="100" />
             </div>
           </template>
 
@@ -333,7 +416,7 @@
             </div>
             <div>
               <label class="label">금액 (원)</label>
-              <input v-model.number="flightData.amount" type="number" class="input" placeholder="예: 50000" min="0" step="100" />
+              <input v-model.number="flightData.amount" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
             </div>
           </template>
 
@@ -355,7 +438,7 @@
             </div>
             <div>
               <label class="label">금액 (원)</label>
-              <input v-model.number="flightData.amount" type="number" class="input" placeholder="예: 30000" min="0" step="100" />
+              <input v-model.number="flightData.amount" v-number-format type="text" class="input" placeholder="예: 30000" min="0" step="100" />
             </div>
           </template>
 
@@ -382,7 +465,7 @@
             </div>
             <div>
               <label class="label">금액 (원)</label>
-              <input v-model.number="flightData.amount" type="number" class="input" placeholder="예: 15000" min="0" step="100" />
+              <input v-model.number="flightData.amount" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
             </div>
           </template>
 
@@ -419,21 +502,21 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">렌트비 (원)</label>
-                <input v-model.number="flightData.rentalCost" type="number" class="input" placeholder="예: 100000" min="0" step="100" />
+                <input v-model.number="flightData.rentalCost" v-number-format type="text" class="input" placeholder="예: 100000" min="0" step="100" />
               </div>
               <div>
                 <label class="label">유류비 (원)</label>
-                <input v-model.number="flightData.fuelCost" type="number" class="input" placeholder="예: 50000" min="0" step="100" />
+                <input v-model.number="flightData.fuelCost" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">톨비 (원)</label>
-                <input v-model.number="flightData.tollFee" type="number" class="input" placeholder="예: 20000" min="0" step="100" />
+                <input v-model.number="flightData.tollFee" v-number-format type="text" class="input" placeholder="예: 20000" min="0" step="100" />
               </div>
               <div>
                 <label class="label">주차비 (원)</label>
-                <input v-model.number="flightData.parkingFee" type="number" class="input" placeholder="예: 15000" min="0" step="100" />
+                <input v-model.number="flightData.parkingFee" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
               </div>
             </div>
           </template>
@@ -443,16 +526,16 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">유류비 (원)</label>
-                <input v-model.number="flightData.fuelCost" type="number" class="input" placeholder="예: 50000" min="0" step="100" />
+                <input v-model.number="flightData.fuelCost" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
               </div>
               <div>
                 <label class="label">톨비 (원)</label>
-                <input v-model.number="flightData.tollFee" type="number" class="input" placeholder="예: 20000" min="0" step="100" />
+                <input v-model.number="flightData.tollFee" v-number-format type="text" class="input" placeholder="예: 20000" min="0" step="100" />
               </div>
             </div>
             <div>
               <label class="label">주차비 (원)</label>
-              <input v-model.number="flightData.parkingFee" type="number" class="input" placeholder="예: 15000" min="0" step="100" />
+              <input v-model.number="flightData.parkingFee" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
             </div>
           </template>
 
@@ -575,6 +658,7 @@ const effectiveReadonly = computed(() => props.readonly || isSharedView.value);
 const loading = ref(true);
 const trip = ref({});
 const expandedCategories = ref(['항공편']); // 기본으로 항공편 펼침
+const selectedCategoryFilter = ref(null); // null = 전체 보기
 
 // Modal states
 const isEditModalOpen = ref(false);
@@ -660,6 +744,21 @@ const totalTransportationCost = computed(() => {
   return trip.value.flights.reduce((sum, f) => sum + getFlightTotalCost(f), 0);
 });
 
+// 등록된 데이터가 있는 카테고리만 필터링
+const categoriesWithData = computed(() => {
+  return categories.filter(category => getFlightsByCategory(category.name).length > 0);
+});
+
+// 선택된 필터에 따라 표시할 카테고리
+const filteredCategories = computed(() => {
+  if (selectedCategoryFilter.value === null) {
+    // 전체 보기 - 모든 카테고리 표시
+    return categories;
+  }
+  // 특정 카테고리만 표시
+  return categories.filter(cat => cat.name === selectedCategoryFilter.value);
+});
+
 function getFlightsByCategory(category) {
   if (!trip.value.flights) return [];
   const flights = trip.value.flights.filter(f => f.category === category);
@@ -712,6 +811,15 @@ function toggleCategory(category) {
     expandedCategories.value.splice(index, 1);
   } else {
     expandedCategories.value.push(category);
+  }
+}
+
+// 카테고리 필터 선택
+function selectCategoryFilter(categoryName) {
+  selectedCategoryFilter.value = categoryName;
+  // 선택된 카테고리를 자동으로 펼침
+  if (!expandedCategories.value.includes(categoryName)) {
+    expandedCategories.value.push(categoryName);
   }
 }
 
@@ -886,8 +994,37 @@ async function saveFlightsFromModal(flights) {
 }
 
 
-onMounted(() => {
-  loadTrip();
+onMounted(async () => {
+  try {
+    // 1. Ensure tripId or shareToken is valid
+    const routeId = route.params.id
+    const routeToken = route.params.shareToken
+
+    // undefined 문자열이 온 경우 trips 목록으로 리다이렉트
+    if (routeId === 'undefined' || routeToken === 'undefined') {
+      console.warn('Invalid route params detected:', { routeId, routeToken })
+      if (isSharedView.value) {
+        router.push('/home')
+      } else {
+        router.push('/trips')
+      }
+      return
+    }
+
+    // 2. Load trip data
+    await loadTrip()
+
+    // 3. Set initial filter to the first category with data, if any
+    if (categoriesWithData.value.length > 0) {
+      selectedCategoryFilter.value = categoriesWithData.value[0].name;
+      // 또한 해당 카테고리를 확장된 카테고리 목록에 추가하여 펼쳐진 상태로 만듭니다.
+      if (!expandedCategories.value.includes(selectedCategoryFilter.value)) {
+        expandedCategories.value.push(selectedCategoryFilter.value);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to initialize TripTransportation:', error)
+  }
 });
 </script>
 

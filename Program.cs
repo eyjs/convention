@@ -97,12 +97,6 @@ builder.Services.AddPooledDbContextFactory<ConventionDbContext>(options =>
 });
 
 builder.Services.AddRepositories();
-
-
-// --- 4. [핵심 수정] RAG 및 AI 관련 서비스 등록 (올바른 수명 주기 설정) ---
-
-// VectorStore와 EmbeddingService는 데이터를 메모리에 유지하거나 모델을 로드해야 하므로 'Singleton'으로 등록합니다.
-//builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>();
 if (builder.Configuration.GetValue<bool>("EmbeddingSettings:UseOnnx", false))
 {
     builder.Services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
@@ -113,8 +107,7 @@ else
 }
 
 // Vector Store 등록 - MSSQL 사용
-builder.Services.AddScoped<IVectorStore, MssqlVectorStore>(); // MSSQL Vector Store (Scoped)
-Console.WriteLine("Using MSSQL Vector Store.");
+builder.Services.AddScoped<IVectorStore, MssqlVectorStore>();
 
 builder.Services.AddScoped<ILlmProvider, Llama3Provider>(provider =>
 {
@@ -125,11 +118,10 @@ builder.Services.AddScoped<ILlmProvider, Llama3Provider>(provider =>
     return new Llama3Provider(httpClient, configuration, logger);
 });
 
-// 💥 GeminiProvider도 'ILlmProvider' 인터페이스로 등록합니다.
 builder.Services.AddScoped<ILlmProvider, GeminiProvider>(provider =>
 {
     var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-    var httpClient = httpClientFactory.CreateClient("LlmClient"); // 300초 클라이언트
+    var httpClient = httpClientFactory.CreateClient("LlmClient"); 
     var configuration = provider.GetRequiredService<IConfiguration>();
     return new GeminiProvider(httpClient, configuration);
 });

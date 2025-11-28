@@ -130,7 +130,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { noticeAPI } from '@/services/noticeService'
 import { formatFileSize } from '@/utils/fileUpload'
@@ -144,6 +144,12 @@ export default {
   setup() {
     const router = useRouter()
     const route = useRoute()
+
+    // Computed: noticeId with validation
+    const noticeId = computed(() => {
+      const id = route.params.id
+      return (id && id !== 'undefined') ? id : null
+    })
 
     // 상태
     const loading = ref(false)
@@ -164,15 +170,19 @@ export default {
 
     // 메서드
     const fetchNotice = async () => {
+      if (!noticeId.value) {
+        alert('공지사항 ID가 유효하지 않습니다.')
+        goBack()
+        return
+      }
+
       loading.value = true
       try {
-        const id = route.params.id
-
         // 조회수 증가
-        await noticeAPI.incrementViewCount(id)
+        await noticeAPI.incrementViewCount(noticeId.value)
 
         // 공지사항 상세 조회
-        const response = await noticeAPI.getNotice(id)
+        const response = await noticeAPI.getNotice(noticeId.value)
         notice.value = response.data
 
         // 이전글/다음글 정보가 있다면 설정
@@ -201,8 +211,21 @@ export default {
     }
 
     // 생명주기
-    onMounted(() => {
-      fetchNotice()
+    onMounted(async () => {
+      try {
+        // 1. Ensure noticeId is valid
+        if (!noticeId.value) {
+          console.warn('Invalid noticeId detected:', route.params.id)
+          alert('공지사항 ID가 유효하지 않습니다.')
+          router.push('/notices')
+          return
+        }
+
+        // 2. Load notice data
+        await fetchNotice()
+      } catch (error) {
+        console.error('Failed to initialize NoticeDetail:', error)
+      }
     })
 
     return {

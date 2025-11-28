@@ -218,7 +218,10 @@ const router = useRouter()
 const conventionStore = useConventionStore()
 const authStore = useAuthStore()
 
-const actionId = computed(() => parseInt(route.params.actionId))
+const actionId = computed(() => {
+  const id = parseInt(route.params.actionId, 10)
+  return isNaN(id) ? null : id
+})
 const conventionId = computed(() => conventionStore.currentConvention?.id)
 
 const loading = ref(true)
@@ -323,11 +326,19 @@ async function handleSubmit() {
 
 onMounted(async () => {
   try {
-    // Ensure convention store is ready
+    // 1. Validate actionId
+    if (!actionId.value) {
+      console.warn('Invalid actionId detected:', route.params.actionId)
+      error.value = '유효하지 않은 액션 ID입니다.'
+      loading.value = false
+      return
+    }
+
+    // 2. Ensure convention store is ready
     if (!conventionStore.currentConvention) {
       const selectedConventionId = localStorage.getItem('selectedConventionId')
       if (selectedConventionId) {
-        await conventionStore.setCurrentConvention(parseInt(selectedConventionId))
+        await conventionStore.setCurrentConvention(parseInt(selectedConventionId, 10))
       }
     }
 
@@ -337,6 +348,7 @@ onMounted(async () => {
       return
     }
 
+    // 3. Load action data
     await loadAction()
     if (!error.value) {
       await loadExistingSubmission()

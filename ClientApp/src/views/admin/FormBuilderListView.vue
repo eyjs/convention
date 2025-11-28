@@ -113,7 +113,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import formBuilderService from '@/services/formBuilderService'
 
@@ -121,7 +121,12 @@ const router = useRouter()
 const route = useRoute()
 const forms = ref([])
 const loading = ref(false)
-const conventionId = ref(null)
+
+// Computed: conventionId with validation
+const conventionId = computed(() => {
+  const id = parseInt(route.params.conventionId, 10)
+  return isNaN(id) ? null : id
+})
 
 async function fetchForms() {
   if (!conventionId.value) {
@@ -175,8 +180,20 @@ function formatDateTime(dateString) {
   return date.toLocaleString('ko-KR')
 }
 
-onMounted(() => {
-  conventionId.value = parseInt(route.params.conventionId, 10)
-  fetchForms()
+onMounted(async () => {
+  try {
+    // 1. Validate conventionId
+    if (!conventionId.value) {
+      console.warn('Invalid conventionId detected:', route.params.conventionId)
+      alert('유효하지 않은 컨벤션 ID입니다.')
+      router.push('/admin')
+      return
+    }
+
+    // 2. Load forms data
+    await fetchForms()
+  } catch (error) {
+    console.error('Failed to initialize FormBuilderListView:', error)
+  }
 })
 </script>
