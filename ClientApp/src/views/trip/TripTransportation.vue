@@ -182,33 +182,28 @@
 
                         <!-- Route -->
                         <div class="bg-white rounded-xl p-5 mb-4 shadow-sm">
-                          <div class="flex items-center justify-between gap-4">
-                            <div class="flex-1">
-                              <div class="text-xs text-gray-500 mb-1">출발</div>
-                              <div class="text-2xl font-black text-gray-900">{{ flight.departureLocation || '출발역' }}</div>
-                              <div class="text-base font-bold text-green-600 mt-1">{{ formatTime(flight.departureTime) }}</div>
-                            </div>
-
-                            <div class="flex flex-col items-center px-2">
-                              <Train class="w-6 h-6 text-green-500 mb-1" />
-                              <div class="w-16 h-0.5 bg-green-300"></div>
-                            </div>
-
-                            <div class="flex-1 text-right">
-                              <div class="text-xs text-gray-500 mb-1">도착</div>
-                              <div class="text-2xl font-black text-gray-900">{{ flight.arrivalLocation || '도착역' }}</div>
-                              <div class="text-base font-bold text-green-600 mt-1">{{ formatTime(flight.arrivalTime) }}</div>
-                            </div>
-                          </div>
-                        </div>
+                                    <div class="flex items-center justify-between gap-4">
+                                      <div class="flex-1">
+                                        <div class="text-xs text-gray-500 mb-1">출발</div>
+                                        <div class="text-xl font-black text-gray-900">{{ flight.departureLocation || '출발역' }}</div>
+                                        <div class="text-base font-bold text-green-600 mt-1">{{ formatTime(flight.departureTime) }}</div>
+                                      </div>
+                          
+                                      <div class="flex flex-col items-center px-2">
+                                        <Train class="w-6 h-6 text-green-500 mb-1" />
+                                        <div class="w-16 h-0.5 bg-green-300"></div>
+                                      </div>
+                          
+                                      <div class="flex-1 text-right">
+                                        <div class="text-xs text-gray-500 mb-1">도착</div>
+                                        <div class="text-xl font-black text-gray-900">{{ flight.arrivalLocation || '도착역' }}</div>
+                                        <div class="text-base font-bold text-green-600 mt-1">{{ formatTime(flight.arrivalTime) }}</div>
+                                      </div>
+                                    </div>                        </div>
 
                         <!-- Info -->
-                        <div class="flex items-center justify-between">
-                          <div>
-                            <div class="text-xs text-gray-600 mb-1">운임</div>
-                            <div class="text-xl font-bold text-green-700">{{ (flight.amount || 0).toLocaleString() }}원</div>
-                          </div>
-                          <div v-if="flight.bookingReference" class="text-right">
+                        <div v-if="flight.bookingReference" class="flex items-center justify-end">
+                          <div class="text-right">
                             <div class="text-xs text-gray-600 mb-1">예약번호</div>
                             <div class="text-sm font-semibold text-gray-900">{{ flight.bookingReference }}</div>
                           </div>
@@ -415,6 +410,17 @@
               />
             </div>
             <div>
+              <label class="label">도착 일시</label>
+              <CommonDatePicker
+                v-model:value="flightData.arrivalTime"
+                type="datetime"
+                format="YYYY-MM-DD HH:mm"
+                value-type="YYYY-MM-DDTHH:mm:ss"
+                placeholder="날짜와 시간을 선택하세요"
+                class="w-full"
+              />
+            </div>
+            <div>
               <label class="label">금액 (원)</label>
               <input v-model.number="flightData.amount" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
             </div>
@@ -576,7 +582,11 @@
     />
 
     <!-- Bottom Navigation Bar -->
-    <BottomNavigationBar v-if="tripId || trip.id" :trip-id="tripId || trip.id" :share-token="shareToken" :show="!uiStore.isModalOpen" />
+    <BottomNavigationBar
+      v-if="((tripId && tripId !== 'undefined') || (shareToken && shareToken !== 'undefined')) && !uiStore.isModalOpen"
+      :trip-id="tripId || trip.id"
+      :share-token="shareToken"
+    />
   </div>
 </template>
 

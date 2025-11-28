@@ -48,17 +48,19 @@ const props = defineProps({
 
 // A helper function to create safe URLs.
 const createUrl = (path) => {
-  // Check if both tripId and shareToken are missing or undefined
-  if ((!props.tripId || props.tripId === 'undefined') && (!props.shareToken || props.shareToken === 'undefined')) {
-    return '#'; // Return a non-functional link if IDs are missing or undefined
+  const tripId = props.tripId;
+  const shareToken = props.shareToken;
+
+  // A value is valid if it's not null, not undefined, and not the string 'undefined'.
+  const isTripIdValid = tripId !== null && tripId !== undefined && tripId !== 'undefined';
+  const isShareTokenValid = shareToken !== null && shareToken !== undefined && shareToken !== 'undefined';
+
+  if (isShareTokenValid) {
+    return `/trips/share/${shareToken}${path}`;
   }
 
-  if (props.shareToken && props.shareToken !== 'undefined') {
-    return `/trips/share/${props.shareToken}${path}`;
-  }
-
-  if (props.tripId && props.tripId !== 'undefined') {
-    return `/trips/${props.tripId}${path}`;
+  if (isTripIdValid) {
+    return `/trips/${tripId}${path}`;
   }
 
   return '#'; // Fallback

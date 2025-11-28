@@ -487,10 +487,9 @@
 
     <!-- Bottom Navigation Bar -->
     <BottomNavigationBar
-      v-if="tripId || trip.id"
+      v-if="((tripId && tripId !== 'undefined') || (shareToken && shareToken !== 'undefined')) && !uiStore.isModalOpen"
       :trip-id="tripId || trip.id"
       :share-token="shareToken"
-      :show="!uiStore.isModalOpen"
     />
   
 </template>

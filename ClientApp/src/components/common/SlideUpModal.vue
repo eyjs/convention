@@ -145,7 +145,6 @@ const onMouseUp = (e) => {
 const close = () => {
   // X 버튼이나 외부 클릭으로 닫는 경우, 히스토리를 추가했으면 뒤로가기
   if (historyPushed.value) {
-    historyPushed.value = false
     window.history.back()
   } else {
     // 히스토리 관리를 안 하는 경우 (또는 이미 처리된 경우)

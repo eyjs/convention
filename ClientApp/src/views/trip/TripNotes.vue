@@ -85,7 +85,11 @@
       </div>
     </div>
 
-    <BottomNavigationBar v-if="tripId || trip.id" :trip-id="tripId || trip.id" :share-token="shareToken" :show="!uiStore.isModalOpen" />
+    <BottomNavigationBar
+      v-if="((tripId && tripId !== 'undefined') || (shareToken && shareToken !== 'undefined')) && !uiStore.isModalOpen"
+      :trip-id="tripId || trip.id"
+      :share-token="shareToken"
+    />
 
     <!-- Generic Input Modal -->
     <SlideUpModal :is-open="isInputModalOpen" @close="closeInputModal">

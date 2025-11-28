@@ -108,7 +108,7 @@
         <div v-if="tripWideExpenses.items.length > 0" class="bg-white rounded-2xl shadow-md overflow-hidden border-2 border-primary-200">
           <button @click="showTripWide = !showTripWide" class="w-full p-4 flex justify-between items-center">
             <div>
-              <h3 class="text-lg font-bold text-gray-900">여행 전체 비용</h3>
+              <h3 class="text-lg font-bold text-gray-900">공통 비용</h3>
               <p class="text-xs text-gray-500">기간 전체에 걸친 비용</p>
             </div>
             <div class="flex items-center gap-2">
@@ -197,7 +197,11 @@
       </div>
     </div>
 
-    <BottomNavigationBar v-if="tripId || trip.id" :trip-id="tripId || trip.id" :share-token="shareToken" :show="!uiStore.isModalOpen" />
+    <BottomNavigationBar
+      v-if="((tripId && tripId !== 'undefined') || (shareToken && shareToken !== 'undefined')) && !uiStore.isModalOpen"
+      :trip-id="tripId || trip.id"
+      :share-token="shareToken"
+    />
   </div>
 </template>
 
