@@ -5,6 +5,10 @@
       "destination": "http://event.ifa.co.kr/api/:path*"
     },
     {
+      "source": "/chathub/:path*",
+      "destination": "http://event.ifa.co.kr/chathub/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
