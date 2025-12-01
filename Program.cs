@@ -24,6 +24,20 @@ using LocalRAG.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// HTTP와 HTTPS 모두 지원하도록 설정
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    // HTTP 포트 (5000)
+    serverOptions.ListenAnyIP(5000);
+
+    // HTTPS 포트 (5001) - 인증서가 있는 경우에만 활성화
+    // 프로덕션에서는 리버스 프록시(IIS, Nginx 등)가 HTTPS 처리
+    // serverOptions.ListenAnyIP(5001, listenOptions =>
+    // {
+    //     listenOptions.UseHttps();
+    // });
+});
+
 // --- 1. 로깅 설정 ---
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
@@ -62,10 +76,25 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSPA", policy =>
     {
-        policy.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000" })
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            // 설정된 허용 도메인 목록
+            var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                ?? new[] { "http://localhost:3000" };
+
+            // 정확히 일치하는 도메인 확인
+            if (allowedOrigins.Contains(origin))
+                return true;
+
+            // Vercel 프리뷰 도메인 허용 (*.vercel.app)
+            if (origin.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return false;
+        })
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials();
     });
 });
 

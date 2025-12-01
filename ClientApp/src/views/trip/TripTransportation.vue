@@ -180,24 +180,24 @@
                           </div>
                         </div>
 
-                        <!-- Route -->
-                        <div class="bg-white rounded-xl p-5 mb-4 shadow-sm">
-                                    <div class="flex items-center justify-between gap-4">
-                                      <div class="flex-1">
-                                        <div class="text-xs text-gray-500 mb-1">출발</div>
-                                        <div class="text-xl font-black text-gray-900">{{ flight.departureLocation || '출발역' }}</div>
-                                        <div class="text-base font-bold text-green-600 mt-1">{{ formatTime(flight.departureTime) }}</div>
+                        <!-- Route (모바일 최적화) -->
+                        <div class="bg-white rounded-xl p-3 md:p-5 mb-4 shadow-sm">
+                                    <div class="flex items-center justify-between gap-2 md:gap-4">
+                                      <div class="flex-1 min-w-0">
+                                        <div class="text-xs text-gray-500 mb-0.5">출발</div>
+                                        <div class="text-sm md:text-lg font-black text-gray-900 truncate">{{ flight.departureLocation || '출발역' }}</div>
+                                        <div class="text-xs md:text-sm font-bold text-green-600 mt-0.5">{{ formatTime(flight.departureTime) }}</div>
                                       </div>
-                          
-                                      <div class="flex flex-col items-center px-2">
-                                        <Train class="w-6 h-6 text-green-500 mb-1" />
-                                        <div class="w-16 h-0.5 bg-green-300"></div>
+
+                                      <div class="flex flex-col items-center px-1 flex-shrink-0">
+                                        <Train class="w-4 h-4 md:w-6 md:h-6 text-green-500 mb-0.5 md:mb-1" />
+                                        <div class="w-8 md:w-16 h-0.5 bg-green-300"></div>
                                       </div>
-                          
-                                      <div class="flex-1 text-right">
-                                        <div class="text-xs text-gray-500 mb-1">도착</div>
-                                        <div class="text-xl font-black text-gray-900">{{ flight.arrivalLocation || '도착역' }}</div>
-                                        <div class="text-base font-bold text-green-600 mt-1">{{ formatTime(flight.arrivalTime) }}</div>
+
+                                      <div class="flex-1 min-w-0 text-right">
+                                        <div class="text-xs text-gray-500 mb-0.5">도착</div>
+                                        <div class="text-sm md:text-lg font-black text-gray-900 truncate">{{ flight.arrivalLocation || '도착역' }}</div>
+                                        <div class="text-xs md:text-sm font-bold text-green-600 mt-0.5">{{ formatTime(flight.arrivalTime) }}</div>
                                       </div>
                                     </div>                        </div>
 
