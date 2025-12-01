@@ -426,6 +426,11 @@ const remainingNoticesCount = computed(() => {
 })
 
 function navigateTo(route) {
+  // [방어] route가 유효한지 확인
+  if (!route || route === 'undefined') {
+    console.warn('Invalid route:', route)
+    return
+  }
   router.push(route)
 }
 
@@ -437,6 +442,11 @@ const handleLogout = async () => {
 }
 
 function openNotice(notice) {
+  // [방어] notice.id가 유효한지 확인
+  if (!notice || !notice.id || notice.id === 'undefined') {
+    console.warn('Invalid notice:', notice)
+    return
+  }
   // TripDetail처럼 composable로 noticeId 전달
   setPendingNotice(notice.id)
   router.push('/notices')

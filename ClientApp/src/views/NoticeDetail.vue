@@ -202,6 +202,11 @@ export default {
     }
 
     const goToNotice = (id) => {
+      // [방어] id가 유효한지 확인
+      if (!id || id === 'undefined') {
+        console.warn('Invalid notice id:', id)
+        return
+      }
       router.push(`/notices/${id}`)
     }
 

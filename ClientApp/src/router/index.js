@@ -195,6 +195,7 @@ const routes = [
     meta: {
       title: '행사 홈',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
     },
   },
@@ -281,6 +282,7 @@ const routes = [
     meta: {
       title: '나의일정',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
     },
   },
@@ -292,6 +294,7 @@ const routes = [
     meta: {
       title: '여행 서류 제출',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
       showNav: false,
     },
@@ -304,6 +307,7 @@ const routes = [
     meta: {
       title: 'Survey',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
       showNav: false,
     },
@@ -316,6 +320,7 @@ const routes = [
     meta: {
       title: '폼 작성',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
       showNav: false,
     },
@@ -328,6 +333,7 @@ const routes = [
     meta: {
       title: '양식 작성',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
       showNav: false,
     },
@@ -339,6 +345,7 @@ const routes = [
     meta: {
       title: '주체국',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
     },
   },
@@ -349,6 +356,7 @@ const routes = [
     meta: {
       title: '합창국',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
     },
   },
@@ -361,6 +369,7 @@ const routes = [
     meta: {
       title: '로마 정보',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
     },
   },
@@ -371,6 +380,7 @@ const routes = [
     meta: {
       title: '핫스팟',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
     },
   },
@@ -381,6 +391,7 @@ const routes = [
     meta: {
       title: '맛스팟',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
     },
   },
@@ -393,6 +404,7 @@ const routes = [
     meta: {
       title: '사진첩',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
     },
   },
@@ -405,6 +417,7 @@ const routes = [
     meta: {
       title: '공지사항',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
     },
   },
@@ -416,6 +429,7 @@ const routes = [
     meta: {
       title: '공지사항 상세',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
     },
   },
@@ -428,6 +442,7 @@ const routes = [
     meta: {
       title: '추가 기능',
       requiresAuth: true,
+      requiresConvention: true,
       layout: 'DefaultLayout',
     },
   },
@@ -436,6 +451,7 @@ const routes = [
     children: dynamicFeatureRoutes,
     meta: {
       requiresAuth: true,
+      requiresConvention: true,
     },
   },
 ]
@@ -458,7 +474,14 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.meta.requiresAuth !== false
   const requiresAdmin = to.meta.requiresAdmin || false
-  const selectedConventionId = localStorage.getItem('selectedConventionId')
+
+  // [방어] LocalStorage 무결성 검사 - "undefined" 문자열 오염 정화
+  let selectedConventionId = localStorage.getItem('selectedConventionId')
+  if (selectedConventionId === 'undefined' || selectedConventionId === 'null') {
+    console.warn('Corrupted localStorage detected. Cleaning up...')
+    localStorage.removeItem('selectedConventionId')
+    selectedConventionId = null
+  }
 
   // 1. 로그인 페이지 접근 시
   if (to.path === '/login' && authStore.isAuthenticated) {
@@ -484,16 +507,16 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // 4. 일반 유저의 행사 선택 체크 (어드민은 제외)
-  // 행사가 선택되지 않았을 때, 행사 관련 페이지만 접근 제한
-  const allowedWithoutConvention = ['/home', '/trips', '/my-profile']
-  const isAllowedPath = allowedWithoutConvention.some(path => to.path.startsWith(path))
+  // 4. Convention이 필요한 페이지 체크 (메타 정보 활용)
+  // 각 라우트의 meta.requiresConvention 플래그 확인
+  const requiresConvention = to.meta.requiresConvention === true
 
+  // Convention이 필요한 페이지인데 선택된 Convention이 없으면 /home으로
   if (
     authStore.isAuthenticated &&
     !authStore.isAdmin &&
-    !selectedConventionId &&
-    !isAllowedPath
+    requiresConvention &&
+    !selectedConventionId
   ) {
     next('/home')
     return

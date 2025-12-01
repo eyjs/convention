@@ -285,7 +285,11 @@
     </div>
 
     <!-- 공지 상세 모달 -->
-    <SlideUpModal :is-open="!!selectedNotice" @close="closeNotice">
+    <SlideUpModal
+      :is-open="!!selectedNotice"
+      @close="closeNotice"
+      :disable-history-management="true"
+    >
       <template #header-title>공지사항</template>
       <template #body>
         <div v-if="selectedNotice" class="p-6">

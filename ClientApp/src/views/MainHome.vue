@@ -264,10 +264,20 @@ function goToCreateTrip() {
 }
 
 function goToTripDetail(tripId) {
+  // [방어] tripId가 유효한지 확인
+  if (!tripId || tripId === 'undefined') {
+    console.warn('Invalid tripId:', tripId)
+    return
+  }
   router.push(`/trips/${tripId}`)
 }
 
 async function goToConvention(convention) {
+  // [방어] convention.id가 유효한지 확인
+  if (!convention || !convention.id || convention.id === 'undefined') {
+    console.warn('Invalid convention:', convention)
+    return
+  }
   await conventionStore.selectConvention(convention.id)
   router.push('/')
 }
