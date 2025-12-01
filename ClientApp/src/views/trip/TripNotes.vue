@@ -92,7 +92,7 @@
     />
 
     <!-- Generic Input Modal -->
-    <SlideUpModal :is-open="isInputModalOpen" @close="closeInputModal">
+    <SlideUpModal :is-open="isInputModalOpen" @close="closeInputModal" :disable-history-management="true">
       <template #header-title>{{ inputModalData.title }}</template>
       <template #body>
         <form @submit.prevent="handleInputConfirm">
@@ -109,7 +109,7 @@
     </SlideUpModal>
 
     <!-- Item Edit Modal -->
-    <SlideUpModal :is-open="isItemEditModalOpen" @close="closeItemEditModal">
+    <SlideUpModal :is-open="isItemEditModalOpen" @close="closeItemEditModal" :disable-history-management="true">
         <template #header-title>항목 수정</template>
         <template #body>
             <form v-if="editingItem" id="item-edit-form" @submit.prevent="saveItemChanges" class="space-y-4">
