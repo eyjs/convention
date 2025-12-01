@@ -8,7 +8,7 @@
         <div class="flex items-center space-x-3">
           <button
             v-if="showBack"
-            @click="$router.back()"
+            @click="handleBack"
             class="p-2 -ml-2 rounded-lg"
             :class="
               transparent
@@ -98,6 +98,11 @@ defineProps({
 })
 
 const isSidebarOpen = ref(false)
+
+// 뒤로가기 핸들러: 브라우저 히스토리 기반 (모달 히스토리와 호환)
+function handleBack() {
+  window.history.back()
+}
 </script>
 
 <style scoped>

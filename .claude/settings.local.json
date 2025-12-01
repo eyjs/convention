@@ -16,7 +16,8 @@
       "Bash(npx vue-tsc:*)",
       "Bash(dotnet build:migrations:*)",
       "Bash(curl:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
