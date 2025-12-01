@@ -130,8 +130,8 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { noticeAPI } from '@/services/noticeService'
 import { formatFileSize } from '@/utils/fileUpload'
 import dayjs from 'dayjs'
@@ -141,15 +141,14 @@ import 'quill/dist/quill.snow.css'
 
 export default {
   name: 'NoticeDetail',
-  setup() {
+  props: {
+    id: String,  // 라우터에서 자동 주입 (params.id)
+  },
+  setup(props) {
     const router = useRouter()
-    const route = useRoute()
 
-    // Computed: noticeId with validation
-    const noticeId = computed(() => {
-      const id = route.params.id
-      return (id && id !== 'undefined') ? id : null
-    })
+    // Computed: noticeId
+    const noticeId = computed(() => props.id || null)
 
     // 상태
     const loading = ref(false)
@@ -212,19 +211,15 @@ export default {
 
     // 생명주기
     onMounted(async () => {
-      try {
-        // 1. Ensure noticeId is valid
-        if (!noticeId.value) {
-          console.warn('Invalid noticeId detected:', route.params.id)
-          alert('공지사항 ID가 유효하지 않습니다.')
-          router.push('/notices')
-          return
-        }
-
-        // 2. Load notice data
+      if (noticeId.value) {
         await fetchNotice()
-      } catch (error) {
-        console.error('Failed to initialize NoticeDetail:', error)
+      }
+    })
+
+    // Watch for route changes (when navigating between different notices)
+    watch(() => props.id, async (newId, oldId) => {
+      if (newId && newId !== oldId) {
+        await fetchNotice()
       }
     })
 

@@ -207,19 +207,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useConventionStore } from '@/stores/convention'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
 
-const route = useRoute()
+const props = defineProps({
+  actionId: String,  // 라우터에서 자동 주입 (params.actionId)
+})
+
 const router = useRouter()
 const conventionStore = useConventionStore()
 const authStore = useAuthStore()
 
 const actionId = computed(() => {
-  const id = parseInt(route.params.actionId, 10)
+  const id = parseInt(props.actionId, 10)
   return isNaN(id) ? null : id
 })
 const conventionId = computed(() => conventionStore.currentConvention?.id)
@@ -324,17 +327,18 @@ async function handleSubmit() {
   }
 }
 
-onMounted(async () => {
-  try {
-    // 1. Validate actionId
-    if (!actionId.value) {
-      console.warn('Invalid actionId detected:', route.params.actionId)
-      error.value = '유효하지 않은 액션 ID입니다.'
-      loading.value = false
-      return
-    }
+async function initForm() {
+  if (!actionId.value) {
+    error.value = '유효하지 않은 액션 ID입니다.'
+    loading.value = false
+    return
+  }
 
-    // 2. Ensure convention store is ready
+  loading.value = true
+  error.value = null
+
+  try {
+    // Ensure convention store is ready
     if (!conventionStore.currentConvention) {
       const selectedConventionId = localStorage.getItem('selectedConventionId')
       if (selectedConventionId) {
@@ -348,7 +352,7 @@ onMounted(async () => {
       return
     }
 
-    // 3. Load action data
+    // Load action data
     await loadAction()
     if (!error.value) {
       await loadExistingSubmission()
@@ -358,6 +362,17 @@ onMounted(async () => {
     error.value = '초기화 중 오류가 발생했습니다.'
   } finally {
     loading.value = false
+  }
+}
+
+onMounted(() => {
+  initForm()
+})
+
+// Watch for route changes (when navigating between different forms)
+watch(() => props.actionId, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    initForm()
   }
 })
 </script>

@@ -115,11 +115,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '@/api'
 
-const route = useRoute()
+const props = defineProps({
+  id: String,  // 라우터에서 자동 주입 (params.id)
+})
+
 const router = useRouter()
 const survey = ref(null)
 const loading = ref(true)
@@ -127,23 +130,20 @@ const error = ref(null)
 const responses = reactive({})
 const isSubmitting = ref(false)
 
-// Computed: surveyId with validation
-const surveyId = computed(() => {
-  const id = route.params.id
-  return (id && id !== 'undefined') ? id : null
-})
+// Computed: surveyId
+const surveyId = computed(() => props.id || null)
 
-onMounted(async () => {
+async function loadSurvey() {
+  if (!surveyId.value) {
+    error.value = 'Survey ID not found.'
+    loading.value = false
+    return
+  }
+
+  loading.value = true
+  error.value = null
+
   try {
-    // 1. Validate surveyId
-    if (!surveyId.value) {
-      console.warn('Invalid surveyId detected:', route.params.id)
-      error.value = 'Survey ID not found.'
-      loading.value = false
-      return
-    }
-
-    // 2. Load survey data
     const response = await api.get(`/surveys/${surveyId.value}`)
     survey.value = response.data
 
@@ -193,10 +193,21 @@ onMounted(async () => {
       }
     })
   } catch (err) {
-    console.error('Failed to initialize Survey:', err)
+    console.error('Failed to load Survey:', err)
     error.value = 'Failed to load survey.'
   } finally {
     loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadSurvey()
+})
+
+// Watch for route changes (when navigating between different surveys)
+watch(() => props.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    loadSurvey()
   }
 })
 

@@ -300,6 +300,7 @@ const routes = [
     path: '/feature/surveys/:id',
     name: 'Survey',
     component: () => import('@/views/feature/Survey.vue'),
+    props: true,
     meta: {
       title: 'Survey',
       requiresAuth: true,
@@ -311,6 +312,7 @@ const routes = [
     path: '/feature/generic-form/:actionId',
     name: 'GenericForm',
     component: () => import('@/views/feature/GenericForm.vue'),
+    props: true,
     meta: {
       title: '폼 작성',
       requiresAuth: true,
@@ -322,6 +324,7 @@ const routes = [
     path: '/feature/form/:formDefinitionId',
     name: 'DynamicFormRenderer',
     component: () => import('@/views/feature/DynamicFormRenderer.vue'),
+    props: true,
     meta: {
       title: '양식 작성',
       requiresAuth: true,
@@ -409,6 +412,7 @@ const routes = [
     path: '/notices/:id',
     name: 'NoticeDetail',
     component: () => import('@/views/NoticeDetail.vue'),
+    props: true,
     meta: {
       title: '공지사항 상세',
       requiresAuth: true,

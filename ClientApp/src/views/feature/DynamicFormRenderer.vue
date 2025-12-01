@@ -395,19 +395,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
 import formBuilderService from '@/services/formBuilderService'
 
-const route = useRoute()
+const props = defineProps({
+  formDefinitionId: String,  // 라우터에서 자동 주입 (params.formDefinitionId)
+})
+
 const router = useRouter()
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
 
-const formDefinitionId = computed(() => parseInt(route.params.formDefinitionId))
+const formDefinitionId = computed(() => parseInt(props.formDefinitionId))
 
 const loading = ref(true)
 const error = ref(null)
@@ -657,7 +660,10 @@ async function handleSubmit() {
   }
 }
 
-onMounted(async () => {
+async function initForm() {
+  loading.value = true
+  error.value = null
+
   if (!conventionStore.currentConvention) {
     const selectedConventionId = localStorage.getItem('selectedConventionId')
     if (selectedConventionId) {
@@ -670,6 +676,17 @@ onMounted(async () => {
     await loadExistingSubmission()
   }
   loading.value = false
+}
+
+onMounted(() => {
+  initForm()
+})
+
+// Watch for route changes (when navigating between different forms)
+watch(() => props.formDefinitionId, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    initForm()
+  }
 })
 </script>
 
