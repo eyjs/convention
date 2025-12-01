@@ -152,6 +152,7 @@ const routes = [
         path: '/trips/:id',
         name: 'TripDetail',
         component: () => import('@/views/trip/TripDetail.vue'),
+        props: true,
         meta: { requiresAuth: true, title: '여행 상세' }
       },
       
@@ -159,24 +160,28 @@ const routes = [
         path: '/trips/:id/itinerary',
         name: 'TripItinerary',
         component: () => import('@/views/trip/TripItinerary.vue'),
+        props: true,
         meta: { requiresAuth: true, title: '여행 일정표' }
       },
       {
         path: '/trips/:id/expenses',
         name: 'TripExpenses',
         component: () => import('@/views/trip/TripExpenses.vue'),
+        props: true,
         meta: { requiresAuth: true, title: '여행 가계부' }
       },
       {
         path: '/trips/:id/notes',
         name: 'TripNotes',
         component: () => import('@/views/trip/TripNotes.vue'),
+        props: true,
         meta: { requiresAuth: true, title: '여행 노트' }
       },
       {
         path: '/trips/:id/transportation',
         name: 'TripTransportation',
         component: () => import('@/views/trip/TripTransportation.vue'),
+        props: true,
         meta: { requiresAuth: true, title: '여행 교통편' }
       },
       // ----------------------------------------------------------------

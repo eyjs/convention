@@ -206,8 +206,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, createApp } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch, createApp } from 'vue';
+import { useRouter } from 'vue-router';
 import MainHeader from '@/components/common/MainHeader.vue';
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue';
 import { useUIStore } from '@/stores/ui';
@@ -221,22 +221,16 @@ import PrintableExpenses from './PrintableExpenses.vue';
 
 
 const props = defineProps({
+  id: String,               // 라우터에서 자동 주입 (params.id)
   shareToken: String,
   readonly: { type: Boolean, default: false }
 });
 
 const uiStore = useUIStore();
-const route = useRoute();
 const router = useRouter();
 
-const tripId = computed(() => {
-  const id = route.params.id
-  return (id && id !== 'undefined') ? id : null
-});
-const shareToken = computed(() => {
-  const token = props.shareToken || route.params.shareToken
-  return (token && token !== 'undefined') ? token : null
-});
+const tripId = computed(() => props.id || null);
+const shareToken = computed(() => props.shareToken || null);
 const isSharedView = computed(() => !!shareToken.value);
 
 const loading = ref(true);
@@ -529,5 +523,12 @@ async function exportToPDF() {
 
 onMounted(() => {
   loadTrip();
+});
+
+// Watch for route changes (when navigating between different trips)
+watch(() => props.id, async (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    await loadTrip();
+  }
 });
 </script>

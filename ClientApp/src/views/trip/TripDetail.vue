@@ -521,7 +521,7 @@ import dayjs from 'dayjs'
 
 // Props for readonly mode and shared access
 const props = defineProps({
-  tripId: String,           // 일반 접근용 ID (라우터에서 전달)
+  id: String,               // 라우터에서 자동 주입 (params.id)
   shareToken: String,       // 공유 접근용 토큰
   readonly: {               // Readonly 모드 플래그
     type: Boolean,
@@ -529,19 +529,12 @@ const props = defineProps({
   }
 })
 
-const route = useRoute()
 const router = useRouter()
 const uiStore = useUIStore()
 
-// Determine tripId and readonly mode (filter out undefined strings)
-const tripId = computed(() => {
-  const id = props.tripId || route.params.id
-  return (id && id !== 'undefined') ? id : null
-})
-const shareToken = computed(() => {
-  const token = props.shareToken || route.params.shareToken
-  return (token && token !== 'undefined') ? token : null
-})
+// Determine tripId and readonly mode
+const tripId = computed(() => props.id || null)
+const shareToken = computed(() => props.shareToken || null)
 const isSharedView = computed(() => !!shareToken.value)
 const effectiveReadonly = computed(() => props.readonly || isSharedView.value)
 
@@ -810,26 +803,13 @@ const transportationData = ref({});
 // --- Lifecycle and Data Loading ---
 onMounted(async () => {
   try {
-    // 1. Ensure tripId or shareToken is valid
-    // tripId와 shareToken이 모두 없고, route에서도 'undefined' 문자열이 온 경우
-    const routeId = route.params.id
-    const routeToken = route.params.shareToken
-
-    // undefined 문자열이 온 경우 trips 목록으로 리다이렉트
-    if (routeId === 'undefined' || routeToken === 'undefined') {
-      console.warn('Invalid route params detected:', { routeId, routeToken })
-      router.push('/trips')
-      return
-    }
-
-    // 2. Load trip data
     await loadTrip()
     loadScript()
     setInterval(() => { now.value = new Date() }, 60000) // Update time every minute for highlight
     await nextTick()
     handleDayFilterScroll()
 
-    // 3. Load reminders from localStorage
+    // Load reminders from localStorage
     const tripIdValue = tripId.value || shareToken.value
     if (tripIdValue) {
       const stored = localStorage.getItem(`reminders_checked_${tripIdValue}`)
@@ -839,6 +819,13 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Failed to initialize TripDetail:', error)
+  }
+})
+
+// Watch for route changes (when navigating between different trips)
+watch(() => props.id, async (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    await loadTrip()
   }
 })
 

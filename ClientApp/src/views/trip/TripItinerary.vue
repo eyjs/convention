@@ -478,6 +478,7 @@ import dayjs from 'dayjs'
 
 // Props for readonly mode and shared access
 const props = defineProps({
+  id: String,               // 라우터에서 자동 주입 (params.id)
   shareToken: String,       // 공유 접근용 토큰
   readonly: {               // Readonly 모드 플래그
     type: Boolean,
@@ -485,19 +486,12 @@ const props = defineProps({
   }
 })
 
-const route = useRoute()
 const router = useRouter()
 const uiStore = useUIStore()
 
-// Determine tripId and readonly mode (filter out undefined strings)
-const tripId = computed(() => {
-  const id = route.params.id
-  return (id && id !== 'undefined') ? id : null
-})
-const shareToken = computed(() => {
-  const token = props.shareToken || route.params.shareToken
-  return (token && token !== 'undefined') ? token : null
-})
+// Determine tripId and readonly mode
+const tripId = computed(() => props.id || null)
+const shareToken = computed(() => props.shareToken || null)
 const isSharedView = computed(() => !!shareToken.value)
 const effectiveReadonly = computed(() => props.readonly || isSharedView.value)
 
@@ -579,6 +573,13 @@ onMounted(async () => {
   setInterval(() => { now.value = new Date() }, 60000)
   await nextTick()
   handleDayFilterScroll()
+})
+
+// Watch for route changes (when navigating between different trips)
+watch(() => props.id, async (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    await loadTrip()
+  }
 })
 
 async function loadTrip() {

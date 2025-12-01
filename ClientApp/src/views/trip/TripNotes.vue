@@ -134,8 +134,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { useRouter } from 'vue-router';
 import MainHeader from '@/components/common/MainHeader.vue';
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue';
 import SlideUpModal from '@/components/common/SlideUpModal.vue';
@@ -145,6 +145,7 @@ import { Check } from 'lucide-vue-next';
 
 // Props for readonly mode and shared access
 const props = defineProps({
+  id: String,               // 라우터에서 자동 주입 (params.id)
   shareToken: String,       // 공유 접근용 토큰
   readonly: {               // Readonly 모드 플래그
     type: Boolean,
@@ -153,18 +154,11 @@ const props = defineProps({
 })
 
 const uiStore = useUIStore();
-const route = useRoute();
 const router = useRouter();
 
-// Determine tripId and readonly mode (filter out undefined strings)
-const tripId = computed(() => {
-  const id = route.params.id
-  return (id && id !== 'undefined') ? id : null
-});
-const shareToken = computed(() => {
-  const token = props.shareToken || route.params.shareToken
-  return (token && token !== 'undefined') ? token : null
-});
+// Determine tripId and readonly mode
+const tripId = computed(() => props.id || null);
+const shareToken = computed(() => props.shareToken || null);
 const isSharedView = computed(() => !!shareToken.value);
 const effectiveReadonly = computed(() => props.readonly || isSharedView.value);
 const activeTab = ref('checklist');
@@ -196,6 +190,13 @@ onMounted(async () => {
     checklist.value.forEach(c => {
       if(c.isDefault) expandedCategories.value.push(c.id);
     })
+  }
+});
+
+// Watch for route changes (when navigating between different trips)
+watch(() => props.id, async (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    await fetchTripData();
   }
 });
 

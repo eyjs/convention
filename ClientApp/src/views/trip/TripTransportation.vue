@@ -591,8 +591,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import MainHeader from '@/components/common/MainHeader.vue';
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue';
 import SlideUpModal from '@/components/common/SlideUpModal.vue';
@@ -607,6 +607,7 @@ import { Plane, Train, Bus, Car, Clock, AlertCircle, CheckCircle, DoorOpen, Buil
 
 // Props for readonly mode and shared access
 const props = defineProps({
+  id: String,               // 라우터에서 자동 주입 (params.id)
   shareToken: String,
   readonly: {
     type: Boolean,
@@ -650,18 +651,11 @@ const formatDateTime = (dateTime) => dateTime ? dayjs(dateTime).format('YYYY-MM-
 
 
 const uiStore = useUIStore();
-const route = useRoute();
 const router = useRouter();
 
-// Determine tripId and readonly mode (filter out undefined strings)
-const tripId = computed(() => {
-  const id = route.params.id
-  return (id && id !== 'undefined') ? id : null
-});
-const shareToken = computed(() => {
-  const token = props.shareToken || route.params.shareToken
-  return (token && token !== 'undefined') ? token : null
-});
+// Determine tripId and readonly mode
+const tripId = computed(() => props.id || null);
+const shareToken = computed(() => props.shareToken || null);
 const isSharedView = computed(() => !!shareToken.value);
 const effectiveReadonly = computed(() => props.readonly || isSharedView.value);
 
@@ -1006,25 +1000,9 @@ async function saveFlightsFromModal(flights) {
 
 onMounted(async () => {
   try {
-    // 1. Ensure tripId or shareToken is valid
-    const routeId = route.params.id
-    const routeToken = route.params.shareToken
-
-    // undefined 문자열이 온 경우 trips 목록으로 리다이렉트
-    if (routeId === 'undefined' || routeToken === 'undefined') {
-      console.warn('Invalid route params detected:', { routeId, routeToken })
-      if (isSharedView.value) {
-        router.push('/home')
-      } else {
-        router.push('/trips')
-      }
-      return
-    }
-
-    // 2. Load trip data
     await loadTrip()
 
-    // 3. Set initial filter to the first category with data, if any
+    // Set initial filter to the first category with data, if any
     if (categoriesWithData.value.length > 0) {
       selectedCategoryFilter.value = categoriesWithData.value[0].name;
       // 또한 해당 카테고리를 확장된 카테고리 목록에 추가하여 펼쳐진 상태로 만듭니다.
@@ -1034,6 +1012,13 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Failed to initialize TripTransportation:', error)
+  }
+})
+
+// Watch for route changes (when navigating between different trips)
+watch(() => props.id, async (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    await loadTrip()
   }
 });
 </script>
