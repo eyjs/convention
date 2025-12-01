@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "http://event.ifa.co.kr/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
