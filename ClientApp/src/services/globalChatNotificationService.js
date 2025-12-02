@@ -39,9 +39,16 @@ class GlobalChatNotificationService {
                 return console.error('Failed to join user group:', err.toString())
             })
         } catch (error) {
-            console.error('Global SignalR connection failed: ', error)
             this.isConnecting = false
-            // 5�� �� �翬�� �õ�
+
+            // Mixed Content 에러는 조용히 처리 (HTTPS 백엔드 없음)
+            if (error.message && error.message.includes('Failed to fetch')) {
+                console.warn('SignalR connection failed (Mixed Content). Real-time notifications disabled.')
+                return // 재연결 시도 안 함
+            }
+
+            console.error('Global SignalR connection failed: ', error)
+            // 다른 에러는 5초 후 재연결 시도
             setTimeout(() => this.connect(userId, token), 5000)
         }
     }
