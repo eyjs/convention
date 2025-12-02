@@ -11,8 +11,11 @@ class ConventionChatService {
   }
 
   connect() {
+    // 배포 환경에서는 백엔드 직접 연결 (Vercel proxy는 WebSocket 미지원)
+    const hubUrl = import.meta.env.VITE_SIGNALR_HUB_URL || '/chathub'
+
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(`/chathub?conventionId=${this.conventionId}`, {
+      .withUrl(`${hubUrl}?conventionId=${this.conventionId}`, {
         accessTokenFactory: () => this.token,
       })
       .withAutomaticReconnect()

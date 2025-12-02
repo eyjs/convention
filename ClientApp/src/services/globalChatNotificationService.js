@@ -1,9 +1,9 @@
 import * as signalR from '@microsoft/signalr'
 
 /**
- * ±Û·Î¹ú Ã¤ÆÃ ¾Ë¸² ¼­ºñ½º
- * »ç¿ëÀÚ°¡ ·Î±×ÀÎÇÏ¸é ÀÚ½ÅÀÇ °³ÀÎ ±×·ì(user-{userId})¿¡ °¡ÀÔÇÏ¿©
- * ½Ç½Ã°£À¸·Î unread count ¾÷µ¥ÀÌÆ®¸¦ ¹Þ½À´Ï´Ù.
+ * ï¿½Û·Î¹ï¿½ Ã¤ï¿½ï¿½ ï¿½Ë¸ï¿½ ï¿½ï¿½ï¿½ï¿½
+ * ï¿½ï¿½ï¿½ï¿½Ú°ï¿½ ï¿½Î±ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ ï¿½Ú½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½×·ï¿½(user-{userId})ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¿ï¿½
+ * ï¿½Ç½Ã°ï¿½ï¿½ï¿½ï¿½ï¿½ unread count ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Þ½ï¿½ï¿½Ï´ï¿½.
  */
 class GlobalChatNotificationService {
     constructor() {
@@ -19,8 +19,11 @@ class GlobalChatNotificationService {
 
         this.isConnecting = true
 
+        // ë°°í¬ í™˜ê²½ì—ì„œëŠ” ë°±ì—”ë“œ ì§ì ‘ ì—°ê²° (Vercel proxyëŠ” WebSocket ë¯¸ì§€ì›)
+        const hubUrl = import.meta.env.VITE_SIGNALR_HUB_URL || '/chathub'
+
         this.connection = new signalR.HubConnectionBuilder()
-            .withUrl(`/chathub?userId=${userId}`, {
+            .withUrl(`${hubUrl}?userId=${userId}`, {
                 accessTokenFactory: () => token,
             })
             .withAutomaticReconnect()
@@ -31,14 +34,14 @@ class GlobalChatNotificationService {
             console.log('Global SignalR Connected.')
             this.isConnecting = false
 
-            // OnConnectedAsync¿¡¼­ °³ÀÎ ±×·ì °¡ÀÔÀ» Ã³¸®ÇÏÁö¸¸, ¸¸¾àÀ» À§ÇØ Å¬¶óÀÌ¾ðÆ®¿¡¼­µµ È£Ãâ
+            // OnConnectedAsyncï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½×·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ È£ï¿½ï¿½
             this.connection.invoke('JoinUserGroup', userId).catch((err) => {
                 return console.error('Failed to join user group:', err.toString())
             })
         } catch (error) {
             console.error('Global SignalR connection failed: ', error)
             this.isConnecting = false
-            // 5ÃÊ ÈÄ Àç¿¬°á ½Ãµµ
+            // 5ï¿½ï¿½ ï¿½ï¿½ ï¿½ç¿¬ï¿½ï¿½ ï¿½Ãµï¿½
             setTimeout(() => this.connect(userId, token), 5000)
         }
     }
