@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useUIStore } from '@/stores/ui'
 import { dynamicFeatureRoutes } from './dynamic'
 
 // ============================================
@@ -472,8 +473,16 @@ router.beforeEach((to, from, next) => {
   document.title = to.meta.title || 'iFA Convention'
 
   const authStore = useAuthStore()
+  const uiStore = useUIStore()
   const requiresAuth = to.meta.requiresAuth !== false
   const requiresAdmin = to.meta.requiresAdmin || false
+
+  // 0. 모달 체크 - 뒤로가기 시 모달부터 닫기
+  if (uiStore.hasOpenModal()) {
+    uiStore.closeTopModal()
+    next(false) // 라우팅 취소
+    return
+  }
 
   // [방어] LocalStorage 무결성 검사 - "undefined" 문자열 오염 정화
   let selectedConventionId = localStorage.getItem('selectedConventionId')
