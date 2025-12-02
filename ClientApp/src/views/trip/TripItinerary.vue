@@ -309,7 +309,7 @@
         :is-open="isItineraryModalOpen"
         @close="closeItineraryModal"
         z-index-class="z-[60]"
-        :disable-history-management="true"
+        
       >
         <template #header-title>{{ editingItineraryItem?.id ? '일정 수정' : '일정 추가' }}</template>
         <template #body>
@@ -361,7 +361,7 @@
         :is-open="isItineraryDetailModalOpen"
         @close="closeItineraryDetailModal"
         z-index-class="z-[60]"
-        :disable-history-management="true"
+        
       >
         <template #header-title>일정 상세</template>
         <template #body>

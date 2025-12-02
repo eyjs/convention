@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted, onMounted } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { useUIStore } from '@/stores/ui'
 
 const uiStore = useUIStore()
@@ -68,29 +68,14 @@ const props = defineProps({
     type: String,
     default: 'z-50',
   },
-  disableHistoryManagement: {
-    type: Boolean,
-    default: false,
-  },
 })
 
 const emit = defineEmits(['close'])
 
 const startPos = ref({ x: 0, y: 0 })
-const historyPushed = ref(false)
+const modalId = Symbol('modal') // 고유 ID
 
-// 뒤로가기 이벤트 핸들러
-const handlePopState = (event) => {
-  // 모달이 열려있고, 히스토리를 우리가 관리하고 있는 경우
-  if (props.isOpen && historyPushed.value) {
-    // historyPushed 플래그 먼저 해제 (중복 처리 방지)
-    historyPushed.value = false
-    // 모달 닫기 이벤트 발생
-    emit('close')
-  }
-}
-
-// 모달 열림/닫힘 시 body 스크롤 제어 및 히스토리 관리
+// 모달 열림/닫힘 시 body 스크롤 제어 및 스택 관리
 watch(() => props.isOpen, (newValue, oldValue) => {
   if (newValue && !oldValue) {
     // 모달이 열릴 때
@@ -98,36 +83,29 @@ watch(() => props.isOpen, (newValue, oldValue) => {
     document.body.style.overflow = 'hidden'
     document.body.style.touchAction = 'none'
 
-    // 히스토리 관리가 활성화된 경우에만 히스토리에 가상 엔트리 추가
-    if (!props.disableHistoryManagement && !historyPushed.value) {
-      window.history.pushState({ modal: 'open' }, '')
-      historyPushed.value = true
-    }
+    // UI Store에 모달 등록
+    uiStore.registerModal(modalId, () => {
+      emit('close')
+    })
   } else if (!newValue && oldValue) {
     // 모달이 닫힐 때
     uiStore.closeModal()
     document.body.style.overflow = ''
     document.body.style.touchAction = ''
+
+    // UI Store에서 모달 제거
+    uiStore.unregisterModal(modalId)
   }
 })
 
-onMounted(() => {
-  window.addEventListener('popstate', handlePopState)
-})
-
-// 컴포넌트가 언마운트될 때 스크롤 복원 및 이벤트 리스너 제거
+// 컴포넌트가 언마운트될 때 스크롤 복원 및 스택에서 제거
 onUnmounted(() => {
   if (props.isOpen) {
     uiStore.closeModal()
+    uiStore.unregisterModal(modalId)
   }
   document.body.style.overflow = ''
   document.body.style.touchAction = ''
-  window.removeEventListener('popstate', handlePopState)
-
-  // 히스토리 정리
-  if (historyPushed.value && props.isOpen) {
-    window.history.back()
-  }
 })
 
 const onMouseDown = (e) => {
@@ -143,13 +121,7 @@ const onMouseUp = (e) => {
 }
 
 const close = () => {
-  // X 버튼이나 외부 클릭으로 닫는 경우, 히스토리를 추가했으면 뒤로가기
-  if (historyPushed.value) {
-    window.history.back()
-  } else {
-    // 히스토리 관리를 안 하는 경우 (또는 이미 처리된 경우)
-    emit('close')
-  }
+  emit('close')
 }
 </script>
 

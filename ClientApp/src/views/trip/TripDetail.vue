@@ -97,7 +97,7 @@
             @update:is-shared="handleSharingToggle"
           />
 
-          <SlideUpModal :is-open="isTripInfoModalOpen" @close="closeTripInfoModal" z-index-class="z-[60]" :disable-history-management="true">
+          <SlideUpModal :is-open="isTripInfoModalOpen" @close="closeTripInfoModal" z-index-class="z-[60]" >
             <template #header-title>{{ tripId ? '여행 정보 수정' : '여행 정보 입력' }}</template>
             <template #body>
               <form id="trip-info-form" @submit.prevent="saveTripInfo" class="space-y-4">
@@ -160,7 +160,7 @@
             @delete="handleDeleteTransportation"
           />
       
-          <SlideUpModal :is-open="isTransportationEditModalOpen" @close="closeTransportationEditModal" z-index-class="z-[60]" :disable-history-management="true">
+          <SlideUpModal :is-open="isTransportationEditModalOpen" @close="closeTransportationEditModal" z-index-class="z-[60]" >
             <template #header-title>{{ editingTransportation?.id ? '교통수단 수정' : '교통수단 추가' }}</template>
             <template #body>
               <form id="transportation-form" @submit.prevent="saveTransportation" class="space-y-4">
@@ -246,7 +246,7 @@
             @select="handleSelectAccommodation"
           />
       
-          <SlideUpModal :is-open="isAccommodationEditModalOpen" @close="closeAccommodationEditModal" z-index-class="z-[60]" :disable-history-management="true">
+          <SlideUpModal :is-open="isAccommodationEditModalOpen" @close="closeAccommodationEditModal" z-index-class="z-[60]" >
             <template #header-title>{{ editingAccommodation?.id ? '숙소 수정' : '숙소 추가' }}</template>
             <template #body>
               <form id="acc-form" @submit.prevent="saveAccommodation" class="space-y-4">
@@ -280,7 +280,7 @@
             </template>
           </SlideUpModal>
           
-          <SlideUpModal :is-open="isItineraryModalOpen" @close="closeItineraryModal" z-index-class="z-[60]" :disable-history-management="true">
+          <SlideUpModal :is-open="isItineraryModalOpen" @close="closeItineraryModal" z-index-class="z-[60]" >
             <template #header-title>{{ editingItineraryItem?.id ? '일정 수정' : '일정 추가' }}</template>
             <template #body>
               <form id="itinerary-form" @submit.prevent="saveItineraryItem" class="space-y-4">
@@ -327,7 +327,7 @@
             </template>
           </SlideUpModal>
           
-          <SlideUpModal :is-open="isItineraryDetailModalOpen" @close="closeItineraryDetailModal" z-index-class="z-[60]" :disable-history-management="true">
+          <SlideUpModal :is-open="isItineraryDetailModalOpen" @close="closeItineraryDetailModal" z-index-class="z-[60]" >
             <template #header-title>일정 상세</template>
             <template #body>
               <div v-if="selectedItinerary" class="space-y-4">
@@ -424,7 +424,7 @@
           />
       
           <!-- Reminders Modal -->
-          <SlideUpModal :is-open="isReminderModalOpen" @close="closeReminderModal" z-index-class="z-[60]" :disable-history-management="true">
+          <SlideUpModal :is-open="isReminderModalOpen" @close="closeReminderModal" z-index-class="z-[60]" >
             <template #header-title>알림 및 리마인더</template>
             <template #body>
               <div v-if="upcomingReminders.length > 0" class="space-y-4">
@@ -449,7 +449,7 @@
           </SlideUpModal>
       
           <!-- Reminders Modal -->
-          <SlideUpModal :is-open="isReminderModalOpen" @close="closeReminderModal" z-index-class="z-[60]" :disable-history-management="true">
+          <SlideUpModal :is-open="isReminderModalOpen" @close="closeReminderModal" z-index-class="z-[60]" >
             <template #header-title>알림 및 리마인더</template>
             <template #body>
               <div v-if="upcomingReminders.length > 0" class="space-y-4">

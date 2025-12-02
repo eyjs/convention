@@ -293,7 +293,7 @@
     </div>
 
     <!-- 교통편 추가/수정 모달 -->
-    <SlideUpModal :is-open="isEditModalOpen" @close="closeEditModal" z-index-class="z-[60]" :disable-history-management="true">
+    <SlideUpModal :is-open="isEditModalOpen" @close="closeEditModal" z-index-class="z-[60]" >
       <template #header-title>{{ editingFlight?.id ? '교통편 수정' : '교통편 추가' }}</template>
       <template #body>
         <form id="transportation-form" @submit.prevent="saveTransportation" class="space-y-4">

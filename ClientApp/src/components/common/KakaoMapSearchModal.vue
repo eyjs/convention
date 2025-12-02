@@ -3,7 +3,7 @@
     :is-open="isOpen"
     @close="closeModal"
     :z-index-class="zIndexClass"
-    :disable-history-management="true"
+    
   >
     <template #header-title>장소 검색</template>
     <template #body>

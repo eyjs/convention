@@ -288,7 +288,7 @@
     <SlideUpModal
       :is-open="!!selectedNotice"
       @close="closeNotice"
-      :disable-history-management="true"
+      
     >
       <template #header-title>공지사항</template>
       <template #body>

@@ -10,7 +10,7 @@
 
 <script setup>
     import { computed, defineAsyncComponent, onMounted, watch } from 'vue'
-    import { useRoute } from 'vue-router'
+    import { useRoute, onBeforeRouteLeave } from 'vue-router'
     import { useAuthStore } from '@/stores/auth'
     import { useUIStore } from '@/stores/ui'
     import { useConventionStore } from '@/stores/convention'
@@ -22,6 +22,16 @@
     const authStore = useAuthStore()
     const uiStore = useUIStore()
     const conventionStore = useConventionStore()
+
+    // 전역 네비게이션 가드: 뒤로가기 시 모달 먼저 닫기
+    onBeforeRouteLeave((to, from, next) => {
+        if (uiStore.hasOpenModal()) {
+            next(false) // 라우팅 취소
+            uiStore.closeTopModal() // 최상단 모달 닫기
+        } else {
+            next() // 정상 라우팅
+        }
+    })
 
     // 전역 키보드 대응 비활성화 (네이티브 스크롤 사용)
     const { isKeyboardVisible } = useKeyboardAdjust({
