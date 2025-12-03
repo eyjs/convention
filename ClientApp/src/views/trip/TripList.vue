@@ -42,7 +42,11 @@
 
         <!-- 여행 카드 목록 -->
         <div v-else class="space-y-5">
-          <div v-for="trip in trips" :key="trip.id" @click="goToTripDetail(trip.id)" class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all cursor-pointer overflow-hidden">
+          <div
+            v-for="trip in trips"
+            :key="trip.id"
+            @click="goToTripDetail(trip.id)"
+            class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all cursor-pointer overflow-hidden active:scale-[0.98]">
             <!-- 카드 헤더 (이미지 영역) -->
             <div class="relative h-40 overflow-hidden">
               <!-- 사용자 업로드 이미지 또는 기본 그라데이션 -->

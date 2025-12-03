@@ -97,6 +97,17 @@
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
+  /* iOS Safari 클릭 가능한 요소 최적화 */
+  .cursor-pointer,
+  [role="button"],
+  button,
+  a {
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
 }
 
 /* 커스텀 스크롤바 */
