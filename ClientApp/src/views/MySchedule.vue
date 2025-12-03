@@ -125,15 +125,15 @@
                   '--tw-ring-color': brandColor + '50',
                 }
               : {
-                  borderLeftColor: '#e5e7eb',
+                  borderLeftColor: schedule.isOptionTour ? brandColor : '#e5e7eb',
                 }
           "
         >
-          <!-- 시간 & 타이틀 -->
-          <div class="flex items-start space-x-3">
-            <div class="w-16 flex-shrink-0">
+          <!-- 1행: 시간, 제목, 태그 -->
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
               <div
-                class="px-2 py-1 rounded-lg text-center"
+                class="px-2 py-1 rounded-lg text-center flex-shrink-0"
                 :style="
                   currentSchedule?.id === schedule.id
                     ? {
@@ -151,80 +151,55 @@
                   {{ schedule.endTime }}
                 </div>
               </div>
+              <h3 class="font-bold text-gray-900 text-base truncate">
+                {{ schedule.title }}
+              </h3>
             </div>
+            <span
+              v-if="schedule.category"
+              :class="[
+                'px-2 py-1 rounded text-xs font-medium flex-shrink-0',
+                schedule.isOptionTour
+                  ? 'text-white'
+                  : 'bg-blue-100 text-blue-700'
+              ]"
+              :style="
+                schedule.isOptionTour
+                  ? { backgroundColor: brandColor }
+                  : {}
+              "
+            >
+              {{ schedule.category }}
+            </span>
+          </div>
 
-            <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between mb-2">
-                <h3 class="font-bold text-gray-900 text-base">
-                  {{ schedule.title }}
-                </h3>
-                <span
-                  v-if="schedule.category"
-                  class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium ml-2 flex-shrink-0"
-                >
-                  {{ schedule.category }}
-                </span>
-              </div>
+          <!-- 2행: 내용 -->
+          <p
+            v-if="schedule.description"
+            class="text-sm text-gray-600 line-clamp-2 leading-relaxed"
+          >
+            {{ schedule.description }}
+          </p>
 
-              <!-- 장소 -->
-              <div
-                v-if="schedule.location"
-                class="flex items-center space-x-1 text-sm text-gray-600 mb-2"
-              >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                <span>{{ schedule.location }}</span>
-              </div>
-
-              <!-- 설명 -->
-              <p
-                v-if="schedule.description"
-                class="text-sm text-gray-600 line-clamp-2"
-              >
-                {{ schedule.description }}
-              </p>
-
-              <!-- 참가자/그룹 -->
-              <div
-                v-if="schedule.group"
-                class="flex items-center space-x-2 mt-3"
-              >
-                <div
-                  class="flex items-center space-x-1 px-2 py-1 bg-gray-100 rounded-full text-xs"
-                >
-                  <svg
-                    class="w-3 h-3 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                  <span class="text-gray-700 font-medium">{{
-                    schedule.group
-                  }}</span>
-                  <span v-if="schedule.participants" class="text-gray-500">
-                    ({{ schedule.participants }}명)
-                  </span>
-                </div>
-              </div>
-            </div>
+          <!-- 장소 (선택적) -->
+          <div
+            v-if="schedule.location"
+            class="flex items-center space-x-1 text-xs text-gray-500 mt-1"
+          >
+            <svg
+              class="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            <span>{{ schedule.location }}</span>
           </div>
         </div>
 
@@ -375,14 +350,32 @@
 
     <!-- 일정 상세 모달 -->
     <SlideUpModal :is-open="!!selectedSchedule" @close="closeScheduleDetail">
-      <template #header-title>일정 상세</template>
+      <template #header-title>
+        <span v-if="selectedSchedule?.isOptionTour" class="flex items-center space-x-2">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+          </svg>
+          <span>옵션투어 상세</span>
+        </span>
+        <span v-else>일정 상세</span>
+      </template>
       <template #body>
         <div class="space-y-4">
           <!-- 카테고리 & 시간 -->
           <div class="flex items-center justify-between">
             <span
               v-if="selectedSchedule.category"
-              class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
+              :class="[
+                'px-3 py-1 rounded-full text-sm font-medium',
+                selectedSchedule.isOptionTour
+                  ? 'text-white'
+                  : 'bg-blue-100 text-blue-700'
+              ]"
+              :style="
+                selectedSchedule.isOptionTour
+                  ? { backgroundColor: brandColor }
+                  : {}
+              "
             >
               {{ selectedSchedule.category }}
             </span>
@@ -452,8 +445,8 @@
             </p>
           </div>
 
-          <!-- 참여 그룹 & 참석자 보기 (편의 옵션) -->
-          <div v-if="selectedSchedule.group" class="pt-4 border-t mt-6">
+          <!-- 참여 그룹 & 참석자 보기 (편의 옵션) - 옵션투어는 제외 -->
+          <div v-if="selectedSchedule.group && !selectedSchedule.isOptionTour" class="pt-4 border-t mt-6">
             <div class="p-4 bg-gray-50 rounded-xl">
               <div class="flex items-center space-x-2 mb-3">
                 <svg
@@ -527,6 +520,7 @@ const showCalendarView = ref(false)
 const selectedDate = ref('')
 const selectedSchedule = ref(null)
 const allSchedules = ref([]) // 전체 일정 저장
+const allOptionTours = ref([]) // 전체 옵션투어 저장
 const allActions = ref([]) // 전체 동적 액션 저장
 const currentScheduleRef = ref(null) // 현재 일정 카드 ref
 const currentScheduleId = ref(null) // 현재 진행 중인 일정 ID
@@ -534,9 +528,41 @@ const showParticipantsModal = ref(false) // 참석자 목록 모달
 const participants = ref([]) // 참석자 목록
 const selectedGroupName = ref('') // 선택된 그룹명
 
+// 일정과 옵션투어를 합친 통합 스케줄
+const mergedSchedules = computed(() => {
+  // 일반 일정
+  const regularSchedules = allSchedules.value.map((s) => ({
+    ...s,
+    isOptionTour: false,
+  }))
+
+  // 옵션투어를 일정 형식으로 변환
+  const optionTourSchedules = allOptionTours.value.map((ot) => ({
+    id: `option-${ot.id}`,
+    scheduleTemplateId: null,
+    date: ot.date,
+    startTime: ot.startTime,
+    endTime: ot.endTime,
+    title: ot.name,
+    location: '',
+    description: ot.content,
+    category: '옵션투어',
+    group: '',
+    participants: 0,
+    isOptionTour: true,
+    customOptionId: ot.customOptionId,
+  }))
+
+  // 두 배열을 합치고 날짜/시간순으로 정렬
+  return [...regularSchedules, ...optionTourSchedules].sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date)
+    return a.startTime.localeCompare(b.startTime)
+  })
+})
+
 const schedules = computed(() => {
-  if (!selectedDate.value) return allSchedules.value
-  return allSchedules.value.filter((s) => s.date === selectedDate.value)
+  if (!selectedDate.value) return mergedSchedules.value
+  return mergedSchedules.value.filter((s) => s.date === selectedDate.value)
 })
 
 // 브랜드 컬러 가져오기
@@ -590,10 +616,10 @@ const contentTopActions = computed(() =>
 
 // 날짜 목록 생성
 const dates = computed(() => {
-  if (allSchedules.value.length === 0) return []
+  if (mergedSchedules.value.length === 0) return []
 
   // 일정에서 고유 날짜 추출
-  const uniqueDates = [...new Set(allSchedules.value.map((s) => s.date))].sort()
+  const uniqueDates = [...new Set(mergedSchedules.value.map((s) => s.date))].sort()
 
   return uniqueDates.map((dateStr) => {
     const date = parseLocalDate(dateStr)
@@ -645,7 +671,7 @@ const calendarDays = computed(() => {
   for (let i = startDay - 1; i >= 0; i--) {
     const date = new Date(currentYear, currentMonth, -i)
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-    const daySchedules = allSchedules.value.filter((s) => s.date === dateStr)
+    const daySchedules = mergedSchedules.value.filter((s) => s.date === dateStr)
     days.push({
       date: dateStr,
       day: date.getDate(),
@@ -660,7 +686,7 @@ const calendarDays = computed(() => {
   for (let i = 1; i <= lastDay.getDate(); i++) {
     const date = new Date(currentYear, currentMonth, i)
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-    const daySchedules = allSchedules.value.filter((s) => s.date === dateStr)
+    const daySchedules = mergedSchedules.value.filter((s) => s.date === dateStr)
 
     days.push({
       date: dateStr,
@@ -835,17 +861,24 @@ onMounted(async () => {
       participants: item.participantCount || 0,
     }))
 
-    // 5. Set default date (using existing logic)
-    if (allSchedules.value.length > 0) {
+    // 5. Fetch option tours
+    const optionToursResponse = await apiClient.get(
+      `/user-schedules/${userId}/${conventionId}/option-tours`,
+    )
+
+    allOptionTours.value = optionToursResponse.data || []
+
+    // 6. Set default date (using existing logic)
+    if (mergedSchedules.value.length > 0) {
       const today = new Date().toISOString().split('T')[0]
-      const futureDates = [...new Set(allSchedules.value.map((s) => s.date))]
+      const futureDates = [...new Set(mergedSchedules.value.map((s) => s.date))]
         .filter((d) => d >= today)
         .sort()
 
       selectedDate.value =
-        futureDates.length > 0 ? futureDates[0] : allSchedules.value[0].date
+        futureDates.length > 0 ? futureDates[0] : mergedSchedules.value[0].date
 
-      const firstScheduleDate = parseLocalDate(allSchedules.value[0].date)
+      const firstScheduleDate = parseLocalDate(mergedSchedules.value[0].date)
       currentCalendarYear.value = firstScheduleDate.getFullYear()
       currentCalendarMonth.value = firstScheduleDate.getMonth()
     }

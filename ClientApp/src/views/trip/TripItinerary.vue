@@ -344,7 +344,7 @@
             </div>
             <div>
               <label class="label">금액 (원)</label>
-              <input v-model.number="itineraryItemData.expenseAmount" v-number-format type="text" inputmode="numeric" placeholder="예: 50000" class="input" />
+              <input v-model="itineraryItemData.expenseAmount" v-number-format type="text" inputmode="numeric" placeholder="예: 50000" class="input" />
             </div>
             <div><label class="label">메모</label><textarea v-model="itineraryItemData.notes" rows="3" class="input"></textarea></div>
           </form>
@@ -849,9 +849,11 @@ async function saveItineraryItem() {
     const isNewItem = !editingItineraryItem.value?.id;
     let targetItemId = isNewItem ? null : editingItineraryItem.value.id;
 
-    // 금액이 빈값이면 0으로 설정
-    if (itineraryItemData.value.expenseAmount === null || itineraryItemData.value.expenseAmount === '' || itineraryItemData.value.expenseAmount === undefined) {
-      itineraryItemData.value.expenseAmount = 0;
+    // 금액 필드에서 콤마 제거하고 숫자로 변환
+    const cleanNumber = (value) => {
+      if (!value || value === '') return 0
+      const cleaned = String(value).replace(/,/g, '')
+      return cleaned ? Number(cleaned) : 0
     }
 
     // 페이로드 생성 및 빈 문자열을 null로 변환
@@ -867,7 +869,7 @@ async function saveItineraryItem() {
       phoneNumber: itineraryItemData.value.phoneNumber || null,
       category: itineraryItemData.value.category || null,
       kakaoPlaceUrl: itineraryItemData.value.kakaoPlaceUrl || null,
-      expenseAmount: itineraryItemData.value.expenseAmount,
+      expenseAmount: cleanNumber(itineraryItemData.value.expenseAmount),
       startTime: itineraryItemData.value.startTime || null,
       endTime: itineraryItemData.value.endTime || null,
       notes: itineraryItemData.value.notes || null,

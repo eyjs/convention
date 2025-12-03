@@ -382,7 +382,7 @@
             </div>
             <div>
               <label class="label">금액 (원)</label>
-              <input v-model.number="flightData.amount" v-number-format type="text" class="input" placeholder="예: 150000" min="0" step="100" />
+              <input v-model="flightData.amount" v-number-format type="text" class="input" placeholder="예: 150000" min="0" step="100" />
             </div>
           </template>
 
@@ -422,7 +422,7 @@
             </div>
             <div>
               <label class="label">금액 (원)</label>
-              <input v-model.number="flightData.amount" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
+              <input v-model="flightData.amount" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
             </div>
           </template>
 
@@ -444,7 +444,7 @@
             </div>
             <div>
               <label class="label">금액 (원)</label>
-              <input v-model.number="flightData.amount" v-number-format type="text" class="input" placeholder="예: 30000" min="0" step="100" />
+              <input v-model="flightData.amount" v-number-format type="text" class="input" placeholder="예: 30000" min="0" step="100" />
             </div>
           </template>
 
@@ -471,7 +471,7 @@
             </div>
             <div>
               <label class="label">금액 (원)</label>
-              <input v-model.number="flightData.amount" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
+              <input v-model="flightData.amount" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
             </div>
           </template>
 
@@ -508,21 +508,21 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">렌트비 (원)</label>
-                <input v-model.number="flightData.rentalCost" v-number-format type="text" class="input" placeholder="예: 100000" min="0" step="100" />
+                <input v-model="flightData.rentalCost" v-number-format type="text" class="input" placeholder="예: 100000" min="0" step="100" />
               </div>
               <div>
                 <label class="label">유류비 (원)</label>
-                <input v-model.number="flightData.fuelCost" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
+                <input v-model="flightData.fuelCost" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">톨비 (원)</label>
-                <input v-model.number="flightData.tollFee" v-number-format type="text" class="input" placeholder="예: 20000" min="0" step="100" />
+                <input v-model="flightData.tollFee" v-number-format type="text" class="input" placeholder="예: 20000" min="0" step="100" />
               </div>
               <div>
                 <label class="label">주차비 (원)</label>
-                <input v-model.number="flightData.parkingFee" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
+                <input v-model="flightData.parkingFee" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
               </div>
             </div>
           </template>
@@ -532,16 +532,16 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="label">유류비 (원)</label>
-                <input v-model.number="flightData.fuelCost" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
+                <input v-model="flightData.fuelCost" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
               </div>
               <div>
                 <label class="label">톨비 (원)</label>
-                <input v-model.number="flightData.tollFee" v-number-format type="text" class="input" placeholder="예: 20000" min="0" step="100" />
+                <input v-model="flightData.tollFee" v-number-format type="text" class="input" placeholder="예: 20000" min="0" step="100" />
               </div>
             </div>
             <div>
               <label class="label">주차비 (원)</label>
-              <input v-model.number="flightData.parkingFee" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
+              <input v-model="flightData.parkingFee" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
             </div>
           </template>
 
@@ -922,6 +922,20 @@ function applyFlightInfo(info) {
 
 async function saveTransportation() {
   try {
+    // 금액 필드들에서 콤마 제거하고 숫자로 변환
+    const cleanNumber = (value) => {
+      if (!value) return null
+      const cleaned = String(value).replace(/,/g, '')
+      return cleaned ? Number(cleaned) : null
+    }
+
+    // 금액 필드 정리
+    flightData.value.amount = cleanNumber(flightData.value.amount)
+    flightData.value.tollFee = cleanNumber(flightData.value.tollFee)
+    flightData.value.fuelCost = cleanNumber(flightData.value.fuelCost)
+    flightData.value.parkingFee = cleanNumber(flightData.value.parkingFee)
+    flightData.value.rentalCost = cleanNumber(flightData.value.rentalCost)
+
     // 렌트카/자가용은 합계를 amount에 저장
     if (['렌트카', '자가용'].includes(flightData.value.category)) {
       flightData.value.amount = getFlightTotalCost(flightData.value);

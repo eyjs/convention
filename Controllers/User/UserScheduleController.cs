@@ -137,6 +137,46 @@ public class UserScheduleController : ControllerBase
     }
 
     /// <summary>
+    /// 사용자의 옵션투어 조회
+    /// </summary>
+    [HttpGet("{userId}/{conventionId}/option-tours")]
+    public async Task<IActionResult> GetOptionTours(int userId, int conventionId)
+    {
+        try
+        {
+            var userInConvention = await _context.UserConventions
+                .AnyAsync(uc => uc.UserId == userId && uc.ConventionId == conventionId);
+
+            if (!userInConvention)
+                return NotFound(new { message = "User not found in this convention" });
+
+            var optionToursData = await _context.UserOptionTours
+                .Where(uot => uot.UserId == userId && uot.ConventionId == conventionId)
+                .Include(uot => uot.OptionTour)
+                .OrderBy(uot => uot.OptionTour!.Date)
+                .ThenBy(uot => uot.OptionTour!.StartTime)
+                .ToListAsync();
+
+            var optionTours = optionToursData.Select(uot => new
+            {
+                id = uot.OptionTour!.Id,
+                date = uot.OptionTour.Date.ToString("yyyy-MM-dd"),
+                startTime = uot.OptionTour.StartTime,
+                endTime = uot.OptionTour.EndTime,
+                name = uot.OptionTour.Name,
+                content = uot.OptionTour.Content,
+                customOptionId = uot.OptionTour.CustomOptionId
+            }).ToList();
+
+            return Ok(optionTours);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// 특정 일정 템플릿에 할당된 참석자 목록 조회
     /// 민감정보(연락처, 이메일)는 Admin 권한 사용자만 조회 가능
     /// </summary>

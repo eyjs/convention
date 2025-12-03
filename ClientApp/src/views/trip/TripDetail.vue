@@ -112,7 +112,7 @@
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">예산 (원)</label>
-                  <input v-model.number="tripData.budget" v-number-format type="text" step="1" min="0" placeholder="예산을 입력하세요 (선택사항)" class="w-full input" />
+                  <input v-model="tripData.budget" v-number-format type="text" step="1" min="0" placeholder="예산을 입력하세요 (선택사항)" class="w-full input" />
                   <p class="text-xs text-gray-500 mt-1">여행 예산을 입력하면 대시보드에서 지출 현황을 추적할 수 있습니다.</p>
                 </div>
                 <div>
@@ -184,19 +184,19 @@
                   </div>
                   <div>
                     <label class="label">금액 (원) *</label>
-                    <input v-model.number="transportationData.amount" v-number-format type="text" class="input" placeholder="예: 150000" min="0" step="100" required />
+                    <input v-model="transportationData.amount" v-number-format type="text" class="input" placeholder="예: 150000" min="0" step="100" required />
                   </div>
                 </template>
                 <template v-else-if="transportationData.category === '기차' || transportationData.category === '버스'">
                   <div>
                     <label class="label">금액 (원) *</label>
-                    <input v-model.number="transportationData.amount" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" required />
+                    <input v-model="transportationData.amount" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" required />
                   </div>
                 </template>
                 <template v-else-if="transportationData.category === '택시'">
                   <div>
                     <label class="label">금액 (원) *</label>
-                    <input v-model.number="transportationData.amount" v-number-format type="text" class="input" placeholder="예: 10000" min="0" step="100" required />
+                    <input v-model="transportationData.amount" v-number-format type="text" class="input" placeholder="예: 10000" min="0" step="100" required />
                   </div>
                 </template>
                 <template v-else-if="transportationData.category === '렌트카' || transportationData.category === '자가용'">
@@ -205,19 +205,19 @@
                   </div>
                   <div v-if="transportationData.category === '렌트카'">
                     <label class="label">렌트 비용 (원)</label>
-                    <input v-model.number="transportationData.rentalCost" v-number-format type="text" class="input" placeholder="예: 100000" min="0" step="100" />
+                    <input v-model="transportationData.rentalCost" v-number-format type="text" class="input" placeholder="예: 100000" min="0" step="100" />
                   </div>
                   <div>
                     <label class="label">주유비 (원)</label>
-                    <input v-model.number="transportationData.fuelCost" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
+                    <input v-model="transportationData.fuelCost" v-number-format type="text" class="input" placeholder="예: 50000" min="0" step="100" />
                   </div>
                   <div>
                     <label class="label">톨비 (원)</label>
-                    <input v-model.number="transportationData.tollFee" v-number-format type="text" class="input" placeholder="예: 20000" min="0" step="100" />
+                    <input v-model="transportationData.tollFee" v-number-format type="text" class="input" placeholder="예: 20000" min="0" step="100" />
                   </div>
                   <div>
                     <label class="label">주차비 (원)</label>
-                    <input v-model.number="transportationData.parkingFee" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
+                    <input v-model="transportationData.parkingFee" v-number-format type="text" class="input" placeholder="예: 15000" min="0" step="100" />
                   </div>
                   <div class="pt-3 border-t">
                     <div class="flex justify-between items-center">
@@ -268,7 +268,7 @@
                 </div>
                 <div> <!-- Added expenseAmount input -->
                   <label class="label">비용 (원)</label>
-                  <input v-model.number="accommodationData.expenseAmount" v-number-format type="text" class="input" placeholder="예: 100000" min="0" step="100" />
+                  <input v-model="accommodationData.expenseAmount" v-number-format type="text" class="input" placeholder="예: 100000" min="0" step="100" />
                 </div>
               </form>
             </template>
@@ -314,7 +314,7 @@
                 </div>
                 <div>
                   <label class="label">금액 (원)</label>
-                  <input v-model.number="itineraryItemData.expenseAmount" v-number-format type="text" placeholder="예: 50000" class="input" min="0" step="100" />
+                  <input v-model="itineraryItemData.expenseAmount" v-number-format type="text" placeholder="예: 50000" class="input" min="0" step="100" />
                 </div>
                 <div><label class="label">메모</label><textarea v-model="itineraryItemData.notes" rows="3" class="input"></textarea></div>
               </form>
@@ -1009,6 +1009,12 @@ async function saveTripInfo() {
   tripData.value.destination = countryCity.value.destination
   tripData.value.countryCode = countryCity.value.countryCode
 
+  // 예산 값에서 콤마 제거하고 숫자로 변환
+  if (tripData.value.budget) {
+    const budgetStr = String(tripData.value.budget).replace(/,/g, '')
+    tripData.value.budget = budgetStr ? Number(budgetStr) : null
+  }
+
   try {
     // 새 이미지 파일이 있으면 업로드
     if (coverImageFile.value) {
@@ -1097,7 +1103,14 @@ function editSelectedAccommodation() { // New function
 async function saveAccommodation() {
   if (effectiveReadonly.value) return
   try {
-    const payload = { 
+    // 금액 필드에서 콤마 제거하고 숫자로 변환
+    const cleanNumber = (value) => {
+      if (!value) return null
+      const cleaned = String(value).replace(/,/g, '')
+      return cleaned ? Number(cleaned) : null
+    }
+
+    const payload = {
       personalTripId: tripId.value,
       name: accommodationData.value.name,
       type: accommodationData.value.type || null, // Ensure type is included
@@ -1112,9 +1125,9 @@ async function saveAccommodation() {
       notes: accommodationData.value.notes || null, // Ensure notes is included
       googlePlaceId: accommodationData.value.googlePlaceId,
       kakaoPlaceId: accommodationData.value.kakaoPlaceId,
-      expenseAmount: accommodationData.value.expenseAmount // Send directly
+      expenseAmount: cleanNumber(accommodationData.value.expenseAmount)
     }
-    
+
     if (editingAccommodation.value?.id) {
       await apiClient.put(`/personal-trips/accommodations/${editingAccommodation.value.id}`, payload)
     } else {
@@ -1191,9 +1204,23 @@ function calculateTotalTransportationCost() {
 async function saveTransportation() {
   if (effectiveReadonly.value) return
   try {
-    if (transportationData.value.category === '렌트카' || transportationData.value.category === '자가용') {
-      transportationData.value.amount = calculateTotalTransportationCost();
+    // 금액 필드들에서 콤마 제거하고 숫자로 변환
+    const cleanNumber = (value) => {
+      if (!value) return null
+      const cleaned = String(value).replace(/,/g, '')
+      return cleaned ? Number(cleaned) : null
     }
+
+    if (transportationData.value.category === '렌트카' || transportationData.value.category === '자가용') {
+      transportationData.value.rentalCost = cleanNumber(transportationData.value.rentalCost)
+      transportationData.value.fuelCost = cleanNumber(transportationData.value.fuelCost)
+      transportationData.value.tollFee = cleanNumber(transportationData.value.tollFee)
+      transportationData.value.parkingFee = cleanNumber(transportationData.value.parkingFee)
+      transportationData.value.amount = calculateTotalTransportationCost();
+    } else {
+      transportationData.value.amount = cleanNumber(transportationData.value.amount)
+    }
+
     if (transportationData.value.category !== '택시') {
       transportationData.value.itineraryItemId = null;
     }
@@ -1381,9 +1408,17 @@ async function saveItineraryItem() {
     const isNewItem = !editingItineraryItem.value?.id;
     let targetItemId = isNewItem ? null : editingItineraryItem.value.id;
 
-    const payload = { 
-      ...itineraryItemData.value, 
+    // 금액 필드에서 콤마 제거하고 숫자로 변환
+    const cleanNumber = (value) => {
+      if (!value) return null
+      const cleaned = String(value).replace(/,/g, '')
+      return cleaned ? Number(cleaned) : null
+    }
+
+    const payload = {
+      ...itineraryItemData.value,
       personalTripId: tripId.value,
+      expenseAmount: cleanNumber(itineraryItemData.value.expenseAmount)
     };
 
     if (isNewItem) {
