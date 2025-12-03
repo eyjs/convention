@@ -22,6 +22,7 @@ public class UploadController : ControllerBase
     private readonly IAttributeUploadService _attributeUploadService;
     private readonly IGroupScheduleMappingService _groupScheduleMappingService;
     private readonly INameTagUploadService _nameTagUploadService;
+    private readonly IOptionTourUploadService _optionTourUploadService;
     private readonly ILogger<UploadController> _logger;
 
     public UploadController(
@@ -30,6 +31,7 @@ public class UploadController : ControllerBase
         IAttributeUploadService attributeUploadService,
         IGroupScheduleMappingService groupScheduleMappingService,
         INameTagUploadService nameTagUploadService,
+        IOptionTourUploadService optionTourUploadService,
         ILogger<UploadController> logger)
     {
         _userUploadService = userUploadService;
@@ -37,6 +39,7 @@ public class UploadController : ControllerBase
         _attributeUploadService = attributeUploadService;
         _groupScheduleMappingService = groupScheduleMappingService;
         _nameTagUploadService = nameTagUploadService;
+        _optionTourUploadService = optionTourUploadService;
         _logger = logger;
     }
 
@@ -255,6 +258,44 @@ public class UploadController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to upload name tags for printing");
+            return StatusCode(500, new { error = "서버 오류가 발생했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 옵션투어 업로드
+    /// JSON 형식: { options: [...], participantMappings: [...] }
+    /// 프론트엔드에서 엑셀을 파싱하여 JSON으로 전송
+    /// </summary>
+    [HttpPost("conventions/{conventionId}/option-tours")]
+    [ProducesResponseType(typeof(OptionTourUploadResult), 200)]
+    public async Task<IActionResult> UploadOptionTours(int conventionId, [FromBody] OptionTourUploadRequest request)
+    {
+        if (request == null || request.Options == null || request.ParticipantMappings == null)
+        {
+            return BadRequest(new { error = "요청 데이터가 올바르지 않습니다." });
+        }
+
+        _logger.LogInformation(
+            "Uploading option tours for convention {ConventionId}: {OptionCount} options, {MappingCount} mappings",
+            conventionId,
+            request.Options.Count,
+            request.ParticipantMappings.Count);
+
+        try
+        {
+            var result = await _optionTourUploadService.UploadOptionToursAsync(conventionId, request);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to upload option tours");
             return StatusCode(500, new { error = "서버 오류가 발생했습니다." });
         }
     }

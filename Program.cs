@@ -229,6 +229,7 @@ builder.Services.AddScoped<IScheduleTemplateUploadService, ScheduleUploadService
 builder.Services.AddScoped<IAttributeUploadService, AttributeUploadService>();
 builder.Services.AddScoped<IGroupScheduleMappingService, GroupScheduleMappingService>();
 builder.Services.AddScoped<INameTagUploadService, NameTagUploadService>();
+builder.Services.AddScoped<IOptionTourUploadService, OptionTourUploadService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextFactory, UserContextFactory>();
 builder.Services.AddHttpClient<IFlightService, FlightService>();

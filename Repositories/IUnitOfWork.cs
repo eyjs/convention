@@ -23,6 +23,8 @@ public interface IUnitOfWork : IDisposable
     IRepository<Entities.Action.ConventionAction> ConventionActions { get; }
     IRepository<UserActionStatus> UserActionStatuses { get; }
     IRepository<ScheduleTemplate> ScheduleTemplates { get; }
+    IRepository<OptionTour> OptionTours { get; }
+    IRepository<UserOptionTour> UserOptionTours { get; }
 
     // --- Transaction Methods ---
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

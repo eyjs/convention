@@ -41,6 +41,8 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<Entities.Action.ConventionAction>? _conventionActions;
     private IRepository<UserActionStatus>? _userActionStatuses;
     private IRepository<ScheduleTemplate>? _scheduleTemplates;
+    private IRepository<OptionTour>? _optionTours;
+    private IRepository<UserOptionTour>? _userOptionTours;
 
     public UnitOfWork(ConventionDbContext context)
     {
@@ -102,6 +104,12 @@ public class UnitOfWork : IUnitOfWork
 
     public IRepository<ScheduleTemplate> ScheduleTemplates =>
         _scheduleTemplates ??= new Repository<ScheduleTemplate>(_context);
+
+    public IRepository<OptionTour> OptionTours =>
+        _optionTours ??= new Repository<OptionTour>(_context);
+
+    public IRepository<UserOptionTour> UserOptionTours =>
+        _userOptionTours ??= new Repository<UserOptionTour>(_context);
 
     // ============================================================
     // Transaction Methods

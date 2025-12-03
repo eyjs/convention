@@ -137,6 +137,82 @@
       </div>
     </div>
 
+    <!-- 옵션투어 업로드 탭 -->
+    <div v-if="activeTab === 'option-tours'" class="space-y-4">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          엑셀 파일 선택
+        </label>
+        <input
+          type="file"
+          @change="handleFileOptionTours"
+          accept=".xlsx"
+          class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+        />
+      </div>
+
+      <div class="mb-4 p-4 bg-orange-50 rounded-md">
+        <h3 class="font-medium text-orange-900 mb-2">
+          📋 엑셀 형식 (옵션투어 업로드)
+        </h3>
+        <div class="text-sm text-orange-700 space-y-2">
+          <div class="border-b border-orange-200 pb-2">
+            <p class="font-semibold text-orange-800">시트1: 옵션</p>
+            <p><strong>A열:</strong> 날짜 (필수) - 예: 2025-05-18</p>
+            <p><strong>B열:</strong> 시작시간 (필수) - 예: 02:00</p>
+            <p><strong>C열:</strong> 종료시간 (필수) - 예: 09:00</p>
+            <p><strong>D열:</strong> 옵션명 (필수) - 예: 바뚜르산</p>
+            <p><strong>E열:</strong> 옵션ID (필수) - 사용자 지정 ID (숫자)</p>
+            <p><strong>F열:</strong> 옵션내용 (선택) - 상세 설명</p>
+          </div>
+          <div class="pt-2">
+            <p class="font-semibold text-orange-800">시트2: 참석자별 매핑</p>
+            <p><strong>A열:</strong> 번호 (선택)</p>
+            <p><strong>B열:</strong> 사업단/소속 (선택)</p>
+            <p><strong>C열:</strong> 이름 (필수) - 참석자 매칭용</p>
+            <p><strong>D열:</strong> 주민번호 (조건부 필수) - 참석자 매칭용</p>
+            <p><strong>E열:</strong> 연락처 (조건부 필수) - 참석자 매칭용</p>
+            <p><strong>F열:</strong> 그룹 (선택)</p>
+            <p><strong>G열:</strong> 옵션 ID (필수) - 콤마로 구분 (예: 1,2,3)</p>
+          </div>
+          <p class="mt-3 text-orange-600">
+            ※ 참석자는 이름 + (전화번호 OR 주민번호)로 매칭됩니다
+          </p>
+          <p class="text-orange-600">
+            ※ 참석자가 미리 등록되어 있어야 합니다
+          </p>
+          <p class="text-orange-600">
+            ※ 프론트엔드에서 일정 + 옵션 = 일정표로 조합됩니다
+          </p>
+        </div>
+      </div>
+
+      <button
+        @click="uploadOptionTours"
+        :disabled="!fileOptionTours || uploadingOptionTours"
+        class="w-full px-6 py-3 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
+      >
+        {{ uploadingOptionTours ? '업로드 중...' : '옵션투어 업로드' }}
+      </button>
+
+      <UploadResult
+        v-if="resultOptionTours"
+        :result="resultOptionTours"
+        type="option-tours"
+      />
+
+      <div class="mt-6 pt-6 border-t">
+        <h3 class="font-semibold mb-3">샘플 파일</h3>
+        <a
+          href="/Sample/옵션투어_업로드_샘플.xlsx"
+          download
+          class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+        >
+          📥 옵션투어 업로드 샘플
+        </a>
+      </div>
+    </div>
+
     <!-- 속성 업로드 탭 -->
     <div v-if="activeTab === 'attributes'" class="space-y-4">
       <div class="mb-4">
@@ -207,6 +283,7 @@
 import { ref } from 'vue'
 import apiClient from '@/services/api'
 import UploadResult from './UploadResult.vue'
+import * as XLSX from 'xlsx'
 
 const props = defineProps({
   conventionId: { type: Number, required: true },
@@ -217,6 +294,7 @@ const tabs = [
   { id: 'guests', name: '참석자 업로드' },
   { id: 'schedules', name: '일정 업로드' },
   { id: 'attributes', name: '속성 업로드' },
+  { id: 'option-tours', name: '옵션투어 업로드' },
 ]
 
 const activeTab = ref('guests')
@@ -236,6 +314,11 @@ const fileAttributes = ref(null)
 const uploadingAttributes = ref(false)
 const resultAttributes = ref(null)
 
+// 옵션투어 업로드 상태
+const fileOptionTours = ref(null)
+const uploadingOptionTours = ref(false)
+const resultOptionTours = ref(null)
+
 // 파일 핸들러
 const handleFileGuests = (e) => {
   fileGuests.value = e.target.files[0]
@@ -250,6 +333,11 @@ const handleFileSchedules = (e) => {
 const handleFileAttributes = (e) => {
   fileAttributes.value = e.target.files[0]
   resultAttributes.value = null
+}
+
+const handleFileOptionTours = (e) => {
+  fileOptionTours.value = e.target.files[0]
+  resultOptionTours.value = null
 }
 
 // 참석자 업로드
@@ -425,6 +513,136 @@ const uploadAttributes = async () => {
     }
   } finally {
     uploadingAttributes.value = false
+  }
+}
+
+// 엑셀 날짜를 YYYY-MM-DD 형식으로 변환
+const excelDateToString = (excelDate) => {
+  if (typeof excelDate === 'string') return excelDate
+  const date = XLSX.SSF.parse_date_code(excelDate)
+  return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`
+}
+
+// 시간 문자열 정리 (공백 제거, HH:MM 형식으로)
+const normalizeTime = (timeStr) => {
+  if (!timeStr) return ''
+  return String(timeStr).trim()
+}
+
+// 옵션투어 업로드
+const uploadOptionTours = async () => {
+  if (!fileOptionTours.value) return
+
+  uploadingOptionTours.value = true
+  resultOptionTours.value = null
+
+  try {
+    // 엑셀 파일 읽기
+    const data = await fileOptionTours.value.arrayBuffer()
+    const workbook = XLSX.read(data, { type: 'array' })
+
+    // 시트 확인
+    if (workbook.SheetNames.length < 2) {
+      throw new Error('엑셀 파일에 2개의 시트가 필요합니다 (옵션, 참석자별 매핑)')
+    }
+
+    const optionsSheetName = workbook.SheetNames[0]
+    const mappingSheetName = workbook.SheetNames[1]
+
+    // 시트1: 옵션 파싱
+    const optionsSheet = workbook.Sheets[optionsSheetName]
+    const optionsRaw = XLSX.utils.sheet_to_json(optionsSheet, { header: 1 })
+
+    const options = []
+    for (let i = 1; i < optionsRaw.length; i++) {
+      const row = optionsRaw[i]
+      if (!row || row.length === 0) continue
+
+      const [dateVal, startTime, endTime, name, optionId, content] = row
+
+      if (!dateVal || !startTime || !name || optionId == null) {
+        console.warn(`옵션 시트 ${i + 1}행 스킵: 필수 값 누락`)
+        continue
+      }
+
+      options.push({
+        date: excelDateToString(dateVal),
+        startTime: normalizeTime(startTime),
+        endTime: normalizeTime(endTime),
+        name: String(name).trim(),
+        optionId: Number(optionId),
+        content: content ? String(content).trim() : '',
+      })
+    }
+
+    // 시트2: 참석자별 매핑 파싱
+    const mappingSheet = workbook.Sheets[mappingSheetName]
+    const mappingRaw = XLSX.utils.sheet_to_json(mappingSheet, { header: 1 })
+
+    const participantMappings = []
+    for (let i = 1; i < mappingRaw.length; i++) {
+      const row = mappingRaw[i]
+      if (!row || row.length === 0) continue
+
+      const [num, division, name, idNumber, phone, group, optionIds] = row
+
+      if (!name || !phone) {
+        console.warn(`참석자 매핑 시트 ${i + 1}행 스킵: 이름 또는 전화번호 누락`)
+        continue
+      }
+
+      // 옵션ID 파싱 (콤마로 구분된 문자열 -> 배열)
+      let optionIdArray = []
+      if (optionIds) {
+        const idsStr = String(optionIds)
+        optionIdArray = idsStr
+          .split(',')
+          .map((id) => id.trim())
+          .filter((id) => id !== '')
+          .map((id) => Number(id))
+      }
+
+      participantMappings.push({
+        name: String(name).trim(),
+        phone: String(phone).trim(),
+        division: division ? String(division).trim() : '',
+        idNumber: idNumber ? String(idNumber).trim() : '',
+        group: group ? String(group).trim() : '',
+        optionIds: optionIdArray,
+      })
+    }
+
+    // API로 전송
+    const response = await apiClient.post(
+      `/upload/conventions/${props.conventionId}/option-tours`,
+      {
+        options,
+        participantMappings,
+      },
+    )
+
+    resultOptionTours.value = {
+      success: response.data.success,
+      message: `옵션 ${response.data.optionsCreated}개, 참석자 매핑 ${response.data.mappingsCreated}개 생성됨`,
+      data: {
+        optionsCreated: response.data.optionsCreated,
+        mappingsCreated: response.data.mappingsCreated,
+      },
+      errors: response.data.errors || [],
+      warnings: response.data.warnings || [],
+    }
+  } catch (error) {
+    resultOptionTours.value = {
+      success: false,
+      message: '업로드 실패',
+      errors: [
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          error.message,
+      ],
+    }
+  } finally {
+    uploadingOptionTours.value = false
   }
 }
 </script>

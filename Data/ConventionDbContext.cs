@@ -68,6 +68,10 @@ public class ConventionDbContext : DbContext
     // Incheon Flight Data
     public DbSet<IncheonFlightData> IncheonFlightData { get; set; }
 
+    // Option Tours
+    public DbSet<OptionTour> OptionTours { get; set; }
+    public DbSet<UserOptionTour> UserOptionTours { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -634,6 +638,62 @@ public class ConventionDbContext : DbContext
 
             entity.HasIndex(e => e.FlightId)
                   .HasDatabaseName("IX_IncheonFlightData_FlightId");
+        });
+
+        // OptionTour
+        modelBuilder.Entity<OptionTour>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.StartTime).IsRequired().HasMaxLength(10);
+            entity.Property(e => e.EndTime).HasMaxLength(10);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_OptionTour_ConventionId");
+            entity.HasIndex(e => e.Date).HasDatabaseName("IX_OptionTour_Date");
+            entity.HasIndex(e => new { e.ConventionId, e.CustomOptionId })
+                  .HasDatabaseName("IX_OptionTour_ConventionId_CustomOptionId");
+
+            entity.HasOne(e => e.Convention)
+                  .WithMany()
+                  .HasForeignKey(e => e.ConventionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.UserOptionTours)
+                  .WithOne(u => u.OptionTour)
+                  .HasForeignKey(u => u.OptionTourId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserOptionTour
+        modelBuilder.Entity<UserOptionTour>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+
+            entity.HasIndex(e => e.UserId).HasDatabaseName("IX_UserOptionTour_UserId");
+            entity.HasIndex(e => e.OptionTourId).HasDatabaseName("IX_UserOptionTour_OptionTourId");
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_UserOptionTour_ConventionId");
+            entity.HasIndex(e => new { e.UserId, e.ConventionId, e.OptionTourId })
+                  .IsUnique()
+                  .HasDatabaseName("UQ_UserOptionTour_UserId_ConventionId_OptionTourId");
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(e => e.OptionTour)
+                  .WithMany(o => o.UserOptionTours)
+                  .HasForeignKey(e => e.OptionTourId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Convention)
+                  .WithMany()
+                  .HasForeignKey(e => e.ConventionId)
+                  .OnDelete(DeleteBehavior.NoAction);
         });
     }
 }
