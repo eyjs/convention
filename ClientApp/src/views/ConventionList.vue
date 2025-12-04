@@ -36,12 +36,12 @@
 
           <!-- 스타투어 카드 목록 -->
           <div v-else class="space-y-5">
-            <div
+            <button
               v-for="convention in conventions"
               :key="convention.id"
               @click="goToConvention(convention)"
-              onclick=""
-              class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all cursor-pointer overflow-hidden active:scale-[0.98]">
+              type="button"
+              class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all cursor-pointer overflow-hidden active:scale-[0.98] text-left w-full">
               <!-- 카드 헤더 (이미지 영역) -->
               <div class="relative h-40 overflow-hidden">
                 <div v-if="convention.conventionImg"
@@ -72,7 +72,7 @@
                   <span class="font-medium">{{ formatDate(convention.startDate) }} ~ {{ formatDate(convention.endDate) }}</span>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
         </template>
       </div>

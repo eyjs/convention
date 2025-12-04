@@ -61,11 +61,11 @@
               <!-- 수평 스크롤 카드 -->
               <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
                   <div class="flex gap-4 pb-2">
-                      <div v-for="convention in conventions.slice(0, 10)"
+                      <button v-for="convention in conventions.slice(0, 10)"
                            :key="convention.id"
                            @click="goToConvention(convention)"
-                           onclick=""
-                           class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group">
+                           type="button"
+                           class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group text-left">
                           <!-- 상단 이미지 영역 -->
                           <div class="relative h-[200px] overflow-hidden">
                               <div v-if="convention.conventionImg"
@@ -96,7 +96,7 @@
                                   <span class="truncate">{{ formatDate(convention.startDate) }} ~ {{ formatDate(convention.endDate) }}</span>
                               </div>
                           </div>
-                      </div>
+                      </button>
                   </div>
               </div>
           </div>
@@ -132,11 +132,11 @@
               <!-- 수평 스크롤 카드 -->
               <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
                   <div class="flex gap-4 pb-2">
-                      <div v-for="trip in trips.slice(0, 10)"
+                      <button v-for="trip in trips.slice(0, 10)"
                            :key="trip.id"
                            @click="goToTripDetail(trip.id)"
-                           onclick=""
-                           class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group">
+                           type="button"
+                           class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group text-left">
                           <!-- 상단 이미지 영역 (인스타그램 스타일) -->
                           <div class="relative h-[200px] overflow-hidden">
                               <!-- 사용자 업로드 이미지 또는 기본 그라데이션 -->
@@ -176,7 +176,7 @@
                                   <span class="font-semibold truncate">{{ [trip.destination, trip.city].filter(Boolean).join(', ') }}</span>
                               </div>
                           </div>
-                      </div>
+                      </button>
                   </div>
               </div>
           </div>

@@ -42,6 +42,7 @@
         v-if="isModalOpen"
         class="fixed inset-0 bg-black/60 flex justify-center items-end md:items-center z-50"
         @click.self="closeLoginModal"
+        onclick=""
       >
         <div
           class="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-w-md text-center relative max-h-[90vh] md:max-h-[80vh] overflow-y-auto"
