@@ -93,6 +93,19 @@ const routes = [
       showNav: false,
     },
   },
+
+  // === Convention List ===
+  {
+    path: '/conventions',
+    name: 'ConventionList',
+    component: () => import('@/views/ConventionList.vue'),
+    meta: {
+      title: '스타투어',
+      requiresAuth: true,
+      layout: null,
+      showNav: false,
+    },
+  },
       {
         path: '/trips/new',
         name: 'NewTrip',

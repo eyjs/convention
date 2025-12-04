@@ -67,7 +67,7 @@
           <div class="mb-8">
               <div class="flex justify-between items-center mb-4 px-1">
                   <h3 class="text-xl font-bold text-gray-900">진행중인 스타투어</h3>
-                  <button v-if="conventions.length > 0" @click="router.push('/')" class="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                  <button v-if="conventions.length > 0" @click="router.push('/conventions')" class="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                       더보기
                   </button>
               </div>
