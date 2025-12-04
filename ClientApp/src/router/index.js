@@ -470,68 +470,75 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title || 'iFA Convention'
+  try {
+    document.title = to.meta.title || 'iFA Convention'
 
-  const authStore = useAuthStore()
-  const uiStore = useUIStore()
-  const requiresAuth = to.meta.requiresAuth !== false
-  const requiresAdmin = to.meta.requiresAdmin || false
+    const authStore = useAuthStore()
+    const uiStore = useUIStore()
+    const requiresAuth = to.meta.requiresAuth !== false
+    const requiresAdmin = to.meta.requiresAdmin || false
 
-  // 0. 모달 체크 - 뒤로가기 시 모달부터 닫기
-  if (uiStore.hasOpenModal()) {
-    uiStore.closeTopModal()
-    next(false) // 라우팅 취소
-    return
-  }
-
-  // [방어] LocalStorage 무결성 검사 - "undefined" 문자열 오염 정화
-  let selectedConventionId = localStorage.getItem('selectedConventionId')
-  if (selectedConventionId === 'undefined' || selectedConventionId === 'null') {
-    console.warn('Corrupted localStorage detected. Cleaning up...')
-    localStorage.removeItem('selectedConventionId')
-    selectedConventionId = null
-  }
-
-  // 1. 로그인 페이지 접근 시
-  if (to.path === '/login' && authStore.isAuthenticated) {
-    // 어드민은 어드민 페이지로
-    if (authStore.isAdmin) {
-      next('/admin')
+    // 0. 모달 체크 - 뒤로가기 시 모달부터 닫기
+    if (uiStore.hasOpenModal()) {
+      uiStore.closeTopModal()
+      next(false) // 라우팅 취소
       return
     }
-    // 일반 유저는 홈으로
-    next('/home')
-    return
+
+    // [방어] LocalStorage 무결성 검사 - "undefined" 문자열 오염 정화
+    let selectedConventionId = localStorage.getItem('selectedConventionId')
+    if (selectedConventionId === 'undefined' || selectedConventionId === 'null') {
+      console.warn('Corrupted localStorage detected. Cleaning up...')
+      localStorage.removeItem('selectedConventionId')
+      selectedConventionId = null
+    }
+
+    // 1. 로그인 페이지 접근 시
+    if (to.path === '/login' && authStore.isAuthenticated) {
+      // 어드민은 어드민 페이지로
+      if (authStore.isAdmin) {
+        next('/admin')
+        return
+      }
+      // 일반 유저는 홈으로
+      next('/home')
+      return
+    }
+
+    // 2. 인증 필요 체크
+    if (requiresAuth && !authStore.isAuthenticated) {
+      next('/login')
+      return
+    }
+
+    // 3. 어드민 권한 체크
+    if (requiresAdmin && !authStore.isAdmin) {
+      next('/')
+      return
+    }
+
+    // 4. Convention이 필요한 페이지 체크 (메타 정보 활용)
+    // 각 라우트의 meta.requiresConvention 플래그 확인
+    const requiresConvention = to.meta.requiresConvention === true
+
+    // Convention이 필요한 페이지인데 선택된 Convention이 없으면 /home으로
+    if (
+      authStore.isAuthenticated &&
+      !authStore.isAdmin &&
+      requiresConvention &&
+      !selectedConventionId
+    ) {
+      next('/home')
+      return
+    }
+
+    next()
+  } catch (error) {
+    // iOS Safari localStorage 접근 오류(비공개 모드, 개인정보 보호 설정) 또는 예상치 못한 에러 처리
+    console.error('[Router Guard Error] iOS Safari localStorage 접근 오류 또는 예상치 못한 에러:', error)
+    // 에러가 발생해도 라우팅은 계속 진행되도록 보장하여 앱 먹통 방지
+    next()
   }
-
-  // 2. 인증 필요 체크
-  if (requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
-    return
-  }
-
-  // 3. 어드민 권한 체크
-  if (requiresAdmin && !authStore.isAdmin) {
-    next('/')
-    return
-  }
-
-  // 4. Convention이 필요한 페이지 체크 (메타 정보 활용)
-  // 각 라우트의 meta.requiresConvention 플래그 확인
-  const requiresConvention = to.meta.requiresConvention === true
-
-  // Convention이 필요한 페이지인데 선택된 Convention이 없으면 /home으로
-  if (
-    authStore.isAuthenticated &&
-    !authStore.isAdmin &&
-    requiresConvention &&
-    !selectedConventionId
-  ) {
-    next('/home')
-    return
-  }
-
-  next()
 })
 
 export default router
