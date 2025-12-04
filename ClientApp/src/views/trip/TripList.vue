@@ -46,6 +46,7 @@
             v-for="trip in trips"
             :key="trip.id"
             @click="goToTripDetail(trip.id)"
+            onclick=""
             class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all cursor-pointer overflow-hidden active:scale-[0.98]">
             <!-- 카드 헤더 (이미지 영역) -->
             <div class="relative h-40 overflow-hidden">

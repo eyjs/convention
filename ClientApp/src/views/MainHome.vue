@@ -36,33 +36,6 @@
               <div class="absolute bottom-0 right-8 w-24 h-24 bg-white/10 rounded-full -mb-12"></div>
           </div>
 
-          <!-- 빠른 액션 -->
-          <div class="grid grid-cols-2 gap-4 mb-8">
-              <button @click="goToCreateTrip" class="relative overflow-hidden bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 active:scale-95">
-                  <div class="flex flex-col items-center gap-3 text-white">
-                      <div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-                          </svg>
-                      </div>
-                      <span class="text-base font-bold">새 여행</span>
-                  </div>
-                  <div class="absolute -bottom-2 -right-2 w-20 h-20 bg-white/10 rounded-full"></div>
-              </button>
-
-              <button @click="router.push('/')" class="relative overflow-hidden bg-gradient-to-br from-rose-500 to-orange-500 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105 active:scale-95">
-                  <div class="flex flex-col items-center gap-3 text-white">
-                      <div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                          </svg>
-                      </div>
-                      <span class="text-base font-bold">스타투어</span>
-                  </div>
-                  <div class="absolute -bottom-2 -right-2 w-20 h-20 bg-white/10 rounded-full"></div>
-              </button>
-          </div>
-
           <!-- 내 행사 섹션 -->
           <div class="mb-8">
               <div class="flex justify-between items-center mb-4 px-1">
@@ -91,6 +64,7 @@
                       <div v-for="convention in conventions.slice(0, 10)"
                            :key="convention.id"
                            @click="goToConvention(convention)"
+                           onclick=""
                            class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group">
                           <!-- 상단 이미지 영역 -->
                           <div class="relative h-[200px] overflow-hidden">
@@ -161,6 +135,7 @@
                       <div v-for="trip in trips.slice(0, 10)"
                            :key="trip.id"
                            @click="goToTripDetail(trip.id)"
+                           onclick=""
                            class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group">
                           <!-- 상단 이미지 영역 (인스타그램 스타일) -->
                           <div class="relative h-[200px] overflow-hidden">
