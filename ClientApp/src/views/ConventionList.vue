@@ -36,19 +36,18 @@
 
           <!-- 스타투어 카드 목록 -->
           <div v-else class="space-y-5">
-            <button
+            <div
               v-for="convention in conventions"
               :key="convention.id"
               @click="goToConvention(convention)"
-              type="button"
-              class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all cursor-pointer overflow-hidden active:scale-[0.98] text-left w-full">
+              class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-shadow cursor-pointer overflow-hidden w-full">
               <!-- 카드 헤더 (이미지 영역) -->
               <div class="relative h-40 overflow-hidden">
                 <div v-if="convention.conventionImg"
-                     class="absolute inset-0 bg-cover bg-center"
+                     class="absolute inset-0 bg-cover bg-center pointer-events-none"
                      :style="{ backgroundImage: `url(${convention.conventionImg})` }">
                 </div>
-                <div v-else class="absolute inset-0 bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500">
+                <div v-else class="absolute inset-0 bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500 pointer-events-none">
                   <div class="absolute inset-0 flex items-center justify-center">
                     <svg class="w-16 h-16 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -72,7 +71,7 @@
                   <span class="font-medium">{{ formatDate(convention.startDate) }} ~ {{ formatDate(convention.endDate) }}</span>
                 </div>
               </div>
-            </button>
+            </div>
           </div>
         </template>
       </div>

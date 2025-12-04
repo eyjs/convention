@@ -42,20 +42,19 @@
 
         <!-- 여행 카드 목록 -->
         <div v-else class="space-y-5">
-          <button
+          <div
             v-for="trip in trips"
             :key="trip.id"
             @click="goToTripDetail(trip.id)"
-            type="button"
-            class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all cursor-pointer overflow-hidden active:scale-[0.98] text-left w-full">
+            class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-shadow cursor-pointer overflow-hidden w-full">
             <!-- 카드 헤더 (이미지 영역) -->
             <div class="relative h-40 overflow-hidden">
               <!-- 사용자 업로드 이미지 또는 기본 그라데이션 -->
-              <div v-if="trip.coverImageUrl" 
-                   class="absolute inset-0 bg-cover bg-center"
+              <div v-if="trip.coverImageUrl"
+                   class="absolute inset-0 bg-cover bg-center pointer-events-none"
                    :style="{ backgroundImage: `url(${trip.coverImageUrl})` }">
               </div>
-              <div v-else class="absolute inset-0 bg-gradient-to-br from-cyan-500 via-teal-500 to-blue-600">
+              <div v-else class="absolute inset-0 bg-gradient-to-br from-cyan-500 via-teal-500 to-blue-600 pointer-events-none">
                 <div class="absolute inset-0 flex items-center justify-center">
                   <svg class="w-16 h-16 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -105,7 +104,7 @@
                 </span>
               </div>
             </div>
-          </button>
+          </div>
         </div>
       </template>
       </div>
