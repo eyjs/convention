@@ -103,6 +103,16 @@ namespace LocalRAG.Entities.PersonalTrip
         [Column(TypeName = "decimal(18, 2)")]
         public decimal? Budget { get; set; }
 
+        /// <summary>
+        /// 삭제 여부 (Soft Delete)
+        /// </summary>
+        public bool IsDeleted { get; set; } = false;
+
+        /// <summary>
+        /// 삭제일
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
         // Navigation properties
         [ForeignKey(nameof(UserId))]
         public virtual User User { get; set; } = null!;

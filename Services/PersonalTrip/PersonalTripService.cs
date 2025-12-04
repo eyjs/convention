@@ -25,7 +25,7 @@ namespace LocalRAG.Services.PersonalTrip
         {
             var trips = await _context.PersonalTrips
                 .AsNoTracking()
-                .Where(t => t.UserId == userId)
+                .Where(t => t.UserId == userId && !t.IsDeleted)
                 .Include(t => t.Flights)
                 .Include(t => t.Accommodations)
                 .Include(t => t.ItineraryItems)
@@ -46,7 +46,7 @@ namespace LocalRAG.Services.PersonalTrip
                 .Include(t => t.ItineraryItems)
                 .Include(t => t.ChecklistCategories)
                     .ThenInclude(c => c.Items)
-                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId && !t.IsDeleted);
 
             return trip == null ? null : MapToPersonalTripDto(trip);
         }
@@ -120,10 +120,12 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<bool> DeleteTripAsync(int tripId, int userId)
         {
-            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId && !t.IsDeleted);
             if (trip == null) return false;
 
-            _context.PersonalTrips.Remove(trip);
+            // Soft Delete
+            trip.IsDeleted = true;
+            trip.DeletedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return true;
         }

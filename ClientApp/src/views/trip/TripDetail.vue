@@ -143,9 +143,14 @@
               </form>
             </template>
             <template #footer>
-              <div class="flex gap-3 w-full">
-                <button type="button" @click="closeTripInfoModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
-                <button type="submit" form="trip-info-form" :disabled="isUploadingImage" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{{ isUploadingImage ? '업로드 중...' : '저장' }}</button>
+              <div class="space-y-3 w-full">
+                <div class="flex gap-3 w-full">
+                  <button type="button" @click="closeTripInfoModal" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:bg-gray-300 transition-colors">취소</button>
+                  <button type="submit" form="trip-info-form" :disabled="isUploadingImage" class="flex-1 py-3 px-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{{ isUploadingImage ? '업로드 중...' : '저장' }}</button>
+                </div>
+                <button v-if="tripId" type="button" @click="deleteTrip" class="w-full py-3 px-4 bg-red-50 text-red-600 rounded-xl font-semibold hover:bg-red-100 active:bg-red-200 transition-colors border border-red-200">
+                  여행 삭제
+                </button>
               </div>
             </template>
           </SlideUpModal>
@@ -1040,6 +1045,23 @@ async function saveTripInfo() {
   } catch (error) {
     console.error('Failed to save trip info:', error)
     alert('저장에 실패했습니다.')
+  }
+}
+
+async function deleteTrip() {
+  if (effectiveReadonly.value) return
+  if (!tripId.value) return
+
+  if (!confirm('정말 이 여행을 삭제하시겠습니까?\n삭제된 여행은 목록에서 보이지 않게 됩니다.')) return
+
+  try {
+    await apiClient.delete(`/personal-trips/${tripId.value}`)
+    closeTripInfoModal()
+    // 여행 목록으로 이동
+    router.push('/trips')
+  } catch (error) {
+    console.error('Failed to delete trip:', error)
+    alert('삭제에 실패했습니다.')
   }
 }
 
