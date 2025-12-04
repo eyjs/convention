@@ -40,7 +40,8 @@
               v-for="convention in conventions"
               :key="convention.id"
               @click="goToConvention(convention)"
-              class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-shadow cursor-pointer overflow-hidden w-full">
+              class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-shadow cursor-pointer overflow-hidden w-full"
+              >
               <!-- 카드 헤더 (이미지 영역) -->
               <div class="relative h-40 overflow-hidden">
                 <div v-if="convention.conventionImg"

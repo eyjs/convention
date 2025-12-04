@@ -98,16 +98,7 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* iOS Safari 클릭 가능한 요소 최적화 */
-  .cursor-pointer,
-  [role="button"],
-  button,
-  a {
-    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
-    -webkit-user-select: none;
-    user-select: none;
-    touch-action: manipulation;
-  }
+
 }
 
 /* 커스텀 스크롤바 */
@@ -239,11 +230,11 @@ body.keyboard-visible .input-wrapper:last-child {
 }
 
 /* 터치 영역 최적화 (최소 44x44px) */
-button,
-a {
+button {
   min-height: 44px;
   min-width: 44px;
 }
+/* a 태그는 iOS 버그로 인해 min-width/min-height 적용 제외 */
 
 /* 체크박스와 라디오 버튼은 기본 크기 유지 */
 input[type='checkbox'],

@@ -46,7 +46,8 @@
             v-for="trip in trips"
             :key="trip.id"
             @click="goToTripDetail(trip.id)"
-            class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-shadow cursor-pointer overflow-hidden w-full">
+            class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-shadow cursor-pointer overflow-hidden w-full"
+            >
             <!-- 카드 헤더 (이미지 영역) -->
             <div class="relative h-40 overflow-hidden">
               <!-- 사용자 업로드 이미지 또는 기본 그라데이션 -->
@@ -110,7 +111,7 @@
       </div>
 
       <!-- 새 여행 만들기 FAB -->
-      <button @click="goToCreateTrip" class="fixed bottom-8 right-8 bg-primary-500 text-white rounded-full p-5 shadow-2xl hover:shadow-3xl focus:outline-none focus:ring-4 focus:ring-primary-300/50 transition-all transform hover:scale-110 active:scale-95 z-20">
+      <button @click="goToCreateTrip" class="fixed bottom-8 right-8 bg-primary-500 text-white rounded-full p-5 shadow-2xl hover:shadow-3xl focus:outline-none focus:ring-4 focus:ring-primary-300/50 transition-shadow z-20" >
         <PlusIcon class="w-7 h-7" />
       </button>
     </div>
