@@ -40,6 +40,9 @@
               v-for="convention in conventions"
               :key="convention.id"
               @click="goToConvention(convention)"
+              onclick=""
+              role="button"
+              tabindex="0"
               class="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-shadow cursor-pointer overflow-hidden w-full"
               >
               <!-- 카드 헤더 (이미지 영역) -->

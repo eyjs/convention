@@ -59,23 +59,27 @@
               </div>
 
               <!-- 수평 스크롤 카드 -->
-              <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide" style="touch-action: pan-x;">
+              <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
                   <div class="flex gap-4 pb-2">
                       <div v-for="convention in conventions.slice(0, 10)"
                            :key="convention.id"
                            @click="goToConvention(convention)"
-                           class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow block group"
-                           >
+                           onclick=""
+                           role="button"
+                           tabindex="0"
+                           class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow cursor-pointer overflow-hidden group">
                           <!-- 상단 이미지 영역 -->
-                          <div class="relative h-[200px]">
-                              <img v-if="convention.conventionImg"
-                                   :src="convention.conventionImg"
-                                   class="w-full h-full object-cover pointer-events-none"
-                                   alt="" />
-                              <div v-else class="w-full h-full bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500 flex items-center justify-center">
-                                  <svg class="w-20 h-20 text-white/25 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                  </svg>
+                          <div class="relative h-[200px] overflow-hidden pointer-events-none">
+                              <div v-if="convention.conventionImg"
+                                   class="absolute inset-0 bg-cover bg-center"
+                                   :style="{ backgroundImage: `url(${convention.conventionImg})` }">
+                              </div>
+                              <div v-else class="absolute inset-0 bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500">
+                                  <div class="absolute inset-0 flex items-center justify-center">
+                                      <svg class="w-20 h-20 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                      </svg>
+                                  </div>
                               </div>
                           </div>
 
@@ -125,24 +129,27 @@
               </div>
 
               <!-- 수평 스크롤 카드 -->
-              <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide" style="touch-action: pan-x;">
+              <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
                   <div class="flex gap-4 pb-2">
                       <div v-for="trip in trips.slice(0, 10)"
                            :key="trip.id"
                            @click="goToTripDetail(trip.id)"
-                           class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow block group"
-                           >
-                          <!-- 상단 이미지 영역 (인스타그램 스타일) -->
-                          <div class="relative h-[200px]">
-                              <!-- 사용자 업로드 이미지 또는 기본 그라데이션 -->
-                              <img v-if="trip.coverImageUrl"
-                                   :src="trip.coverImageUrl"
-                                   :alt="trip.title"
-                                   class="w-full h-full object-cover pointer-events-none" />
-                              <div v-else class="w-full h-full bg-gradient-to-br from-cyan-500 via-teal-500 to-blue-600 flex items-center justify-center">
-                                  <svg class="w-20 h-20 text-white/25 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
+                           onclick=""
+                           role="button"
+                           tabindex="0"
+                           class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow cursor-pointer overflow-hidden group">
+                          <!-- 상단 이미지 영역 -->
+                          <div class="relative h-[200px] overflow-hidden pointer-events-none">
+                              <div v-if="trip.coverImageUrl"
+                                   class="absolute inset-0 bg-cover bg-center"
+                                   :style="{ backgroundImage: `url(${trip.coverImageUrl})` }">
+                              </div>
+                              <div v-else class="absolute inset-0 bg-gradient-to-br from-cyan-500 via-teal-500 to-blue-600">
+                                  <div class="absolute inset-0 flex items-center justify-center">
+                                      <svg class="w-20 h-20 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                  </div>
                               </div>
                           </div>
 

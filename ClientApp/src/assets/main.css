@@ -121,11 +121,11 @@
   background: rgb(var(--color-primary-600));
 }
 
-/* 터치 피드백 */
-.touch-feedback:active {
+/* 터치 피드백 - iOS에서 transform이 클릭을 막을 수 있으므로 주석 처리 */
+/* .touch-feedback:active {
   transform: scale(0.98);
   transition: transform 0.1s ease;
-}
+} */
 
 /* 텍스트 선택 방지 */
 .no-select {
