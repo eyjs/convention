@@ -1,11 +1,12 @@
+using LocalRAG.Constants;
 using LocalRAG.Data;
+using LocalRAG.Extensions;
 using LocalRAG.Interfaces;
 using LocalRAG.DTOs.AuthModels;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace LocalRAG.Controllers.Auth;
 
@@ -15,15 +16,18 @@ public class AuthController : ControllerBase
 {
     private readonly ConventionDbContext _context;
     private readonly IAuthService _authService;
+    private readonly IChecklistService _checklistService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
-        ConventionDbContext context, 
+        ConventionDbContext context,
         IAuthService authService,
+        IChecklistService checklistService,
         ILogger<AuthController> logger)
     {
         _context = context;
         _authService = authService;
+        _checklistService = checklistService;
         _logger = logger;
     }
 
@@ -57,7 +61,7 @@ public class AuthController : ControllerBase
                 Name = request.Name,
                 Email = request.Email,
                 Phone = request.Phone,
-                Role = "Guest",
+                Role = Roles.Guest,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -242,7 +246,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             var user = await _context.Users.FindAsync(userId);
 
             if (user != null)
@@ -268,7 +272,7 @@ public class AuthController : ControllerBase
         _logger.LogInformation("GetCurrentUser endpoint hit.");
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             var user = await _context.Users
                 .Include(u => u.UserConventions)
                     .ThenInclude(uc => uc.Convention)
@@ -308,7 +312,7 @@ public class AuthController : ControllerBase
 
             if (firstUserConvention != null)
             {
-                checklistStatus = await BuildChecklistStatusAsync(user.Id, firstUserConvention.ConventionId);
+                checklistStatus = await _checklistService.BuildChecklistStatusAsync(user.Id, firstUserConvention.ConventionId);
                 _logger.LogInformation("Checklist status built: {HasStatus}", checklistStatus != null);
             }
 
@@ -332,85 +336,13 @@ public class AuthController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 체크리스트 상태 구축
-    /// </summary>
-    private async Task<object?> BuildChecklistStatusAsync(int userId, int conventionId)
-    {
-        _logger.LogInformation("BuildChecklistStatusAsync called for UserId={UserId}, ConventionId={ConventionId}", userId, conventionId);
-
-        // 1. 해당 행사의 활성 액션 목록 조회
-        var actions = await _context.ConventionActions
-            .Where(a => a.ConventionId == conventionId && a.IsActive)
-            .OrderBy(a => a.OrderNum)
-            .ThenBy(a => a.CreatedAt)
-            .ToListAsync();
-
-        _logger.LogInformation("Found {ActionCount} active actions for ConventionId={ConventionId}", actions.Count, conventionId);
-
-        if (actions.Count == 0)
-            return null; // 액션이 없으면 null 반환 (국내 행사 등)
-
-        // 2. 해당 사용자의 액션 상태 조회
-        var statuses = await _context.UserActionStatuses
-            .Where(s => s.UserId == userId)
-            .ToListAsync();
-
-        var statusDict = statuses.ToDictionary(s => s.ConventionActionId, s => s);
-
-        // 3. 체크리스트 아이템 구축
-        var items = new List<object>();
-        int completedCount = 0;
-
-        foreach (var action in actions)
-        {
-            var status = statusDict.GetValueOrDefault(action.Id);
-            bool isComplete = status?.IsComplete ?? false;
-
-            if (isComplete)
-                completedCount++;
-
-            items.Add(new
-            {
-                actionId = action.Id,
-                title = action.Title,
-                isComplete = isComplete,
-                deadline = action.Deadline,
-                navigateTo = action.MapsTo,
-                orderNum = action.OrderNum
-            });
-        }
-
-        // 4. 가장 가까운 미완료 액션의 마감일 찾기
-        DateTime? overallDeadline = actions
-            .Where(a => {
-                var status = statusDict.GetValueOrDefault(a.Id);
-                return !(status?.IsComplete ?? false) && a.Deadline.HasValue;
-            })
-            .OrderBy(a => a.Deadline)
-            .FirstOrDefault()?.Deadline;
-
-        // 5. 체크리스트 DTO 반환
-        int totalItems = actions.Count;
-        int progressPercentage = totalItems > 0 ? (completedCount * 100 / totalItems) : 0;
-
-        return new
-        {
-            totalItems = totalItems,
-            completedItems = completedCount,
-            progressPercentage = progressPercentage,
-            overallDeadline = overallDeadline,
-            items = items
-        };
-    }
-
     [Authorize]
     [HttpGet("conventions/available")]
     public async Task<IActionResult> GetAvailableConventions()
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
 
             var joinedConventionIds = await _context.UserConventions
                 .Where(uc => uc.UserId == userId)
@@ -418,7 +350,7 @@ public class AuthController : ControllerBase
                 .ToListAsync();
 
             var availableConventions = await _context.Conventions
-                .Where(c => c.DeleteYn == "N" && !joinedConventionIds.Contains(c.Id))
+                .Where(c => c.DeleteYn == DeleteStatus.Active && !joinedConventionIds.Contains(c.Id))
                 .Select(c => new
                 {
                     c.Id,

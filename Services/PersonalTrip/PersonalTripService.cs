@@ -80,7 +80,6 @@ namespace LocalRAG.Services.PersonalTrip
             
             await AddDefaultChecklistCategoriesAsync(trip.Id);
 
-
             return MapToPersonalTripDto(trip);
         }
 

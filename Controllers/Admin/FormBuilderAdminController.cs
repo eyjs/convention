@@ -5,6 +5,7 @@ using LocalRAG.Data;
 using LocalRAG.Entities.FormBuilder;
 using LocalRAG.DTOs.FormBuilder;
 using System.Security.Claims;
+using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Admin;
 
@@ -13,7 +14,7 @@ namespace LocalRAG.Controllers.Admin;
 /// </summary>
 [ApiController]
 [Route("api/admin/conventions/{conventionId}/forms")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = Roles.Admin)]
 public class FormBuilderAdminController : ControllerBase
 {
     private readonly ConventionDbContext _context;

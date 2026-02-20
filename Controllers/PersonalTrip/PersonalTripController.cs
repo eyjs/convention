@@ -3,6 +3,7 @@ using LocalRAG.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.PersonalTrip
 {
@@ -676,7 +677,7 @@ namespace LocalRAG.Controllers.PersonalTrip
         /// [Admin] 사용자 이름으로 여행 목록 검색
         /// </summary>
         [HttpGet("search")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> SearchTrips([FromQuery] string userName)
         {
             try

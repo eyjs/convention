@@ -30,7 +30,7 @@ public class AuthService : IAuthService
             new Claim("LoginId", user.LoginId)
         };
 
-        // (�ٽ� �߰�) GuestId�� ������ ��ū�� Ŭ�������� �߰��մϴ�.
+        // GuestId가 있으면 토큰에 클레임으로 추가
         if (guestId.HasValue)
         {
             claims.Add(new Claim("GuestId", guestId.Value.ToString()));
@@ -51,8 +51,6 @@ public class AuthService : IAuthService
             expires: DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationMinutes),
             signingCredentials: credentials
         );
-       
-        
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
@@ -104,8 +102,8 @@ public class AuthService : IAuthService
         {
             return BCrypt.Net.BCrypt.Verify(password, passwordHash);
         }
-        catch (Exception)
-        {   
+        catch (SaltParseException)
+        {
             return false;
         }
     }

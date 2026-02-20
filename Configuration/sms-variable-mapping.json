@@ -1,0 +1,48 @@
+{
+  "Mappings": [
+    {
+      "Key": "#{guest_name}",
+      "Source": "User",
+      "Property": "Name",
+      "Description": "참석자 이름"
+    },
+    {
+      "Key": "#{user_phone}",
+      "Source": "User",
+      "Property": "Phone",
+      "Description": "참석자 전화번호"
+    },
+    {
+      "Key": "#{corp_part}",
+      "Source": "User",
+      "Property": "CorpPart",
+      "Description": "사업단/소속"
+    },
+    {
+      "Key": "#{title}",
+      "Source": "Convention",
+      "Property": "Title",
+      "Description": "행사 제목"
+    },
+    {
+      "Key": "#{start_date}",
+      "Source": "Convention",
+      "Property": "StartDate",
+      "Format": "yyyy.MM.dd",
+      "Description": "행사 시작일"
+    },
+    {
+      "Key": "#{end_date}",
+      "Source": "Convention",
+      "Property": "EndDate",
+      "Format": "yyyy.MM.dd",
+      "Description": "행사 종료일"
+    },
+    {
+      "Key": "#{url}",
+      "Source": "Computed",
+      "Value": "https://event.ifa.co.kr/invite/{Convention.Id}",
+      "Description": "초대 링크 (자동 생성)"
+    }
+  ]
+}

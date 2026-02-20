@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using LocalRAG.DTOs.SurveyModels;
 using LocalRAG.Interfaces;
+using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Convention
 {
@@ -20,7 +21,7 @@ namespace LocalRAG.Controllers.Convention
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> GetAllSurveys()
         {
             var surveys = await _surveyService.GetAllSurveysAsync();
@@ -39,7 +40,7 @@ namespace LocalRAG.Controllers.Convention
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> CreateSurvey([FromBody] SurveyCreateDto createDto)
         {
             if (!ModelState.IsValid)
@@ -52,7 +53,7 @@ namespace LocalRAG.Controllers.Convention
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> UpdateSurvey(int id, [FromBody] SurveyCreateDto updateDto)
         {
             if (!ModelState.IsValid)
@@ -126,7 +127,7 @@ namespace LocalRAG.Controllers.Convention
         }
 
         [HttpGet("{id}/stats")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> GetSurveyStats(int id)
         {
             var stats = await _surveyService.GetSurveyStatsAsync(id);

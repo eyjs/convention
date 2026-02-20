@@ -1,5 +1,3 @@
-// ----------------- Llama3Provider.cs (수정된 최종 버전) -----------------
-
 using LocalRAG.DTOs.ChatModels;
 using LocalRAG.Interfaces;
 using System.Net.Http.Json;
@@ -37,7 +35,6 @@ public class Llama3Provider : ILlmProvider
 
     public async Task<string> GenerateResponseAsync(string prompt, string? context = null, List<ChatRequestMessage>? history = null, string? systemInstructionOverride = null)
     {
-        // 이 메서드는 기존과 동일하게 유지합니다.
         try
         {
             var effectiveSystemPrompt = systemInstructionOverride ?? @"You are a helpful AI assistant. Always respond in Korean.";
@@ -90,7 +87,6 @@ public class Llama3Provider : ILlmProvider
         return messages;
     }
 
-    
     public async Task<string> ClassifyIntentAsync(string question, List<ChatRequestMessage>? history = null)
     {
         try
@@ -139,7 +135,6 @@ Respond with ONLY the category name. Do not add any explanation or punctuation."
 
     public async Task<float[]> GenerateEmbeddingAsync(string text)
     {
-        // 이 메서드는 기존과 동일하게 유지합니다.
         try
         {
             var embeddingModel = "nomic-embed-text";

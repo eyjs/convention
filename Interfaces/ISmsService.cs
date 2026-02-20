@@ -9,4 +9,9 @@ public interface ISmsService
     /// 인증번호 SMS 전송
     /// </summary>
     Task<bool> SendVerificationCodeAsync(string phoneNumber, string code);
+
+    /// <summary>
+    /// 일반 SMS 발송 (행사 ID 포함)
+    /// </summary>
+    Task<bool> SendSmsAsync(int? conventionId, string receiverName, string phoneNumber, string message);
 }

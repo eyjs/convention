@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
 using LocalRAG.Entities;
 using LocalRAG.Entities.Action;
-using System.Security.Claims;
 using System.Text.Json;
 using LocalRAG.DTOs.ActionModels;
+using LocalRAG.Extensions;
 using LocalRAG.Interfaces;
 
 namespace LocalRAG.Controllers.Convention;
@@ -133,11 +133,10 @@ public class UserActionController : ControllerBase
     [HttpGet("statuses")]
     public async Task<ActionResult> GetActionStatuses(int conventionId)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-        {
+        var userIdNullable = User.GetUserIdOrNull();
+        if (userIdNullable == null)
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
-        }
+        var userId = userIdNullable.Value;
 
         var statuses = await _context.UserActionStatuses
             .Where(s => s.UserId == userId && s.ConventionAction != null && s.ConventionAction.ConventionId == conventionId)
@@ -150,11 +149,10 @@ public class UserActionController : ControllerBase
     [HttpGet("checklist")]
     public async Task<ActionResult> GetUserChecklist(int conventionId)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-        {
+        var userIdNullable = User.GetUserIdOrNull();
+        if (userIdNullable == null)
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
-        }
+        var userId = userIdNullable.Value;
 
         try
         {
@@ -201,11 +199,10 @@ public class UserActionController : ControllerBase
     [HttpPost("{actionId:int}/complete")]
     public async Task<IActionResult> CompleteAction(int conventionId, int actionId, [FromBody] ActionResponseDto? responseDto = null)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-        {
+        var userIdNullable = User.GetUserIdOrNull();
+        if (userIdNullable == null)
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
-        }
+        var userId = userIdNullable.Value;
 
         var action = await _context.ConventionActions.FirstOrDefaultAsync(a => a.Id == actionId && a.ConventionId == conventionId);
         if (action == null)
@@ -239,11 +236,10 @@ public class UserActionController : ControllerBase
     [HttpPost("{actionId:int}/toggle")]
     public async Task<IActionResult> ToggleAction(int conventionId, int actionId, [FromBody] ToggleActionDto dto)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-        {
+        var userIdNullable = User.GetUserIdOrNull();
+        if (userIdNullable == null)
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
-        }
+        var userId = userIdNullable.Value;
 
         var action = await _context.ConventionActions.FirstOrDefaultAsync(a => a.Id == actionId && a.ConventionId == conventionId);
         if (action == null)
@@ -280,11 +276,10 @@ public class UserActionController : ControllerBase
     [HttpPost("{actionId}/submit")]
     public async Task<IActionResult> SubmitGenericActionData(int conventionId, int actionId, [FromBody] JsonElement payload)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-        {
+        var userIdNullable = User.GetUserIdOrNull();
+        if (userIdNullable == null)
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
-        }
+        var userId = userIdNullable.Value;
 
         var action = await _context.ConventionActions
             .FirstOrDefaultAsync(a => a.Id == actionId && a.ConventionId == conventionId);
@@ -346,11 +341,10 @@ public class UserActionController : ControllerBase
     [HttpGet("{actionId}/submission")]
     public async Task<IActionResult> GetMySubmission(int conventionId, int actionId)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-        {
+        var userIdNullable = User.GetUserIdOrNull();
+        if (userIdNullable == null)
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
-        }
+        var userId = userIdNullable.Value;
 
         var submission = await _context.ActionSubmissions
             .AsNoTracking()
@@ -405,11 +399,10 @@ public class UserActionController : ControllerBase
     [HttpGet("checklist-status")]
     public async Task<IActionResult> GetChecklistStatus(int conventionId)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-        {
+        var userIdNullable = User.GetUserIdOrNull();
+        if (userIdNullable == null)
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
-        }
+        var userId = userIdNullable.Value;
 
         var actions = await _context.ConventionActions
             .Where(a => a.ConventionId == conventionId &&

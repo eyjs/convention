@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LocalRAG.Interfaces;
 using LocalRAG.DTOs.NoticeModels;
+using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Convention
 {
@@ -40,7 +41,7 @@ namespace LocalRAG.Controllers.Convention
         }
     
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<ActionResult<NoticeCategoryDto>> CreateCategory(int conventionId, [FromBody] CreateNoticeCategoryDto dto)
         {
             if (conventionId != dto.ConventionId)
@@ -52,7 +53,7 @@ namespace LocalRAG.Controllers.Convention
         }
     
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<ActionResult<NoticeCategoryDto>> UpdateCategory(int id, [FromBody] UpdateNoticeCategoryDto dto)
         { 
             try
@@ -67,7 +68,7 @@ namespace LocalRAG.Controllers.Convention
         }
     
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> DeleteCategory(int id)
         {
             try

@@ -12,6 +12,27 @@ namespace LocalRAG.Services.Convention;
 /// </summary>
 public class ActionOrchestrationService : IActionOrchestrationService
 {
+    private static class ActionStatus
+    {
+        public const string Completed = "Completed";
+        public const string NotStarted = "NotStarted";
+        public const string Ready = "Ready";
+    }
+
+    private static class StatusSummary
+    {
+        public const string Completed = "완료됨";
+        public const string NotCompleted = "미완료";
+        public const string Submitted = "제출 완료";
+        public const string NotSubmitted = "미제출";
+        public const string NotResponded = "미응답";
+        public const string FormConfigError = "폼 설정 오류";
+        public const string ModuleConfigError = "모듈 설정 오류";
+        public const string QueryError = "조회 오류";
+        public const string SurveyNotFound = "설문을 찾을 수 없음";
+        public const string PopupReady = "팝업 준비";
+    }
+
     private readonly ConventionDbContext _context;
     private readonly ILogger<ActionOrchestrationService> _logger;
     private readonly HttpClient _httpClient;
@@ -79,7 +100,7 @@ public class ActionOrchestrationService : IActionOrchestrationService
             BehaviorType = action.BehaviorType.ToString(),
             OrderNum = action.OrderNum,
             Route = CalculateRoute(action),
-            Status = "NotStarted",
+            Status = ActionStatus.NotStarted,
             Summary = null,
             CompletedAt = null
         };
@@ -108,8 +129,8 @@ public class ActionOrchestrationService : IActionOrchestrationService
                 // ShowComponentPopup은 프론트엔드에서 팝업을 띄우는 역할만 하므로,
                 // 별도의 상태 조회 로직은 필요하지 않음.
                 // 필요하다면 여기에 팝업 관련 초기 상태 로직을 추가할 수 있음.
-                dto.Status = "Ready"; // 또는 "NotStarted"
-                dto.Summary = "팝업 준비";
+                dto.Status = ActionStatus.Ready; // 또는 "NotStarted"
+                dto.Summary = StatusSummary.PopupReady;
                 break;
 
             default:
@@ -130,14 +151,14 @@ public class ActionOrchestrationService : IActionOrchestrationService
 
         if (status != null && status.IsComplete)
         {
-            dto.Status = "Completed";
-            dto.Summary = "완료됨";
+            dto.Status = ActionStatus.Completed;
+            dto.Summary = StatusSummary.Completed;
             dto.CompletedAt = status.CompletedAt;
         }
         else
         {
-            dto.Status = "NotStarted";
-            dto.Summary = "미완료";
+            dto.Status = ActionStatus.NotStarted;
+            dto.Summary = StatusSummary.NotCompleted;
         }
     }
 
@@ -148,8 +169,8 @@ public class ActionOrchestrationService : IActionOrchestrationService
     {
         if (!formDefinitionId.HasValue)
         {
-            dto.Status = "NotStarted";
-            dto.Summary = "폼 설정 오류";
+            dto.Status = ActionStatus.NotStarted;
+            dto.Summary = StatusSummary.FormConfigError;
             return;
         }
 
@@ -158,14 +179,14 @@ public class ActionOrchestrationService : IActionOrchestrationService
 
         if (submission != null)
         {
-            dto.Status = "Completed";
-            dto.Summary = "제출 완료";
+            dto.Status = ActionStatus.Completed;
+            dto.Summary = StatusSummary.Submitted;
             dto.CompletedAt = submission.SubmittedAt;
         }
         else
         {
-            dto.Status = "NotStarted";
-            dto.Summary = "미제출";
+            dto.Status = ActionStatus.NotStarted;
+            dto.Summary = StatusSummary.NotSubmitted;
         }
     }
 
@@ -176,8 +197,8 @@ public class ActionOrchestrationService : IActionOrchestrationService
     {
         if (string.IsNullOrEmpty(moduleIdentifier) || !targetId.HasValue)
         {
-            dto.Status = "NotStarted";
-            dto.Summary = "모듈 설정 오류";
+            dto.Status = ActionStatus.NotStarted;
+            dto.Summary = StatusSummary.ModuleConfigError;
             return;
         }
 
@@ -201,15 +222,15 @@ public class ActionOrchestrationService : IActionOrchestrationService
             else
             {
                 // 향후 다른 모듈 추가 시 확장 가능
-                dto.Status = "NotStarted";
+                dto.Status = ActionStatus.NotStarted;
                 dto.Summary = $"지원되지 않는 모듈: {moduleIdentifier}";
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "ModuleLink 데이터 조회 중 오류 발생: {ModuleIdentifier}, TargetId={TargetId}", moduleIdentifier, targetId);
-            dto.Status = "NotStarted";
-            dto.Summary = "조회 오류";
+            dto.Status = ActionStatus.NotStarted;
+            dto.Summary = StatusSummary.QueryError;
         }
     }
 
@@ -225,8 +246,8 @@ public class ActionOrchestrationService : IActionOrchestrationService
 
         if (survey == null)
         {
-            dto.Status = "NotStarted";
-            dto.Summary = "설문을 찾을 수 없음";
+            dto.Status = ActionStatus.NotStarted;
+            dto.Summary = StatusSummary.SurveyNotFound;
             return;
         }
 
@@ -237,7 +258,7 @@ public class ActionOrchestrationService : IActionOrchestrationService
 
         if (response != null)
         {
-            dto.Status = "Completed";
+            dto.Status = ActionStatus.Completed;
             var totalQuestions = survey.Questions?.Count ?? 0;
             var answeredQuestions = response.Details?.Count ?? 0;
             dto.Summary = $"{answeredQuestions}/{totalQuestions} 항목 응답 완료";
@@ -245,8 +266,8 @@ public class ActionOrchestrationService : IActionOrchestrationService
         }
         else
         {
-            dto.Status = "NotStarted";
-            dto.Summary = "미응답";
+            dto.Status = ActionStatus.NotStarted;
+            dto.Summary = StatusSummary.NotResponded;
         }
     }
 

@@ -97,7 +97,7 @@
 * (선택) Ollama (로컬 Llama3 사용 시)
 
 ### 2. 백엔드 설정
-```bash
+```bashge g
 # 리포지토리 클론
 git clone <repository-url>
 cd <repository-folder>

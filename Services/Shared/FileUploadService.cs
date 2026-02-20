@@ -7,6 +7,13 @@ namespace LocalRAG.Services.Shared;
 
 public class FileUploadService : IFileUploadService
 {
+    private const long MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+    private const long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+    private static readonly string[] AllowedImageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+    private static readonly string[] AllowedImageMimeTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    private static readonly string[] BlockedFileExtensions = [".exe", ".dll", ".bat", ".cmd", ".sh", ".ps1", ".vbs", ".js"];
+
     private readonly string _uploadBasePath;
     private readonly string _baseUrl;
     private readonly ILogger<FileUploadService> _logger;
@@ -40,23 +47,7 @@ public class FileUploadService : IFileUploadService
         // 파일 검증
         ValidateImageFile(file);
 
-        var year = DateTime.Now.Year.ToString();
-        var dayOfYear = DateTime.Now.DayOfYear.ToString();
-        
-        var pathSegments = new List<string> { _uploadBasePath };
-        if (!string.IsNullOrEmpty(dateFolder))
-        {
-            pathSegments.Add(dateFolder);
-        }
-        pathSegments.Add(year);
-        pathSegments.Add(dayOfYear);
-        
-        var uploadPath = Path.Combine(pathSegments.ToArray());
-        
-        if (!Directory.Exists(uploadPath))
-        {
-            Directory.CreateDirectory(uploadPath);
-        }
+        var uploadPath = ResolveUploadPath(dateFolder);
 
         // 파일명 생성 (중복 방지)
         var fileName = GenerateUniqueFileName(file.FileName);
@@ -69,10 +60,7 @@ public class FileUploadService : IFileUploadService
         }
 
         // 상대 경로 및 URL 생성
-        var relativePath = !string.IsNullOrEmpty(dateFolder)
-            ? $"{dateFolder}/{year}/{dayOfYear}/{fileName}"
-            : $"{year}/{dayOfYear}/{fileName}";
-        
+        var relativePath = BuildRelativePath(dateFolder, fileName);
         var url = $"{_baseUrl}/{relativePath}";
 
         _logger.LogInformation("Image uploaded: {FileName} -> {Path}", file.FileName, filePath);
@@ -93,23 +81,7 @@ public class FileUploadService : IFileUploadService
         // 파일 검증 (악성 파일 차단)
         ValidateFile(file);
 
-        var year = DateTime.Now.Year.ToString();
-        var dayOfYear = DateTime.Now.DayOfYear.ToString();
-
-        var pathSegments = new List<string> { _uploadBasePath };
-        if (!string.IsNullOrEmpty(dateFolder))
-        {
-            pathSegments.Add(dateFolder);
-        }
-        pathSegments.Add(year);
-        pathSegments.Add(dayOfYear);
-
-        var uploadPath = Path.Combine(pathSegments.ToArray());
-        
-        if (!Directory.Exists(uploadPath))
-        {
-            Directory.CreateDirectory(uploadPath);
-        }
+        var uploadPath = ResolveUploadPath(dateFolder);
 
         var fileName = GenerateUniqueFileName(file.FileName);
         var filePath = Path.Combine(uploadPath, fileName);
@@ -119,10 +91,7 @@ public class FileUploadService : IFileUploadService
             await file.CopyToAsync(stream);
         }
 
-        var relativePath = !string.IsNullOrEmpty(dateFolder)
-            ? $"{dateFolder}/{year}/{dayOfYear}/{fileName}"
-            : $"{year}/{dayOfYear}/{fileName}";
-            
+        var relativePath = BuildRelativePath(dateFolder, fileName);
         var url = $"{_baseUrl}/{relativePath}";
 
         _logger.LogInformation("File uploaded: {FileName} -> {Path}", file.FileName, filePath);
@@ -153,28 +122,12 @@ public class FileUploadService : IFileUploadService
             var fileBytes = Convert.FromBase64String(base64);
 
             // 파일 크기 검증
-            if (fileBytes.Length > 10 * 1024 * 1024) // 10MB
+            if (fileBytes.Length > MAX_IMAGE_SIZE)
             {
                 throw new InvalidOperationException("파일 크기가 10MB를 초과합니다.");
             }
 
-            var year = DateTime.Now.Year.ToString();
-            var dayOfYear = DateTime.Now.DayOfYear.ToString();
-
-            var pathSegments = new List<string> { _uploadBasePath };
-            if (!string.IsNullOrEmpty(dateFolder))
-            {
-                pathSegments.Add(dateFolder);
-            }
-            pathSegments.Add(year);
-            pathSegments.Add(dayOfYear);
-            
-            var uploadPath = Path.Combine(pathSegments.ToArray());
-            
-            if (!Directory.Exists(uploadPath))
-            {
-                Directory.CreateDirectory(uploadPath);
-            }
+            var uploadPath = ResolveUploadPath(dateFolder);
 
             var newFileName = GenerateUniqueFileName(fileName);
             var filePath = Path.Combine(uploadPath, newFileName);
@@ -182,10 +135,7 @@ public class FileUploadService : IFileUploadService
             // 파일 저장
             await System.IO.File.WriteAllBytesAsync(filePath, fileBytes);
 
-            var relativePath = !string.IsNullOrEmpty(dateFolder)
-                ? $"{dateFolder}/{year}/{dayOfYear}/{newFileName}"
-                : $"{year}/{dayOfYear}/{newFileName}";
-
+            var relativePath = BuildRelativePath(dateFolder, newFileName);
             var url = $"{_baseUrl}/{relativePath}";
 
             _logger.LogInformation("Base64 image uploaded: {FileName} -> {Path}", fileName, filePath);
@@ -246,24 +196,51 @@ public class FileUploadService : IFileUploadService
 
     #region Private Methods
 
+    private string ResolveUploadPath(string? dateFolder)
+    {
+        var year = DateTime.UtcNow.Year.ToString();
+        var dayOfYear = DateTime.UtcNow.DayOfYear.ToString();
+
+        var pathSegments = new List<string> { _uploadBasePath };
+        if (!string.IsNullOrEmpty(dateFolder))
+            pathSegments.Add(dateFolder);
+        pathSegments.Add(year);
+        pathSegments.Add(dayOfYear);
+
+        var uploadPath = Path.Combine(pathSegments.ToArray());
+
+        if (!Directory.Exists(uploadPath))
+            Directory.CreateDirectory(uploadPath);
+
+        return uploadPath;
+    }
+
+    private string BuildRelativePath(string? dateFolder, string fileName)
+    {
+        var year = DateTime.UtcNow.Year.ToString();
+        var dayOfYear = DateTime.UtcNow.DayOfYear.ToString();
+
+        return !string.IsNullOrEmpty(dateFolder)
+            ? $"{dateFolder}/{year}/{dayOfYear}/{fileName}"
+            : $"{year}/{dayOfYear}/{fileName}";
+    }
+
     private void ValidateImageFile(IFormFile file)
     {
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
-        if (!allowedExtensions.Contains(extension))
+        if (!AllowedImageExtensions.Contains(extension))
         {
             throw new InvalidOperationException("이미지 파일만 업로드 가능합니다.");
         }
 
-        if (file.Length > 10 * 1024 * 1024) // 10MB
+        if (file.Length > MAX_IMAGE_SIZE)
         {
             throw new InvalidOperationException("이미지 파일 크기는 10MB를 초과할 수 없습니다.");
         }
 
         // MIME 타입 검증
-        var allowedMimeTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
-        if (!allowedMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
+        if (!AllowedImageMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
         {
             throw new InvalidOperationException("유효하지 않은 이미지 형식입니다.");
         }
@@ -272,15 +249,14 @@ public class FileUploadService : IFileUploadService
     private void ValidateFile(IFormFile file)
     {
         // 위험한 확장자 차단
-        var blockedExtensions = new[] { ".exe", ".dll", ".bat", ".cmd", ".sh", ".ps1", ".vbs", ".js" };
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
-        if (blockedExtensions.Contains(extension))
+        if (BlockedFileExtensions.Contains(extension))
         {
             throw new InvalidOperationException("업로드할 수 없는 파일 형식입니다.");
         }
 
-        if (file.Length > 50 * 1024 * 1024) // 50MB
+        if (file.Length > MAX_FILE_SIZE)
         {
             throw new InvalidOperationException("파일 크기는 50MB를 초과할 수 없습니다.");
         }
@@ -296,7 +272,7 @@ public class FileUploadService : IFileUploadService
         fileName = Regex.Replace(fileName, @"[^\w\-가-힣]", "_");
 
         // 타임스탬프 + GUID로 고유 파일명 생성
-        var timestamp = DateTime.Now.ToString("HHmmss");
+        var timestamp = DateTime.UtcNow.ToString("HHmmss");
         var uniqueId = Guid.NewGuid().ToString("N").Substring(0, 8);
 
         return $"{fileName}_{timestamp}_{uniqueId}{extension}";

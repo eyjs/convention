@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using LocalRAG.DTOs.FormBuilder;
 using LocalRAG.Interfaces;
+using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Convention;
 
@@ -102,7 +103,7 @@ public class FormBuilderController : ControllerBase
     /// <summary>
     /// [관리자용] 특정 폼의 모든 제출 데이터 조회
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [HttpGet("{formDefinitionId}/submissions/all")]
     public async Task<IActionResult> GetAllSubmissions(int formDefinitionId)
     {

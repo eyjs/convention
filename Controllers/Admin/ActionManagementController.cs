@@ -5,12 +5,13 @@ using Microsoft.AspNetCore.Authorization;
 using LocalRAG.Entities.Action;
 using LocalRAG.DTOs.ActionModels;
 using System.Text.RegularExpressions;
+using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/action-management")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = Roles.Admin)]
 public class ActionManagementController : ControllerBase
 {
     private readonly ConventionDbContext _context;

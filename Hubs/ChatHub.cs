@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Security.Claims;
+using LocalRAG.Constants;
 using LocalRAG.Data;
 using LocalRAG.Entities;
 
@@ -107,7 +108,7 @@ public class ChatHub : Hub
             UserId = userId,
             Message = message,
             CreatedAt = DateTime.UtcNow,
-            IsAdmin = user.Role == "Admin"
+            IsAdmin = user.Role == Roles.Admin
         };
 
         _context.ConventionChatMessages.Add(chatMessage);

@@ -20,6 +20,11 @@ namespace LocalRAG.Entities
         public DateTime? StartDate { get; set; }
 
         public DateTime? EndDate { get; set; }
+
+        /// <summary>
+        /// 사전등록 종료일
+        /// </summary>
+        public DateTime? PreEndDate { get; set; }
         
         public string? ConventionImg { get; set; }
         

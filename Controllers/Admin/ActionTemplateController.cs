@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
 using LocalRAG.Entities.Action;
 using LocalRAG.DTOs.ActionModels;
+using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Admin;
 
@@ -12,7 +13,7 @@ namespace LocalRAG.Controllers.Admin;
 /// </summary>
 [ApiController]
 [Route("api/admin/action-templates")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = Roles.Admin)]
 public class ActionTemplateController : ControllerBase
 {
     private readonly ConventionDbContext _context;

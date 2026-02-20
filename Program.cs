@@ -9,7 +9,7 @@ using LocalRAG.Services.Ai;
 using LocalRAG.Services.Auth;
 using LocalRAG.Services.Chat;
 using LocalRAG.Services.Convention;
-using LocalRAG.Services.Flight; // Added
+using LocalRAG.Services.Flight;
 using LocalRAG.Services.Shared;
 using LocalRAG.Services.Shared.Builders;
 using LocalRAG.Services.Upload;
@@ -155,14 +155,9 @@ builder.Services.AddScoped<ILlmProvider, GeminiProvider>(provider =>
     return new GeminiProvider(httpClient, configuration);
 });
 
-// LlmProviderManager 등록 (DB 기반 동적 Provider 관리)
 builder.Services.AddScoped<LlmProviderManager>();
 
-
-// 핵심 서비스들을 'Scoped'로 등록합니다.
 builder.Services.AddScoped<IRagService, RagService>();
-
-// 기존 수동 서비스는 제거하거나 주석 처리
 builder.Services.AddScoped<ConventionDocumentBuilder>();
 builder.Services.AddScoped<IndexingService>();
 builder.Services.AddScoped<IConventionChatService, ConventionChatService>();
@@ -217,12 +212,15 @@ builder.Services.AddScoped<INoticeService, NoticeService>();
 builder.Services.AddScoped<INoticeCategoryService, NoticeCategoryService>();
 builder.Services.AddScoped<ISurveyService, SurveyService>();
 builder.Services.AddScoped<IActionOrchestrationService, ActionOrchestrationService>();
+builder.Services.AddScoped<IChecklistService, ChecklistService>();
 builder.Services.AddScoped<IFormBuilderService, LocalRAG.Services.FormBuilder.FormBuilderService>();
 builder.Services.AddScoped<IPersonalTripService, LocalRAG.Services.PersonalTrip.PersonalTripService>();
-builder.Services.AddSingleton<ISmsService, SmsService>();
+builder.Services.AddScoped<ISmsSender, DbSmsSender>();
+builder.Services.AddScoped<ISmsService, LocalRAG.Services.Shared.SmsService>();
+builder.Services.AddSingleton<ITemplateVariableService, TemplateVariableService>();
+builder.Services.AddScoped<SmsTemplateContextFactory>();
 builder.Services.AddSingleton<IVerificationService, VerificationService>();
 
-// 파일 업로드 서비스 등록
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IUserUploadService, UserUploadService>();
 builder.Services.AddScoped<IScheduleTemplateUploadService, ScheduleUploadService>();
@@ -234,13 +232,11 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextFactory, UserContextFactory>();
 builder.Services.AddHttpClient<IFlightService, FlightService>();
 
-// HealthChecks
 builder.Services.AddHealthChecks()
     .AddCheck<LlmProviderHealthCheck>("llm_provider")
     .AddCheck<VectorStoreHealthCheck>("vector_store")
     .AddCheck<EmbeddingServiceHealthCheck>("embedding_service")
     .AddDbContextCheck<ConventionDbContext>("database");
-
 
 // --- 애플리케이션 빌드 및 미들웨어 파이프라인 구성 ---
 var app = builder.Build();
@@ -254,19 +250,10 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 
-// CORS를 HTTPS 리다이렉션보다 먼저 설정
 app.UseCors("AllowSPA");
 
-// // 개발 환경에서는 HTTPS 리다이렉션 비활성화 (현재 임시로 전체 주석 처리)
-// if (!app.Environment.IsDevelopment())
-// {
-//     app.UseHttpsRedirection();
-// }
-
-// 정적 파일 서비스 설정
-app.UseStaticFiles(); // wwwroot 폴더
-
-app.UseSession();  // 세션 미들웨어 추가
+app.UseStaticFiles();
+app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -7,10 +7,18 @@ namespace LocalRAG.Services.Ai;
 
 public class OnnxEmbeddingService : IEmbeddingService
 {
+    private const int CLS_TOKEN_ID = 101;
+    private const int SEP_TOKEN_ID = 102;
+    private const int PAD_TOKEN_ID = 0;
+    private const int MAX_SEQUENCE_LENGTH = 512;
+    private const int MAX_WORDS = 510; // MAX_SEQUENCE_LENGTH - 2 (for CLS and SEP)
+    private const int VOCAB_SIZE = 30000;
+    private const int TOKEN_ID_OFFSET = 1000;
+
     private readonly InferenceSession _session;
     private readonly IConfiguration _configuration;
     private readonly string _modelPath;
-    
+
     public int EmbeddingDimensions { get; }
 
     public OnnxEmbeddingService(IConfiguration configuration)
@@ -107,23 +115,23 @@ public class OnnxEmbeddingService : IEmbeddingService
     {
         // 간단한 토큰화 (실제로는 SentencePiece나 BERT 토크나이저 사용)
         var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var tokens = new List<int> { 101 }; // [CLS] token
-        
-        foreach (var word in words.Take(510)) // 최대 길이 제한
+        var tokens = new List<int> { CLS_TOKEN_ID }; // [CLS] token
+
+        foreach (var word in words.Take(MAX_WORDS)) // 최대 길이 제한
         {
             // 단어를 해시 기반으로 토큰 ID 생성 (실제로는 vocab 사전 사용)
-            var tokenId = Math.Abs(word.GetHashCode()) % 30000 + 1000;
+            var tokenId = Math.Abs(word.GetHashCode()) % VOCAB_SIZE + TOKEN_ID_OFFSET;
             tokens.Add(tokenId);
         }
-        
-        tokens.Add(102); // [SEP] token
-        
-        // 패딩 (512 토큰까지)
-        while (tokens.Count < 512)
+
+        tokens.Add(SEP_TOKEN_ID); // [SEP] token
+
+        // 패딩
+        while (tokens.Count < MAX_SEQUENCE_LENGTH)
         {
-            tokens.Add(0); // [PAD] token
+            tokens.Add(PAD_TOKEN_ID); // [PAD] token
         }
-        
+
         return tokens.ToArray();
     }
 

@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocalRAG.Data;
 
-using System.Security.Claims;
+using LocalRAG.Constants;
+using LocalRAG.Extensions;
 using LocalRAG.Entities;
 using LocalRAG.DTOs.UserModels; // Changed from GuestModels
 using LocalRAG.DTOs.ActionModels;
@@ -35,7 +36,7 @@ public class UserController : ControllerBase // Changed from GuestController
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             
             // 사용자의 정보 조회
             var user = await _context.Users
@@ -175,7 +176,7 @@ public class UserController : ControllerBase // Changed from GuestController
     /// 참석자 다중 속성 일괄 할당
     /// </summary>
     [HttpPost("bulk-assign-attributes")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> BulkAssignAttributes([FromBody] BulkAssignAttributesDto dto)
     {
         if (dto == null || dto.UserMappings == null || !dto.UserMappings.Any())
@@ -286,7 +287,7 @@ public class UserController : ControllerBase // Changed from GuestController
     /// 속성 템플릿으로 참석자 목록 조회 (속성 포함)
     /// </summary>
     [HttpGet("participants-with-attributes")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> GetParticipantsWithAttributes([FromQuery] int conventionId)
     {
         try
@@ -329,7 +330,7 @@ public class UserController : ControllerBase // Changed from GuestController
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             
             var user = await _context.Users.FindAsync(userId);
 
@@ -399,21 +400,21 @@ public class UserController : ControllerBase // Changed from GuestController
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            var userId = User.GetUserIdOrNull();
+            if (userId == null)
             {
                 return BadRequest(new { message = "사용자 정보를 찾을 수 없습니다." });
             }
 
             var userExistsInConvention = await _context.UserConventions
-                .AnyAsync(uc => uc.UserId == userId && uc.ConventionId == conventionId);
+                .AnyAsync(uc => uc.UserId == userId.Value && uc.ConventionId == conventionId);
 
             if (!userExistsInConvention)
             {
                 return NotFound(new { message = "해당 행사의 참석자가 아닙니다." });
             }
 
-            var checklist = await BuildChecklistStatusAsync(userId, conventionId);
+            var checklist = await BuildChecklistStatusAsync(userId.Value, conventionId);
 
             return Ok(checklist);
         }
@@ -493,7 +494,7 @@ public class UserController : ControllerBase // Changed from GuestController
     [HttpGet("profile")]
     public async Task<IActionResult> GetMyProfile()
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var userId = User.GetUserId();
 
         var user = await _context.Users
             .AsNoTracking()
@@ -530,7 +531,7 @@ public class UserController : ControllerBase // Changed from GuestController
     [HttpPut("profile")]
     public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateUserProfileDto dto)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var userId = User.GetUserId();
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
@@ -575,7 +576,7 @@ public class UserController : ControllerBase // Changed from GuestController
     [HttpPatch("profile/field")]
     public async Task<IActionResult> UpdateProfileField([FromBody] UpdateProfileFieldRequest request)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var userId = User.GetUserId();
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
@@ -641,7 +642,7 @@ public class UserController : ControllerBase // Changed from GuestController
     [HttpPut("password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var userId = User.GetUserId();
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
@@ -671,7 +672,7 @@ public class UserController : ControllerBase // Changed from GuestController
     [HttpPost("profile/photo")]
     public async Task<IActionResult> UploadProfilePhoto(IFormFile file)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var userId = User.GetUserId();
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
@@ -725,7 +726,7 @@ public class UserController : ControllerBase // Changed from GuestController
     [HttpPost("profile/passport-image")]
     public async Task<IActionResult> UploadPassportImage(IFormFile file)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var userId = User.GetUserId();
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
@@ -769,7 +770,7 @@ public class UserController : ControllerBase // Changed from GuestController
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
 
             var conventions = await _context.UserConventions
                 .Where(uc => uc.UserId == userId)

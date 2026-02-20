@@ -72,9 +72,41 @@ public class ConventionDbContext : DbContext
     public DbSet<OptionTour> OptionTours { get; set; }
     public DbSet<UserOptionTour> UserOptionTours { get; set; }
 
+    // SMS Logs
+    public DbSet<SmsLog> SmsLogs { get; set; }
+    public DbSet<SmsTemplate> SmsTemplates { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // SmsTemplate 설정
+        modelBuilder.Entity<SmsTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.RegDtm).HasDefaultValueSql("getdate()");
+            entity.Property(e => e.DeleteYn).HasDefaultValue("2");
+            
+            // 글로벌 필터: 정상 데이터('2')만 기본으로 조회
+            entity.HasQueryFilter(e => e.DeleteYn == "2");
+        });
+
+        // SmsLog 설정
+        modelBuilder.Entity<SmsLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.SentAt).HasDefaultValueSql("getdate()");
+            
+            entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_SmsLog_ConventionId");
+            entity.HasIndex(e => e.ExternalId).HasDatabaseName("IX_SmsLog_ExternalId");
+            entity.HasIndex(e => e.SentAt).HasDatabaseName("IX_SmsLog_SentAt");
+
+            entity.HasOne(e => e.Convention)
+                  .WithMany()
+                  .HasForeignKey(e => e.ConventionId)
+                  .OnDelete(DeleteBehavior.SetNull); // 행사 삭제되어도 로그는 유지
+        });
 
         // VectorDataEntry 테이블 설정
         modelBuilder.Entity<VectorDataEntry>(entity =>

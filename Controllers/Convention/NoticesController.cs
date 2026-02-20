@@ -5,8 +5,8 @@ using LocalRAG.Data;
 using LocalRAG.Interfaces;
 using LocalRAG.Entities;
 
-using System.Security.Claims;
 using LocalRAG.DTOs.NoticeModels;
+using LocalRAG.Extensions;
 
 namespace LocalRAG.Controllers.Convention;
 
@@ -87,7 +87,7 @@ public class NoticesController : ControllerBase
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             var notice = await _noticeService.CreateNoticeAsync(conventionId, request, userId);
             return CreatedAtAction(nameof(GetNotice), new { id = notice.Id }, notice);
         }
@@ -107,7 +107,7 @@ public class NoticesController : ControllerBase
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             var notice = await _noticeService.UpdateNoticeAsync(id, request, userId);
             return Ok(notice);
         }
@@ -135,7 +135,7 @@ public class NoticesController : ControllerBase
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             await _noticeService.DeleteNoticeAsync(id, userId);
             return NoContent();
         }
@@ -196,7 +196,7 @@ public class NoticesController : ControllerBase
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             var notice = await _noticeService.TogglePinAsync(id, userId);
             return Ok(notice);
         }
@@ -269,12 +269,12 @@ public class NoticesController : ControllerBase
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            var userIdNullable = User.GetUserIdOrNull();
+            if (userIdNullable == null)
             {
                 return Unauthorized("사용자 정보를 확인할 수 없습니다.");
             }
+            var userId = userIdNullable.Value;
 
             var user = await _context.Users.FindAsync(userId);
             if (user == null)
@@ -325,11 +325,12 @@ public class NoticesController : ControllerBase
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            var userIdNullable = User.GetUserIdOrNull();
+            if (userIdNullable == null)
             {
                 return Unauthorized("사용자 정보를 확인할 수 없습니다.");
             }
+            var userId = userIdNullable.Value;
 
             var comment = await _context.Comments
                 .Include(c => c.Author)
@@ -375,17 +376,12 @@ public class NoticesController : ControllerBase
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-
-            if (userIdClaim == null)
+            var userIdNullable = User.GetUserIdOrNull();
+            if (userIdNullable == null)
             {
                 return Unauthorized("사용자 정보를 확인할 수 없습니다.");
             }
-
-            if (!int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return Unauthorized("잘못된 사용자 정보입니다.");
-            }
+            var userId = userIdNullable.Value;
 
             var comment = await _context.Comments.FindAsync(commentId);
 

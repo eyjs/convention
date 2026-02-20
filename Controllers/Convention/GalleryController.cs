@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using LocalRAG.Interfaces;
 using System.Security.Claims;
 using LocalRAG.DTOs.GalleryModels;
+using LocalRAG.Constants;
+using LocalRAG.Extensions;
 
 namespace LocalRAG.Controllers.Convention;
 
@@ -66,14 +68,14 @@ public class GalleryController : ControllerBase
     /// 갤러리 생성 (관리자)
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<GalleryResponse>> CreateGallery(
         [FromQuery] int conventionId,
         [FromBody] CreateGalleryRequest request)
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             var gallery = await _galleryService.CreateGalleryAsync(conventionId, request, userId);
             return CreatedAtAction(nameof(GetGallery), new { id = gallery.Id }, gallery);
         }
@@ -93,7 +95,7 @@ public class GalleryController : ControllerBase
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             var gallery = await _galleryService.UpdateGalleryAsync(id, request, userId);
             return Ok(gallery);
         }
@@ -121,7 +123,7 @@ public class GalleryController : ControllerBase
     {
         try
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             await _galleryService.DeleteGalleryAsync(id, userId);
             return NoContent();
         }

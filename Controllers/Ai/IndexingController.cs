@@ -3,12 +3,13 @@ using LocalRAG.Services.Ai;
 using Microsoft.AspNetCore.Authorization;
 using LocalRAG.Interfaces;
 using System.Collections.Generic; // List<Notice> 사용
+using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Ai;
 
 [ApiController]
 [Route("api/admin/indexing")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = Roles.Admin)]
 public class IndexingController : ControllerBase
 {
     private readonly IndexingService _conventionIndexingService;

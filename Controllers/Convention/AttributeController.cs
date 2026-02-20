@@ -5,12 +5,13 @@ using LocalRAG.DTOs.ConventionModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Convention;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = Roles.Admin)]
 public class AttributeController : ControllerBase
 {
     private readonly ConventionDbContext _context;

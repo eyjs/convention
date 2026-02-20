@@ -1,4 +1,5 @@
 using LocalRAG.Data;
+using LocalRAG.Constants;
 using LocalRAG.Services.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,7 @@ namespace LocalRAG.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin/database")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = Roles.Admin)]
 public class DatabaseController : ControllerBase
 {
     private readonly ConventionDbContext _context;
@@ -177,8 +178,7 @@ public class DatabaseController : ControllerBase
             {
                 success = false,
                 error = "Migration 실행 실패",
-                detail = ex.Message,
-                stackTrace = ex.StackTrace
+                detail = ex.Message
             });
         }
     }

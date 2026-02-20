@@ -267,81 +267,10 @@ namespace LocalRAG.Services.Convention
                     response.SubmittedAt = DateTime.UtcNow; // 제출 시간 업데이트
 
                     // 새로운 답변 추가
-                    foreach (var answer in submissionDto.Answers)
-                    {
-                        if (answer.SelectedOptionIds != null && answer.SelectedOptionIds.Any())
-                        {
-                            foreach (var optionId in answer.SelectedOptionIds)
-                            {
-                                response.Details.Add(new SurveyResponseDetail
-                                {
-                                    QuestionId = answer.QuestionId,
-                                    SelectedOptionId = optionId
-                                });
-                            }
-                        }
-                        else if (!string.IsNullOrEmpty(answer.AnswerText))
-                        {
-                            response.Details.Add(new SurveyResponseDetail
-                            {
-                                QuestionId = answer.QuestionId,
-                                AnswerText = answer.AnswerText
-                            });
-                        }
-                    }
+                    AddAnswerDetails(response, submissionDto);
 
                     // 2. ConventionAction 연동 로직
-                    var action = await _context.ConventionActions
-                        .FirstOrDefaultAsync(a => a.ConventionId == survey.ConventionId &&
-                                                  a.BehaviorType == BehaviorType.ModuleLink &&
-                                                  a.TargetModuleId == survey.Id);
-
-                    if (action != null)
-                    {
-                        // 2a. ActionSubmissions 테이블에 JSON 데이터 저장 (고도화된 방식)
-                        var submissionJson = JsonSerializer.Serialize(submissionDto);
-                        var actionSubmission = await _context.ActionSubmissions
-                            .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
-
-                        if (actionSubmission == null)
-                        {
-                            actionSubmission = new ActionSubmission
-                            {
-                                UserId = userId,
-                                ConventionActionId = action.Id,
-                                SubmissionDataJson = submissionJson,
-                                SubmittedAt = DateTime.UtcNow
-                            };
-                            _context.ActionSubmissions.Add(actionSubmission);
-                        }
-                        else
-                        {
-                            actionSubmission.SubmissionDataJson = submissionJson;
-                            actionSubmission.UpdatedAt = DateTime.UtcNow;
-                        }
-
-                        // 2b. UserActionStatus를 완료로 표시 (진척도 트래킹용)
-                        var userActionStatus = await _context.UserActionStatuses
-                            .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
-
-                        if (userActionStatus == null)
-                        {
-                            userActionStatus = new UserActionStatus
-                            {
-                                UserId = userId,
-                                ConventionActionId = action.Id,
-                                IsComplete = true,
-                                CreatedAt = DateTime.UtcNow,
-                                UpdatedAt = DateTime.UtcNow
-                            };
-                            _context.UserActionStatuses.Add(userActionStatus);
-                        }
-                        else
-                        {
-                            userActionStatus.IsComplete = true;
-                            userActionStatus.UpdatedAt = DateTime.UtcNow;
-                        }
-                    }
+                    await UpdateConventionActionStatusAsync(survey, submissionDto, userId);
 
                     // 3. 모든 변경사항을 한 번에 커밋
                     await _context.SaveChangesAsync();
@@ -379,38 +308,10 @@ namespace LocalRAG.Services.Convention
                 TotalResponses = survey.Responses.Count
             };
 
+            var allDetails = survey.Responses.SelectMany(r => r.Details).ToList();
             foreach (var question in survey.Questions.OrderBy(q => q.OrderIndex))
             {
-                var questionStats = new QuestionStatsDto
-                {
-                    QuestionId = question.Id,
-                    QuestionText = question.QuestionText,
-                    QuestionType = question.Type.ToString()
-                };
-
-                var detailsForQuestion = survey.Responses.SelectMany(r => r.Details).Where(d => d.QuestionId == question.Id).ToList();
-
-                if (question.Type == QuestionType.SINGLE_CHOICE || question.Type == QuestionType.MULTIPLE_CHOICE)
-                {
-                    foreach (var option in question.Options.OrderBy(o => o.OrderIndex))
-                    {
-                        var count = detailsForQuestion.Count(d => d.SelectedOptionId == option.Id);
-                        questionStats.Answers.Add(new AnswerStatDto
-                        {
-                            Answer = option.OptionText,
-                            Count = count
-                        });
-                    }
-                }
-                else // SHORT_TEXT or LONG_TEXT
-                {
-                    var textAnswers = detailsForQuestion
-                        .Where(d => !string.IsNullOrEmpty(d.AnswerText))
-                        .Select(d => new AnswerStatDto { Answer = d.AnswerText, Count = 1 })
-                        .ToList();
-                    questionStats.Answers.AddRange(textAnswers);
-                }
-
+                var questionStats = BuildQuestionStats(question, allDetails);
                 stats.QuestionStats.Add(questionStats);
             }
 
@@ -441,6 +342,122 @@ namespace LocalRAG.Services.Convention
                     AnswerText = d.AnswerText
                 }).ToList()
             };
+        }
+
+        private static void AddAnswerDetails(SurveyResponse response, SurveySubmissionDto submissionDto)
+        {
+            foreach (var answer in submissionDto.Answers)
+            {
+                if (answer.SelectedOptionIds != null && answer.SelectedOptionIds.Any())
+                {
+                    foreach (var optionId in answer.SelectedOptionIds)
+                    {
+                        response.Details.Add(new SurveyResponseDetail
+                        {
+                            QuestionId = answer.QuestionId,
+                            SelectedOptionId = optionId
+                        });
+                    }
+                }
+                else if (!string.IsNullOrEmpty(answer.AnswerText))
+                {
+                    response.Details.Add(new SurveyResponseDetail
+                    {
+                        QuestionId = answer.QuestionId,
+                        AnswerText = answer.AnswerText
+                    });
+                }
+            }
+        }
+
+        private async Task UpdateConventionActionStatusAsync(Survey survey, SurveySubmissionDto submissionDto, int userId)
+        {
+            var action = await _context.ConventionActions
+                .FirstOrDefaultAsync(a => a.ConventionId == survey.ConventionId &&
+                                          a.BehaviorType == BehaviorType.ModuleLink &&
+                                          a.TargetModuleId == survey.Id);
+
+            if (action != null)
+            {
+                // ActionSubmissions 테이블에 JSON 데이터 저장
+                var submissionJson = JsonSerializer.Serialize(submissionDto);
+                var actionSubmission = await _context.ActionSubmissions
+                    .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
+
+                if (actionSubmission == null)
+                {
+                    actionSubmission = new ActionSubmission
+                    {
+                        UserId = userId,
+                        ConventionActionId = action.Id,
+                        SubmissionDataJson = submissionJson,
+                        SubmittedAt = DateTime.UtcNow
+                    };
+                    _context.ActionSubmissions.Add(actionSubmission);
+                }
+                else
+                {
+                    actionSubmission.SubmissionDataJson = submissionJson;
+                    actionSubmission.UpdatedAt = DateTime.UtcNow;
+                }
+
+                // UserActionStatus를 완료로 표시
+                var userActionStatus = await _context.UserActionStatuses
+                    .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
+
+                if (userActionStatus == null)
+                {
+                    userActionStatus = new UserActionStatus
+                    {
+                        UserId = userId,
+                        ConventionActionId = action.Id,
+                        IsComplete = true,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.UserActionStatuses.Add(userActionStatus);
+                }
+                else
+                {
+                    userActionStatus.IsComplete = true;
+                    userActionStatus.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+        }
+
+        private static QuestionStatsDto BuildQuestionStats(SurveyQuestion question, List<SurveyResponseDetail> allDetails)
+        {
+            var questionStats = new QuestionStatsDto
+            {
+                QuestionId = question.Id,
+                QuestionText = question.QuestionText,
+                QuestionType = question.Type.ToString()
+            };
+
+            var detailsForQuestion = allDetails.Where(d => d.QuestionId == question.Id).ToList();
+
+            if (question.Type == QuestionType.SINGLE_CHOICE || question.Type == QuestionType.MULTIPLE_CHOICE)
+            {
+                foreach (var option in question.Options.OrderBy(o => o.OrderIndex))
+                {
+                    var count = detailsForQuestion.Count(d => d.SelectedOptionId == option.Id);
+                    questionStats.Answers.Add(new AnswerStatDto
+                    {
+                        Answer = option.OptionText,
+                        Count = count
+                    });
+                }
+            }
+            else // SHORT_TEXT or LONG_TEXT
+            {
+                var textAnswers = detailsForQuestion
+                    .Where(d => !string.IsNullOrEmpty(d.AnswerText))
+                    .Select(d => new AnswerStatDto { Answer = d.AnswerText, Count = 1 })
+                    .ToList();
+                questionStats.Answers.AddRange(textAnswers);
+            }
+
+            return questionStats;
         }
     }
 }

@@ -6,12 +6,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using LocalRAG.Constants;
+using LocalRAG.Extensions;
 
 namespace LocalRAG.Controllers.Admin
 {
     [ApiController]
     [Route("api/admin/notices")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     public class AdminNoticesController : ControllerBase
     {
         private readonly INoticeService _noticeService;
@@ -47,7 +49,7 @@ namespace LocalRAG.Controllers.Admin
             [FromQuery] int conventionId,
             [FromBody] CreateNoticeRequest request)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             var notice = await _noticeService.CreateNoticeAsync(conventionId, request, userId);
             return CreatedAtAction(nameof(GetNotice), new { id = notice.Id }, notice);
         }
@@ -55,7 +57,7 @@ namespace LocalRAG.Controllers.Admin
         [HttpPut("{id}")]
         public async Task<ActionResult<NoticeResponse>> UpdateNotice(int id, [FromBody] UpdateNoticeRequest request)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             var notice = await _noticeService.UpdateNoticeAsync(id, request, userId);
             return Ok(notice);
         }
@@ -63,7 +65,7 @@ namespace LocalRAG.Controllers.Admin
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteNotice(int id)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             await _noticeService.DeleteNoticeAsync(id, userId);
             return NoContent();
         }
@@ -71,7 +73,7 @@ namespace LocalRAG.Controllers.Admin
         [HttpPost("{id}/toggle-pin")]
         public async Task<ActionResult<NoticeResponse>> TogglePin(int id)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             var notice = await _noticeService.TogglePinAsync(id, userId);
             return Ok(notice);
         }
@@ -79,7 +81,7 @@ namespace LocalRAG.Controllers.Admin
         [HttpPut("update-order")]
         public async Task<IActionResult> UpdateNoticeOrder([FromBody] UpdateNoticeOrderRequest request)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userId = User.GetUserId();
             await _noticeService.UpdateNoticeOrderAsync(request.Orders, userId);
             return NoContent();
         }

@@ -462,6 +462,9 @@ namespace LocalRAG.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("PreEndDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("RegDtm")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -1683,6 +1686,88 @@ namespace LocalRAG.Migrations
                     b.ToTable("Sections");
                 });
 
+            modelBuilder.Entity("LocalRAG.Entities.SmsLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int?>("ConventionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReceiverName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ReceiverPhone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("SentAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("getdate()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConventionId")
+                        .HasDatabaseName("IX_SmsLog_ConventionId");
+
+                    b.HasIndex("ExternalId")
+                        .HasDatabaseName("IX_SmsLog_ExternalId");
+
+                    b.HasIndex("SentAt")
+                        .HasDatabaseName("IX_SmsLog_SentAt");
+
+                    b.ToTable("SmsLogs");
+                });
+
+            modelBuilder.Entity("LocalRAG.Entities.SmsTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DeleteYn")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(1)
+                        .HasColumnType("nvarchar(1)")
+                        .HasDefaultValue("2");
+
+                    b.Property<DateTime>("RegDtm")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("getdate()");
+
+                    b.Property<string>("TemplateContent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TemplateName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SmsTemplates");
+                });
+
             modelBuilder.Entity("LocalRAG.Entities.Survey", b =>
                 {
                     b.Property<int>("Id")
@@ -2517,6 +2602,16 @@ namespace LocalRAG.Migrations
                         .IsRequired();
 
                     b.Navigation("Menu");
+                });
+
+            modelBuilder.Entity("LocalRAG.Entities.SmsLog", b =>
+                {
+                    b.HasOne("LocalRAG.Entities.Convention", "Convention")
+                        .WithMany()
+                        .HasForeignKey("ConventionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Convention");
                 });
 
             modelBuilder.Entity("LocalRAG.Entities.Survey", b =>

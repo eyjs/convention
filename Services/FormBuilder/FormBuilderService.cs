@@ -10,6 +10,8 @@ namespace LocalRAG.Services.FormBuilder;
 
 public class FormBuilderService : IFormBuilderService
 {
+    private const string UPLOADS_FOLDER = "uploads";
+
     private readonly ConventionDbContext _context;
     private readonly ILogger<FormBuilderService> _logger;
 
@@ -95,21 +97,7 @@ public class FormBuilderService : IFormBuilderService
         // 파일 처리
         if (file != null && file.Length > 0)
         {
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
-
-            var uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            var fileUrl = $"/uploads/{uniqueFileName}";
+            var fileUrl = await SaveUploadedFileAsync(file);
 
             // fileFieldKey가 제공되면 해당 키의 값을 파일 URL로 업데이트
             if (!string.IsNullOrEmpty(fileFieldKey) && tempDict.ContainsKey(fileFieldKey))
@@ -178,6 +166,23 @@ public class FormBuilderService : IFormBuilderService
         return true;
     }
 
+    private async Task<string> SaveUploadedFileAsync(IFormFile file)
+    {
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", UPLOADS_FOLDER);
+        if (!Directory.Exists(uploadsFolder))
+            Directory.CreateDirectory(uploadsFolder);
+
+        var uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
+        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        return $"/{UPLOADS_FOLDER}/{uniqueFileName}";
+    }
+
     public async Task<List<FormSubmissionDto>> GetAllSubmissionsAsync(int formDefinitionId)
     {
         if (!await _context.FormDefinitions.AnyAsync(f => f.Id == formDefinitionId))
@@ -212,7 +217,7 @@ public class FormBuilderService : IFormBuilderService
         }
 
         // 경로 검증 (보안)
-        if (path.Contains("..") || !path.StartsWith("/uploads/"))
+        if (path.Contains("..") || !path.StartsWith($"/{UPLOADS_FOLDER}/"))
         {
             return false;
         }

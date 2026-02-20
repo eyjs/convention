@@ -6,12 +6,13 @@ using LocalRAG.Services.Ai;
 using LocalRAG.Entities;
 using LocalRAG.Interfaces;
 using LocalRAG.DTOs.AdminModels;
+using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Admin;
 
 [ApiController]
 [Route("api/admin")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = Roles.Admin)]
 public class ChatbotManagementController : ControllerBase
 {
     private readonly ConventionDbContext _context;
@@ -34,43 +35,28 @@ public class ChatbotManagementController : ControllerBase
         _logger = logger;
     }
 
-    #region 통계 및 상태
+    #region Stats
 
-    /// <summary>
-    /// 챗봇 시스템 통계
-    /// </summary>
     [HttpGet("chatbot/stats")]
     public async Task<ActionResult> GetStats()
     {
         var totalDocuments = await _context.VectorDataEntries.CountAsync();
         var activeConventions = await _context.Conventions
-            .Where(c => c.DeleteYn == "N")
+            .Where(c => c.DeleteYn == DeleteStatus.Active)
             .CountAsync();
         var totalGuests = await _context.UserConventions.CountAsync();
-        var dbSize = totalDocuments * 1024; // 대략적인 크기
+        var dbSize = totalDocuments * 1024;
 
-        return Ok(new
-        {
-            totalDocuments,
-            activeConventions,
-            totalGuests,
-            dbSize
-        });
+        return Ok(new { totalDocuments, activeConventions, totalGuests, dbSize });
     }
 
-    /// <summary>
-    /// VectorStore 상태 정보 (IVectorStore 사용 - InMemory 지원)
-    /// </summary>
     [HttpGet("chatbot/vector-status")]
-    [AllowAnonymous] // 일시적으로 인증 없이 접근 허용
     public async Task<ActionResult> GetVectorStoreStatus()
     {
         try
         {
-            // IVectorStore를 사용하여 InMemory와 MSSQL 모두 지원
             var totalVectors = await _vectorStore.GetDocumentCountAsync();
 
-            // DB에서 통계 정보 가져오기 (MSSQL일 경우)
             var lastIndexed = await _context.VectorDataEntries
                 .OrderByDescending(v => v.CreatedAt)
                 .Select(v => v.CreatedAt)
@@ -78,13 +64,10 @@ public class ChatbotManagementController : ControllerBase
 
             var byType = await _context.VectorDataEntries
                 .GroupBy(v => v.SourceType)
-                .Select(g => new
-                {
-                    type = g.Key,
-                    count = g.Count()
-                })
+                .Select(g => new { type = g.Key, count = g.Count() })
                 .ToListAsync();
 
+            const int maxCapacity = 1_000_000;
             return Ok(new
             {
                 isConnected = true,
@@ -93,8 +76,8 @@ public class ChatbotManagementController : ControllerBase
                 capacity = new
                 {
                     used = totalVectors,
-                    total = 1000000, // 최대 용량 (예시)
-                    usagePercent = totalVectors > 0 ? (double)totalVectors / 1000000 * 100 : 0
+                    total = maxCapacity,
+                    usagePercent = totalVectors > 0 ? (double)totalVectors / maxCapacity * 100 : 0
                 },
                 byType
             });
@@ -107,23 +90,14 @@ public class ChatbotManagementController : ControllerBase
                 isConnected = false,
                 totalVectors = 0,
                 lastIndexed = (DateTime?)null,
-                capacity = new
-                {
-                    used = 0,
-                    total = 0,
-                    usagePercent = 0
-                },
-                byType = new object[0],
+                capacity = new { used = 0, total = 0, usagePercent = 0 },
+                byType = Array.Empty<object>(),
                 error = ex.Message
             });
         }
     }
 
-    /// <summary>
-    /// 행사별 색인 상세 정보 조회
-    /// </summary>
     [HttpGet("chatbot/conventions/{conventionId}/indexed-items")]
-    [AllowAnonymous]
     public async Task<ActionResult> GetIndexedItems(int conventionId)
     {
         try
@@ -138,19 +112,15 @@ public class ChatbotManagementController : ControllerBase
 
             var userConventionCount = await _context.UserConventions
                 .CountAsync(uc => uc.ConventionId == conventionId);
-
             var notices = await _context.Notices
                 .Where(n => n.ConventionId == conventionId && !n.IsDeleted)
                 .CountAsync();
-
             var conventionActions = await _context.ConventionActions
                 .Where(a => a.ConventionId == conventionId && a.IsActive)
                 .CountAsync();
-
             var vectorCount = await _vectorStore.GetDocumentCountAsync(conventionId);
 
-            // 색인된 항목 상세 정보
-            var indexedItems = new
+            return Ok(new
             {
                 conventionInfo = new
                 {
@@ -160,31 +130,17 @@ public class ChatbotManagementController : ControllerBase
                     type = convention.ConventionType,
                     indexed = true
                 },
-                guestSummary = new
-                {
-                    totalCount = userConventionCount,
-                    indexed = userConventionCount > 0
-                },
+                guestSummary = new { totalCount = userConventionCount, indexed = userConventionCount > 0 },
                 schedules = new
                 {
                     templateCount = convention.ScheduleTemplates.Count,
                     itemCount = convention.ScheduleTemplates.SelectMany(st => st.ScheduleItems).Count(),
                     indexed = convention.ScheduleTemplates.Any()
                 },
-                notices = new
-                {
-                    count = notices,
-                    indexed = notices > 0
-                },
-                actions = new
-                {
-                    count = conventionActions,
-                    indexed = conventionActions > 0
-                },
-                vectorCount = vectorCount
-            };
-
-            return Ok(indexedItems);
+                notices = new { count = notices, indexed = notices > 0 },
+                actions = new { count = conventionActions, indexed = conventionActions > 0 },
+                vectorCount
+            });
         }
         catch (Exception ex)
         {
@@ -193,11 +149,7 @@ public class ChatbotManagementController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 벡터 통계
-    /// </summary>
     [HttpGet("chatbot/vector-stats")]
-    [AllowAnonymous]
     public async Task<ActionResult> GetVectorStats()
     {
         var total = await _context.VectorDataEntries.CountAsync();
@@ -213,33 +165,24 @@ public class ChatbotManagementController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(new
-        {
-            bySouce = bySource // 기존 오타 유지 (프론트엔드 호환성)
-        });
+        return Ok(new { bySouce = bySource }); // 프론트엔드 호환성 유지
     }
 
     #endregion
 
-    #region 행사 관리
+    #region Convention Indexing
 
-    /// <summary>
-    /// 행사 목록 조회
-    /// </summary>
     [HttpGet("chatbot/conventions")]
-    [AllowAnonymous]
     public async Task<ActionResult> GetConventions()
     {
         var conventions = await _context.Conventions
-            .Where(c => c.DeleteYn == "N")
+            .Where(c => c.DeleteYn == DeleteStatus.Active)
             .Select(c => new
             {
-                c.Id,
-                c.Title,
-                c.StartDate,
+                c.Id, c.Title, c.StartDate,
                 GuestCount = _context.UserConventions.Count(uc => uc.ConventionId == c.Id),
                 VectorCount = _context.VectorDataEntries.Count(v => v.ConventionId == c.Id),
-                ChatbotEnabled = true // 모든 행사 기본 활성화
+                ChatbotEnabled = true
             })
             .OrderByDescending(c => c.StartDate)
             .ToListAsync();
@@ -247,11 +190,7 @@ public class ChatbotManagementController : ControllerBase
         return Ok(conventions);
     }
 
-    /// <summary>
-    /// 행사별 재색인
-    /// </summary>
     [HttpPost("chatbot/reindex-convention/{conventionId}")]
-    [AllowAnonymous]
     public async Task<ActionResult> ReindexConvention(int conventionId)
     {
         try
@@ -261,7 +200,6 @@ public class ChatbotManagementController : ControllerBase
                 return NotFound(new { message = "행사를 찾을 수 없습니다." });
 
             await _indexingService.IndexConventionAsync(conventionId);
-
             return Ok(new { message = "행사가 재색인되었습니다." });
         }
         catch (Exception ex)
@@ -271,19 +209,13 @@ public class ChatbotManagementController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 전체 재색인
-    /// </summary>
     [HttpPost("chatbot/reindex-all")]
-    [AllowAnonymous]
     public async Task<ActionResult> ReindexAll()
     {
         try
         {
             _logger.LogInformation("전체 재색인 시작");
-
             var result = await _indexingService.ReindexAllConventionsAsync();
-
             _logger.LogInformation("전체 재색인 완료: {Count}개 행사", result.SuccessCount);
 
             return Ok(new
@@ -301,30 +233,21 @@ public class ChatbotManagementController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 행사 챗봇 활성/비활성
-    /// </summary>
     [HttpPut("chatbot/convention/{conventionId}/toggle")]
-    [AllowAnonymous]
     public async Task<ActionResult> ToggleChatbot(int conventionId, [FromBody] ToggleChatbotRequest request)
     {
         var convention = await _context.Conventions.FindAsync(conventionId);
         if (convention == null)
             return NotFound(new { message = "행사를 찾을 수 없습니다." });
 
-        // 현재는 항상 활성화 상태 (추후 DB 필드 추가 가능)
         return Ok(new { message = request.Enabled ? "챗봇이 활성화되었습니다." : "챗봇이 비활성화되었습니다." });
     }
 
     #endregion
 
-    #region LLM Provider 관리
+    #region LLM Providers
 
-    /// <summary>
-    /// 모든 LLM Provider 목록 조회
-    /// </summary>
     [HttpGet("llm-providers")]
-    [AllowAnonymous] // 일시적으로 인증 없이 접근 허용
     public async Task<ActionResult> GetAllProviders()
     {
         try
@@ -338,10 +261,10 @@ public class ChatbotManagementController : ControllerBase
                 providerType = s.ProviderName,
                 modelName = s.ModelName,
                 baseUrl = s.BaseUrl,
-                apiKey = MaskApiKey(s.ApiKey), // 마스킹된 키
+                apiKey = MaskApiKey(s.ApiKey),
                 hasApiKey = !string.IsNullOrEmpty(s.ApiKey),
                 isActive = s.IsActive,
-                isCurrent = activeProvider?.Id == s.Id, // 현재 적용 상태
+                isCurrent = activeProvider?.Id == s.Id,
                 createdAt = s.CreatedAt,
                 updatedAt = s.UpdatedAt
             });
@@ -355,9 +278,6 @@ public class ChatbotManagementController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 현재 활성 Provider 조회
-    /// </summary>
     [HttpGet("llm-providers/active")]
     public async Task<ActionResult> GetActiveProvider()
     {
@@ -365,9 +285,7 @@ public class ChatbotManagementController : ControllerBase
         {
             var setting = await _providerManager.GetActiveSettingAsync();
             if (setting == null)
-            {
                 return Ok(new { providerName = "none", message = "활성 Provider 없음" });
-            }
 
             return Ok(new
             {
@@ -386,9 +304,6 @@ public class ChatbotManagementController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Provider 추가
-    /// </summary>
     [HttpPost("llm-providers")]
     public async Task<ActionResult> CreateProvider([FromBody] CreateProviderRequest request)
     {
@@ -405,9 +320,8 @@ public class ChatbotManagementController : ControllerBase
             };
 
             var created = await _providerManager.CreateSettingAsync(setting);
-            
             _logger.LogInformation("Provider 생성: {Provider}", created.ProviderName);
-            
+
             return Ok(new { success = true, id = created.Id, message = "Provider가 추가되었습니다." });
         }
         catch (InvalidOperationException ex)
@@ -421,9 +335,6 @@ public class ChatbotManagementController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Provider 수정
-    /// </summary>
     [HttpPut("llm-providers/{id}")]
     public async Task<ActionResult> UpdateProvider(int id, [FromBody] UpdateProviderRequest request)
     {
@@ -432,7 +343,7 @@ public class ChatbotManagementController : ControllerBase
             var setting = new LlmSetting
             {
                 ProviderName = request.ProviderType,
-                ApiKey = string.IsNullOrEmpty(request.ApiKey) ? null : request.ApiKey, // 비어있으면 기존 유지
+                ApiKey = string.IsNullOrEmpty(request.ApiKey) ? null : request.ApiKey,
                 BaseUrl = request.BaseUrl,
                 ModelName = request.ModelName,
                 IsActive = request.IsActive,
@@ -440,9 +351,8 @@ public class ChatbotManagementController : ControllerBase
             };
 
             await _providerManager.UpdateSettingAsync(id, setting);
-            
             _logger.LogInformation("Provider 수정: ID={Id}", id);
-            
+
             return Ok(new { success = true, message = "Provider가 수정되었습니다." });
         }
         catch (KeyNotFoundException ex)
@@ -456,9 +366,6 @@ public class ChatbotManagementController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Provider 삭제
-    /// </summary>
     [HttpDelete("llm-providers/{id}")]
     public async Task<ActionResult> DeleteProvider(int id)
     {
@@ -466,12 +373,9 @@ public class ChatbotManagementController : ControllerBase
         {
             var success = await _providerManager.DeleteSettingAsync(id);
             if (!success)
-            {
                 return NotFound(new { error = "Provider를 찾을 수 없습니다." });
-            }
 
             _logger.LogInformation("Provider 삭제: ID={Id}", id);
-
             return Ok(new { success = true, message = "Provider가 삭제되었습니다." });
         }
         catch (InvalidOperationException ex)
@@ -485,32 +389,20 @@ public class ChatbotManagementController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Provider 활성/비활성 토글 (실시간 스왑)
-    /// </summary>
     [HttpPatch("llm-providers/{id}/toggle")]
     public async Task<ActionResult> ToggleProvider(int id, [FromBody] ToggleProviderRequest request)
     {
         try
         {
-            if (request.IsActive)
-            {
-                // 활성화 = 이 Provider로 스왑
-                var success = await _providerManager.ActivateProviderAsync(id);
-                if (!success)
-                {
-                    return NotFound(new { error = "Provider를 찾을 수 없습니다." });
-                }
-
-                _logger.LogInformation("Provider 활성화 (스왑): ID={Id}", id);
-                
-                return Ok(new { success = true, message = "Provider가 활성화되었습니다. (실시간 스왑 완료)" });
-            }
-            else
-            {
-                // 비활성화는 허용하지 않음 (항상 하나는 활성화되어야 함)
+            if (!request.IsActive)
                 return BadRequest(new { error = "최소 하나의 Provider는 활성화되어야 합니다. 다른 Provider를 활성화하세요." });
-            }
+
+            var success = await _providerManager.ActivateProviderAsync(id);
+            if (!success)
+                return NotFound(new { error = "Provider를 찾을 수 없습니다." });
+
+            _logger.LogInformation("Provider 활성화 (스왑): ID={Id}", id);
+            return Ok(new { success = true, message = "Provider가 활성화되었습니다. (실시간 스왑 완료)" });
         }
         catch (Exception ex)
         {
@@ -521,13 +413,9 @@ public class ChatbotManagementController : ControllerBase
 
     #endregion
 
-    #region 로그 및 활동
+    #region Logs
 
-    /// <summary>
-    /// 최근 활동 내역
-    /// </summary>
     [HttpGet("chatbot/recent-activities")]
-    [AllowAnonymous]
     public async Task<ActionResult> GetRecentActivities()
     {
         var activities = await _context.VectorDataEntries
@@ -544,18 +432,15 @@ public class ChatbotManagementController : ControllerBase
         return Ok(activities);
     }
 
-    /// <summary>
-    /// 시스템 로그
-    /// </summary>
     [HttpGet("chatbot/logs")]
-    [AllowAnonymous]
     public ActionResult GetLogs()
     {
+        var now = DateTime.UtcNow;
         var logs = new[]
         {
-            new { timestamp = DateTime.Now.ToString("HH:mm:ss"), level = "info", message = "챗봇 시스템 정상 작동 중" },
-            new { timestamp = DateTime.Now.AddMinutes(-5).ToString("HH:mm:ss"), level = "info", message = "벡터 데이터베이스 연결 성공" },
-            new { timestamp = DateTime.Now.AddMinutes(-10).ToString("HH:mm:ss"), level = "info", message = "행사 색인 완료" }
+            new { timestamp = now.ToString("HH:mm:ss"), level = "info", message = "챗봇 시스템 정상 작동 중" },
+            new { timestamp = now.AddMinutes(-5).ToString("HH:mm:ss"), level = "info", message = "벡터 데이터베이스 연결 성공" },
+            new { timestamp = now.AddMinutes(-10).ToString("HH:mm:ss"), level = "info", message = "행사 색인 완료" }
         };
 
         return Ok(logs);
@@ -563,13 +448,9 @@ public class ChatbotManagementController : ControllerBase
 
     #endregion
 
-    #region 유틸리티
+    #region Utility
 
-    /// <summary>
-    /// 벡터 DB 초기화
-    /// </summary>
     [HttpDelete("chatbot/clear-vectors")]
-    [AllowAnonymous]
     public async Task<ActionResult> ClearVectors()
     {
         try
@@ -579,7 +460,6 @@ public class ChatbotManagementController : ControllerBase
             await _context.SaveChangesAsync();
 
             _logger.LogWarning("벡터 DB 초기화: {Count}개 문서 삭제됨", count);
-
             return Ok(new { message = $"{count}개의 벡터 문서가 삭제되었습니다." });
         }
         catch (Exception ex)
@@ -589,17 +469,13 @@ public class ChatbotManagementController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// API Key 마스킹
-    /// </summary>
-    private string? MaskApiKey(string? apiKey)
+    private static string? MaskApiKey(string? apiKey)
     {
         if (string.IsNullOrEmpty(apiKey) || apiKey.Length < 10)
             return null;
-        
-        return apiKey.Substring(0, 8) + "..." + apiKey.Substring(apiKey.Length - 4);
+
+        return $"{apiKey[..8]}...{apiKey[^4..]}";
     }
 
     #endregion
 }
-

@@ -13,6 +13,15 @@ namespace LocalRAG.Services.Flight
         // 인천공항 API 오퍼레이션 상수 정의
         private const string DEPARTURE_API_OPERATION = "getPassengerDeparturesDeOdp";
         private const string ARRIVAL_API_OPERATION = "getPassengerArrivalsDeOdp";
+        private const string DEPARTURE_TYPE = "DEPARTURE";
+        private const string API_BASE_URL = "http://apis.data.go.kr/B551177/StatusOfPassengerFlightsDeOdp";
+        private const int API_PAGE_SIZE = 10;
+
+        // 캐시 TTL (시간 단위)
+        private const double SAME_DAY_CACHE_TTL_HOURS = 1;
+        private const double NEAR_FUTURE_CACHE_TTL_HOURS = 6;
+        private const int NEAR_FUTURE_DAYS_THRESHOLD = 3;
+        private const double FAR_FUTURE_CACHE_TTL_HOURS = 24;
     
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
@@ -33,7 +42,7 @@ namespace LocalRAG.Services.Flight
 
         public async Task<List<FlightDto>> GetFlights(string flightType, string searchDate, string? fromTime = null, string? toTime = null)
         {
-            var operation = flightType.ToUpper() == "DEPARTURE" ? DEPARTURE_API_OPERATION : ARRIVAL_API_OPERATION;
+            var operation = flightType.ToUpper() == DEPARTURE_TYPE ? DEPARTURE_API_OPERATION : ARRIVAL_API_OPERATION;
             var url = BuildApiUrl(operation, searchDate, fromTime, toTime, null);
 
             _logger.LogInformation("Fetching flights from URL: {url}", url);
@@ -54,7 +63,7 @@ namespace LocalRAG.Services.Flight
                 return null;
             }
 
-            var operation = flightType.ToUpper() == "DEPARTURE" ? DEPARTURE_API_OPERATION : ARRIVAL_API_OPERATION;
+            var operation = flightType.ToUpper() == DEPARTURE_TYPE ? DEPARTURE_API_OPERATION : ARRIVAL_API_OPERATION;
             var url = BuildApiUrl(operation, searchDate, null, null, formattedFlightId);
 
             _logger.LogInformation("Fetching single flight from URL: {url}", url);
@@ -73,10 +82,8 @@ namespace LocalRAG.Services.Flight
         private string BuildApiUrl(string operation, string searchDate, string? fromTime, string? toTime, string? flightId)
         {
             var serviceKey = _configuration["ApiKeys:IncheonAirport"] ?? throw new InvalidOperationException("Incheon Airport API Key is not configured");
-            var baseUrl = "http://apis.data.go.kr/B551177/StatusOfPassengerFlightsDeOdp";
-            
             var urlBuilder = new StringBuilder();
-            urlBuilder.Append($"{baseUrl}/{operation}?serviceKey={serviceKey}&type=json&lang=K&pageNo=1&numOfRows=10");
+            urlBuilder.Append($"{API_BASE_URL}/{operation}?serviceKey={serviceKey}&type=json&lang=K&pageNo=1&numOfRows={API_PAGE_SIZE}");
 
             // searchday must be in YYYYMMDD format.
             if (DateTime.TryParse(searchDate, out var parsedDate))
@@ -166,7 +173,7 @@ namespace LocalRAG.Services.Flight
         {
             try
             {
-                var operation = flightType.ToUpper() == "DEPARTURE" ? DEPARTURE_API_OPERATION : ARRIVAL_API_OPERATION;
+                var operation = flightType.ToUpper() == DEPARTURE_TYPE ? DEPARTURE_API_OPERATION : ARRIVAL_API_OPERATION;
 
                 var url = BuildApiUrl(operation, searchDate, null, null, null);
                 _logger.LogInformation("Syncing flight data from API: {url}", url);
@@ -256,7 +263,7 @@ namespace LocalRAG.Services.Flight
                     await _dbContext.SaveChangesAsync();
                 }
 
-                await SyncFlightDataFromApi(searchDate, "DEPARTURE");
+                await SyncFlightDataFromApi(searchDate, DEPARTURE_TYPE);
                 await SyncFlightDataFromApi(searchDate, "ARRIVAL");
 
                 // 재조회
@@ -335,23 +342,23 @@ namespace LocalRAG.Services.Flight
                 return false;
             }
 
-            // 당일 항공편: 1시간 TTL
+            // 당일 항공편
             if (scheduleDateTime.Date == now.Date)
             {
-                return (now - lastUpdated).TotalHours > 1;
+                return (now - lastUpdated).TotalHours > SAME_DAY_CACHE_TTL_HOURS;
             }
 
             // 미래 항공편
             var daysUntilFlight = (scheduleDateTime.Date - now.Date).Days;
 
-            // 1-3일 후: 6시간 TTL
-            if (daysUntilFlight <= 3)
+            // 근접 미래 (1-3일 후)
+            if (daysUntilFlight <= NEAR_FUTURE_DAYS_THRESHOLD)
             {
-                return (now - lastUpdated).TotalHours > 6;
+                return (now - lastUpdated).TotalHours > NEAR_FUTURE_CACHE_TTL_HOURS;
             }
 
-            // 4일 이상: 24시간 TTL
-            return (now - lastUpdated).TotalHours > 24;
+            // 먼 미래 (4일 이상)
+            return (now - lastUpdated).TotalHours > FAR_FUTURE_CACHE_TTL_HOURS;
         }
     }
 }
