@@ -41,7 +41,7 @@
     {
       "Key": "#{url}",
       "Source": "Computed",
-      "Value": "https://event.ifa.co.kr/invite/{Convention.Id}",
+      "Value": "https://startour.ifa.co.kr/invite/{Convention.Id}",
       "Description": "초대 링크 (자동 생성)"
     }
   ]

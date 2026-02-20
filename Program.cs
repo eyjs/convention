@@ -18,25 +18,20 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using System.Text;
 using LocalRAG.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// HTTP와 HTTPS 모두 지원하도록 설정
-builder.WebHost.ConfigureKestrel(serverOptions =>
+if (builder.Environment.IsDevelopment())
 {
-    // HTTP 포트 (5000)
-    serverOptions.ListenAnyIP(5000);
-
-    // HTTPS 포트 (5001) - 인증서가 있는 경우에만 활성화
-    // 프로덕션에서는 리버스 프록시(IIS, Nginx 등)가 HTTPS 처리
-    // serverOptions.ListenAnyIP(5001, listenOptions =>
-    // {
-    //     listenOptions.UseHttps();
-    // });
-});
+    builder.WebHost.ConfigureKestrel(serverOptions =>
+    {
+        serverOptions.ListenAnyIP(5000);
+    });
+}
 
 // --- 1. 로깅 설정 ---
 Log.Logger = new LoggerConfiguration()
@@ -70,6 +65,8 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromHours(2);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.None;
 });
 
 builder.Services.AddCors(options =>
@@ -232,6 +229,13 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextFactory, UserContextFactory>();
 builder.Services.AddHttpClient<IFlightService, FlightService>();
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddHealthChecks()
     .AddCheck<LlmProviderHealthCheck>("llm_provider")
     .AddCheck<VectorStoreHealthCheck>("vector_store")
@@ -245,6 +249,14 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+app.UseForwardedHeaders();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+    app.UseHsts();
 }
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
