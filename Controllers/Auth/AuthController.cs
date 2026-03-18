@@ -1,12 +1,9 @@
-using LocalRAG.Constants;
-using LocalRAG.Data;
 using LocalRAG.Extensions;
 using LocalRAG.Interfaces;
 using LocalRAG.DTOs.AuthModels;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Controllers.Auth;
 
@@ -14,20 +11,14 @@ namespace LocalRAG.Controllers.Auth;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
     private readonly IAuthService _authService;
-    private readonly IChecklistService _checklistService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
-        ConventionDbContext context,
         IAuthService authService,
-        IChecklistService checklistService,
         ILogger<AuthController> logger)
     {
-        _context = context;
         _authService = authService;
-        _checklistService = checklistService;
         _logger = logger;
     }
 
@@ -36,49 +27,10 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var existingUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.LoginId == request.LoginId);
-
-            if (existingUser != null)
-            {
-                return BadRequest(new { message = "이미 사용 중인 아이디입니다." });
-            }
-
-            if (!string.IsNullOrEmpty(request.Email))
-            {
-                var existingEmail = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Email == request.Email);
-                if (existingEmail != null)
-                {
-                    return BadRequest(new { message = "이미 사용 중인 이메일입니다." });
-                }
-            }
-
-            var user = new Entities.User
-            {
-                LoginId = request.LoginId,
-                PasswordHash = _authService.HashPassword(request.Password),
-                Name = request.Name,
-                Email = request.Email,
-                Phone = request.Phone,
-                Role = Roles.Guest,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("New user registered: {LoginId}", user.LoginId);
-
-            return Ok(new
-            {
-                message = "회원가입이 완료되었습니다.",
-                userId = user.Id,
-                loginId = user.LoginId,
-                name = user.Name
-            });
+            var result = await _authService.RegisterAsync(request);
+            return result.IsSuccess
+                ? Ok(result.Data)
+                : ToErrorResponse(result);
         }
         catch (Exception ex)
         {
@@ -92,42 +44,10 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // --- 1. 회원으로 로그인 시도 (ID: LoginId) ---
-
-            // .Include(u => u.UserConventions)를 추가하여 사용자와 연결된 행사 참여 정보를 함께 로드합니다.
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.LoginId == request.LoginId);
-
-            if (user != null && user.IsActive && _authService.VerifyPassword(request.Password, user.PasswordHash))
-            {
-                var accessToken = _authService.GenerateAccessToken(user);
-                var refreshToken = _authService.GenerateRefreshToken();
-                
-                user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
-                user.LastLoginAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync();
-
-                return Ok(new
-                {
-                    accessToken,
-                    refreshToken,
-                    user = new
-                    {
-                        id = user.Id,
-                        loginId = user.LoginId,
-                        name = user.Name,
-                        role = user.Role
-                    }
-                });
-            }
-
-            // --- 2. 비회원으로 로그인 시도 (ID: 참석자 이름) ---
-            // NOTE: 이 경로는 더 이상 사용되지 않습니다. UserConvention 모델로 전환되었습니다.
-            // 하위 호환성을 위해 유지하되, guest-login 엔드포인트 사용을 권장합니다.
-
-            // --- 3. 로그인 최종 실패 ---
-            return Unauthorized(new { message = "아이디 또는 비밀번호를 확인해주세요." });
+            var result = await _authService.LoginAsync(request);
+            return result.IsSuccess
+                ? Ok(result.Data)
+                : ToErrorResponse(result);
         }
         catch (Exception ex)
         {
@@ -136,69 +56,26 @@ public class AuthController : ControllerBase
         }
     }
 
-    // 비회원 로그인 (이름 + 연락처)
     [HttpPost("guest-login")]
     public async Task<IActionResult> GuestLogin([FromBody] GuestLoginRequest request)
     {
         try
         {
-            // 연락처에서 '-' 제거
-            var normalizedPhone = request.Phone.Replace("-", "").Replace(" ", "");
+            var result = await _authService.GuestLoginAsync(request);
 
-            // UserConvention을 통해 사용자 조회
-            var userConvention = await _context.UserConventions
-                .Include(uc => uc.User)
-                .Include(uc => uc.Convention)
-                .FirstOrDefaultAsync(uc =>
-                    uc.User.Name == request.Name &&
-                    uc.User.Phone.Replace("-", "").Replace(" ", "") == normalizedPhone &&
-                    uc.ConventionId == request.ConventionId);
-
-            if (userConvention == null)
+            if (!result.IsSuccess)
             {
-                return Unauthorized(new { message = "참석자 정보를 찾을 수 없습니다. 이름과 연락처를 확인해주세요." });
-            }
-
-            if (userConvention.User == null || userConvention.Convention == null)
-            {
-                _logger.LogWarning("Guest login failed due to partial data. User: {User}, Convention: {Convention}", userConvention.User, userConvention.Convention);
-                return Unauthorized(new { message = "참석자 또는 행사 정보를 찾을 수 없습니다." });
-            }
-
-            var user = userConvention.User;
-
-            // 회원으로 전환된 경우 (LoginId가 있는 경우)
-            if (!string.IsNullOrEmpty(user.LoginId) && !user.LoginId.StartsWith("guest_"))
-            {
-                return BadRequest(new {
-                    message = "회원으로 전환된 계정입니다. 일반 로그인을 이용해주세요.",
-                    loginId = user.LoginId
-                });
-            }
-
-            // 비회원용 토큰 생성 (User 정보 기반)
-            var accessToken = _authService.GenerateAccessToken(user, user.Id, userConvention.ConventionId);
-
-            return Ok(new
-            {
-                accessToken,
-                isGuest = true,
-                user = new
+                // 회원 전환 안내 (메시지에 '|' 구분자로 loginId가 포함된 경우)
+                if (result.ErrorMessage != null && result.ErrorMessage.Contains('|'))
                 {
-                    id = user.Id,
-                    name = user.Name,
-                    phone = user.Phone,
-                    corpPart = user.CorpPart,
-                    affiliation = user.Affiliation
-                },
-                convention = new
-                {
-                    id = userConvention.Convention.Id,
-                    title = userConvention.Convention.Title,
-                    startDate = userConvention.Convention.StartDate,
-                    endDate = userConvention.Convention.EndDate
+                    var parts = result.ErrorMessage.Split('|', 2);
+                    return BadRequest(new { message = parts[0], loginId = parts[1] });
                 }
-            });
+
+                return ToErrorResponse(result);
+            }
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -212,26 +89,10 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken);
-
-            if (user == null || user.RefreshTokenExpiresAt < DateTime.UtcNow)
-            {
-                return Unauthorized(new { message = "유효하지 않은 리프레시 토큰입니다." });
-            }
-
-            var accessToken = _authService.GenerateAccessToken(user);
-            var refreshToken = _authService.GenerateRefreshToken();
-
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                accessToken,
-                refreshToken
-            });
+            var result = await _authService.RefreshTokenAsync(request);
+            return result.IsSuccess
+                ? Ok(result.Data)
+                : ToErrorResponse(result);
         }
         catch (Exception ex)
         {
@@ -247,15 +108,7 @@ public class AuthController : ControllerBase
         try
         {
             var userId = User.GetUserId();
-            var user = await _context.Users.FindAsync(userId);
-
-            if (user != null)
-            {
-                user.RefreshToken = null;
-                user.RefreshTokenExpiresAt = null;
-                await _context.SaveChangesAsync();
-            }
-
+            await _authService.LogoutAsync(userId);
             return Ok(new { message = "로그아웃되었습니다." });
         }
         catch (Exception ex)
@@ -273,61 +126,10 @@ public class AuthController : ControllerBase
         try
         {
             var userId = User.GetUserId();
-            var user = await _context.Users
-                .Include(u => u.UserConventions)
-                    .ThenInclude(uc => uc.Convention)
-                .FirstOrDefaultAsync(u => u.Id == userId);
-
-            if (user == null)
-            {
-                return NotFound(new { message = "사용자를 찾을 수 없습니다." });
-            }
-
-            var conventionList = new List<object>();
-            foreach (var uc in user.UserConventions.Where(uc => uc.Convention != null))
-            {
-                var unreadCount = await _context.ConventionChatMessages.CountAsync(m =>
-                    m.ConventionId == uc.ConventionId &&
-                    m.CreatedAt > (uc.LastChatReadTimestamp ?? DateTime.MinValue));
-
-                conventionList.Add(new
-                {
-                    id = uc.ConventionId,
-                    title = uc.Convention!.Title,
-                    startDate = uc.Convention.StartDate,
-                    endDate = uc.Convention.EndDate,
-                    userId = user.Id,
-                    name = user.Name,
-                    unreadCount = unreadCount
-                });
-            }
-
-            // 현재 선택된 행사의 체크리스트 상태 계산 (selectedConventionId가 필요하면 쿼리 매개변수로 추가)
-            // 여기서는 첫 번째 행사의 체크리스트를 기본으로 반환
-            object? checklistStatus = null;
-            var firstUserConvention = user.UserConventions.FirstOrDefault();
-
-            _logger.LogInformation("GetCurrentUser: UserId={UserId}, ConventionCount={ConventionCount}, FirstConvention={FirstConventionId}",
-                user.Id, user.UserConventions.Count, firstUserConvention?.ConventionId ?? 0);
-
-            if (firstUserConvention != null)
-            {
-                checklistStatus = await _checklistService.BuildChecklistStatusAsync(user.Id, firstUserConvention.ConventionId);
-                _logger.LogInformation("Checklist status built: {HasStatus}", checklistStatus != null);
-            }
-
-            return Ok(new
-            {
-                id = user.Id,
-                loginId = user.LoginId,
-                name = user.Name,
-                email = user.Email,
-                phone = user.Phone,
-                role = user.Role,
-                profileImageUrl = user.ProfileImageUrl,
-                conventions = conventionList,
-                checklistStatus = checklistStatus
-            });
+            var result = await _authService.GetCurrentUserAsync(userId);
+            return result.IsSuccess
+                ? Ok(result.Data)
+                : ToErrorResponse(result);
         }
         catch (Exception ex)
         {
@@ -343,26 +145,8 @@ public class AuthController : ControllerBase
         try
         {
             var userId = User.GetUserId();
-
-            var joinedConventionIds = await _context.UserConventions
-                .Where(uc => uc.UserId == userId)
-                .Select(uc => uc.ConventionId)
-                .ToListAsync();
-
-            var availableConventions = await _context.Conventions
-                .Where(c => c.DeleteYn == DeleteStatus.Active && !joinedConventionIds.Contains(c.Id))
-                .Select(c => new
-                {
-                    c.Id,
-                    c.Title,
-                    c.ConventionType,
-                    c.StartDate,
-                    c.EndDate,
-                    c.ConventionImg
-                })
-                .ToListAsync();
-
-            return Ok(availableConventions);
+            var conventions = await _authService.GetAvailableConventionsAsync(userId);
+            return Ok(conventions);
         }
         catch (Exception ex)
         {
@@ -370,5 +154,17 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "행사 목록 조회 중 오류가 발생했습니다." });
         }
     }
-}
 
+    /// <summary>
+    /// AuthResult의 ErrorType에 따라 적절한 HTTP 응답을 반환합니다.
+    /// </summary>
+    private IActionResult ToErrorResponse<T>(AuthResult<T> result)
+    {
+        return result.ErrorType switch
+        {
+            AuthErrorType.Unauthorized => Unauthorized(new { message = result.ErrorMessage }),
+            AuthErrorType.NotFound => NotFound(new { message = result.ErrorMessage }),
+            _ => BadRequest(new { message = result.ErrorMessage })
+        };
+    }
+}

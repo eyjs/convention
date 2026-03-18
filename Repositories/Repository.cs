@@ -25,6 +25,11 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
         _dbSet = context.Set<TEntity>();
     }
 
+    /// <summary>
+    /// 복잡한 쿼리를 위한 IQueryable 접근자
+    /// </summary>
+    public IQueryable<TEntity> Query => _dbSet.AsQueryable();
+
     // ============================================================
     // 조회 (Read) 메서드들
     // ============================================================

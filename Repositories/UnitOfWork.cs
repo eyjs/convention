@@ -1,32 +1,21 @@
 using LocalRAG.Data;
 using LocalRAG.Entities;
-using LocalRAG.DTOs.ScheduleModels; // Added
+using LocalRAG.Entities.Action;
+using LocalRAG.Entities.FormBuilder;
+using LocalRAG.DTOs.ScheduleModels;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace LocalRAG.Repositories;
 
 /// <summary>
 /// Unit of Work 구현체
-/// 
-/// Unit of Work 패턴의 핵심 개념:
-/// 1. 여러 Repository의 변경사항을 하나의 트랜잭션으로 묶음
-/// 2. 모든 작업이 성공하면 커밋, 하나라도 실패하면 롤백
-/// 3. DbContext의 수명 관리 및 트랜잭션 제어
-/// 
-/// 사용 예시:
-/// using (var uow = new UnitOfWork(context))
-/// {
-///     await uow.Conventions.AddAsync(convention);
-///     await uow.Guests.AddAsync(guest);
-///     await uow.SaveChangesAsync(); // 모두 성공 또는 모두 실패
-/// }
 /// </summary>
 public class UnitOfWork : IUnitOfWork
 {
     private readonly ConventionDbContext _context;
     private IDbContextTransaction? _transaction;
 
-    // Repository 인스턴스들 (Lazy Initialization)
+    // Specialized Repository 인스턴스들 (Lazy Initialization)
     private IConventionRepository? _conventions;
     private IUserRepository? _users;
     private IUserConventionRepository? _userConventions;
@@ -38,11 +27,36 @@ public class UnitOfWork : IUnitOfWork
     private ISectionRepository? _sections;
     private IOwnerRepository? _owners;
     private IVectorStoreRepository? _vectorStores;
-    private IRepository<Entities.Action.ConventionAction>? _conventionActions;
+
+    // Generic Repository 인스턴스들
+    private IRepository<ConventionAction>? _conventionActions;
     private IRepository<UserActionStatus>? _userActionStatuses;
     private IRepository<ScheduleTemplate>? _scheduleTemplates;
     private IRepository<OptionTour>? _optionTours;
     private IRepository<UserOptionTour>? _userOptionTours;
+    private IRepository<ScheduleItem>? _scheduleItems;
+    private IRepository<GuestScheduleTemplate>? _guestScheduleTemplates;
+    private IRepository<Notice>? _notices;
+    private IRepository<NoticeCategory>? _noticeCategories;
+    private IRepository<Gallery>? _galleries;
+    private IRepository<GalleryImage>? _galleryImages;
+    private IRepository<FileAttachment>? _fileAttachments;
+    private IRepository<AttributeDefinition>? _attributeDefinitions;
+    private IRepository<AttributeTemplate>? _attributeTemplates;
+    private IRepository<ActionTemplate>? _actionTemplates;
+    private IRepository<ActionSubmission>? _actionSubmissions;
+    private IRepository<ConventionChatMessage>? _conventionChatMessages;
+    private IRepository<LlmSetting>? _llmSettings;
+    private IRepository<VectorDataEntry>? _vectorDataEntries;
+    private IRepository<SurveyQuestion>? _surveyQuestions;
+    private IRepository<QuestionOption>? _questionOptions;
+    private IRepository<SurveyResponse>? _surveyResponses;
+    private IRepository<SurveyResponseDetail>? _surveyResponseDetails;
+    private IRepository<SmsLog>? _smsLogs;
+    private IRepository<SmsTemplate>? _smsTemplates;
+    private IRepository<FormDefinition>? _formDefinitions;
+    private IRepository<FormField>? _formFields;
+    private IRepository<FormSubmission>? _formSubmissions;
 
     public UnitOfWork(ConventionDbContext context)
     {
@@ -50,18 +64,8 @@ public class UnitOfWork : IUnitOfWork
     }
 
     // ============================================================
-    // Repository Properties (Lazy Initialization 패턴)
+    // Specialized Repository Properties
     // ============================================================
-    // 
-    // Lazy Initialization이란?
-    // - 실제 사용될 때까지 객체 생성을 지연
-    // - 메모리 효율성: 사용하지 않는 Repository는 생성하지 않음
-    // - 성능 향상: 초기화 비용을 사용 시점으로 분산
-    //
-    // 작동 방식:
-    // 1. _conventions가 null이면 새로 생성
-    // 2. 이미 생성되어 있으면 기존 인스턴스 반환
-    // 3. ??= 연산자: null일 때만 할당 (null-coalescing assignment)
 
     public IConventionRepository Conventions =>
         _conventions ??= new ConventionRepository(_context);
@@ -96,8 +100,12 @@ public class UnitOfWork : IUnitOfWork
     public IVectorStoreRepository VectorStores =>
         _vectorStores ??= new VectorStoreRepository(_context);
 
-    public IRepository<Entities.Action.ConventionAction> ConventionActions =>
-        _conventionActions ??= new Repository<Entities.Action.ConventionAction>(_context);
+    // ============================================================
+    // Generic Repository Properties
+    // ============================================================
+
+    public IRepository<ConventionAction> ConventionActions =>
+        _conventionActions ??= new Repository<ConventionAction>(_context);
 
     public IRepository<UserActionStatus> UserActionStatuses =>
         _userActionStatuses ??= new Repository<UserActionStatus>(_context);
@@ -110,6 +118,75 @@ public class UnitOfWork : IUnitOfWork
 
     public IRepository<UserOptionTour> UserOptionTours =>
         _userOptionTours ??= new Repository<UserOptionTour>(_context);
+
+    public IRepository<ScheduleItem> ScheduleItems =>
+        _scheduleItems ??= new Repository<ScheduleItem>(_context);
+
+    public IRepository<GuestScheduleTemplate> GuestScheduleTemplates =>
+        _guestScheduleTemplates ??= new Repository<GuestScheduleTemplate>(_context);
+
+    public IRepository<Notice> Notices =>
+        _notices ??= new Repository<Notice>(_context);
+
+    public IRepository<NoticeCategory> NoticeCategories =>
+        _noticeCategories ??= new Repository<NoticeCategory>(_context);
+
+    public IRepository<Gallery> Galleries =>
+        _galleries ??= new Repository<Gallery>(_context);
+
+    public IRepository<GalleryImage> GalleryImages =>
+        _galleryImages ??= new Repository<GalleryImage>(_context);
+
+    public IRepository<FileAttachment> FileAttachments =>
+        _fileAttachments ??= new Repository<FileAttachment>(_context);
+
+    public IRepository<AttributeDefinition> AttributeDefinitions =>
+        _attributeDefinitions ??= new Repository<AttributeDefinition>(_context);
+
+    public IRepository<AttributeTemplate> AttributeTemplates =>
+        _attributeTemplates ??= new Repository<AttributeTemplate>(_context);
+
+    public IRepository<ActionTemplate> ActionTemplates =>
+        _actionTemplates ??= new Repository<ActionTemplate>(_context);
+
+    public IRepository<ActionSubmission> ActionSubmissions =>
+        _actionSubmissions ??= new Repository<ActionSubmission>(_context);
+
+    public IRepository<ConventionChatMessage> ConventionChatMessages =>
+        _conventionChatMessages ??= new Repository<ConventionChatMessage>(_context);
+
+    public IRepository<LlmSetting> LlmSettings =>
+        _llmSettings ??= new Repository<LlmSetting>(_context);
+
+    public IRepository<VectorDataEntry> VectorDataEntries =>
+        _vectorDataEntries ??= new Repository<VectorDataEntry>(_context);
+
+    public IRepository<SurveyQuestion> SurveyQuestions =>
+        _surveyQuestions ??= new Repository<SurveyQuestion>(_context);
+
+    public IRepository<QuestionOption> QuestionOptions =>
+        _questionOptions ??= new Repository<QuestionOption>(_context);
+
+    public IRepository<SurveyResponse> SurveyResponses =>
+        _surveyResponses ??= new Repository<SurveyResponse>(_context);
+
+    public IRepository<SurveyResponseDetail> SurveyResponseDetails =>
+        _surveyResponseDetails ??= new Repository<SurveyResponseDetail>(_context);
+
+    public IRepository<SmsLog> SmsLogs =>
+        _smsLogs ??= new Repository<SmsLog>(_context);
+
+    public IRepository<SmsTemplate> SmsTemplates =>
+        _smsTemplates ??= new Repository<SmsTemplate>(_context);
+
+    public IRepository<FormDefinition> FormDefinitions =>
+        _formDefinitions ??= new Repository<FormDefinition>(_context);
+
+    public IRepository<FormField> FormFields =>
+        _formFields ??= new Repository<FormField>(_context);
+
+    public IRepository<FormSubmission> FormSubmissions =>
+        _formSubmissions ??= new Repository<FormSubmission>(_context);
 
     // ============================================================
     // Transaction Methods

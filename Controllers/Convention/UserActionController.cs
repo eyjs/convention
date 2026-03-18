@@ -1,13 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
-using LocalRAG.Entities;
-using LocalRAG.Entities.Action;
-using System.Text.Json;
 using LocalRAG.DTOs.ActionModels;
 using LocalRAG.Extensions;
 using LocalRAG.Interfaces;
+using System.Text.Json;
 
 namespace LocalRAG.Controllers.Convention;
 
@@ -18,18 +14,15 @@ namespace LocalRAG.Controllers.Convention;
 [Route("api/conventions/{conventionId}/actions")]
 public class UserActionController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUserActionService _userActionService;
     private readonly ILogger<UserActionController> _logger;
-    private readonly IActionOrchestrationService _orchestrationService;
 
     public UserActionController(
-        ConventionDbContext context,
-        ILogger<UserActionController> logger,
-        IActionOrchestrationService orchestrationService)
+        IUserActionService userActionService,
+        ILogger<UserActionController> logger)
     {
-        _context = context;
+        _userActionService = userActionService;
         _logger = logger;
-        _orchestrationService = orchestrationService;
     }
 
     /// <summary>
@@ -38,31 +31,7 @@ public class UserActionController : ControllerBase
     [HttpGet("urgent")]
     public async Task<ActionResult> GetUrgentActions(int conventionId)
     {
-        var now = DateTime.UtcNow;
-
-        var actions = await _context.ConventionActions
-            .Include(a => a.Template)
-            .Where(a => a.ConventionId == conventionId &&
-                       a.IsActive &&
-                       a.Deadline.HasValue &&
-                       a.Deadline.Value > now) // 미래 마감기한만
-            .Select(a => new
-            {
-                a.Id,
-                a.Title,
-                a.Deadline,
-                a.MapsTo,
-                a.IsRequired,
-                a.ActionCategory,
-                a.TargetLocation,
-                a.ConfigJson,
-                a.BehaviorType,
-                a.TargetId,
-                IconClass = a.IconClass ?? (a.Template == null ? null : a.Template.IconClass),
-                Category = a.Category ?? (a.Template == null ? null : a.Template.Category)
-            })
-            .ToListAsync();
-
+        var actions = await _userActionService.GetUrgentActionsAsync(conventionId);
         return Ok(actions);
     }
 
@@ -77,55 +46,7 @@ public class UserActionController : ControllerBase
         [FromQuery] string? actionCategory = null,
         [FromQuery] bool? isActive = null)
     {
-        var query = _context.ConventionActions
-            .Include(a => a.Template)
-            .Where(a => a.ConventionId == conventionId);
-
-        if (isActive.HasValue)
-        {
-            query = query.Where(a => a.IsActive == isActive.Value);
-        }
-        else
-        {
-            query = query.Where(a => a.IsActive);
-        }
-
-        if (!string.IsNullOrEmpty(targetLocation))
-        {
-            var locations = targetLocation.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                         .Select(l => l.Trim())
-                                         .ToList();
-            if (locations.Any())
-            {
-                query = query.Where(a => a.TargetLocation != null && locations.Contains(a.TargetLocation));
-            }
-        }
-
-        if (!string.IsNullOrEmpty(actionCategory))
-        {
-            query = query.Where(a => a.ActionCategory == actionCategory);
-        }
-
-        var actions = await query
-            .OrderBy(a => a.Category)
-            .ThenBy(a => a.OrderNum)
-            .Select(a => new
-            {
-                a.Id,
-                a.Title,
-                a.Deadline,
-                a.MapsTo,
-                a.IsRequired,
-                a.ActionCategory,
-                a.TargetLocation,
-                a.ConfigJson,
-                a.BehaviorType,
-                a.TargetId,
-                IconClass = a.IconClass ?? (a.Template == null ? null : a.Template.IconClass),
-                Category = a.Category ?? (a.Template == null ? null : a.Template.Category)
-            })
-            .ToListAsync();
-
+        var actions = await _userActionService.GetAllActionsAsync(conventionId, targetLocation, actionCategory, isActive);
         return Ok(actions);
     }
 
@@ -138,10 +59,7 @@ public class UserActionController : ControllerBase
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
         var userId = userIdNullable.Value;
 
-        var statuses = await _context.UserActionStatuses
-            .Where(s => s.UserId == userId && s.ConventionAction != null && s.ConventionAction.ConventionId == conventionId)
-            .ToListAsync();
-
+        var statuses = await _userActionService.GetUserActionStatusesAsync(conventionId, userId);
         return Ok(statuses);
     }
 
@@ -156,7 +74,7 @@ public class UserActionController : ControllerBase
 
         try
         {
-            var checklist = await _orchestrationService.GetUserActionsAsync(conventionId, userId);
+            var checklist = await _userActionService.GetUserChecklistAsync(conventionId, userId);
             return Ok(checklist);
         }
         catch (Exception ex)
@@ -169,30 +87,11 @@ public class UserActionController : ControllerBase
     [HttpGet("{actionId}")]
     public async Task<ActionResult> GetActionDetail(int conventionId, int actionId)
     {
-        var action = await _context.ConventionActions
-            .Include(a => a.Template)
-            .FirstOrDefaultAsync(a => a.ConventionId == conventionId &&
-                                    a.Id == actionId &&
-                                    a.IsActive);
-
-        if (action == null)
+        var result = await _userActionService.GetActionDetailAsync(conventionId, actionId);
+        if (result == null)
             return NotFound(new { message = "액션을 찾을 수 없습니다." });
 
-        return Ok(new
-        {
-            action.Id,
-            action.Title,
-            action.Deadline,
-            action.MapsTo,
-            action.ConfigJson,
-            action.IsRequired,
-            action.ActionCategory,
-            action.TargetLocation,
-            action.BehaviorType,
-            action.TargetId,
-            IconClass = action.IconClass ?? action.Template?.IconClass,
-            Category = action.Category ?? action.Template?.Category
-        });
+        return Ok(result);
     }
 
     [Authorize]
@@ -204,32 +103,11 @@ public class UserActionController : ControllerBase
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
         var userId = userIdNullable.Value;
 
-        var action = await _context.ConventionActions.FirstOrDefaultAsync(a => a.Id == actionId && a.ConventionId == conventionId);
-        if (action == null)
-        {
+        var result = await _userActionService.CompleteActionAsync(conventionId, actionId, userId, responseDto?.ResponseDataJson);
+        if (result == null)
             return NotFound(new { message = "액션을 찾을 수 없습니다." });
-        }
 
-        var status = await _context.UserActionStatuses.FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
-        if (status == null)
-        {
-            status = new UserActionStatus
-            {
-                UserId = userId,
-                ConventionActionId = action.Id,
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.UserActionStatuses.Add(status);
-        }
-
-        status.IsComplete = true;
-        status.CompletedAt = DateTime.UtcNow;
-        status.ResponseDataJson = responseDto?.ResponseDataJson;
-        status.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-
-        return Ok(new { message = "액션이 완료되었습니다." });
+        return Ok(result);
     }
 
     [Authorize]
@@ -241,35 +119,11 @@ public class UserActionController : ControllerBase
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
         var userId = userIdNullable.Value;
 
-        var action = await _context.ConventionActions.FirstOrDefaultAsync(a => a.Id == actionId && a.ConventionId == conventionId);
-        if (action == null)
-        {
+        var result = await _userActionService.ToggleActionAsync(conventionId, actionId, userId, dto.IsComplete);
+        if (result == null)
             return NotFound(new { message = "액션을 찾을 수 없습니다." });
-        }
 
-        var status = await _context.UserActionStatuses.FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
-        if (status == null)
-        {
-            status = new UserActionStatus
-            {
-                UserId = userId,
-                ConventionActionId = action.Id,
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.UserActionStatuses.Add(status);
-        }
-
-        status.IsComplete = dto.IsComplete;
-        status.CompletedAt = dto.IsComplete ? DateTime.UtcNow : null;
-        status.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-
-        return Ok(new
-        {
-            message = dto.IsComplete ? "액션이 완료되었습니다." : "완료가 취소되었습니다.",
-            isComplete = status.IsComplete
-        });
+        return Ok(result);
     }
 
     [Authorize]
@@ -281,60 +135,14 @@ public class UserActionController : ControllerBase
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
         var userId = userIdNullable.Value;
 
-        var action = await _context.ConventionActions
-            .FirstOrDefaultAsync(a => a.Id == actionId && a.ConventionId == conventionId);
+        var (result, error, notFound) = await _userActionService.SubmitActionAsync(conventionId, actionId, userId, payload);
 
-        if (action == null)
-        {
-            return NotFound(new { message = "액션을 찾을 수 없습니다." });
-        }
+        if (notFound)
+            return NotFound(new { message = error });
+        if (error != null)
+            return BadRequest(new { message = error });
 
-        if (action.BehaviorType != BehaviorType.FormBuilder)
-        {
-            return BadRequest(new { message = "이 액션은 FormBuilder 타입이 아닙니다." });
-        }
-
-        var submission = await _context.ActionSubmissions
-            .FirstOrDefaultAsync(s => s.ConventionActionId == actionId && s.UserId == userId);
-
-        if (submission != null)
-        {
-            submission.SubmissionDataJson = payload.ToString();
-            submission.UpdatedAt = DateTime.UtcNow;
-        }
-        else
-        {
-            submission = new ActionSubmission
-            {
-                ConventionActionId = actionId,
-                UserId = userId,
-                SubmissionDataJson = payload.ToString(),
-                SubmittedAt = DateTime.UtcNow
-            };
-            _context.ActionSubmissions.Add(submission);
-        }
-
-        var status = await _context.UserActionStatuses
-            .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == actionId);
-
-        if (status == null)
-        {
-            status = new UserActionStatus
-            {
-                UserId = userId,
-                ConventionActionId = actionId,
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.UserActionStatuses.Add(status);
-        }
-
-        status.IsComplete = true;
-        status.CompletedAt = DateTime.UtcNow;
-        status.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-
-        return Ok(new { message = "제출이 완료되었습니다." });
+        return Ok(result);
     }
 
     [Authorize]
@@ -346,53 +154,25 @@ public class UserActionController : ControllerBase
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
         var userId = userIdNullable.Value;
 
-        var submission = await _context.ActionSubmissions
-            .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.ConventionActionId == actionId && s.UserId == userId);
-
-        if (submission == null)
-        {
+        var result = await _userActionService.GetUserSubmissionAsync(actionId, userId);
+        if (result == null)
             return NotFound(new { message = "제출 데이터가 없습니다." });
-        }
 
-        var jsonData = JsonDocument.Parse(submission.SubmissionDataJson);
-        return Ok(jsonData.RootElement);
+        return Ok(result);
     }
 
     [Authorize(Roles = "Admin")]
     [HttpGet("{actionId}/submissions/all")]
     public async Task<IActionResult> GetAllSubmissions(int conventionId, int actionId)
     {
-        var action = await _context.ConventionActions
-            .FirstOrDefaultAsync(a => a.Id == actionId && a.ConventionId == conventionId);
+        var (result, error, notFound) = await _userActionService.GetAllSubmissionsAsync(conventionId, actionId);
 
-        if (action == null)
-        {
-            return NotFound(new { message = "액션을 찾을 수 없습니다." });
-        }
+        if (notFound)
+            return NotFound(new { message = error });
+        if (error != null)
+            return BadRequest(new { message = error });
 
-        if (action.BehaviorType != BehaviorType.FormBuilder)
-        {
-            return BadRequest(new { message = "이 액션은 FormBuilder 타입이 아닙니다." });
-        }
-
-        var submissionsRaw = await _context.ActionSubmissions
-            .Include(s => s.User)
-            .Where(s => s.ConventionActionId == actionId)
-            .ToListAsync();
-
-        var submissions = submissionsRaw.Select(s => new
-        {
-            s.Id,
-            s.UserId,
-            UserName = s.User.Name,
-            UserEmail = s.User.Email,
-            SubmissionData = JsonDocument.Parse(s.SubmissionDataJson).RootElement,
-            s.SubmittedAt,
-            s.UpdatedAt
-        }).ToList();
-
-        return Ok(submissions);
+        return Ok(result);
     }
 
     [Authorize]
@@ -404,90 +184,15 @@ public class UserActionController : ControllerBase
             return Unauthorized("사용자 정보를 확인할 수 없습니다.");
         var userId = userIdNullable.Value;
 
-        var actions = await _context.ConventionActions
-            .Where(a => a.ConventionId == conventionId &&
-                       a.IsActive &&
-                       a.Deadline.HasValue)
-            .OrderBy(a => a.Deadline)
-            .ThenBy(a => a.OrderNum)
-            .ToListAsync();
-
-        if (actions.Count == 0)
-            return Ok(new { totalItems = 0, completedItems = 0, progressPercentage = 0, items = new List<object>() });
-
-        var statuses = await _context.UserActionStatuses
-            .Where(s => s.UserId == userId)
-            .ToListAsync();
-
-        var statusDict = statuses.ToDictionary(s => s.ConventionActionId, s => s);
-
-        var items = new List<object>();
-        int completedCount = 0;
-
-        foreach (var action in actions)
-        {
-            var status = statusDict.GetValueOrDefault(action.Id);
-            bool isComplete = status?.IsComplete ?? false;
-
-            if (isComplete)
-                completedCount++;
-
-            items.Add(new
-            {
-                actionId = action.Id,
-                title = action.Title,
-                isComplete = isComplete,
-                deadline = action.Deadline,
-                navigateTo = action.MapsTo,
-                orderNum = action.OrderNum,
-                behaviorType = action.BehaviorType,
-                targetId = action.TargetId
-            });
-        }
-
-        DateTime? overallDeadline = actions
-            .Where(a => {
-                var status = statusDict.GetValueOrDefault(a.Id);
-                return !(status?.IsComplete ?? false);
-            })
-            .OrderBy(a => a.Deadline)
-            .FirstOrDefault()?.Deadline;
-
-        int totalItems = actions.Count;
-        int progressPercentage = totalItems > 0 ? (completedCount * 100 / totalItems) : 0;
-
-        return Ok(new
-        {
-            totalItems = totalItems,
-            completedItems = completedCount,
-            progressPercentage = progressPercentage,
-            overallDeadline = overallDeadline,
-            items = items
-        });
+        var result = await _userActionService.GetChecklistStatusAsync(conventionId, userId);
+        return Ok(result);
     }
 
     [Authorize]
     [HttpGet("menu")]
     public async Task<IActionResult> GetMenuActions(int conventionId)
     {
-        var actions = await _context.ConventionActions
-            .Where(a => a.ConventionId == conventionId &&
-                       a.IsActive &&
-                       a.ActionCategory == "MENU")
-            .OrderBy(a => a.OrderNum)
-            .ThenBy(a => a.CreatedAt)
-            .Select(a => new
-            {
-                a.Id,
-                a.Title,
-                a.MapsTo,
-                a.OrderNum,
-                a.BehaviorType,
-                a.TargetId,
-                a.ConfigJson
-            })
-            .ToListAsync();
-
+        var actions = await _userActionService.GetMenuActionsAsync(conventionId);
         return Ok(actions);
     }
 }

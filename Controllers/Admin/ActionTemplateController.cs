@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using LocalRAG.Entities.Action;
 using LocalRAG.DTOs.ActionModels;
+using LocalRAG.Repositories;
 using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Admin;
@@ -16,14 +16,14 @@ namespace LocalRAG.Controllers.Admin;
 [Authorize(Roles = Roles.Admin)]
 public class ActionTemplateController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ActionTemplateController> _logger;
 
     public ActionTemplateController(
-        ConventionDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<ActionTemplateController> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -33,7 +33,7 @@ public class ActionTemplateController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ActionTemplate>>> GetTemplates([FromQuery] string? category = null)
     {
-        var query = _context.ActionTemplates.AsQueryable();
+        var query = _unitOfWork.ActionTemplates.Query;
 
         if (!string.IsNullOrEmpty(category))
             query = query.Where(t => t.Category == category);
@@ -52,7 +52,7 @@ public class ActionTemplateController : ControllerBase
     [HttpGet("by-category")]
     public async Task<ActionResult> GetTemplatesByCategory()
     {
-        var templates = await _context.ActionTemplates
+        var templates = await _unitOfWork.ActionTemplates.Query
             .Where(t => t.IsActive)
             .OrderBy(t => t.Category)
             .ThenBy(t => t.OrderNum)
@@ -74,7 +74,7 @@ public class ActionTemplateController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ActionTemplate>> GetTemplate(int id)
     {
-        var template = await _context.ActionTemplates.FindAsync(id);
+        var template = await _unitOfWork.ActionTemplates.GetByIdAsync(id);
         if (template == null)
             return NotFound();
 
@@ -87,10 +87,9 @@ public class ActionTemplateController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ActionTemplate>> CreateTemplate([FromBody] ActionTemplateDto dto)
     {
-        // 중복 TemplateType 확인
-        var exists = await _context.ActionTemplates
-            .AnyAsync(t => t.TemplateType == dto.TemplateType);
-        
+        var exists = await _unitOfWork.ActionTemplates
+            .ExistsAsync(t => t.TemplateType == dto.TemplateType);
+
         if (exists)
             return BadRequest($"TemplateType '{dto.TemplateType}' already exists");
 
@@ -109,8 +108,8 @@ public class ActionTemplateController : ControllerBase
             UpdatedAt = DateTime.UtcNow
         };
 
-        _context.ActionTemplates.Add(template);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.ActionTemplates.AddAsync(template);
+        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Created action template: {TemplateType}", template.TemplateType);
         return CreatedAtAction(nameof(GetTemplate), new { id = template.Id }, template);
@@ -122,7 +121,7 @@ public class ActionTemplateController : ControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdateTemplate(int id, [FromBody] ActionTemplateDto dto)
     {
-        var template = await _context.ActionTemplates.FindAsync(id);
+        var template = await _unitOfWork.ActionTemplates.GetByIdAsync(id);
         if (template == null)
             return NotFound();
 
@@ -136,7 +135,8 @@ public class ActionTemplateController : ControllerBase
         template.OrderNum = dto.OrderNum;
         template.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        _unitOfWork.ActionTemplates.Update(template);
+        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Updated template: {TemplateType}", template.TemplateType);
         return NoContent();
@@ -148,19 +148,18 @@ public class ActionTemplateController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteTemplate(int id)
     {
-        var template = await _context.ActionTemplates.FindAsync(id);
+        var template = await _unitOfWork.ActionTemplates.GetByIdAsync(id);
         if (template == null)
             return NotFound();
 
-        // 사용 중인 ConventionAction이 있는지 확인
-        var inUse = await _context.ConventionActions
-            .AnyAsync(a => a.TemplateId == id);
+        var inUse = await _unitOfWork.ConventionActions
+            .ExistsAsync(a => a.TemplateId == id);
 
         if (inUse)
             return BadRequest("이 템플릿을 사용 중인 액션이 있습니다. 먼저 액션을 삭제하거나 수정하세요.");
 
-        _context.ActionTemplates.Remove(template);
-        await _context.SaveChangesAsync();
+        _unitOfWork.ActionTemplates.Remove(template);
+        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Deleted template: {TemplateType}", template.TemplateType);
         return NoContent();
@@ -172,17 +171,16 @@ public class ActionTemplateController : ControllerBase
     [HttpPost("{templateId}/apply-to-convention/{conventionId}")]
     public async Task<ActionResult> ApplyTemplateToConvention(int templateId, int conventionId, [FromBody] ApplyTemplateDto dto)
     {
-        var template = await _context.ActionTemplates.FindAsync(templateId);
+        var template = await _unitOfWork.ActionTemplates.GetByIdAsync(templateId);
         if (template == null)
             return NotFound("Template not found");
 
-        var convention = await _context.Conventions.FindAsync(conventionId);
+        var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
         if (convention == null)
             return NotFound("Convention not found");
 
-        // 이미 같은 템플릿이 적용되어 있는지 확인
-        var exists = await _context.ConventionActions
-            .AnyAsync(a => a.ConventionId == conventionId && a.TemplateId == templateId);
+        var exists = await _unitOfWork.ConventionActions
+            .ExistsAsync(a => a.ConventionId == conventionId && a.TemplateId == templateId);
 
         if (exists)
             return BadRequest("이미 동일한 템플릿이 적용되어 있습니다.");
@@ -203,10 +201,10 @@ public class ActionTemplateController : ControllerBase
             UpdatedAt = DateTime.UtcNow
         };
 
-        _context.ConventionActions.Add(action);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.ConventionActions.AddAsync(action);
+        await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Applied template {TemplateType} to convention {ConventionId}", 
+        _logger.LogInformation("Applied template {TemplateType} to convention {ConventionId}",
             template.TemplateType, conventionId);
 
         return Ok(action);

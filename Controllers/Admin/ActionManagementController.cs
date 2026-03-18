@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using Microsoft.AspNetCore.Authorization;
 using LocalRAG.Entities.Action;
 using LocalRAG.DTOs.ActionModels;
+using LocalRAG.Repositories;
 using System.Text.RegularExpressions;
 using LocalRAG.Constants;
 
@@ -14,21 +14,21 @@ namespace LocalRAG.Controllers.Admin;
 [Authorize(Roles = Roles.Admin)]
 public class ActionManagementController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ActionManagementController> _logger;
 
     public ActionManagementController(
-        ConventionDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<ActionManagementController> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
     [HttpGet("convention/{conventionId}")]
     public async Task<ActionResult<List<ConventionActionDto>>> GetActionsForConvention(int conventionId)
     {
-        var actions = await _context.ConventionActions
+        var actions = await _unitOfWork.ConventionActions.Query
             .Where(a => a.ConventionId == conventionId)
             .OrderBy(a => a.OrderNum)
             .Select(a => new ConventionActionDto
@@ -49,7 +49,7 @@ public class ActionManagementController : ControllerBase
             .ToListAsync();
         return Ok(actions);
     }
-    
+
     [HttpPost("actions")]
     public async Task<ActionResult> CreateAction([FromBody] ConventionActionDto request)
     {
@@ -69,27 +69,23 @@ public class ActionManagementController : ControllerBase
             CreatedAt = DateTime.UtcNow
         };
 
-        // BehaviorType이 ModuleLink인 경우 MapsTo 필드에 대한 유효성 검사 및 정규화
         if (action.BehaviorType == BehaviorType.ModuleLink)
         {
-            action.MapsTo = action.MapsTo.Trim(); // 앞뒤 공백 제거
+            action.MapsTo = action.MapsTo.Trim();
 
-            // /feature/ 접두어 강제
             if (!action.MapsTo.StartsWith("/feature/", StringComparison.OrdinalIgnoreCase))
             {
                 action.MapsTo = "/feature/" + action.MapsTo.TrimStart('/');
             }
-            // 중복 슬래시 제거 (예: /feature//path -> /feature/path)
             action.MapsTo = Regex.Replace(action.MapsTo, "(?<!:)/{2,}", "/");
 
-            // 유효성 검사: /feature/로 시작해야 함
             if (!action.MapsTo.StartsWith("/feature/", StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest("ModuleLink의 MapsTo는 '/feature/'로 시작해야 합니다.");
             }
         }
-        _context.ConventionActions.Add(action);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.ConventionActions.AddAsync(action);
+        await _unitOfWork.SaveChangesAsync();
         return Ok(new { id = action.Id });
     }
 
@@ -99,7 +95,7 @@ public class ActionManagementController : ControllerBase
         _logger.LogInformation("UpdateAction called for ID: {Id}", id);
         _logger.LogInformation("Request DTO: {@Request}", request);
 
-        var action = await _context.ConventionActions.FindAsync(id);
+        var action = await _unitOfWork.ConventionActions.GetByIdAsync(id);
         if (action == null)
         {
             _logger.LogWarning("Action with ID {Id} not found.", id);
@@ -119,20 +115,16 @@ public class ActionManagementController : ControllerBase
         action.TargetModuleId = request.BehaviorType == BehaviorType.ModuleLink.ToString() ? request.TargetModuleId : null;
         action.UpdatedAt = DateTime.UtcNow;
 
-        // BehaviorType이 ModuleLink인 경우 MapsTo 필드에 대한 유효성 검사 및 정규화
         if (action.BehaviorType == BehaviorType.ModuleLink)
         {
-            action.MapsTo = action.MapsTo.Trim(); // 앞뒤 공백 제거
+            action.MapsTo = action.MapsTo.Trim();
 
-            // /feature/ 접두어 강제
             if (!action.MapsTo.StartsWith("/feature/", StringComparison.OrdinalIgnoreCase))
             {
                 action.MapsTo = "/feature/" + action.MapsTo.TrimStart('/');
             }
-            // 중복 슬래시 제거 (예: /feature//path -> /feature/path)
             action.MapsTo = Regex.Replace(action.MapsTo, "(?<!:)/{2,}", "/");
 
-            // 유효성 검사: /feature/로 시작해야 함
             if (!action.MapsTo.StartsWith("/feature/", StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest("ModuleLink의 MapsTo는 '/feature/'로 시작해야 합니다.");
@@ -141,7 +133,8 @@ public class ActionManagementController : ControllerBase
 
         try
         {
-            await _context.SaveChangesAsync();
+            _unitOfWork.ConventionActions.Update(action);
+            await _unitOfWork.SaveChangesAsync();
             _logger.LogInformation("Action with ID {Id} updated successfully.", id);
             return Ok();
         }
@@ -156,24 +149,25 @@ public class ActionManagementController : ControllerBase
             return StatusCode(500, new { message = "액션 업데이트 중 알 수 없는 오류가 발생했습니다." });
         }
     }
-    
+
     [HttpPut("actions/{id}/toggle")]
     public async Task<ActionResult> ToggleAction(int id)
     {
-        var action = await _context.ConventionActions.FindAsync(id);
+        var action = await _unitOfWork.ConventionActions.GetByIdAsync(id);
         if (action == null) return NotFound();
         action.IsActive = !action.IsActive;
-        await _context.SaveChangesAsync();
+        _unitOfWork.ConventionActions.Update(action);
+        await _unitOfWork.SaveChangesAsync();
         return Ok(new { isActive = action.IsActive });
     }
 
     [HttpDelete("actions/{id}")]
     public async Task<ActionResult> DeleteAction(int id)
     {
-        var action = await _context.ConventionActions.FindAsync(id);
+        var action = await _unitOfWork.ConventionActions.GetByIdAsync(id);
         if (action == null) return NotFound();
-        _context.ConventionActions.Remove(action);
-        await _context.SaveChangesAsync();
+        _unitOfWork.ConventionActions.Remove(action);
+        await _unitOfWork.SaveChangesAsync();
         return Ok();
     }
 }

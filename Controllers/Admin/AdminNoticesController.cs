@@ -1,11 +1,9 @@
-using LocalRAG.Data;
 using LocalRAG.DTOs.NoticeModels;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
-using System.Threading.Tasks;
 using LocalRAG.Constants;
 using LocalRAG.Extensions;
 
@@ -17,12 +15,12 @@ namespace LocalRAG.Controllers.Admin
     public class AdminNoticesController : ControllerBase
     {
         private readonly INoticeService _noticeService;
-        private readonly ConventionDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public AdminNoticesController(INoticeService noticeService, ConventionDbContext context)
+        public AdminNoticesController(INoticeService noticeService, IUnitOfWork unitOfWork)
         {
             _noticeService = noticeService;
-            _context = context;
+            _unitOfWork = unitOfWork;
         }
 
         [HttpGet]
@@ -89,11 +87,13 @@ namespace LocalRAG.Controllers.Admin
         [HttpDelete("comments/{commentId}")]
         public async Task<IActionResult> HardDeleteComment(int commentId)
         {
-            var comment = await _context.Comments.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == commentId);
+            var comment = await _unitOfWork.Comments.Query
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(c => c.Id == commentId);
             if (comment == null) return NotFound();
 
-            _context.Comments.Remove(comment);
-            await _context.SaveChangesAsync();
+            _unitOfWork.Comments.Remove(comment);
+            await _unitOfWork.SaveChangesAsync();
 
             return NoContent();
         }

@@ -9,6 +9,14 @@ namespace LocalRAG.Repositories;
 /// <typeparam name="TEntity">엔티티 타입</typeparam>
 public interface IRepository<TEntity> where TEntity : class
 {
+    // --- IQueryable 접근 ---
+
+    /// <summary>
+    /// 복잡한 쿼리(Include, Select, GroupBy 등)를 위한 IQueryable 접근자입니다.
+    /// 단순 CRUD는 전용 메서드를 사용하세요.
+    /// </summary>
+    IQueryable<TEntity> Query { get; }
+
     // --- 조회 (Read) ---
 
     /// <summary>

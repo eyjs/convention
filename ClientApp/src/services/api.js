@@ -44,8 +44,10 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    // 401 에러이고 재시도하지 않은 경우
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // 401 에러이고 재시도하지 않은 경우 (로그인 요청은 토큰 갱신 불필요)
+    const requestUrl = originalRequest?.url || ''
+    const isAuthRequest = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/guest-login')
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       // 이미 토큰 갱신 중이면 큐에 추가
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

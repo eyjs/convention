@@ -1,4 +1,6 @@
 using LocalRAG.Entities;
+using LocalRAG.Entities.Action;
+using LocalRAG.Entities.FormBuilder;
 using LocalRAG.DTOs.ScheduleModels;
 
 namespace LocalRAG.Repositories;
@@ -8,7 +10,7 @@ namespace LocalRAG.Repositories;
 /// </summary>
 public interface IUnitOfWork : IDisposable
 {
-    // --- Repository Properties ---
+    // --- Specialized Repository Properties ---
     IConventionRepository Conventions { get; }
     IUserRepository Users { get; }
     IUserConventionRepository UserConventions { get; }
@@ -20,11 +22,54 @@ public interface IUnitOfWork : IDisposable
     ISectionRepository Sections { get; }
     IOwnerRepository Owners { get; }
     IVectorStoreRepository VectorStores { get; }
-    IRepository<Entities.Action.ConventionAction> ConventionActions { get; }
+
+    // --- Generic Repository Properties ---
+    IRepository<ConventionAction> ConventionActions { get; }
     IRepository<UserActionStatus> UserActionStatuses { get; }
     IRepository<ScheduleTemplate> ScheduleTemplates { get; }
     IRepository<OptionTour> OptionTours { get; }
     IRepository<UserOptionTour> UserOptionTours { get; }
+
+    // Schedule
+    IRepository<ScheduleItem> ScheduleItems { get; }
+    IRepository<GuestScheduleTemplate> GuestScheduleTemplates { get; }
+
+    // Notice & Gallery
+    IRepository<Notice> Notices { get; }
+    IRepository<NoticeCategory> NoticeCategories { get; }
+    IRepository<Gallery> Galleries { get; }
+    IRepository<GalleryImage> GalleryImages { get; }
+    IRepository<FileAttachment> FileAttachments { get; }
+
+    // Attributes
+    IRepository<AttributeDefinition> AttributeDefinitions { get; }
+    IRepository<AttributeTemplate> AttributeTemplates { get; }
+
+    // Actions
+    IRepository<ActionTemplate> ActionTemplates { get; }
+    IRepository<ActionSubmission> ActionSubmissions { get; }
+
+    // Chat
+    IRepository<ConventionChatMessage> ConventionChatMessages { get; }
+
+    // AI / LLM
+    IRepository<LlmSetting> LlmSettings { get; }
+    IRepository<VectorDataEntry> VectorDataEntries { get; }
+
+    // Survey
+    IRepository<SurveyQuestion> SurveyQuestions { get; }
+    IRepository<QuestionOption> QuestionOptions { get; }
+    IRepository<SurveyResponse> SurveyResponses { get; }
+    IRepository<SurveyResponseDetail> SurveyResponseDetails { get; }
+
+    // SMS
+    IRepository<SmsLog> SmsLogs { get; }
+    IRepository<SmsTemplate> SmsTemplates { get; }
+
+    // Form Builder
+    IRepository<FormDefinition> FormDefinitions { get; }
+    IRepository<FormField> FormFields { get; }
+    IRepository<FormSubmission> FormSubmissions { get; }
 
     // --- Transaction Methods ---
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

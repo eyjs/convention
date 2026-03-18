@@ -1,0 +1,188 @@
+using LocalRAG.Configuration;
+using LocalRAG.Interfaces;
+using LocalRAG.Providers;
+using LocalRAG.Services.Ai;
+using LocalRAG.Services.Auth;
+using LocalRAG.Services.Chat;
+using LocalRAG.Services.Convention;
+using LocalRAG.Services.Flight;
+using LocalRAG.Services.Shared;
+using LocalRAG.Services.Shared.Builders;
+using LocalRAG.Services.Upload;
+using LocalRAG.Services.UserProfile;
+using LocalRAG.Services.Admin;
+using LocalRAG.Storage;
+
+namespace LocalRAG.Extensions;
+
+public static class ServiceCollectionExtensions
+{
+    /// <summary>
+    /// AI/RAG 관련 서비스 등록
+    /// </summary>
+    public static IServiceCollection AddAiServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddScoped<ILlmProvider, Llama3Provider>(provider =>
+        {
+            var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient("LlmClient");
+            var configuration = provider.GetRequiredService<IConfiguration>();
+            var logger = provider.GetRequiredService<ILogger<Llama3Provider>>();
+            return new Llama3Provider(httpClient, configuration, logger);
+        });
+
+        services.AddScoped<ILlmProvider, GeminiProvider>(provider =>
+        {
+            var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient("LlmClient");
+            var configuration = provider.GetRequiredService<IConfiguration>();
+            return new GeminiProvider(httpClient, configuration);
+        });
+
+        services.AddScoped<LlmProviderManager>();
+
+        if (configuration.GetValue<bool>("EmbeddingSettings:UseOnnx", false))
+        {
+            services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
+        }
+        else
+        {
+            services.AddSingleton<IEmbeddingService, LocalEmbeddingService>();
+        }
+
+        services.AddScoped<IRagService, RagService>();
+        services.AddScoped<ConventionDocumentBuilder>();
+        services.AddScoped<IndexingService>();
+        services.AddScoped<IVectorStore, MssqlVectorStore>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 채팅 서비스 등록
+    /// </summary>
+    public static IServiceCollection AddChatServices(this IServiceCollection services)
+    {
+        services.AddScoped<IConventionChatService, ConventionChatService>();
+        services.AddScoped<IChatHistoryService, ChatHistoryService>();
+        services.AddScoped<SourceIdentifier>();
+        services.AddScoped<ChatIntentRouter>();
+        services.AddScoped<ChatPromptBuilder>();
+        services.AddScoped<LlmResponseService>();
+        services.AddScoped<RagSearchService>();
+        services.AddScoped<UserContextualDataProvider>();
+        services.AddScoped<ConventionAccessService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 인증 서비스 등록
+    /// </summary>
+    public static IServiceCollection AddAuthServices(this IServiceCollection services)
+    {
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddSingleton<IVerificationService, VerificationService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 컨벤션 도메인 서비스 등록
+    /// </summary>
+    public static IServiceCollection AddConventionServices(this IServiceCollection services)
+    {
+        services.AddScoped<INoticeService, NoticeService>();
+        services.AddScoped<INoticeCategoryService, NoticeCategoryService>();
+        services.AddScoped<ISurveyService, SurveyService>();
+        services.AddScoped<IActionOrchestrationService, ActionOrchestrationService>();
+        services.AddScoped<IUserActionService, UserActionService>();
+        services.AddScoped<IChecklistService, ChecklistService>();
+        services.AddScoped<IFormBuilderService, LocalRAG.Services.FormBuilder.FormBuilderService>();
+        services.AddScoped<IPersonalTripService, LocalRAG.Services.PersonalTrip.PersonalTripService>();
+        services.AddScoped<IConventionCrudService, ConventionCrudService>();
+        services.AddScoped<IScheduleService, ScheduleService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// SMS 서비스 등록
+    /// </summary>
+    public static IServiceCollection AddSmsServices(this IServiceCollection services)
+    {
+        services.AddScoped<ISmsSender, DbSmsSender>();
+        services.AddScoped<ISmsService, LocalRAG.Services.Shared.SmsService>();
+        services.AddSingleton<ITemplateVariableService, TemplateVariableService>();
+        services.AddScoped<SmsTemplateContextFactory>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 파일 업로드 서비스 등록
+    /// </summary>
+    public static IServiceCollection AddUploadServices(this IServiceCollection services)
+    {
+        services.AddScoped<IFileUploadService, FileUploadService>();
+        services.AddScoped<IUserUploadService, UserUploadService>();
+        services.AddScoped<IScheduleTemplateUploadService, ScheduleUploadService>();
+        services.AddScoped<IAttributeUploadService, AttributeUploadService>();
+        services.AddScoped<IGroupScheduleMappingService, GroupScheduleMappingService>();
+        services.AddScoped<INameTagUploadService, NameTagUploadService>();
+        services.AddScoped<IOptionTourUploadService, OptionTourUploadService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 사용자 컨텍스트 및 기타 서비스 등록
+    /// </summary>
+    public static IServiceCollection AddUserContextServices(this IServiceCollection services)
+    {
+        services.AddHttpContextAccessor();
+        services.AddScoped<IUserContextFactory, UserContextFactory>();
+        services.AddHttpClient<IFlightService, FlightService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 사용자 프로필 서비스 등록
+    /// </summary>
+    public static IServiceCollection AddUserServices(this IServiceCollection services)
+    {
+        services.AddScoped<IUserProfileService, UserProfileService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 관리자 서비스 등록
+    /// </summary>
+    public static IServiceCollection AddAdminServices(this IServiceCollection services)
+    {
+        services.AddScoped<IAdminUserService, AdminUserService>();
+        services.AddScoped<IAdminStatsService, AdminStatsService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 모든 도메인 서비스를 한 번에 등록
+    /// </summary>
+    public static IServiceCollection AddDomainServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddAiServices(configuration);
+        services.AddChatServices();
+        services.AddAuthServices();
+        services.AddConventionServices();
+        services.AddUserServices();
+        services.AddAdminServices();
+        services.AddSmsServices();
+        services.AddUploadServices();
+        services.AddUserContextServices();
+
+        return services;
+    }
+}

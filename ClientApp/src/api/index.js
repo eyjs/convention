@@ -29,11 +29,11 @@ api.interceptors.response.use(
   },
   (error) => {
     const authStore = useAuthStore()
-    if (error.response && error.response.status === 401) {
-      // If 401 Unauthorized, log out the user
+    const requestUrl = error.config?.url || ''
+    const isAuthEndpoint = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/guest-login')
+
+    if (error.response && error.response.status === 401 && !isAuthEndpoint) {
       authStore.logout()
-      // Optionally redirect to login page
-      // router.push('/login'); // Requires router instance
     }
     return Promise.reject(error)
   },

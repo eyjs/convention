@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using LocalRAG.Services.Ai;
 using LocalRAG.Entities;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 using LocalRAG.DTOs.AdminModels;
 using LocalRAG.Constants;
 
@@ -15,20 +15,20 @@ namespace LocalRAG.Controllers.Admin;
 [Authorize(Roles = Roles.Admin)]
 public class ChatbotManagementController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IndexingService _indexingService;
     private readonly LlmProviderManager _providerManager;
     private readonly IVectorStore _vectorStore;
     private readonly ILogger<ChatbotManagementController> _logger;
 
     public ChatbotManagementController(
-        ConventionDbContext context,
+        IUnitOfWork unitOfWork,
         IndexingService indexingService,
         LlmProviderManager providerManager,
         IVectorStore vectorStore,
         ILogger<ChatbotManagementController> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _indexingService = indexingService;
         _providerManager = providerManager;
         _vectorStore = vectorStore;
@@ -40,11 +40,10 @@ public class ChatbotManagementController : ControllerBase
     [HttpGet("chatbot/stats")]
     public async Task<ActionResult> GetStats()
     {
-        var totalDocuments = await _context.VectorDataEntries.CountAsync();
-        var activeConventions = await _context.Conventions
-            .Where(c => c.DeleteYn == DeleteStatus.Active)
-            .CountAsync();
-        var totalGuests = await _context.UserConventions.CountAsync();
+        var totalDocuments = await _unitOfWork.VectorDataEntries.CountAsync();
+        var activeConventions = await _unitOfWork.Conventions
+            .CountAsync(c => c.DeleteYn == DeleteStatus.Active);
+        var totalGuests = await _unitOfWork.UserConventions.CountAsync();
         var dbSize = totalDocuments * 1024;
 
         return Ok(new { totalDocuments, activeConventions, totalGuests, dbSize });
@@ -57,12 +56,12 @@ public class ChatbotManagementController : ControllerBase
         {
             var totalVectors = await _vectorStore.GetDocumentCountAsync();
 
-            var lastIndexed = await _context.VectorDataEntries
+            var lastIndexed = await _unitOfWork.VectorDataEntries.Query
                 .OrderByDescending(v => v.CreatedAt)
                 .Select(v => v.CreatedAt)
                 .FirstOrDefaultAsync();
 
-            var byType = await _context.VectorDataEntries
+            var byType = await _unitOfWork.VectorDataEntries.Query
                 .GroupBy(v => v.SourceType)
                 .Select(g => new { type = g.Key, count = g.Count() })
                 .ToListAsync();
@@ -102,7 +101,7 @@ public class ChatbotManagementController : ControllerBase
     {
         try
         {
-            var convention = await _context.Conventions
+            var convention = await _unitOfWork.Conventions.Query
                 .Include(c => c.ScheduleTemplates).ThenInclude(st => st.ScheduleItems)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == conventionId);
@@ -110,14 +109,12 @@ public class ChatbotManagementController : ControllerBase
             if (convention == null)
                 return NotFound(new { message = "행사를 찾을 수 없습니다." });
 
-            var userConventionCount = await _context.UserConventions
+            var userConventionCount = await _unitOfWork.UserConventions
                 .CountAsync(uc => uc.ConventionId == conventionId);
-            var notices = await _context.Notices
-                .Where(n => n.ConventionId == conventionId && !n.IsDeleted)
-                .CountAsync();
-            var conventionActions = await _context.ConventionActions
-                .Where(a => a.ConventionId == conventionId && a.IsActive)
-                .CountAsync();
+            var notices = await _unitOfWork.Notices
+                .CountAsync(n => n.ConventionId == conventionId && !n.IsDeleted);
+            var conventionActions = await _unitOfWork.ConventionActions
+                .CountAsync(a => a.ConventionId == conventionId && a.IsActive);
             var vectorCount = await _vectorStore.GetDocumentCountAsync(conventionId);
 
             return Ok(new
@@ -152,9 +149,9 @@ public class ChatbotManagementController : ControllerBase
     [HttpGet("chatbot/vector-stats")]
     public async Task<ActionResult> GetVectorStats()
     {
-        var total = await _context.VectorDataEntries.CountAsync();
+        var total = await _unitOfWork.VectorDataEntries.CountAsync();
 
-        var bySource = await _context.VectorDataEntries
+        var bySource = await _unitOfWork.VectorDataEntries.Query
             .GroupBy(v => v.SourceType)
             .Select(g => new
             {
@@ -175,13 +172,13 @@ public class ChatbotManagementController : ControllerBase
     [HttpGet("chatbot/conventions")]
     public async Task<ActionResult> GetConventions()
     {
-        var conventions = await _context.Conventions
+        var conventions = await _unitOfWork.Conventions.Query
             .Where(c => c.DeleteYn == DeleteStatus.Active)
             .Select(c => new
             {
                 c.Id, c.Title, c.StartDate,
-                GuestCount = _context.UserConventions.Count(uc => uc.ConventionId == c.Id),
-                VectorCount = _context.VectorDataEntries.Count(v => v.ConventionId == c.Id),
+                GuestCount = _unitOfWork.UserConventions.Query.Count(uc => uc.ConventionId == c.Id),
+                VectorCount = _unitOfWork.VectorDataEntries.Query.Count(v => v.ConventionId == c.Id),
                 ChatbotEnabled = true
             })
             .OrderByDescending(c => c.StartDate)
@@ -195,7 +192,7 @@ public class ChatbotManagementController : ControllerBase
     {
         try
         {
-            var convention = await _context.Conventions.FindAsync(conventionId);
+            var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
             if (convention == null)
                 return NotFound(new { message = "행사를 찾을 수 없습니다." });
 
@@ -236,7 +233,7 @@ public class ChatbotManagementController : ControllerBase
     [HttpPut("chatbot/convention/{conventionId}/toggle")]
     public async Task<ActionResult> ToggleChatbot(int conventionId, [FromBody] ToggleChatbotRequest request)
     {
-        var convention = await _context.Conventions.FindAsync(conventionId);
+        var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
         if (convention == null)
             return NotFound(new { message = "행사를 찾을 수 없습니다." });
 
@@ -418,7 +415,7 @@ public class ChatbotManagementController : ControllerBase
     [HttpGet("chatbot/recent-activities")]
     public async Task<ActionResult> GetRecentActivities()
     {
-        var activities = await _context.VectorDataEntries
+        var activities = await _unitOfWork.VectorDataEntries.Query
             .OrderByDescending(v => v.CreatedAt)
             .Take(10)
             .Select(v => new
@@ -455,9 +452,10 @@ public class ChatbotManagementController : ControllerBase
     {
         try
         {
-            var count = await _context.VectorDataEntries.CountAsync();
-            _context.VectorDataEntries.RemoveRange(_context.VectorDataEntries);
-            await _context.SaveChangesAsync();
+            var count = await _unitOfWork.VectorDataEntries.CountAsync();
+            var allEntries = await _unitOfWork.VectorDataEntries.GetAllAsync();
+            _unitOfWork.VectorDataEntries.RemoveRange(allEntries);
+            await _unitOfWork.SaveChangesAsync();
 
             _logger.LogWarning("벡터 DB 초기화: {Count}개 문서 삭제됨", count);
             return Ok(new { message = $"{count}개의 벡터 문서가 삭제되었습니다." });

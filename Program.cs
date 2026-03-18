@@ -1,22 +1,12 @@
 using LocalRAG.Configuration;
 using LocalRAG.Data;
+using LocalRAG.Extensions;
 using LocalRAG.HealthChecks;
 using LocalRAG.Interfaces;
 using LocalRAG.Middleware;
-using LocalRAG.Providers;
 using LocalRAG.Repositories;
-using LocalRAG.Services.Ai;
-using LocalRAG.Services.Auth;
-using LocalRAG.Services.Chat;
-using LocalRAG.Services.Convention;
-using LocalRAG.Services.Flight;
-using LocalRAG.Services.Shared;
-using LocalRAG.Services.Shared.Builders;
-using LocalRAG.Services.Upload;
-using LocalRAG.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
@@ -83,10 +73,6 @@ builder.Services.AddCors(options =>
             if (allowedOrigins.Contains(origin))
                 return true;
 
-            // Vercel 프리뷰 도메인 허용 (*.vercel.app)
-            if (origin.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase))
-                return true;
-
             return false;
         })
         .AllowAnyMethod()
@@ -123,52 +109,11 @@ builder.Services.AddPooledDbContextFactory<ConventionDbContext>(options =>
 });
 
 builder.Services.AddRepositories();
-if (builder.Configuration.GetValue<bool>("EmbeddingSettings:UseOnnx", false))
-{
-    builder.Services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
-}
-else
-{
-    builder.Services.AddSingleton<IEmbeddingService, LocalEmbeddingService>();
-}
 
-// Vector Store 등록 - MSSQL 사용
-builder.Services.AddScoped<IVectorStore, MssqlVectorStore>();
+// --- 5. 도메인 서비스 등록 ---
+builder.Services.AddDomainServices(builder.Configuration);
 
-builder.Services.AddScoped<ILlmProvider, Llama3Provider>(provider =>
-{
-    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-    var httpClient = httpClientFactory.CreateClient("LlmClient"); // 300초 클라이언트
-    var configuration = provider.GetRequiredService<IConfiguration>();
-    var logger = provider.GetRequiredService<ILogger<Llama3Provider>>();
-    return new Llama3Provider(httpClient, configuration, logger);
-});
-
-builder.Services.AddScoped<ILlmProvider, GeminiProvider>(provider =>
-{
-    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-    var httpClient = httpClientFactory.CreateClient("LlmClient"); 
-    var configuration = provider.GetRequiredService<IConfiguration>();
-    return new GeminiProvider(httpClient, configuration);
-});
-
-builder.Services.AddScoped<LlmProviderManager>();
-
-builder.Services.AddScoped<IRagService, RagService>();
-builder.Services.AddScoped<ConventionDocumentBuilder>();
-builder.Services.AddScoped<IndexingService>();
-builder.Services.AddScoped<IConventionChatService, ConventionChatService>();
-
-builder.Services.AddScoped<SourceIdentifier>();
-builder.Services.AddScoped<ChatIntentRouter>();
-builder.Services.AddScoped<ChatPromptBuilder>();
-builder.Services.AddScoped<LlmResponseService>();
-builder.Services.AddScoped<RagSearchService>();
-builder.Services.AddScoped<UserContextualDataProvider>();
-builder.Services.AddScoped<ConventionAccessService>();
-
-// --- 5. 인증 및 기타 서비스 등록 ---
-var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings(); // Moved declaration here
+var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -204,30 +149,6 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddSingleton(jwtSettings);
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<INoticeService, NoticeService>();
-builder.Services.AddScoped<INoticeCategoryService, NoticeCategoryService>();
-builder.Services.AddScoped<ISurveyService, SurveyService>();
-builder.Services.AddScoped<IActionOrchestrationService, ActionOrchestrationService>();
-builder.Services.AddScoped<IChecklistService, ChecklistService>();
-builder.Services.AddScoped<IFormBuilderService, LocalRAG.Services.FormBuilder.FormBuilderService>();
-builder.Services.AddScoped<IPersonalTripService, LocalRAG.Services.PersonalTrip.PersonalTripService>();
-builder.Services.AddScoped<ISmsSender, DbSmsSender>();
-builder.Services.AddScoped<ISmsService, LocalRAG.Services.Shared.SmsService>();
-builder.Services.AddSingleton<ITemplateVariableService, TemplateVariableService>();
-builder.Services.AddScoped<SmsTemplateContextFactory>();
-builder.Services.AddSingleton<IVerificationService, VerificationService>();
-
-builder.Services.AddScoped<IFileUploadService, FileUploadService>();
-builder.Services.AddScoped<IUserUploadService, UserUploadService>();
-builder.Services.AddScoped<IScheduleTemplateUploadService, ScheduleUploadService>();
-builder.Services.AddScoped<IAttributeUploadService, AttributeUploadService>();
-builder.Services.AddScoped<IGroupScheduleMappingService, GroupScheduleMappingService>();
-builder.Services.AddScoped<INameTagUploadService, NameTagUploadService>();
-builder.Services.AddScoped<IOptionTourUploadService, OptionTourUploadService>();
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IUserContextFactory, UserContextFactory>();
-builder.Services.AddHttpClient<IFlightService, FlightService>();
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {

@@ -1,11 +1,10 @@
-using LocalRAG.Data;
 using LocalRAG.Entities;
 using LocalRAG.DTOs.ConventionModels;
+using LocalRAG.Repositories;
+using LocalRAG.Constants;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Convention;
 
@@ -14,23 +13,22 @@ namespace LocalRAG.Controllers.Convention;
 [Authorize(Roles = Roles.Admin)]
 public class AttributeController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public AttributeController(ConventionDbContext context)
+    public AttributeController(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     // 속성 정의 목록 조회
     [HttpGet("conventions/{conventionId}/definitions")]
     public async Task<IActionResult> GetAttributeDefinitions(int conventionId)
     {
-        var definitions = await _context.AttributeDefinitions
-            .Where(ad => ad.ConventionId == conventionId)
-            .OrderBy(ad => ad.OrderNum)
-            .ToListAsync();
+        var definitions = await _unitOfWork.AttributeDefinitions
+            .FindAsync(ad => ad.ConventionId == conventionId);
 
-        return Ok(definitions);
+        var sorted = definitions.OrderBy(ad => ad.OrderNum).ToList();
+        return Ok(sorted);
     }
 
     // 속성 정의 생성
@@ -46,8 +44,8 @@ public class AttributeController : ControllerBase
             IsRequired = dto.IsRequired
         };
 
-        _context.AttributeDefinitions.Add(definition);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.AttributeDefinitions.AddAsync(definition);
+        await _unitOfWork.SaveChangesAsync();
 
         return Ok(definition);
     }
@@ -56,7 +54,7 @@ public class AttributeController : ControllerBase
     [HttpPut("definitions/{id}")]
     public async Task<IActionResult> UpdateAttributeDefinition(int id, [FromBody] AttributeDefinitionDto dto)
     {
-        var definition = await _context.AttributeDefinitions.FindAsync(id);
+        var definition = await _unitOfWork.AttributeDefinitions.GetByIdAsync(id);
         if (definition == null) return NotFound();
 
         definition.AttributeKey = dto.AttributeKey;
@@ -64,7 +62,8 @@ public class AttributeController : ControllerBase
         definition.OrderNum = dto.OrderNum;
         definition.IsRequired = dto.IsRequired;
 
-        await _context.SaveChangesAsync();
+        _unitOfWork.AttributeDefinitions.Update(definition);
+        await _unitOfWork.SaveChangesAsync();
         return Ok(definition);
     }
 
@@ -72,12 +71,11 @@ public class AttributeController : ControllerBase
     [HttpDelete("definitions/{id}")]
     public async Task<IActionResult> DeleteAttributeDefinition(int id)
     {
-        var definition = await _context.AttributeDefinitions.FindAsync(id);
+        var definition = await _unitOfWork.AttributeDefinitions.GetByIdAsync(id);
         if (definition == null) return NotFound();
 
-        _context.AttributeDefinitions.Remove(definition);
-        await _context.SaveChangesAsync();
+        _unitOfWork.AttributeDefinitions.Remove(definition);
+        await _unitOfWork.SaveChangesAsync();
         return Ok();
     }
 }
-

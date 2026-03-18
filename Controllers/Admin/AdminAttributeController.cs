@@ -1,7 +1,7 @@
-using LocalRAG.Data;
 using LocalRAG.Constants;
 using LocalRAG.Interfaces;
 using LocalRAG.Entities;
+using LocalRAG.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,19 +14,19 @@ namespace LocalRAG.Controllers.Admin;
 [Authorize(Roles = Roles.Admin)]
 public class AdminAttributeController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IFileUploadService _fileUploadService;
 
-    public AdminAttributeController(ConventionDbContext context, IFileUploadService fileUploadService)
+    public AdminAttributeController(IUnitOfWork unitOfWork, IFileUploadService fileUploadService)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _fileUploadService = fileUploadService;
     }
 
     [HttpGet("conventions/{conventionId}/attributes/keys")]
     public async Task<IActionResult> GetAttributeKeys(int conventionId)
     {
-        var keys = await _context.UserConventions
+        var keys = await _unitOfWork.UserConventions.Query
             .Where(uc => uc.ConventionId == conventionId)
             .SelectMany(uc => uc.User.GuestAttributes)
             .Select(ga => ga.AttributeKey)
@@ -42,14 +42,14 @@ public class AdminAttributeController : ControllerBase
     {
         var decodedKey = Uri.UnescapeDataString(attributeKey);
 
-        var attribute = await _context.GuestAttributes
-            .FirstOrDefaultAsync(ga => ga.UserId == guestId && ga.AttributeKey == decodedKey);
+        var attribute = await _unitOfWork.GuestAttributes
+            .GetAsync(ga => ga.UserId == guestId && ga.AttributeKey == decodedKey);
 
         if (attribute == null)
             return NotFound(new { message = $"속성 '{decodedKey}'을 찾을 수 없습니다." });
 
-        _context.GuestAttributes.Remove(attribute);
-        await _context.SaveChangesAsync();
+        _unitOfWork.GuestAttributes.Remove(attribute);
+        await _unitOfWork.SaveChangesAsync();
 
         return Ok(new { message = $"속성 '{decodedKey}'이 삭제되었습니다." });
     }
@@ -59,7 +59,7 @@ public class AdminAttributeController : ControllerBase
     {
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-        var guests = await _context.UserConventions
+        var guests = await _unitOfWork.UserConventions.Query
             .Where(uc => uc.ConventionId == conventionId)
             .Include(uc => uc.User)
                 .ThenInclude(u => u.GuestAttributes)

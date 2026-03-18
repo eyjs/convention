@@ -1,8 +1,8 @@
-using LocalRAG.Data;
 using LocalRAG.Constants;
 using LocalRAG.Interfaces;
 using LocalRAG.Entities;
 using LocalRAG.DTOs.AdminModels;
+using LocalRAG.Repositories;
 using LocalRAG.Services.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,18 +15,18 @@ namespace LocalRAG.Controllers.Admin;
 [Authorize(Roles = Roles.Admin)]
 public class AdminSmsController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ISmsService _smsService;
     private readonly ITemplateVariableService _templateService;
     private readonly SmsTemplateContextFactory _contextFactory;
 
     public AdminSmsController(
-        ConventionDbContext context,
+        IUnitOfWork unitOfWork,
         ISmsService smsService,
         ITemplateVariableService templateService,
         SmsTemplateContextFactory contextFactory)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _smsService = smsService;
         _templateService = templateService;
         _contextFactory = contextFactory;
@@ -41,10 +41,10 @@ public class AdminSmsController : ControllerBase
         if (dto.TargetUserIds == null || !dto.TargetUserIds.Any())
             return BadRequest(new { message = "수신자가 선택되지 않았습니다." });
 
-        var convention = await _context.Conventions.FindAsync(conventionId);
+        var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
         if (convention == null) return NotFound("행사 정보를 찾을 수 없습니다.");
 
-        var users = await _context.Users
+        var users = await _unitOfWork.Users.Query
             .Where(u => dto.TargetUserIds.Contains(u.Id))
             .Include(u => u.GuestAttributes)
             .ToListAsync();
@@ -76,10 +76,10 @@ public class AdminSmsController : ControllerBase
         if (string.IsNullOrWhiteSpace(dto.Content))
             return BadRequest(new { message = "내용이 없습니다." });
 
-        var convention = await _context.Conventions.FindAsync(conventionId);
+        var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
         if (convention == null) return NotFound("행사 정보를 찾을 수 없습니다.");
 
-        var user = await _context.Users
+        var user = await _unitOfWork.Users.Query
             .Include(u => u.GuestAttributes)
             .FirstOrDefaultAsync(u => u.Id == dto.TargetUserId);
 
@@ -94,7 +94,7 @@ public class AdminSmsController : ControllerBase
     [HttpGet("sms-templates")]
     public async Task<IActionResult> GetSmsTemplates()
     {
-        var templates = await _context.SmsTemplates
+        var templates = await _unitOfWork.SmsTemplates.Query
             .OrderByDescending(t => t.Id)
             .Select(t => new SmsTemplateDto
             {
@@ -117,8 +117,8 @@ public class AdminSmsController : ControllerBase
             RegDtm = DateTime.UtcNow,
             DeleteYn = DeleteStatus.ActiveNumeric
         };
-        _context.SmsTemplates.Add(template);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SmsTemplates.AddAsync(template);
+        await _unitOfWork.SaveChangesAsync();
 
         dto.Id = template.Id;
         dto.CreatedAt = template.RegDtm;
@@ -129,13 +129,14 @@ public class AdminSmsController : ControllerBase
     [HttpPut("sms-templates/{id}")]
     public async Task<IActionResult> UpdateSmsTemplate(int id, [FromBody] SmsTemplateDto dto)
     {
-        var template = await _context.SmsTemplates.FindAsync(id);
+        var template = await _unitOfWork.SmsTemplates.GetByIdAsync(id);
         if (template == null) return NotFound();
 
         template.TemplateName = dto.Title;
         template.TemplateContent = dto.Content;
 
-        await _context.SaveChangesAsync();
+        _unitOfWork.SmsTemplates.Update(template);
+        await _unitOfWork.SaveChangesAsync();
         return Ok(dto);
     }
 }
