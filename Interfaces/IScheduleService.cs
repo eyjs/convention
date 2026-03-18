@@ -37,4 +37,14 @@ public interface IScheduleService
     Task<(object? Result, bool Found)> GetAssignedTemplatesAsync(int userId);
     Task<(object? Result, string? Error, int StatusCode)> GetOptionToursAsync(int userId, int conventionId);
     Task<(object? Result, string? Error, int StatusCode)> GetScheduleParticipantsAsync(int scheduleTemplateId, string? userRole);
+
+    // === Admin 옵션투어 관리 ===
+
+    Task<object> GetOptionToursByConventionAsync(int conventionId);
+    Task<object> CreateOptionTourAsync(int conventionId, OptionTourAdminDto dto);
+    Task<object?> UpdateOptionTourAsync(int id, OptionTourAdminDto dto);
+    Task<bool> DeleteOptionTourAsync(int id);
+    Task<object> GetOptionTourParticipantsAsync(int optionTourId);
+    Task<(bool Success, object Result, int StatusCode)> AddParticipantsToOptionTourAsync(int optionTourId, List<int> userIds);
+    Task<bool> RemoveParticipantFromOptionTourAsync(int optionTourId, int userId);
 }

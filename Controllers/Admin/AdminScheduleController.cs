@@ -109,4 +109,58 @@ public class AdminScheduleController : ControllerBase
         var items = await _scheduleService.GetAllSchedulesAsync(conventionId);
         return Ok(items);
     }
+
+    // === 옵션투어 관리 ===
+
+    [HttpGet("conventions/{conventionId}/option-tours")]
+    public async Task<IActionResult> GetOptionTours(int conventionId)
+    {
+        var optionTours = await _scheduleService.GetOptionToursByConventionAsync(conventionId);
+        return Ok(optionTours);
+    }
+
+    [HttpPost("conventions/{conventionId}/option-tours")]
+    public async Task<IActionResult> CreateOptionTour(int conventionId, [FromBody] OptionTourAdminDto dto)
+    {
+        var optionTour = await _scheduleService.CreateOptionTourAsync(conventionId, dto);
+        return Ok(optionTour);
+    }
+
+    [HttpPut("option-tours/{id}")]
+    public async Task<IActionResult> UpdateOptionTour(int id, [FromBody] OptionTourAdminDto dto)
+    {
+        var optionTour = await _scheduleService.UpdateOptionTourAsync(id, dto);
+        if (optionTour == null) return NotFound();
+        return Ok(optionTour);
+    }
+
+    [HttpDelete("option-tours/{id}")]
+    public async Task<IActionResult> DeleteOptionTour(int id)
+    {
+        var deleted = await _scheduleService.DeleteOptionTourAsync(id);
+        if (!deleted) return NotFound();
+        return Ok();
+    }
+
+    [HttpGet("option-tours/{id}/participants")]
+    public async Task<IActionResult> GetOptionTourParticipants(int id)
+    {
+        var participants = await _scheduleService.GetOptionTourParticipantsAsync(id);
+        return Ok(participants);
+    }
+
+    [HttpPost("option-tours/{id}/participants")]
+    public async Task<IActionResult> AddOptionTourParticipants(int id, [FromBody] AddParticipantsDto dto)
+    {
+        var (success, result, statusCode) = await _scheduleService.AddParticipantsToOptionTourAsync(id, dto.UserIds);
+        return StatusCode(statusCode, result);
+    }
+
+    [HttpDelete("option-tours/{id}/participants/{userId}")]
+    public async Task<IActionResult> RemoveOptionTourParticipant(int id, int userId)
+    {
+        var removed = await _scheduleService.RemoveParticipantFromOptionTourAsync(id, userId);
+        if (!removed) return NotFound();
+        return Ok();
+    }
 }

@@ -1,5 +1,39 @@
 <template>
   <div>
+    <!-- 탭 -->
+    <div class="flex gap-1 mb-6 border-b">
+      <button
+        :class="[
+          'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px',
+          activeTab === 'schedule'
+            ? 'border-primary-600 text-primary-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700',
+        ]"
+        @click="activeTab = 'schedule'"
+      >
+        일정 코스
+      </button>
+      <button
+        :class="[
+          'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px',
+          activeTab === 'optionTour'
+            ? 'border-primary-600 text-primary-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700',
+        ]"
+        @click="activeTab = 'optionTour'"
+      >
+        옵션투어
+      </button>
+    </div>
+
+    <!-- 옵션투어 탭 -->
+    <OptionTourManagement
+      v-if="activeTab === 'optionTour'"
+      :convention-id="conventionId"
+    />
+
+    <!-- 일정 코스 탭 -->
+    <div v-if="activeTab === 'schedule'">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl font-semibold">일정 관리</h2>
       <button
@@ -476,6 +510,7 @@
         </div>
       </template>
     </BaseModal>
+    </div>
   </div>
 </template>
 
@@ -483,11 +518,13 @@
 import { ref, onMounted, computed } from 'vue'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
+import OptionTourManagement from '@/components/admin/OptionTourManagement.vue'
 
 const props = defineProps({
   conventionId: { type: Number, required: true },
 })
 
+const activeTab = ref('schedule')
 const selectedTemplateId = ref('all')
 
 const filteredTemplates = computed(() => {

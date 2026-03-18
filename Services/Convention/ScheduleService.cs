@@ -1,4 +1,5 @@
 using LocalRAG.DTOs.ScheduleModels;
+using LocalRAG.Entities;
 using LocalRAG.Interfaces;
 using LocalRAG.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -457,5 +458,170 @@ public class ScheduleService : IScheduleService
             _logger.LogError(ex, "참석자 목록 조회 중 오류 발생: scheduleTemplateId={TemplateId}", scheduleTemplateId);
             return (null, "Internal server error", 500);
         }
+    }
+
+    // ============================================================
+    // Admin 옵션투어 관리
+    // ============================================================
+
+    public async Task<object> GetOptionToursByConventionAsync(int conventionId)
+    {
+        var optionTours = await _unitOfWork.OptionTours.Query
+            .Where(ot => ot.ConventionId == conventionId)
+            .OrderBy(ot => ot.Date)
+            .ThenBy(ot => ot.StartTime)
+            .Select(ot => new
+            {
+                ot.Id, ot.ConventionId,
+                Date = ot.Date.ToString("yyyy-MM-dd"),
+                ot.StartTime, ot.EndTime, ot.Name,
+                ot.CustomOptionId, ot.Content, ot.CreatedAt,
+                ParticipantCount = ot.UserOptionTours.Count
+            })
+            .ToListAsync();
+
+        return optionTours;
+    }
+
+    public async Task<object> CreateOptionTourAsync(int conventionId, OptionTourAdminDto dto)
+    {
+        var optionTour = new OptionTour
+        {
+            ConventionId = conventionId,
+            Date = DateTime.ParseExact(dto.Date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+            StartTime = dto.StartTime,
+            EndTime = dto.EndTime,
+            Name = dto.Name,
+            CustomOptionId = dto.CustomOptionId,
+            Content = dto.Content
+        };
+
+        await _unitOfWork.OptionTours.AddAsync(optionTour);
+        await _unitOfWork.SaveChangesAsync();
+
+        return new
+        {
+            optionTour.Id, optionTour.ConventionId,
+            Date = optionTour.Date.ToString("yyyy-MM-dd"),
+            optionTour.StartTime, optionTour.EndTime, optionTour.Name,
+            optionTour.CustomOptionId, optionTour.Content, optionTour.CreatedAt,
+            ParticipantCount = 0
+        };
+    }
+
+    public async Task<object?> UpdateOptionTourAsync(int id, OptionTourAdminDto dto)
+    {
+        var optionTour = await _unitOfWork.OptionTours.GetByIdAsync(id);
+        if (optionTour == null) return null;
+
+        optionTour.Date = DateTime.ParseExact(dto.Date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        optionTour.StartTime = dto.StartTime;
+        optionTour.EndTime = dto.EndTime;
+        optionTour.Name = dto.Name;
+        optionTour.CustomOptionId = dto.CustomOptionId;
+        optionTour.Content = dto.Content;
+
+        await _unitOfWork.SaveChangesAsync();
+
+        var participantCount = await _unitOfWork.UserOptionTours.Query
+            .CountAsync(uot => uot.OptionTourId == id);
+
+        return new
+        {
+            optionTour.Id, optionTour.ConventionId,
+            Date = optionTour.Date.ToString("yyyy-MM-dd"),
+            optionTour.StartTime, optionTour.EndTime, optionTour.Name,
+            optionTour.CustomOptionId, optionTour.Content, optionTour.CreatedAt,
+            ParticipantCount = participantCount
+        };
+    }
+
+    public async Task<bool> DeleteOptionTourAsync(int id)
+    {
+        var optionTour = await _unitOfWork.OptionTours.Query
+            .Include(ot => ot.UserOptionTours)
+            .FirstOrDefaultAsync(ot => ot.Id == id);
+
+        if (optionTour == null) return false;
+
+        if (optionTour.UserOptionTours.Any())
+            _unitOfWork.UserOptionTours.RemoveRange(optionTour.UserOptionTours);
+
+        _unitOfWork.OptionTours.Remove(optionTour);
+        await _unitOfWork.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<object> GetOptionTourParticipantsAsync(int optionTourId)
+    {
+        var participants = await _unitOfWork.UserOptionTours.Query
+            .Where(uot => uot.OptionTourId == optionTourId)
+            .Include(uot => uot.User)
+            .Select(uot => new
+            {
+                Id = uot.User!.Id,
+                Name = uot.User.Name,
+                Phone = uot.User.Phone,
+                CorpPart = uot.User.CorpPart,
+                Affiliation = uot.User.Affiliation,
+                CreatedAt = uot.CreatedAt
+            })
+            .OrderBy(p => p.Name)
+            .ToListAsync();
+
+        return participants;
+    }
+
+    public async Task<(bool Success, object Result, int StatusCode)> AddParticipantsToOptionTourAsync(
+        int optionTourId, List<int> userIds)
+    {
+        var optionTour = await _unitOfWork.OptionTours.GetByIdAsync(optionTourId);
+        if (optionTour == null)
+            return (false, new { message = "옵션투어를 찾을 수 없습니다." }, 404);
+
+        var existingUserIds = await _unitOfWork.UserOptionTours.Query
+            .Where(uot => uot.OptionTourId == optionTourId)
+            .Select(uot => uot.UserId)
+            .ToListAsync();
+
+        var newUserIds = userIds.Except(existingUserIds).ToList();
+        if (newUserIds.Count == 0)
+            return (true, new { message = "모든 참석자가 이미 등록되어 있습니다.", addedCount = 0 }, 200);
+
+        var validUserIds = await _unitOfWork.Users.Query
+            .Where(u => newUserIds.Contains(u.Id))
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        if (validUserIds.Count == 0)
+            return (false, new { message = "유효한 참석자가 없습니다." }, 400);
+
+        foreach (var userId in validUserIds)
+        {
+            await _unitOfWork.UserOptionTours.AddAsync(new UserOptionTour
+            {
+                UserId = userId,
+                OptionTourId = optionTourId,
+                ConventionId = optionTour.ConventionId
+            });
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+
+        return (true, new { message = $"{validUserIds.Count}명의 참석자가 추가되었습니다.", addedCount = validUserIds.Count }, 200);
+    }
+
+    public async Task<bool> RemoveParticipantFromOptionTourAsync(int optionTourId, int userId)
+    {
+        var mapping = await _unitOfWork.UserOptionTours.Query
+            .FirstOrDefaultAsync(uot => uot.OptionTourId == optionTourId && uot.UserId == userId);
+
+        if (mapping == null) return false;
+
+        _unitOfWork.UserOptionTours.Remove(mapping);
+        await _unitOfWork.SaveChangesAsync();
+
+        return true;
     }
 }
