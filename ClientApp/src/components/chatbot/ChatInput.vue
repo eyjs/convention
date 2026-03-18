@@ -5,18 +5,17 @@
         <textarea
           ref="inputRef"
           v-model="inputText"
-          @keydown.enter="handleEnter"
-          @input="adjustHeight"
           :disabled="disabled"
           :placeholder="placeholder"
           rows="1"
           class="w-full resize-none rounded-3xl border border-gray-300 px-6 py-4 text-base focus:outline-none focus:border-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors shadow-sm"
           style="max-height: 200px; min-height: 52px"
+          @keydown.enter="handleEnter"
+          @input="adjustHeight"
         ></textarea>
       </div>
 
       <button
-        @click="handleSend"
         :disabled="!canSend"
         :class="[
           'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all',
@@ -24,6 +23,7 @@
             ? 'bg-black text-white hover:bg-gray-800 active:scale-95'
             : 'bg-gray-200 text-gray-400 cursor-not-allowed',
         ]"
+        @click="handleSend"
       >
         <svg
           v-if="!loading"

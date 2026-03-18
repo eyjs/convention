@@ -15,13 +15,13 @@
             <button
               v-for="category in categories"
               :key="category.id"
-              @click="selectedCategory = category.id"
               :class="[
                 'px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors',
                 selectedCategory === category.id
                   ? 'text-primary-600 border-primary-600'
                   : 'text-gray-500 border-transparent hover:text-gray-700',
               ]"
+              @click="selectedCategory = category.id"
             >
               {{ category.name }}
               <span v-if="category.count" class="ml-1 text-xs opacity-70"
@@ -35,8 +35,8 @@
           class="absolute left-0 top-0 bottom-0 flex items-center bg-gradient-to-r from-white to-transparent pr-4"
         >
           <button
-            @click="scrollLeft"
             class="p-1 bg-white rounded-full shadow-md"
+            @click="scrollLeft"
           >
             <svg
               class="w-6 h-6"
@@ -58,8 +58,8 @@
           class="absolute right-0 top-0 bottom-0 flex items-center bg-gradient-to-l from-white to-transparent pl-4"
         >
           <button
-            @click="scrollRight"
             class="p-1 bg-white rounded-full shadow-md"
+            @click="scrollRight"
           >
             <svg
               class="w-6 h-6"
@@ -90,8 +90,8 @@
       <div
         v-for="notice in importantNotices"
         :key="notice.id"
-        @click="openNotice(notice)"
         class="bg-white rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all border-l-4 border-red-500"
+        @click="openNotice(notice)"
       >
         <div class="flex items-start space-x-3">
           <div
@@ -178,8 +178,8 @@
       <div
         v-for="notice in filteredNotices"
         :key="notice.id"
-        @click="openNotice(notice)"
         class="bg-white rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all"
+        @click="openNotice(notice)"
       >
         <div class="flex items-start space-x-3">
           <div
@@ -285,11 +285,7 @@
     </div>
 
     <!-- 공지 상세 모달 -->
-    <SlideUpModal
-      :is-open="!!selectedNotice"
-      @close="closeNotice"
-      
-    >
+    <SlideUpModal :is-open="!!selectedNotice" @close="closeNotice">
       <template #header-title>공지사항</template>
       <template #body>
         <div v-if="selectedNotice" class="p-6">
@@ -353,7 +349,7 @@
           </div>
 
           <!-- 본문 -->
-          <div class="mb-6" v-viewer ref="viewer">
+          <div ref="viewer" v-viewer class="mb-6">
             <QuillViewer
               :content="selectedNotice.content"
               @image-clicked="openImageViewer"
@@ -430,8 +426,8 @@
                       class="flex-grow flex justify-end"
                     >
                       <button
-                        @click.stop="deleteComment(comment.id)"
                         class="p-1 hover:bg-gray-100 rounded-full"
+                        @click.stop="deleteComment(comment.id)"
                       >
                         <svg
                           class="w-5 h-5 text-gray-500"
@@ -468,9 +464,9 @@
                 ></textarea>
                 <div class="flex justify-end mt-2">
                   <button
-                    @click="submitComment"
                     :disabled="!newComment.trim()"
                     class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    @click="submitComment"
                   >
                     댓글 작성
                   </button>
@@ -485,20 +481,20 @@
     <!-- 글쓰기 모달 (관리자용) -->
     <div
       v-if="showWriteModal"
-      @click="closeWriteModal"
       class="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      @click="closeWriteModal"
     >
       <div
-        @click.stop
         class="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto"
+        @click.stop
       >
         <div
           class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between"
         >
           <h2 class="text-lg font-bold text-gray-900">공지사항 작성</h2>
           <button
-            @click="closeWriteModal"
             class="p-2 hover:bg-gray-100 rounded-lg"
+            @click="closeWriteModal"
           >
             <svg
               class="w-5 h-5"
@@ -534,8 +530,8 @@
           <div>
             <label class="flex items-center space-x-2">
               <input
-                type="checkbox"
                 v-model="newNotice.isPinned"
+                type="checkbox"
                 class="rounded"
               />
               <span class="text-sm font-medium text-gray-700"
@@ -570,15 +566,15 @@
 
           <div class="flex justify-end space-x-3 pt-4">
             <button
-              @click="closeWriteModal"
               class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              @click="closeWriteModal"
             >
               취소
             </button>
             <button
-              @click="submitNotice"
               :disabled="!newNotice.title || !newNotice.content"
               class="px-4 py-2 bg-primary-600 text-white rounded-lg disabled:bg-gray-300"
+              @click="submitNotice"
             >
               등록
             </button>
@@ -938,8 +934,7 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => {
-})
+onUnmounted(() => {})
 </script>
 <style>
 .no-scrollbar::-webkit-scrollbar {

@@ -14,6 +14,8 @@ namespace LocalRAG.Storage;
 
 public class MssqlVectorStore : IVectorStore
 {
+    private const int MAX_CANDIDATE_COUNT = 500;
+
     private readonly IDbContextFactory<ConventionDbContext> _dbContextFactory;
     private readonly ILogger<MssqlVectorStore> _logger;
 
@@ -24,21 +26,38 @@ public class MssqlVectorStore : IVectorStore
         _logger.LogInformation("MssqlVectorStore 초기화됨 (DbContextFactory 사용).");
     }
 
-    // 메타데이터에서 ConventionId 추출 헬퍼 (이전과 동일)
+    // 메타데이터에서 ConventionId 추출 헬퍼
     private int GetConventionIdFromMetadata(Dictionary<string, object>? metadata)
     {
-        const string key = "conventionId";
-        if (metadata != null && metadata.TryGetValue(key, out var valueObj))
-        {
-            if (valueObj is int intValue) return intValue;
-            if (valueObj is long longValue && longValue >= int.MinValue && longValue <= int.MaxValue) return (int)longValue;
-            if (valueObj is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Number && jsonElement.TryGetInt32(out int jsonInt)) return jsonInt;
-            if (valueObj is string strValue && int.TryParse(strValue, out int parsedInt)) return parsedInt;
+        if (TryParseConventionId(metadata, out int result))
+            return result;
 
-            _logger.LogWarning("메타데이터 키 '{Key}'의 값이 유효한 정수가 아닙니다. Value: {Value}", key, valueObj);
+        throw new ArgumentException("Document metadata must contain a valid integer 'conventionId'.");
+    }
+
+    private bool TryParseConventionId(Dictionary<string, object>? metadata, out int conventionId)
+    {
+        conventionId = 0;
+        const string key = "conventionId";
+        if (metadata == null || !metadata.TryGetValue(key, out var valueObj))
+        {
+            _logger.LogWarning("메타데이터에 유효한 '{Key}' 키가 없습니다.", key);
+            return false;
         }
-        _logger.LogWarning("메타데이터에 유효한 '{Key}' 키가 없습니다.", key);
-        throw new ArgumentException($"Document metadata must contain a valid integer '{key}'.");
+
+        return TryParseIntValue(valueObj, out conventionId);
+    }
+
+    private bool TryParseIntValue(object? valueObj, out int result)
+    {
+        result = 0;
+        if (valueObj is int intValue) { result = intValue; return true; }
+        if (valueObj is long longValue && longValue >= int.MinValue && longValue <= int.MaxValue) { result = (int)longValue; return true; }
+        if (valueObj is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Number && jsonElement.TryGetInt32(out int jsonInt)) { result = jsonInt; return true; }
+        if (valueObj is string strValue && int.TryParse(strValue, out int parsedInt)) { result = parsedInt; return true; }
+
+        _logger.LogWarning("값이 유효한 정수가 아닙니다. Value: {Value}", valueObj);
+        return false;
     }
 
     // 메타데이터에서 SourceType 추출 헬퍼
@@ -139,12 +158,7 @@ public class MssqlVectorStore : IVectorStore
             {
                 if (kvp.Key.Equals("conventionId", StringComparison.OrdinalIgnoreCase))
                 {
-                    int conventionId;
-                    if (kvp.Value is int intValue) conventionId = intValue;
-                    else if (kvp.Value is long longValue && longValue >= int.MinValue && longValue <= int.MaxValue) conventionId = (int)longValue;
-                    else if (kvp.Value is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Number && jsonElement.TryGetInt32(out int jsonInt)) conventionId = jsonInt;
-                    else if (kvp.Value is string strValue && int.TryParse(strValue, out int parsedInt)) conventionId = parsedInt;
-                    else
+                    if (!TryParseIntValue(kvp.Value, out int conventionId))
                     {
                         _logger.LogWarning("검색 필터에 유효하지 않은 conventionId 값이 있습니다: {Value}. 검색 결과가 없을 수 있습니다.", kvp.Value);
                         return new List<VectorSearchResult>();
@@ -156,11 +170,15 @@ public class MssqlVectorStore : IVectorStore
             }
         }
 
-        // ⚠️ 성능 경고: 메모리로 로드 (이전과 동일)
         List<VectorDataEntry> candidates;
         try
         {
-            candidates = await query.ToListAsync();
+            var totalCount = await query.CountAsync();
+            if (totalCount > MAX_CANDIDATE_COUNT)
+            {
+                _logger.LogWarning("후보 벡터 수({Count})가 상한({Max})을 초과합니다. 최근 데이터만 로드합니다.", totalCount, MAX_CANDIDATE_COUNT);
+            }
+            candidates = await query.OrderByDescending(v => v.Id).Take(MAX_CANDIDATE_COUNT).ToListAsync();
             _logger.LogInformation("{Count}개의 후보 벡터를 DB에서 메모리로 로드했습니다.", candidates.Count);
         }
         catch (Exception ex)
@@ -294,10 +312,13 @@ public class MssqlVectorStore : IVectorStore
         }
         try
         {
-            var candidates = await dbContext.VectorDataEntries.AsNoTracking()
-                                             .Where(v => v.MetadataJson != null)
-                                             .Select(v => new { v.Id, v.MetadataJson })
-                                             .ToListAsync();
+            // 서버 사이드 Contains()로 후보를 좁힌 뒤, 클라이언트에서 정확히 파싱하여 삭제
+            var searchPattern = $"\"{key}\":\"{valueStr}\"";
+            var candidates = await dbContext.VectorDataEntries
+                .Where(v => v.MetadataJson != null && v.MetadataJson.Contains(searchPattern))
+                .Select(v => new { v.Id, v.MetadataJson })
+                .ToListAsync();
+
             var idsToDelete = new List<string>();
             foreach (var item in candidates)
             {
@@ -311,16 +332,18 @@ public class MssqlVectorStore : IVectorStore
                         idsToDelete.Add(item.Id);
                     }
                 }
-                catch (JsonException ex)
-                {
-                    _logger.LogWarning(ex, "메타데이터 JSON 파싱 오류 (ID: {Id}). 건너<0xEB><0x9A><0x8E>니다.", item.Id);
-                }
+                catch (JsonException) { }
             }
-            if (!idsToDelete.Any()) { _logger.LogInformation("메타데이터 '{Key}' = '{Value}' 조건에 맞는 문서 없음.", key, valueStr); return; }
+
+            if (!idsToDelete.Any())
+            {
+                _logger.LogInformation("메타데이터 '{Key}' = '{Value}' 조건에 맞는 문서 없음.", key, valueStr);
+                return;
+            }
 
             int deletedCount = await dbContext.VectorDataEntries
                 .Where(v => idsToDelete.Contains(v.Id))
-                .ExecuteDeleteAsync(); // EF Core 7+ 필요
+                .ExecuteDeleteAsync();
             _logger.LogInformation("메타데이터 '{Key}' = '{Value}' 조건 문서 {Count}개 삭제 완료.", key, valueStr, deletedCount);
         }
         catch (Exception ex)

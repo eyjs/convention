@@ -1,16 +1,15 @@
-﻿using LocalRAG.Data;
 using LocalRAG.DTOs.ChatModels;
-using Microsoft.EntityFrameworkCore;
+using LocalRAG.Repositories;
 
 namespace LocalRAG.Services.Chat;
 
 public class ConventionAccessService
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public ConventionAccessService(ConventionDbContext context)
+    public ConventionAccessService(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<bool> VerifyAsync(int conventionId, ChatUserContext userContext)
@@ -18,7 +17,7 @@ public class ConventionAccessService
         if (userContext.Role == UserRole.Admin) return true;
         if (userContext.UserId is null) return false;
 
-        return await _context.UserConventions
-            .AnyAsync(uc => uc.UserId == userContext.UserId && uc.ConventionId == conventionId);
+        return await _unitOfWork.UserConventions.ExistsAsync(
+            uc => uc.UserId == userContext.UserId && uc.ConventionId == conventionId);
     }
 }

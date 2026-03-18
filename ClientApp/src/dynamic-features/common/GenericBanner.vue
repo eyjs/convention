@@ -17,9 +17,9 @@
   <div
     :class="bannerClasses"
     :style="bannerStyle"
-    @click="handleBannerClick"
     :role="isClickable ? 'button' : 'img'"
     :tabindex="isClickable ? 0 : undefined"
+    @click="handleBannerClick"
     @keydown.enter="handleBannerClick"
     @keydown.space.prevent="handleBannerClick"
   >
@@ -63,8 +63,8 @@
       <button
         v-if="config.ctaButton"
         :class="ctaButtonClasses"
-        @click.stop="handleCtaClick"
         class="mt-4 self-start"
+        @click.stop="handleCtaClick"
       >
         {{ config.ctaButton.label }}
         <svg

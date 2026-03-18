@@ -10,8 +10,8 @@
           설문 관리
         </h2>
         <button
-          @click="openCreateModal"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+          @click="openCreateModal"
         >
           새 설문 생성
         </button>
@@ -86,20 +86,20 @@
                 class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
               >
                 <button
-                  @click="copySurveyUrl(survey.id)"
                   class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4"
+                  @click="copySurveyUrl(survey.id)"
                 >
                   URL 복사
                 </button>
                 <button
-                  @click="showEditView(survey.id)"
                   class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-4"
+                  @click="showEditView(survey.id)"
                 >
                   수정
                 </button>
                 <button
-                  @click="showStatsView(survey.id)"
                   class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                  @click="showStatsView(survey.id)"
                 >
                   통계
                 </button>
@@ -152,7 +152,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import api from '@/api'
+import api from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SurveyForm from '@/views/admin/survey/SurveyForm.vue' // Re-using the form view
 import SurveyStats from '@/views/admin/survey/SurveyStats.vue' // Re-using the stats view

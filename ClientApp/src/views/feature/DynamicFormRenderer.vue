@@ -16,8 +16,8 @@
       >
         <p class="text-red-600">{{ error }}</p>
         <button
-          @click="router.back()"
           class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          @click="router.back()"
         >
           돌아가기
         </button>
@@ -36,7 +36,7 @@
         </div>
 
         <!-- 동적 폼 필드 -->
-        <form @submit.prevent="handleSubmit" class="space-y-6">
+        <form class="space-y-6" @submit.prevent="handleSubmit">
           <div v-for="field in sortedFields" :key="field.id" class="form-group">
             <label
               :for="`field-${field.id}`"
@@ -119,9 +119,9 @@
                 class="flex items-center"
               >
                 <input
+                  v-model="formData[field.key]"
                   type="radio"
                   :name="`field-${field.id}`"
-                  v-model="formData[field.key]"
                   :value="option.value"
                   :required="field.isRequired"
                   class="mr-2"
@@ -137,8 +137,8 @@
             >
               <input
                 :id="`field-${field.id}`"
-                type="checkbox"
                 v-model="formData[field.key]"
+                type="checkbox"
                 class="mr-2 w-4 h-4 text-blue-600"
               />
             </div>
@@ -149,9 +149,9 @@
               <input
                 :id="`field-${field.id}`"
                 type="file"
-                @change="handleFileChange($event, field.key)"
                 :required="field.isRequired && !existingFileUrls[field.key]"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                @change="handleFileChange($event, field.key)"
               />
 
               <!-- 새로 선택한 파일 정보 -->
@@ -185,15 +185,15 @@
                   <div class="flex gap-2">
                     <button
                       type="button"
-                      @click="openImageViewer(existingFileUrls[field.key])"
                       class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                      @click="openImageViewer(existingFileUrls[field.key])"
                     >
                       🔍 크게 보기
                     </button>
                     <button
                       type="button"
-                      @click="downloadFile(existingFileUrls[field.key])"
                       class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                      @click="downloadFile(existingFileUrls[field.key])"
                     >
                       ⬇ 다운로드
                     </button>
@@ -218,15 +218,15 @@
                   <div class="flex gap-2">
                     <button
                       type="button"
-                      @click="openPdfViewer(existingFileUrls[field.key])"
                       class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                      @click="openPdfViewer(existingFileUrls[field.key])"
                     >
                       📄 PDF 보기
                     </button>
                     <button
                       type="button"
-                      @click="downloadFile(existingFileUrls[field.key])"
                       class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                      @click="downloadFile(existingFileUrls[field.key])"
                     >
                       ⬇ 다운로드
                     </button>
@@ -240,8 +240,8 @@
                   </p>
                   <button
                     type="button"
-                    @click="downloadFile(existingFileUrls[field.key])"
                     class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    @click="downloadFile(existingFileUrls[field.key])"
                   >
                     ⬇ 다운로드
                   </button>
@@ -254,8 +254,8 @@
           <div class="flex gap-4 pt-6 border-t">
             <button
               type="button"
-              @click="router.back()"
               class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+              @click="router.back()"
             >
               취소
             </button>
@@ -287,8 +287,8 @@
       >
         <!-- 닫기 버튼 (고정 위치 - 우상단) -->
         <button
-          @click="closeImageViewer"
           class="fixed top-6 right-6 w-12 h-12 flex items-center justify-center bg-white rounded-full text-gray-800 hover:bg-gray-200 transition-colors shadow-2xl z-[60] font-bold text-xl"
+          @click="closeImageViewer"
         >
           ✕
         </button>
@@ -296,8 +296,8 @@
         <!-- 다운로드 버튼 (고정 위치 - 우하단) -->
         <button
           type="button"
-          @click="downloadFile(imageViewerUrl)"
           class="fixed bottom-6 right-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-2xl z-[60] font-medium flex items-center gap-2"
+          @click="downloadFile(imageViewerUrl)"
         >
           <svg
             class="w-5 h-5"
@@ -332,8 +332,8 @@
       <!-- PDF 뷰어 모달 -->
       <div
         v-if="pdfViewerUrl"
-        @click="closePdfViewer"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
+        @click="closePdfViewer"
       >
         <div
           class="relative w-full max-w-6xl h-[90vh] bg-white rounded-lg shadow-2xl overflow-hidden"
@@ -354,8 +354,8 @@
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                @click="downloadFile(pdfViewerUrl)"
                 class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center gap-2"
+                @click="downloadFile(pdfViewerUrl)"
               >
                 <svg
                   class="w-4 h-4"
@@ -374,8 +374,8 @@
               </button>
               <button
                 type="button"
-                @click="closePdfViewer"
                 class="w-10 h-10 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-800 transition-colors font-bold"
+                @click="closePdfViewer"
               >
                 ✕
               </button>
@@ -403,7 +403,7 @@ import apiClient from '@/services/api'
 import formBuilderService from '@/services/formBuilderService'
 
 const props = defineProps({
-  formDefinitionId: String,  // 라우터에서 자동 주입 (params.formDefinitionId)
+  formDefinitionId: String, // 라우터에서 자동 주입 (params.formDefinitionId)
 })
 
 const router = useRouter()
@@ -683,11 +683,14 @@ onMounted(() => {
 })
 
 // Watch for route changes (when navigating between different forms)
-watch(() => props.formDefinitionId, (newId, oldId) => {
-  if (newId && newId !== oldId) {
-    initForm()
-  }
-})
+watch(
+  () => props.formDefinitionId,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      initForm()
+    }
+  },
+)
 </script>
 
 <style scoped>

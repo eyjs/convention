@@ -18,7 +18,7 @@ public class SmsTemplateContextFactory
             EndDate = convention.EndDate?.ToString("yyyy.MM.dd") ?? string.Empty,
             
             // URL 생성 로직
-            Url = $"https://startour.ifa.co.kr/invite/{convention.Id}",
+            Url = $"https://event.ifa.co.kr/invite/{convention.Id}",
             
             // 실제 엔티티의 PreEndDate 사용
             PreEndDate = convention.PreEndDate?.ToString("yyyy.MM.dd") ?? string.Empty

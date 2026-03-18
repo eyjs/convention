@@ -17,8 +17,8 @@
         <!-- 대량 작업 버튼 -->
         <button
           v-if="selectedGuests.length > 0"
-          @click="showBulkAssignModal = true"
           class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
+          @click="showBulkAssignModal = true"
         >
           <svg
             class="w-4 h-4"
@@ -39,8 +39,8 @@
         <!-- 속성 일괄 매핑 버튼 -->
         <button
           v-if="selectedGuests.length > 0"
-          @click="showBulkAttributeModal = true"
           class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
+          @click="showBulkAttributeModal = true"
         >
           <svg
             class="w-4 h-4"
@@ -59,8 +59,8 @@
         </button>
         <!-- 그룹 단위 일정 배정 버튼 -->
         <button
-          @click="openGroupAssignModal"
           class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
+          @click="showGroupAssignModal = true"
         >
           <svg
             class="w-4 h-4"
@@ -79,8 +79,8 @@
         </button>
         <!-- 그룹 단위 일정 해제 버튼 -->
         <button
-          @click="openGroupRemoveModal"
           class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
+          @click="showGroupRemoveModal = true"
         >
           <svg
             class="w-4 h-4"
@@ -99,8 +99,8 @@
         </button>
         <!-- 그룹별 속성 초기화 버튼 -->
         <button
-          @click="openGroupAttributeResetModal"
           class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
+          @click="showGroupAttributeResetModal = true"
         >
           <svg
             class="w-4 h-4"
@@ -118,8 +118,8 @@
           그룹별 속성 초기화
         </button>
         <button
-          @click="showCreateModal = true"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center justify-center whitespace-nowrap overflow-hidden text-ellipsis"
+          @click="showCreateModal = true"
         >
           + 참석자 추가
         </button>
@@ -133,8 +133,8 @@
     >
       <p class="text-gray-500">등록된 참석자가 없습니다</p>
       <button
-        @click="showCreateModal = true"
         class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+        @click="showCreateModal = true"
       >
         첫 참석자 추가하기
       </button>
@@ -147,11 +147,11 @@
               <th class="px-6 py-3 text-left">
                 <input
                   type="checkbox"
-                  @change="toggleSelectAll"
                   :checked="
                     selectedGuests.length === guests.length && guests.length > 0
                   "
                   class="rounded"
+                  @change="toggleSelectAll"
                 />
               </th>
               <th
@@ -194,15 +194,15 @@
             >
               <td class="px-6 py-4 whitespace-nowrap" @click.stop>
                 <input
+                  v-model="selectedGuests"
                   type="checkbox"
                   :value="guest.id"
-                  v-model="selectedGuests"
                   class="rounded"
                 />
               </td>
               <td
                 class="px-6 py-4 whitespace-nowrap cursor-pointer"
-                @click="showGuestDetail(guest.id)"
+                @click="openDetailModal(guest.id)"
               >
                 <div class="font-medium text-gray-900">
                   {{ guest.guestName }}
@@ -243,14 +243,14 @@
                 @click.stop
               >
                 <button
-                  @click="editGuest(guest)"
                   class="text-primary-600 hover:text-primary-900 mr-3"
+                  @click="editGuest(guest)"
                 >
                   수정
                 </button>
                 <button
-                  @click="deleteGuest(guest.id)"
                   class="text-red-600 hover:text-red-900"
+                  @click="deleteGuest(guest.id)"
                 >
                   삭제
                 </button>
@@ -262,992 +262,95 @@
     </div>
 
     <!-- 참석자 생성/수정 모달 -->
-    <BaseModal
+    <GuestFormModal
       :is-open="showCreateModal || !!editingGuest"
+      :editing-guest="editingGuest"
+      :available-templates="availableTemplates"
+      :attribute-templates="attributeTemplates"
+      :guests="guests"
+      :convention-id="conventionId"
       @close="closeGuestModal"
-      max-width="2xl"
-    >
-      <template #header>
-        <h2 class="text-xl font-semibold">
-          {{ editingGuest ? '참석자 수정' : '참석자 추가' }}
-        </h2>
-      </template>
-      <template #body>
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium mb-1">이름 *</label>
-              <input
-                v-model="guestForm.guestName"
-                type="text"
-                class="w-full px-3 py-2 border rounded-lg"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">전화번호 *</label>
-              <input
-                v-model="guestForm.telephone"
-                type="text"
-                class="w-full px-3 py-2 border rounded-lg"
-              />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium mb-1">부서</label>
-              <input
-                v-model="guestForm.corpPart"
-                type="text"
-                class="w-full px-3 py-2 border rounded-lg"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">주민등록번호</label>
-              <input
-                v-model="guestForm.residentNumber"
-                type="text"
-                placeholder="000000-0000000"
-                class="w-full px-3 py-2 border rounded-lg"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-1">소속</label>
-            <input
-              v-model="guestForm.affiliation"
-              type="text"
-              class="w-full px-3 py-2 border rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-1"
-              >초기 비밀번호 (선택)</label
-            >
-            <input
-              v-model="guestForm.password"
-              type="password"
-              placeholder="미입력 시 주민등록번호 앞 6자리 자동 설정"
-              class="w-full px-3 py-2 border rounded-lg"
-            />
-            <p class="text-xs text-gray-500 mt-1">
-              * 주민등록번호가 없거나 비밀번호를 지정하지 않으면 기본 비밀번호
-              "123456"이 설정됩니다.
-            </p>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-2">속성 정보</label>
-            <div class="space-y-3">
-              <!-- 템플릿 기반 속성 -->
-              <div
-                v-for="template in attributeTemplates"
-                :key="template.id"
-                class="space-y-2"
-              >
-                <label class="block text-sm font-medium text-gray-700">{{
-                  template.attributeKey
-                }}</label>
-                <select
-                  v-if="template.attributeValues"
-                  v-model="guestForm.templateAttributes[template.attributeKey]"
-                  class="w-full px-3 py-2 border rounded-lg"
-                >
-                  <option value="">선택하세요</option>
-                  <option
-                    v-for="value in parseAttributeValues(
-                      template.attributeValues,
-                    )"
-                    :key="value"
-                    :value="value"
-                  >
-                    {{ value }}
-                  </option>
-                </select>
-                <input
-                  v-else
-                  v-model="guestForm.templateAttributes[template.attributeKey]"
-                  type="text"
-                  class="w-full px-3 py-2 border rounded-lg"
-                  :placeholder="`${template.attributeKey} 입력`"
-                />
-              </div>
-
-              <!-- 추가 속성 (수기) -->
-              <div class="pt-3 border-t">
-                <p class="text-sm text-gray-600 mb-2">추가 속성 (수기 입력)</p>
-                <div
-                  v-for="(attr, idx) in guestForm.customAttributes"
-                  :key="idx"
-                  class="flex flex-col sm:flex-row gap-2 mb-2"
-                >
-                  <input
-                    v-model="attr.key"
-                    placeholder="키 (예: 호차)"
-                    class="flex-1 px-3 py-2 border rounded-lg"
-                  />
-                  <input
-                    v-model="attr.value"
-                    placeholder="값"
-                    class="flex-1 px-3 py-2 border rounded-lg"
-                  />
-                  <button
-                    @click="guestForm.customAttributes.splice(idx, 1)"
-                    class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg whitespace-nowrap overflow-hidden text-ellipsis"
-                  >
-                    삭제
-                  </button>
-                </div>
-                <button
-                  @click="
-                    guestForm.customAttributes.push({ key: '', value: '' })
-                  "
-                  class="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-600 hover:bg-gray-50 whitespace-nowrap overflow-hidden text-ellipsis"
-                >
-                  + 속성 추가
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-2">일정 배정</label>
-            <div
-              v-if="availableTemplates.length === 0"
-              class="text-sm text-gray-500 p-3 bg-gray-50 rounded"
-            >
-              일정 템플릿이 없습니다. 먼저 일정 관리에서 템플릿을 생성하세요.
-            </div>
-            <div v-else>
-              <!-- 다른 참석자 일정 복사버튼 -->
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm text-gray-600"
-                  >선택: {{ guestForm.scheduleTemplateIds.length }}개</span
-                >
-                <button
-                  @click="showCopyScheduleModal = true"
-                  class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis"
-                >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
-                  다른 참석자 일정 복사
-                </button>
-              </div>
-              <div
-                class="space-y-2 max-h-60 overflow-y-auto border rounded p-2"
-              >
-                <label
-                  v-for="template in availableTemplates"
-                  :key="template.id"
-                  class="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    :value="template.id"
-                    v-model="guestForm.scheduleTemplateIds"
-                    class="rounded mt-1"
-                  />
-                  <div class="flex-1">
-                    <div class="font-medium">{{ template.courseName }}</div>
-                    <div
-                      v-if="template.description"
-                      class="text-xs text-gray-500"
-                    >
-                      {{ template.description }}
-                    </div>
-                    <div class="text-xs text-gray-400 mt-1">
-                      일정 {{ template.scheduleItems?.length || 0 }}개
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <button
-          @click="closeGuestModal"
-          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-        >
-          취소
-        </button>
-        <button
-          @click="saveGuest"
-          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-        >
-          저장
-        </button>
-      </template>
-    </BaseModal>
+      @saved="onGuestSaved"
+    />
 
     <!-- 참석자 상세 모달 -->
-    <BaseModal
+    <GuestDetailModal
       :is-open="showDetailModal"
+      :convention-id="conventionId"
+      :guest-id="detailGuestId"
       @close="closeDetailModal"
-      max-width="4xl"
-    >
-      <template #header>
-        <h2 class="text-2xl font-bold">{{ guestDetail?.guestName }}</h2>
-      </template>
-      <template #body>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <h3 class="font-semibold mb-3">기본 정보</h3>
-            <dl class="space-y-2 text-sm">
-              <div>
-                <dt class="text-gray-500 inline">전화번호:</dt>
-                <dd class="inline ml-2">{{ guestDetail?.telephone }}</dd>
-              </div>
-              <div>
-                <dt class="text-gray-500 inline">부서:</dt>
-                <dd class="inline ml-2">
-                  {{ guestDetail?.corpPart || '-' }}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-gray-500 inline">주민번호:</dt>
-                <dd class="inline ml-2">
-                  {{ guestDetail?.residentNumber || '-' }}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-gray-500 inline">소속:</dt>
-                <dd class="inline ml-2">
-                  {{ guestDetail?.affiliation || '-' }}
-                </dd>
-              </div>
-            </dl>
-          </div>
+    />
 
-          <div
-            v-if="
-              guestDetail?.attributes &&
-              Object.keys(guestDetail.attributes).length > 0
-            "
-          >
-            <h3 class="font-semibold mb-3">속성 정보</h3>
-            <dl class="space-y-2 text-sm">
-              <div v-for="(value, key) in guestDetail.attributes" :key="key">
-                <dt class="text-gray-500 inline">{{ key }}:</dt>
-                <dd class="inline ml-2 font-medium">{{ value }}</dd>
-              </div>
-            </dl>
-          </div>
-        </div>
+    <!-- 대량 작업 모달 (일정 배정 + 속성 매핑) -->
+    <BulkGuestOperations
+      :convention-id="conventionId"
+      :selected-guests="selectedGuests"
+      :guests="guests"
+      :available-templates="availableTemplates"
+      :attribute-templates="attributeTemplates"
+      :show-schedule-modal="showBulkAssignModal"
+      :show-attribute-modal="showBulkAttributeModal"
+      @close-schedule="showBulkAssignModal = false"
+      @close-attribute="showBulkAttributeModal = false"
+      @completed="onBulkCompleted"
+    />
 
-        <div v-if="guestDetail?.schedules && guestDetail.schedules.length > 0">
-          <h3 class="font-semibold mb-3">배정된 일정</h3>
-          <div class="space-y-4">
-            <div
-              v-for="schedule in guestDetail.schedules"
-              :key="schedule.scheduleTemplateId"
-              class="border rounded-lg overflow-hidden"
-            >
-              <div class="bg-gray-50 px-4 py-3 border-b">
-                <h4 class="font-semibold">{{ schedule.courseName }}</h4>
-                <p v-if="schedule.description" class="text-sm text-gray-600">
-                  {{ schedule.description }}
-                </p>
-              </div>
-              <div class="p-4">
-                <div class="space-y-3">
-                  <div
-                    v-for="item in schedule.items"
-                    :key="item.id"
-                    class="flex gap-3 p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div class="flex-shrink-0 w-24 text-sm">
-                      <div class="font-medium">
-                        {{ formatDate(item.scheduleDate) }}
-                      </div>
-                      <div class="text-gray-600">{{ item.startTime }}</div>
-                    </div>
-                    <div class="flex-1">
-                      <p class="font-medium">{{ item.title }}</p>
-                      <p v-if="item.location" class="text-sm text-gray-500">
-                        📍 {{ item.location }}
-                      </p>
-                      <p
-                        v-if="item.content"
-                        class="text-sm text-gray-600 mt-1 whitespace-pre-wrap"
-                      >
-                        {{ item.content }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-else class="text-center text-gray-500 py-8 border rounded-lg">
-          배정된 일정이 없습니다
-        </div>
-      </template>
-    </BaseModal>
-
-    <!-- 일정 복사 모달 -->
-    <BaseModal
-      :is-open="showCopyScheduleModal"
-      @close="
-        () => {
-          showCopyScheduleModal = false
-          searchQuery = ''
-        }
-      "
-      max-width="lg"
-    >
-      <template #header>
-        <h2 class="text-xl font-semibold">다른 참석자 일정 복사</h2>
-      </template>
-      <template #body>
-        <div class="mb-4">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="참석자 이름 검색..."
-            class="w-full px-3 py-2 border rounded-lg"
-          />
-        </div>
-
-        <div class="space-y-2 max-h-96 overflow-y-auto">
-          <div
-            v-for="guest in filteredGuestsForCopy"
-            :key="guest.id"
-            class="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-            @click="copyScheduleFromGuest(guest)"
-          >
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="font-medium">{{ guest.guestName }}</p>
-                <p class="text-sm text-gray-500">{{ guest.telephone }}</p>
-                <div
-                  v-if="guest.scheduleTemplates.length > 0"
-                  class="flex flex-wrap gap-1 mt-2"
-                >
-                  <span
-                    v-for="st in guest.scheduleTemplates"
-                    :key="st.scheduleTemplateId"
-                    class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs"
-                  >
-                    {{ st.courseName }}
-                  </span>
-                </div>
-                <p v-else class="text-xs text-gray-400 mt-1">
-                  배정된 일정 없음
-                </p>
-              </div>
-              <button
-                v-if="guest.scheduleTemplates.length > 0"
-                class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap overflow-hidden text-ellipsis"
-              >
-                복사
-              </button>
-            </div>
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <button
-          @click="
-            () => {
-              showCopyScheduleModal = false
-              searchQuery = ''
-            }
-          "
-          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-        >
-          취소
-        </button>
-      </template>
-    </BaseModal>
-
-    <!-- 대량 일정 배정 모달 -->
-    <BaseModal
-      :is-open="showBulkAssignModal"
-      @close="closeBulkAssignModal"
-      max-width="2xl"
-    >
-      <template #header>
-        <h2 class="text-xl font-semibold">일정 일괄 배정</h2>
-      </template>
-      <template #body>
-        <div class="mb-4 p-4 bg-blue-50 rounded-lg">
-          <p class="text-sm font-medium text-blue-900">
-            선택된 참석자: {{ selectedGuests.length }}명
-          </p>
-          <div class="flex flex-wrap gap-2 mt-2">
-            <span
-              v-for="id in selectedGuests.slice(0, 5)"
-              :key="id"
-              class="px-2 py-1 bg-white text-sm rounded"
-            >
-              {{ guests.find((g) => g.id === id)?.guestName }}
-            </span>
-            <span
-              v-if="selectedGuests.length > 5"
-              class="px-2 py-1 bg-white text-sm rounded"
-            >
-              +{{ selectedGuests.length - 5 }}명
-            </span>
-          </div>
-        </div>
-
-        <div class="mb-4">
-          <label class="block text-sm font-medium mb-2">배정할 일정 선택</label>
-          <div class="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-3">
-            <label
-              v-for="template in availableTemplates"
-              :key="template.id"
-              class="flex items-start gap-2 p-3 border rounded hover:bg-gray-50 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                :value="template.id"
-                v-model="bulkAssignTemplateIds"
-                class="rounded mt-1"
-              />
-              <div class="flex-1">
-                <div class="font-medium">{{ template.courseName }}</div>
-                <div v-if="template.description" class="text-sm text-gray-600">
-                  {{ template.description }}
-                </div>
-                <div class="text-xs text-gray-500 mt-1">
-                  일정 {{ template.scheduleItems?.length || 0 }}개 • 참석자
-                  {{ template.guestCount || 0 }}명
-                </div>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <div class="mb-4">
-          <label class="flex items-center gap-2">
-            <input
-              type="checkbox"
-              v-model="bulkAssignReplace"
-              class="rounded"
-            />
-            <span class="text-sm text-gray-700"
-              >기존 일정을 대체 (체크 시 기존 일정 삭제 후 새 일정 배정)</span
-            >
-          </label>
-        </div>
-      </template>
-      <template #footer>
-        <button
-          @click="closeBulkAssignModal"
-          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-        >
-          취소
-        </button>
-        <button
-          @click="executeBulkAssign"
-          :disabled="bulkAssignTemplateIds.length === 0"
-          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap overflow-hidden text-ellipsis"
-        >
-          {{ selectedGuests.length }}명에게 일정 배정
-        </button>
-      </template>
-    </BaseModal>
-
-    <!-- 속성 일괄 매핑 모달 -->
-    <BaseModal
-      :is-open="showBulkAttributeModal"
-      @close="closeBulkAttributeModal"
-      max-width="2xl"
-    >
-      <template #header>
-        <h2 class="text-xl font-semibold">
-          속성 일괄 매핑 ({{ selectedGuests.length }}명)
-        </h2>
-      </template>
-      <template #body>
-        <div class="mb-4 p-3 bg-blue-50 rounded-lg">
-          <p class="text-sm text-blue-800">
-            선택한 {{ selectedGuests.length }}명의 참석자에게 동일한 속성을
-            설정합니다.
-          </p>
-        </div>
-
-        <div class="space-y-4">
-          <div
-            v-for="template in attributeTemplates"
-            :key="template.id"
-            class="space-y-2"
-          >
-            <label class="block text-sm font-medium text-gray-700">
-              {{ template.attributeKey }}
-            </label>
-
-            <!-- 선택 값이 있는 경우 드롭다운 -->
-            <select
-              v-if="template.attributeValues"
-              v-model="bulkAttributeForm[template.attributeKey]"
-              class="w-full px-3 py-2 border rounded-lg"
-            >
-              <option value="">선택하세요</option>
-              <option
-                v-for="value in parseAttributeValues(template.attributeValues)"
-                :key="value"
-                :value="value"
-              >
-                {{ value }}
-              </option>
-            </select>
-
-            <!-- 선택 값이 없는 경우 텍스트 입력 -->
-            <input
-              v-else
-              v-model="bulkAttributeForm[template.attributeKey]"
-              type="text"
-              class="w-full px-3 py-2 border rounded-lg"
-              :placeholder="`${template.attributeKey} 입력`"
-            />
-          </div>
-
-          <!-- 미리보기 -->
-          <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h4 class="text-sm font-semibold mb-2">미리보기</h4>
-            <div class="space-y-2 max-h-40 overflow-y-auto">
-              <div
-                v-for="guestId in selectedGuests.slice(0, 5)"
-                :key="guestId"
-                class="text-sm"
-              >
-                <span class="font-medium">{{ getGuestNameById(guestId) }}</span>
-                <span class="text-gray-600 ml-2">
-                  →
-                  <span
-                    v-for="(value, key) in bulkAttributeForm"
-                    :key="key"
-                    class="ml-1"
-                  >
-                    <template v-if="value"> {{ key }}: {{ value }} </template>
-                  </span>
-                </span>
-              </div>
-              <div
-                v-if="selectedGuests.length > 5"
-                class="text-xs text-gray-500"
-              >
-                ... 외 {{ selectedGuests.length - 5 }}명
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <button
-          @click="closeBulkAttributeModal"
-          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-        >
-          취소
-        </button>
-        <button
-          @click="submitBulkAttribute"
-          :disabled="submittingAttribute"
-          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 whitespace-nowrap overflow-hidden text-ellipsis"
-        >
-          {{ submittingAttribute ? '저장 중...' : '일괄 저장' }}
-        </button>
-      </template>
-    </BaseModal>
-
-    <!-- 그룹 단위 일정 배정 모달 -->
-    <BaseModal
-      :is-open="showGroupAssignModal"
-      @close="closeGroupAssignModal"
-      max-width="2xl"
-    >
-      <template #header>
-        <h2 class="text-xl font-semibold">그룹별 일정 배정</h2>
-      </template>
-      <template #body>
-        <div class="space-y-6">
-          <!-- 그룹 선택 -->
-          <div>
-            <label class="block text-sm font-medium mb-2">그룹 선택 *</label>
-            <div v-if="availableGroups.length === 0" class="text-sm text-gray-500 p-3 bg-gray-50 rounded">
-              등록된 그룹이 없습니다. 참석자 업로드 시 그룹 정보를 포함해주세요.
-            </div>
-            <div v-else class="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
-              <label
-                v-for="group in availableGroups"
-                :key="group"
-                class="flex items-center gap-3 p-3 border rounded hover:bg-gray-50 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  :value="group"
-                  v-model="selectedGroupsForAssign"
-                  class="rounded"
-                />
-                <div class="flex-1">
-                  <div class="font-medium">{{ group }}</div>
-                  <div class="text-xs text-gray-500">
-                    {{ getGuestCountByGroup(group) }}명
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <!-- 선택된 그룹 요약 -->
-          <div v-if="selectedGroupsForAssign.length > 0" class="p-4 bg-orange-50 rounded-lg">
-            <p class="text-sm font-medium text-orange-900">
-              선택된 그룹: {{ selectedGroupsForAssign.length }}개
-              (총 {{ getTotalGuestCountForSelectedGroups }}명)
-            </p>
-            <div class="flex flex-wrap gap-2 mt-2">
-              <span
-                v-for="group in selectedGroupsForAssign"
-                :key="group"
-                class="px-2 py-1 bg-white text-sm rounded"
-              >
-                {{ group }}
-              </span>
-            </div>
-          </div>
-
-          <!-- 일정 선택 -->
-          <div>
-            <label class="block text-sm font-medium mb-2">배정할 일정 선택 *</label>
-            <div
-              v-if="availableTemplates.length === 0"
-              class="text-sm text-gray-500 p-3 bg-gray-50 rounded"
-            >
-              일정 템플릿이 없습니다. 먼저 일정 관리에서 템플릿을 생성하세요.
-            </div>
-            <div v-else class="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
-              <label
-                v-for="template in availableTemplates"
-                :key="template.id"
-                class="flex items-start gap-2 p-3 border rounded hover:bg-gray-50 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  :value="template.id"
-                  v-model="groupAssignTemplateIds"
-                  class="rounded mt-1"
-                />
-                <div class="flex-1">
-                  <div class="font-medium">{{ template.courseName }}</div>
-                  <div v-if="template.description" class="text-sm text-gray-600">
-                    {{ template.description }}
-                  </div>
-                  <div class="text-xs text-gray-500 mt-1">
-                    일정 {{ template.scheduleItems?.length || 0 }}개
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <button
-          @click="closeGroupAssignModal"
-          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-        >
-          취소
-        </button>
-        <button
-          @click="executeGroupAssign"
-          :disabled="selectedGroupsForAssign.length === 0 || groupAssignTemplateIds.length === 0 || groupAssigning"
-          class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap overflow-hidden text-ellipsis"
-        >
-          {{ groupAssigning ? '배정 중...' : '그룹에 일정 배정' }}
-        </button>
-      </template>
-    </BaseModal>
-
-    <!-- 그룹 단위 일정 해제 모달 -->
-    <BaseModal
-      :is-open="showGroupRemoveModal"
-      @close="closeGroupRemoveModal"
-      max-width="2xl"
-    >
-      <template #header>
-        <h2 class="text-xl font-semibold text-red-600">그룹별 일정 해제</h2>
-      </template>
-      <template #body>
-        <div class="space-y-6">
-          <!-- 그룹 선택 -->
-          <div>
-            <label class="block text-sm font-medium mb-2">그룹 선택 *</label>
-            <div v-if="availableGroups.length === 0" class="text-sm text-gray-500 p-3 bg-gray-50 rounded">
-              등록된 그룹이 없습니다.
-            </div>
-            <div v-else class="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
-              <label
-                v-for="group in availableGroups"
-                :key="group"
-                class="flex items-center gap-3 p-3 border rounded hover:bg-red-50 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  :value="group"
-                  v-model="selectedGroupsForRemove"
-                  class="rounded text-red-600"
-                />
-                <div class="flex-1">
-                  <div class="font-medium">{{ group }}</div>
-                  <div class="text-xs text-gray-500">
-                    {{ getGuestCountByGroup(group) }}명
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <!-- 선택된 그룹 요약 -->
-          <div v-if="selectedGroupsForRemove.length > 0" class="p-4 bg-red-50 rounded-lg">
-            <p class="text-sm font-medium text-red-900">
-              선택된 그룹: {{ selectedGroupsForRemove.length }}개
-              (총 {{ getTotalGuestCountForSelectedGroupsRemove }}명)
-            </p>
-          </div>
-
-          <!-- 해제할 일정 선택 -->
-          <div>
-            <label class="block text-sm font-medium mb-2">해제할 일정 선택 *</label>
-            <div v-if="availableTemplates.length === 0" class="text-sm text-gray-500 p-3 bg-gray-50 rounded">
-              일정 템플릿이 없습니다.
-            </div>
-            <div v-else class="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
-              <label
-                v-for="template in availableTemplates"
-                :key="template.id"
-                class="flex items-start gap-2 p-3 border rounded hover:bg-red-50 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  :value="template.id"
-                  v-model="groupRemoveTemplateIds"
-                  class="rounded mt-1 text-red-600"
-                />
-                <div class="flex-1">
-                  <div class="font-medium">{{ template.courseName }}</div>
-                  <div v-if="template.description" class="text-sm text-gray-600">
-                    {{ template.description }}
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p class="text-sm text-yellow-800">
-              ⚠️ 선택한 그룹의 참석자들에게서 선택한 일정이 해제됩니다. 이 작업은 되돌릴 수 없습니다.
-            </p>
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <button
-          @click="closeGroupRemoveModal"
-          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-        >
-          취소
-        </button>
-        <button
-          @click="executeGroupRemove"
-          :disabled="selectedGroupsForRemove.length === 0 || groupRemoveTemplateIds.length === 0 || groupRemoving"
-          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          {{ groupRemoving ? '해제 중...' : '일정 해제' }}
-        </button>
-      </template>
-    </BaseModal>
-
-    <!-- 그룹별 속성 초기화 모달 -->
-    <BaseModal
-      :is-open="showGroupAttributeResetModal"
-      @close="closeGroupAttributeResetModal"
-      max-width="2xl"
-    >
-      <template #header>
-        <h2 class="text-xl font-semibold text-gray-700">그룹별 속성 초기화</h2>
-      </template>
-      <template #body>
-        <div class="space-y-6">
-          <!-- 그룹 선택 -->
-          <div>
-            <label class="block text-sm font-medium mb-2">그룹 선택 *</label>
-            <div v-if="availableGroups.length === 0" class="text-sm text-gray-500 p-3 bg-gray-50 rounded">
-              등록된 그룹이 없습니다.
-            </div>
-            <div v-else class="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
-              <label
-                v-for="group in availableGroups"
-                :key="group"
-                class="flex items-center gap-3 p-3 border rounded hover:bg-gray-100 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  :value="group"
-                  v-model="selectedGroupsForAttributeReset"
-                  class="rounded"
-                />
-                <div class="flex-1">
-                  <div class="font-medium">{{ group }}</div>
-                  <div class="text-xs text-gray-500">
-                    {{ getGuestCountByGroup(group) }}명
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <!-- 선택된 그룹 요약 -->
-          <div v-if="selectedGroupsForAttributeReset.length > 0" class="p-4 bg-gray-100 rounded-lg">
-            <p class="text-sm font-medium text-gray-900">
-              선택된 그룹: {{ selectedGroupsForAttributeReset.length }}개
-              (총 {{ getTotalGuestCountForSelectedGroupsAttributeReset }}명)
-            </p>
-          </div>
-
-          <!-- 삭제할 속성 선택 -->
-          <div>
-            <label class="block text-sm font-medium mb-2">삭제할 속성 선택 *</label>
-            <div v-if="availableAttributeKeys.length === 0" class="text-sm text-gray-500 p-3 bg-gray-50 rounded">
-              등록된 속성이 없습니다.
-            </div>
-            <div v-else class="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
-              <label
-                v-for="attrKey in availableAttributeKeys"
-                :key="attrKey"
-                class="flex items-center gap-2 p-3 border rounded hover:bg-gray-100 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  :value="attrKey"
-                  v-model="selectedAttributeKeysForReset"
-                  class="rounded"
-                />
-                <span class="font-medium">{{ attrKey }}</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p class="text-sm text-yellow-800">
-              ⚠️ 선택한 그룹의 참석자들에게서 선택한 속성이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
-            </p>
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <button
-          @click="closeGroupAttributeResetModal"
-          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-        >
-          취소
-        </button>
-        <button
-          @click="executeGroupAttributeReset"
-          :disabled="selectedGroupsForAttributeReset.length === 0 || selectedAttributeKeysForReset.length === 0 || attributeResetting"
-          class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          {{ attributeResetting ? '삭제 중...' : '속성 삭제' }}
-        </button>
-      </template>
-    </BaseModal>
+    <!-- 그룹 단위 작업 모달 -->
+    <GroupOperations
+      :convention-id="conventionId"
+      :guests="guests"
+      :available-templates="availableTemplates"
+      :show-assign-modal="showGroupAssignModal"
+      :show-remove-modal="showGroupRemoveModal"
+      :show-attribute-reset-modal="showGroupAttributeResetModal"
+      @close-assign="showGroupAssignModal = false"
+      @close-remove="showGroupRemoveModal = false"
+      @close-attribute-reset="showGroupAttributeResetModal = false"
+      @completed="onGroupCompleted"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import apiClient from '@/services/api'
-import BaseModal from '@/components/common/BaseModal.vue'
+import GuestFormModal from '@/components/admin/guest/GuestFormModal.vue'
+import GuestDetailModal from '@/components/admin/guest/GuestDetailModal.vue'
+import BulkGuestOperations from '@/components/admin/guest/BulkGuestOperations.vue'
+import GroupOperations from '@/components/admin/guest/GroupOperations.vue'
 
 const props = defineProps({
   conventionId: { type: Number, required: true },
 })
 
+// 공유 상태
 const guests = ref([])
 const availableTemplates = ref([])
 const attributeTemplates = ref([])
-const showCreateModal = ref(false)
-const showDetailModal = ref(false)
-const showCopyScheduleModal = ref(false)
-const showBulkAssignModal = ref(false)
-const editingGuest = ref(null)
-const guestDetail = ref(null)
 const loading = ref(true)
-const searchQuery = ref('')
 const selectedGuests = ref([])
-const bulkAssignTemplateIds = ref([])
-const bulkAssignReplace = ref(false)
+
+// 모달 가시성
+const showCreateModal = ref(false)
+const editingGuest = ref(null)
+const showDetailModal = ref(false)
+const detailGuestId = ref(null)
+const showBulkAssignModal = ref(false)
 const showBulkAttributeModal = ref(false)
-const bulkAttributeForm = ref({})
-const submittingAttribute = ref(false)
-
-// 그룹 단위 일정 배정 관련
 const showGroupAssignModal = ref(false)
-const availableGroups = ref([])
-const selectedGroupsForAssign = ref([])
-const groupAssignTemplateIds = ref([])
-const groupAssigning = ref(false)
-
-// 그룹 단위 일정 해제 관련
 const showGroupRemoveModal = ref(false)
-const selectedGroupsForRemove = ref([])
-const groupRemoveTemplateIds = ref([])
-const groupRemoving = ref(false)
-
-// 그룹별 속성 초기화 관련
 const showGroupAttributeResetModal = ref(false)
-const selectedGroupsForAttributeReset = ref([])
-const selectedAttributeKeysForReset = ref([])
-const attributeResetting = ref(false)
-const availableAttributeKeys = ref([])
 
-const guestForm = ref({
-  guestName: '',
-  telephone: '',
-  corpPart: '',
-  residentNumber: '',
-  affiliation: '',
-  password: '',
-  scheduleTemplateIds: [],
-  templateAttributes: {},
-  customAttributes: [],
-})
-
-const filteredGuestsForCopy = computed(() => {
-  if (!searchQuery.value) return guests.value
-  return guests.value.filter((g) =>
-    g.guestName.toLowerCase().includes(searchQuery.value.toLowerCase()),
-  )
-})
-
+// 데이터 로드
 const loadGuests = async () => {
   loading.value = true
   try {
     const response = await apiClient.get(
       `/admin/conventions/${props.conventionId}/guests`,
     )
-    console.log('✅ Guests loaded:', response.data)
     guests.value = response.data
   } catch (error) {
-    console.error('❌ Failed to load guests:', error)
-    console.error('Error details:', error.response?.data)
+    console.error('Failed to load guests:', error)
   } finally {
     loading.value = false
   }
@@ -1258,10 +361,9 @@ const loadTemplates = async () => {
     const response = await apiClient.get(
       `/admin/conventions/${props.conventionId}/schedule-templates`,
     )
-    console.log('✅ Templates loaded:', response.data)
     availableTemplates.value = response.data
   } catch (error) {
-    console.error('❌ Failed to load templates:', error)
+    console.error('Failed to load templates:', error)
   }
 }
 
@@ -1276,115 +378,12 @@ const loadAttributeTemplates = async () => {
   }
 }
 
-const parseAttributeValues = (valuesStr) => {
-  if (!valuesStr) return []
-  try {
-    return JSON.parse(valuesStr)
-  } catch {
-    return []
-  }
-}
-
-const editGuest = (guest) => {
-  editingGuest.value = guest
-
-  // 기존 속성을 템플릿/커스텀으로 분리
-  const templateAttrs = {}
-  const customAttrs = []
-  const templateKeys = attributeTemplates.value.map((t) => t.attributeKey)
-
-  guest.attributes.forEach((attr) => {
-    if (templateKeys.includes(attr.attributeKey)) {
-      templateAttrs[attr.attributeKey] = attr.attributeValue
-    } else {
-      customAttrs.push({ key: attr.attributeKey, value: attr.attributeValue })
-    }
-  })
-
-  guestForm.value = {
-    guestName: guest.guestName,
-    telephone: guest.telephone,
-    corpPart: guest.corpPart || '',
-    residentNumber: guest.residentNumber || '',
-    affiliation: guest.affiliation || '',
-    password: '',
-    scheduleTemplateIds: guest.scheduleTemplates.map(
-      (st) => st.scheduleTemplateId,
-    ),
-    templateAttributes: templateAttrs,
-    customAttributes: customAttrs,
-  }
-}
-
-const closeGuestModal = () => {
-  showCreateModal.value = false
-  editingGuest.value = null
-  guestForm.value = {
-    guestName: '',
-    telephone: '',
-    corpPart: '',
-    residentNumber: '',
-    affiliation: '',
-    password: '',
-    scheduleTemplateIds: [],
-    templateAttributes: {},
-    customAttributes: [],
-  }
-}
-
-const saveGuest = async () => {
-  try {
-    // 템플릿 + 커스텀 속성 병합
-    const attributes = {}
-
-    // 템플릿 속성
-    Object.entries(guestForm.value.templateAttributes).forEach(
-      ([key, value]) => {
-        if (value) {
-          attributes[key] = value
-        }
-      },
-    )
-
-    // 커스텀 속성
-    guestForm.value.customAttributes.forEach((attr) => {
-      if (attr.key && attr.value) {
-        attributes[attr.key] = attr.value
-      }
-    })
-
-    const data = {
-      name: guestForm.value.guestName,
-      phone: guestForm.value.telephone,
-      corpPart: guestForm.value.corpPart,
-      residentNumber: guestForm.value.residentNumber,
-      affiliation: guestForm.value.affiliation,
-      password: guestForm.value.password,
-      attributes: Object.keys(attributes).length > 0 ? attributes : null,
-    }
-
-    let guestId
-    if (editingGuest.value) {
-      await apiClient.put(`/admin/guests/${editingGuest.value.id}`, data)
-      guestId = editingGuest.value.id
-    } else {
-      const response = await apiClient.post(
-        `/admin/conventions/${props.conventionId}/guests`,
-        data,
-      )
-      guestId = response.data.id
-    }
-
-    // 일정 배정
-    await apiClient.post(`/admin/conventions/${props.conventionId}/guests/${guestId}/schedules`, {
-      scheduleTemplateIds: guestForm.value.scheduleTemplateIds,
-    })
-
-    await loadGuests()
-    closeGuestModal()
-  } catch (error) {
-    console.error('Failed to save guest:', error)
-    alert('저장 실패: ' + (error.response?.data?.message || error.message))
+// 테이블 조작
+const toggleSelectAll = (event) => {
+  if (event.target.checked) {
+    selectedGuests.value = guests.value.map((g) => g.id)
+  } else {
+    selectedGuests.value = []
   }
 }
 
@@ -1400,433 +399,45 @@ const deleteGuest = async (id) => {
   }
 }
 
-const showGuestDetail = async (guestId) => {
-  try {
-    const response = await apiClient.get(`/admin/guests/${guestId}/detail`)
-    console.log('✅ Guest detail loaded:', response.data)
-    guestDetail.value = response.data
-    showDetailModal.value = true
-  } catch (error) {
-    console.error('❌ Failed to load guest detail:', error)
-  }
+// 수정 모달 열기
+const editGuest = (guest) => {
+  editingGuest.value = guest
+}
+
+// 참석자 생성/수정 모달 닫기
+const closeGuestModal = () => {
+  showCreateModal.value = false
+  editingGuest.value = null
+}
+
+// 저장 완료 핸들러
+const onGuestSaved = async () => {
+  closeGuestModal()
+  await loadGuests()
+}
+
+// 상세 모달
+const openDetailModal = (guestId) => {
+  detailGuestId.value = guestId
+  showDetailModal.value = true
 }
 
 const closeDetailModal = () => {
   showDetailModal.value = false
-  guestDetail.value = null
+  detailGuestId.value = null
 }
 
-const copyScheduleFromGuest = (guest) => {
-  if (guest.scheduleTemplates.length === 0) {
-    alert('이 참석자는 배정된 일정이 없습니다.')
-    return
-  }
-
-  // 일정 복사
-  guestForm.value.scheduleTemplateIds = guest.scheduleTemplates.map(
-    (st) => st.scheduleTemplateId,
-  )
-  showCopyScheduleModal.value = false
-  searchQuery.value = ''
-  alert(
-    `${guest.guestName}님의 일정 ${guest.scheduleTemplates.length}개를 복사했습니다.`,
-  )
+// 대량 작업 완료 핸들러
+const onBulkCompleted = async () => {
+  selectedGuests.value = []
+  await loadGuests()
+  await loadTemplates()
 }
 
-const toggleSelectAll = (event) => {
-  if (event.target.checked) {
-    selectedGuests.value = guests.value.map((g) => g.id)
-  } else {
-    selectedGuests.value = []
-  }
-}
-
-const closeBulkAssignModal = () => {
-  showBulkAssignModal.value = false
-  bulkAssignTemplateIds.value = []
-  bulkAssignReplace.value = false
-}
-
-const executeBulkAssign = async () => {
-  if (bulkAssignTemplateIds.value.length === 0) {
-    alert('배정할 일정을 선택해주세요.')
-    return
-  }
-
-  const confirmMessage = bulkAssignReplace.value
-    ? `${selectedGuests.value.length}명의 기존 일정을 모두 삭제하고 새 일정을 배정하시겠습니까?`
-    : `${selectedGuests.value.length}명에게 일정을 추가로 배정하시겠습니까?`
-
-  if (!confirm(confirmMessage)) return
-
-  try {
-    loading.value = true
-    let successCount = 0
-    let failCount = 0
-
-    for (const guestId of selectedGuests.value) {
-      try {
-        if (bulkAssignReplace.value) {
-          // 대체 모드: 기존 일정 삭제 후 새 일정 배정
-          await apiClient.post(`/admin/conventions/${props.conventionId}/guests/${guestId}/schedules`, {
-            scheduleTemplateIds: bulkAssignTemplateIds.value,
-          })
-        } else {
-          // 추가 모드: 기존 일정 + 새 일정
-          const guest = guests.value.find((g) => g.id === guestId)
-          const existingIds =
-            guest?.scheduleTemplates.map((st) => st.scheduleTemplateId) || []
-          const mergedIds = [
-            ...new Set([...existingIds, ...bulkAssignTemplateIds.value]),
-          ]
-
-          await apiClient.post(`/admin/conventions/${props.conventionId}/guests/${guestId}/schedules`, {
-            scheduleTemplateIds: mergedIds,
-          })
-        }
-        successCount++
-      } catch (error) {
-        console.error(`Failed to assign schedules to guest ${guestId}:`, error)
-        failCount++
-      }
-    }
-
-    await loadGuests()
-    await loadTemplates()
-    closeBulkAssignModal()
-    selectedGuests.value = []
-
-    alert(`완료! 성공: ${successCount}명, 실패: ${failCount}명`)
-  } catch (error) {
-    console.error('Bulk assign failed:', error)
-    alert('일괄 배정 실패: ' + (error.response?.data?.message || error.message))
-  } finally {
-    loading.value = false
-  }
-}
-
-// 메서드 추가
-const closeBulkAttributeModal = () => {
-  showBulkAttributeModal.value = false
-  bulkAttributeForm.value = {}
-}
-
-const getGuestNameById = (guestId) => {
-  const guest = guests.value.find((g) => g.id === guestId)
-  return guest ? guest.guestName : ''
-}
-
-const submitBulkAttribute = async () => {
-  // 빈 값 제거
-  const filteredAttributes = Object.entries(bulkAttributeForm.value)
-    .filter(([_, value]) => value !== '')
-    .reduce((acc, [key, value]) => {
-      acc[key] = value
-      return acc
-    }, {})
-
-  if (Object.keys(filteredAttributes).length === 0) {
-    alert('최소 하나의 속성을 입력해주세요')
-    return
-  }
-
-  if (
-    !confirm(
-      `${selectedGuests.value.length}명의 참석자에게 속성을 일괄 매핑하시겠습니까?`,
-    )
-  ) {
-    return
-  }
-
-  submittingAttribute.value = true
-
-  try {
-    const payload = {
-      conventionId: props.conventionId,
-      guestMappings: selectedGuests.value.map((guestId) => ({
-        guestId,
-        attributes: filteredAttributes,
-      })),
-    }
-
-    const response = await apiClient.post(
-      '/guest/bulk-assign-attributes',
-      payload,
-    )
-
-    if (response.data.success) {
-      alert(response.data.message)
-      closeBulkAttributeModal()
-      selectedGuests.value = []
-      await loadGuests() // 목록 새로고침
-    } else {
-      alert(response.data.message)
-    }
-  } catch (error) {
-    console.error('Failed to bulk assign attributes:', error)
-    alert(
-      '속성 할당에 실패했습니다: ' +
-        (error.response?.data?.message || error.message),
-    )
-  } finally {
-    submittingAttribute.value = false
-  }
-}
-
-const formatDate = (dateStr) => {
-  const date = new Date(dateStr)
-  return `${date.getMonth() + 1}/${date.getDate()}`
-}
-
-// 그룹 단위 일정 배정 관련 함수들
-const loadGroups = () => {
-  // guests 데이터에서 그룹 추출 (groupName 필드 사용)
-  const groups = [...new Set(
-    guests.value
-      .filter((g) => g.groupName && g.groupName.trim() !== '')
-      .map((g) => g.groupName)
-  )].sort()
-
-  availableGroups.value = groups
-  console.log('✅ Groups extracted from guests:', availableGroups.value)
-}
-
-const getGuestCountByGroup = (groupName) => {
-  return guests.value.filter((g) => g.groupName === groupName).length
-}
-
-const getTotalGuestCountForSelectedGroups = computed(() => {
-  return selectedGroupsForAssign.value.reduce((total, groupName) => {
-    return total + getGuestCountByGroup(groupName)
-  }, 0)
-})
-
-const openGroupAssignModal = () => {
-  loadGroups()
-  showGroupAssignModal.value = true
-}
-
-const closeGroupAssignModal = () => {
-  showGroupAssignModal.value = false
-  selectedGroupsForAssign.value = []
-  groupAssignTemplateIds.value = []
-}
-
-const executeGroupAssign = async () => {
-  if (selectedGroupsForAssign.value.length === 0) {
-    alert('그룹을 선택해주세요.')
-    return
-  }
-  if (groupAssignTemplateIds.value.length === 0) {
-    alert('배정할 일정을 선택해주세요.')
-    return
-  }
-
-  const totalGuests = getTotalGuestCountForSelectedGroups.value
-  if (!confirm(`선택된 ${selectedGroupsForAssign.value.length}개 그룹 (총 ${totalGuests}명)에게 일정을 배정하시겠습니까?`)) {
-    return
-  }
-
-  groupAssigning.value = true
-
-  try {
-    let successCount = 0
-    let failCount = 0
-
-    // 선택된 그룹에 속한 참석자들 찾기
-    const guestsInSelectedGroups = guests.value.filter((g) =>
-      selectedGroupsForAssign.value.includes(g.groupName)
-    )
-
-    // 각 참석자에 대해 일정 배정
-    for (const guest of guestsInSelectedGroups) {
-      try {
-        // 기존 일정 + 새 일정 병합
-        const existingIds = guest.scheduleTemplates?.map((st) => st.scheduleTemplateId) || []
-        const mergedIds = [...new Set([...existingIds, ...groupAssignTemplateIds.value])]
-
-        await apiClient.post(`/admin/conventions/${props.conventionId}/guests/${guest.id}/schedules`, {
-          scheduleTemplateIds: mergedIds,
-        })
-        successCount++
-      } catch (error) {
-        console.error(`Failed to assign schedules to guest ${guest.id}:`, error)
-        failCount++
-      }
-    }
-
-    await loadGuests()
-    await loadTemplates()
-    closeGroupAssignModal()
-
-    alert(`그룹 일정 배정 완료!\n성공: ${successCount}명\n실패: ${failCount}명`)
-  } catch (error) {
-    console.error('Group assign failed:', error)
-    alert('그룹 일정 배정 실패: ' + (error.response?.data?.message || error.message))
-  } finally {
-    groupAssigning.value = false
-  }
-}
-
-// 그룹 단위 일정 해제 관련 함수들
-const getTotalGuestCountForSelectedGroupsRemove = computed(() => {
-  return selectedGroupsForRemove.value.reduce((total, groupName) => {
-    return total + getGuestCountByGroup(groupName)
-  }, 0)
-})
-
-const openGroupRemoveModal = () => {
-  loadGroups()
-  showGroupRemoveModal.value = true
-}
-
-const closeGroupRemoveModal = () => {
-  showGroupRemoveModal.value = false
-  selectedGroupsForRemove.value = []
-  groupRemoveTemplateIds.value = []
-}
-
-const executeGroupRemove = async () => {
-  if (selectedGroupsForRemove.value.length === 0) {
-    alert('그룹을 선택해주세요.')
-    return
-  }
-  if (groupRemoveTemplateIds.value.length === 0) {
-    alert('해제할 일정을 선택해주세요.')
-    return
-  }
-
-  const totalGuests = getTotalGuestCountForSelectedGroupsRemove.value
-  if (!confirm(`선택된 ${selectedGroupsForRemove.value.length}개 그룹 (총 ${totalGuests}명)의 일정을 해제하시겠습니까?`)) {
-    return
-  }
-
-  groupRemoving.value = true
-
-  try {
-    let successCount = 0
-    let failCount = 0
-
-    // 선택된 그룹에 속한 참석자들 찾기
-    const guestsInSelectedGroups = guests.value.filter((g) =>
-      selectedGroupsForRemove.value.includes(g.groupName)
-    )
-
-    // 각 참석자에 대해 일정 해제
-    for (const guest of guestsInSelectedGroups) {
-      try {
-        // 기존 일정에서 해제할 일정 제거
-        const existingIds = guest.scheduleTemplates?.map((st) => st.scheduleTemplateId) || []
-        const remainingIds = existingIds.filter((id) => !groupRemoveTemplateIds.value.includes(id))
-
-        await apiClient.post(`/admin/conventions/${props.conventionId}/guests/${guest.id}/schedules`, {
-          scheduleTemplateIds: remainingIds,
-        })
-        successCount++
-      } catch (error) {
-        console.error(`Failed to remove schedules from guest ${guest.id}:`, error)
-        failCount++
-      }
-    }
-
-    await loadGuests()
-    await loadTemplates()
-    closeGroupRemoveModal()
-
-    alert(`그룹 일정 해제 완료!\n성공: ${successCount}명\n실패: ${failCount}명`)
-  } catch (error) {
-    console.error('Group remove failed:', error)
-    alert('그룹 일정 해제 실패: ' + (error.response?.data?.message || error.message))
-  } finally {
-    groupRemoving.value = false
-  }
-}
-
-// 그룹별 속성 초기화 관련 함수들
-const getTotalGuestCountForSelectedGroupsAttributeReset = computed(() => {
-  return selectedGroupsForAttributeReset.value.reduce((total, groupName) => {
-    return total + getGuestCountByGroup(groupName)
-  }, 0)
-})
-
-const loadAttributeKeys = () => {
-  // guests 데이터에서 사용 중인 속성 키 추출
-  const keys = new Set()
-  guests.value.forEach((guest) => {
-    if (guest.attributes && Array.isArray(guest.attributes)) {
-      guest.attributes.forEach((attr) => {
-        if (attr.attributeKey) {
-          keys.add(attr.attributeKey)
-        }
-      })
-    }
-  })
-  availableAttributeKeys.value = [...keys].sort()
-  console.log('✅ Attribute keys extracted:', availableAttributeKeys.value)
-}
-
-const openGroupAttributeResetModal = () => {
-  loadGroups()
-  loadAttributeKeys()
-  showGroupAttributeResetModal.value = true
-}
-
-const closeGroupAttributeResetModal = () => {
-  showGroupAttributeResetModal.value = false
-  selectedGroupsForAttributeReset.value = []
-  selectedAttributeKeysForReset.value = []
-}
-
-const executeGroupAttributeReset = async () => {
-  if (selectedGroupsForAttributeReset.value.length === 0) {
-    alert('그룹을 선택해주세요.')
-    return
-  }
-  if (selectedAttributeKeysForReset.value.length === 0) {
-    alert('삭제할 속성을 선택해주세요.')
-    return
-  }
-
-  const totalGuests = getTotalGuestCountForSelectedGroupsAttributeReset.value
-  if (!confirm(`선택된 ${selectedGroupsForAttributeReset.value.length}개 그룹 (총 ${totalGuests}명)의 속성을 삭제하시겠습니까?\n\n삭제할 속성: ${selectedAttributeKeysForReset.value.join(', ')}`)) {
-    return
-  }
-
-  attributeResetting.value = true
-
-  try {
-    let successCount = 0
-    let failCount = 0
-
-    // 선택된 그룹에 속한 참석자들 찾기
-    const guestsInSelectedGroups = guests.value.filter((g) =>
-      selectedGroupsForAttributeReset.value.includes(g.groupName)
-    )
-
-    // 각 참석자에 대해 속성 삭제
-    for (const guest of guestsInSelectedGroups) {
-      try {
-        // 선택된 속성 키들 삭제
-        for (const attrKey of selectedAttributeKeysForReset.value) {
-          await apiClient.delete(`/admin/guests/${guest.id}/attributes/${encodeURIComponent(attrKey)}`)
-        }
-        successCount++
-      } catch (error) {
-        console.error(`Failed to reset attributes for guest ${guest.id}:`, error)
-        failCount++
-      }
-    }
-
-    await loadGuests()
-    closeGroupAttributeResetModal()
-
-    alert(`그룹 속성 삭제 완료!\n성공: ${successCount}명\n실패: ${failCount}명`)
-  } catch (error) {
-    console.error('Group attribute reset failed:', error)
-    alert('그룹 속성 삭제 실패: ' + (error.response?.data?.message || error.message))
-  } finally {
-    attributeResetting.value = false
-  }
+// 그룹 작업 완료 핸들러
+const onGroupCompleted = async () => {
+  await loadGuests()
+  await loadTemplates()
 }
 
 onMounted(() => {

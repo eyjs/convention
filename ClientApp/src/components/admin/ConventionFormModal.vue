@@ -1,12 +1,12 @@
 <template>
-  <BaseModal :is-open="true" @close="$emit('close')" max-width="2xl">
+  <BaseModal :is-open="true" max-width="2xl" @close="$emit('close')">
     <template #header>
       <h2 class="text-xl font-bold">
         {{ convention ? '행사 수정' : '새 행사 만들기' }}
       </h2>
     </template>
     <template #body>
-      <form @submit.prevent="handleSubmit" class="space-y-6">
+      <form class="space-y-6" @submit.prevent="handleSubmit">
         <!-- 행사명 -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -73,21 +73,70 @@
 
         <!-- 커버 이미지 -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">커버 이미지</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >커버 이미지</label
+          >
           <div class="space-y-3">
-            <div v-if="coverImagePreview" class="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-              <img :src="coverImagePreview" alt="커버 이미지 미리보기" class="w-full h-full object-cover" />
-              <button type="button" @click="removeCoverImage" class="absolute top-2 right-2 p-2.5 bg-red-500 text-white rounded-full hover:bg-red-600 active:scale-95 transition-all shadow-lg">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            <div
+              v-if="coverImagePreview"
+              class="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100"
+            >
+              <img
+                :src="coverImagePreview"
+                alt="커버 이미지 미리보기"
+                class="w-full h-full object-cover"
+              />
+              <button
+                type="button"
+                class="absolute top-2 right-2 p-2.5 bg-red-500 text-white rounded-full hover:bg-red-600 active:scale-95 transition-all shadow-lg"
+                @click="removeCoverImage"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
               </button>
             </div>
             <label class="block">
-              <input type="file" ref="coverImageInput" @change="handleCoverImageChange" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" class="hidden" />
-              <div class="flex items-center justify-center w-full py-4 px-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors active:scale-95">
+              <input
+                ref="coverImageInput"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                class="hidden"
+                @change="handleCoverImageChange"
+              />
+              <div
+                class="flex items-center justify-center w-full py-4 px-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors active:scale-95"
+              >
                 <div class="text-center">
-                  <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  <p class="mt-2 text-sm text-gray-600 font-medium">이미지 선택</p>
-                  <p class="mt-1 text-xs text-gray-500">JPG, PNG, GIF, WebP (최대 5MB)</p>
+                  <svg
+                    class="mx-auto h-12 w-12 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <p class="mt-2 text-sm text-gray-600 font-medium">
+                    이미지 선택
+                  </p>
+                  <p class="mt-1 text-xs text-gray-500">
+                    JPG, PNG, GIF, WebP (최대 5MB)
+                  </p>
                 </div>
               </div>
             </label>
@@ -131,15 +180,15 @@
     <template #footer>
       <button
         type="button"
-        @click="$emit('close')"
         class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+        @click="$emit('close')"
       >
         취소
       </button>
       <button
-        @click="handleSubmit"
         :disabled="saving || isUploadingImage"
         class="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white rounded-lg transition-colors flex items-center space-x-2"
+        @click="handleSubmit"
       >
         <svg
           v-if="saving || isUploadingImage"
@@ -161,7 +210,15 @@
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           ></path>
         </svg>
-        <span>{{ isUploadingImage ? '업로드 중...' : saving ? '저장 중...' : convention ? '수정' : '생성' }}</span>
+        <span>{{
+          isUploadingImage
+            ? '업로드 중...'
+            : saving
+              ? '저장 중...'
+              : convention
+                ? '수정'
+                : '생성'
+        }}</span>
       </button>
     </template>
   </BaseModal>
@@ -214,8 +271,12 @@ const dateRange = computed({
       form.value.endDate = null
       return
     }
-    form.value.startDate = newRange.start ? dayjs(newRange.start).format('YYYY-MM-DD') : null
-    form.value.endDate = newRange.end ? dayjs(newRange.end).format('YYYY-MM-DD') : null
+    form.value.startDate = newRange.start
+      ? dayjs(newRange.start).format('YYYY-MM-DD')
+      : null
+    form.value.endDate = newRange.end
+      ? dayjs(newRange.end).format('YYYY-MM-DD')
+      : null
   },
 })
 
@@ -261,7 +322,7 @@ function handleCoverImageChange(event) {
     alert('파일 크기는 5MB를 초과할 수 없습니다.')
     return
   }
-  
+
   coverImageFile.value = file
   const reader = new FileReader()
   reader.onload = (e) => {
@@ -287,9 +348,13 @@ async function uploadConventionCoverImage() {
   isUploadingImage.value = true
 
   try {
-    const response = await apiClient.post('/admin/conventions/upload-cover-image', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    const response = await apiClient.post(
+      '/admin/conventions/upload-cover-image',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      },
+    )
     return response.data.url
   } catch (error) {
     console.error('Failed to upload cover image:', error)

@@ -44,7 +44,9 @@
 const indexModules = import.meta.glob('@/dynamic-features/*/index.js')
 
 // 2. MainView.vue가 있는 기능들 (간단한 기능)
-const mainViewModules = import.meta.glob('@/dynamic-features/*/views/MainView.vue')
+const mainViewModules = import.meta.glob(
+  '@/dynamic-features/*/views/MainView.vue',
+)
 
 // 3. 모든 뷰 파일들 (폴백용)
 const allViewModules = import.meta.glob('@/dynamic-features/*/views/*.vue')

@@ -1,5 +1,5 @@
-using LocalRAG.Data;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -7,11 +7,11 @@ namespace LocalRAG.Services.Shared;
 
 public class ChecklistService : IChecklistService
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public ChecklistService(ConventionDbContext context)
+    public ChecklistService(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     /// <summary>
@@ -19,7 +19,7 @@ public class ChecklistService : IChecklistService
     /// </summary>
     public async Task<object?> BuildChecklistStatusAsync(int userId, int conventionId)
     {
-        var actions = await _context.ConventionActions
+        var actions = await _unitOfWork.ConventionActions.Query
             .Where(a => a.ConventionId == conventionId && a.IsActive)
             .OrderBy(a => a.OrderNum)
             .ThenBy(a => a.CreatedAt)
@@ -28,7 +28,7 @@ public class ChecklistService : IChecklistService
         if (actions.Count == 0)
             return null;
 
-        var statuses = await _context.UserActionStatuses
+        var statuses = await _unitOfWork.UserActionStatuses.Query
             .Where(s => s.UserId == userId)
             .ToListAsync();
 

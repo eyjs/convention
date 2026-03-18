@@ -4,24 +4,24 @@
     <div class="mb-6 border-b">
       <nav class="flex space-x-4">
         <button
-          @click="activeSubTab = 'posts'"
           :class="[
             'pb-3 px-4 border-b-2 font-medium text-sm transition-colors',
             activeSubTab === 'posts'
               ? 'border-primary-600 text-primary-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
           ]"
+          @click="activeSubTab = 'posts'"
         >
           게시글 관리
         </button>
         <button
-          @click="activeSubTab = 'categories'"
           :class="[
             'pb-3 px-4 border-b-2 font-medium text-sm transition-colors',
             activeSubTab === 'categories'
               ? 'border-primary-600 text-primary-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
           ]"
+          @click="activeSubTab = 'categories'"
         >
           카테고리 관리
         </button>
@@ -33,8 +33,8 @@
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-semibold">게시글 관리</h2>
         <button
-          @click="showCreateModal = true"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
+          @click="showCreateModal = true"
         >
           <svg
             class="w-5 h-5"
@@ -212,8 +212,8 @@
               tag="tbody"
               item-key="id"
               handle=".drag-handle"
-              @end="onDragEnd"
               class="bg-white divide-y divide-gray-200"
+              @end="onDragEnd"
             >
               <template #item="{ element: notice }">
                 <tr class="hover:bg-gray-50">
@@ -261,8 +261,8 @@
                   </td>
                   <td class="px-6 py-4">
                     <button
-                      @click="viewNotice(notice)"
                       class="font-medium text-gray-900 hover:text-primary-600 text-left"
+                      @click="viewNotice(notice)"
                     >
                       {{ notice.title }}
                     </button>
@@ -282,20 +282,20 @@
                     class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                   >
                     <button
-                      @click="togglePin(notice)"
                       class="text-yellow-600 hover:text-yellow-900 mr-3"
+                      @click="togglePin(notice)"
                     >
                       {{ notice.isPinned ? '고정해제' : '고정' }}
                     </button>
                     <button
-                      @click="editNotice(notice)"
                       class="text-blue-600 hover:text-blue-900 mr-3"
+                      @click="editNotice(notice)"
                     >
                       수정
                     </button>
                     <button
-                      @click="deleteNotice(notice.id)"
                       class="text-red-600 hover:text-red-900"
+                      @click="deleteNotice(notice.id)"
                     >
                       삭제
                     </button>
@@ -313,8 +313,8 @@
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-semibold">카테고리 관리</h2>
         <button
-          @click="showCategoryModal = true"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
+          @click="showCategoryModal = true"
         >
           <svg
             class="w-5 h-5"
@@ -401,14 +401,14 @@
                   class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                 >
                   <button
-                    @click="editCategory(category)"
                     class="text-blue-600 hover:text-blue-900 mr-3"
+                    @click="editCategory(category)"
                   >
                     수정
                   </button>
                   <button
-                    @click="deleteCategory(category.id, category.noticeCount)"
                     class="text-red-600 hover:text-red-900"
+                    @click="deleteCategory(category.id, category.noticeCount)"
                   >
                     삭제
                   </button>
@@ -423,8 +423,8 @@
     <!-- 게시글 작성/수정 모달 -->
     <BaseModal
       :is-open="showCreateModal || !!editingNotice"
-      @close="closeModal"
       max-width="3xl"
+      @close="closeModal"
     >
       <template #header>
         <h2 class="text-lg font-bold">
@@ -436,8 +436,8 @@
           <div class="flex items-center">
             <label class="flex items-center space-x-2">
               <input
-                type="checkbox"
                 v-model="noticeForm.isPinned"
+                type="checkbox"
                 class="rounded"
               />
               <span class="text-sm font-medium text-gray-700"
@@ -488,15 +488,15 @@
       </template>
       <template #footer>
         <button
-          @click="closeModal"
           class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+          @click="closeModal"
         >
           취소
         </button>
         <button
-          @click="saveNotice"
           :disabled="!noticeForm.title || !noticeForm.content ? true : null"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300"
+          @click="saveNotice"
         >
           {{ editingNotice ? '수정' : '등록' }}
         </button>
@@ -506,8 +506,8 @@
     <!-- 카테고리 생성/수정 모달 -->
     <BaseModal
       :is-open="showCategoryModal || !!editingCategory"
-      @close="closeCategoryModal"
       max-width="md"
+      @close="closeCategoryModal"
     >
       <template #header>
         <h2 class="text-lg font-bold">
@@ -557,15 +557,15 @@
       </template>
       <template #footer>
         <button
-          @click="closeCategoryModal"
           class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+          @click="closeCategoryModal"
         >
           취소
         </button>
         <button
-          @click="saveCategory"
           :disabled="!categoryForm.name ? true : null"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300"
+          @click="saveCategory"
         >
           {{ editingCategory ? '수정' : '추가' }}
         </button>
@@ -575,8 +575,8 @@
     <!-- 상세보기 모달 -->
     <BaseModal
       :is-open="!!viewingNotice"
-      @close="closeViewModal"
       max-width="4xl"
+      @close="closeViewModal"
     >
       <template #header>
         <h2 class="text-base md:text-lg font-bold">게시글 상세</h2>
@@ -618,15 +618,17 @@
         </div>
       </template>
       <template #footer>
+        <!-- prettier-ignore -->
         <button
-            @click="editNotice(viewingNotice); closeViewModal()"
           class="px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg hover:bg-gray-50"
+          @click="editNotice(viewingNotice); closeViewModal()"
         >
           수정
         </button>
+        <!-- prettier-ignore -->
         <button
-            @click="deleteNotice(viewingNotice.id); closeViewModal()"
           class="px-3 md:px-4 py-2 text-sm md:text-base bg-red-600 text-white rounded-lg hover:bg-red-700"
+          @click="deleteNotice(viewingNotice.id); closeViewModal()"
         >
           삭제
         </button>

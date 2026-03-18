@@ -19,8 +19,8 @@
         >
           <slot name="header"></slot>
           <button
-            @click="close"
             class="p-2.5 md:p-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-gray-500 flex-shrink-0 transition-colors"
+            @click="close"
           >
             <svg
               class="w-6 h-6 md:w-5 md:h-5"
@@ -39,7 +39,9 @@
         </header>
 
         <!-- Body -->
-        <main class="p-4 md:p-6 overflow-y-auto overflow-x-hidden flex-1 min-h-0">
+        <main
+          class="p-4 md:p-6 overflow-y-auto overflow-x-hidden flex-1 min-h-0"
+        >
           <slot name="body"></slot>
         </main>
 
@@ -178,7 +180,9 @@ onUnmounted(() => {
 
   .modal-fade-enter-active .modal-content,
   .modal-fade-leave-active .modal-content {
-    transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
+    transition:
+      transform 0.25s ease-in-out,
+      opacity 0.25s ease-in-out;
   }
 
   .modal-fade-enter-from,

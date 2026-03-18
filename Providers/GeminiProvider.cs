@@ -62,24 +62,7 @@ public class GeminiProvider : ILlmProvider
                 contents
             };
 
-            var json = JsonSerializer.Serialize(request);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{_baseUrl}/models/{_model}:generateContent?key={_apiKey}", content);
-            response.EnsureSuccessStatusCode();
-
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<JsonElement>(jsonResponse);
-
-            var candidates = result.GetProperty("candidates");
-            if (candidates.GetArrayLength() > 0)
-            {
-                var parts = candidates[0].GetProperty("content").GetProperty("parts");
-                if (parts.GetArrayLength() > 0)
-                {
-                    return parts[0].GetProperty("text").GetString() ?? "답변을 생성할 수 없습니다";
-                }
-            }
-            return "답변을 생성할 수 없습니다";
+            return await PostToGeminiAsync(request) ?? "답변을 생성할 수 없습니다";
         }
         catch (Exception ex)
         {
@@ -113,29 +96,45 @@ Question: ""{question}""
 Category:";
 
             var request = new { contents = new[] { new { parts = new[] { new { text = prompt } } } } };
-            var json = JsonSerializer.Serialize(request);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{_baseUrl}/models/{_model}:generateContent?key={_apiKey}", content);
-            response.EnsureSuccessStatusCode();
 
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<JsonElement>(jsonResponse);
-
-            var candidates = result.GetProperty("candidates");
-            if (candidates.GetArrayLength() > 0)
-            {
-                var parts = candidates[0].GetProperty("content").GetProperty("parts");
-                if (parts.GetArrayLength() > 0)
-                {
-                    var intentText = parts[0].GetProperty("text").GetString()?.Trim() ?? "general_query";
-                    return intentText;
-                }
-            }
-            return "general_query";
+            return await PostToGeminiAsync(request) ?? "general_query";
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Failed to classify intent with Gemini: {ex.Message}", ex);
         }
+    }
+
+    private async Task<string?> PostToGeminiAsync(object request)
+    {
+        var json = JsonSerializer.Serialize(request);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        using var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/models/{_model}:generateContent")
+        {
+            Content = content
+        };
+        requestMessage.Headers.Add("x-goog-api-key", _apiKey);
+
+        using var response = await _httpClient.SendAsync(requestMessage);
+        response.EnsureSuccessStatusCode();
+
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+        return ExtractResponseText(jsonResponse);
+    }
+
+    private static string? ExtractResponseText(string jsonResponse)
+    {
+        var result = JsonSerializer.Deserialize<JsonElement>(jsonResponse);
+        var candidates = result.GetProperty("candidates");
+        if (candidates.GetArrayLength() > 0)
+        {
+            var parts = candidates[0].GetProperty("content").GetProperty("parts");
+            if (parts.GetArrayLength() > 0)
+            {
+                return parts[0].GetProperty("text").GetString()?.Trim();
+            }
+        }
+        return null;
     }
 }

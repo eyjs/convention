@@ -8,13 +8,13 @@
         <div class="flex items-center space-x-3">
           <button
             v-if="showBack"
-            @click="$router.back()"
             class="p-2 -ml-2 rounded-lg"
             :class="
               transparent
                 ? 'text-white/80 hover:bg-white/10'
                 : 'text-gray-500 hover:bg-gray-100'
             "
+            @click="$router.back()"
           >
             <svg
               class="w-6 h-6"
@@ -44,13 +44,13 @@
 
           <div v-if="showMenu" class="relative">
             <button
-              @click="isSidebarOpen = true"
               class="p-2 -mr-2 rounded-lg"
               :class="
                 transparent
                   ? 'text-white/80 hover:bg-white/10'
                   : 'text-gray-500 hover:bg-gray-100'
               "
+              @click="isSidebarOpen = true"
             >
               <svg
                 class="w-6 h-6"

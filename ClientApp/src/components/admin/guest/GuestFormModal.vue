@@ -1,0 +1,484 @@
+<template>
+  <!-- 참석자 생성/수정 모달 -->
+  <BaseModal :is-open="isOpen" max-width="2xl" @close="closeGuestModal">
+    <template #header>
+      <h2 class="text-xl font-semibold">
+        {{ editingGuest ? '참석자 수정' : '참석자 추가' }}
+      </h2>
+    </template>
+    <template #body>
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">이름 *</label>
+            <input
+              v-model="guestForm.guestName"
+              type="text"
+              class="w-full px-3 py-2 border rounded-lg"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">전화번호 *</label>
+            <input
+              v-model="guestForm.telephone"
+              type="text"
+              class="w-full px-3 py-2 border rounded-lg"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">부서</label>
+            <input
+              v-model="guestForm.corpPart"
+              type="text"
+              class="w-full px-3 py-2 border rounded-lg"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">주민등록번호</label>
+            <input
+              v-model="guestForm.residentNumber"
+              type="text"
+              placeholder="000000-0000000"
+              class="w-full px-3 py-2 border rounded-lg"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">소속</label>
+          <input
+            v-model="guestForm.affiliation"
+            type="text"
+            class="w-full px-3 py-2 border rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1"
+            >초기 비밀번호 (선택)</label
+          >
+          <input
+            v-model="guestForm.password"
+            type="password"
+            placeholder="미입력 시 주민등록번호 앞 6자리 자동 설정"
+            class="w-full px-3 py-2 border rounded-lg"
+          />
+          <p class="text-xs text-gray-500 mt-1">
+            * 주민등록번호가 없거나 비밀번호를 지정하지 않으면 기본 비밀번호
+            "123456"이 설정됩니다.
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">속성 정보</label>
+          <div class="space-y-3">
+            <!-- 템플릿 기반 속성 -->
+            <div
+              v-for="template in attributeTemplates"
+              :key="template.id"
+              class="space-y-2"
+            >
+              <label class="block text-sm font-medium text-gray-700">{{
+                template.attributeKey
+              }}</label>
+              <select
+                v-if="template.attributeValues"
+                v-model="guestForm.templateAttributes[template.attributeKey]"
+                class="w-full px-3 py-2 border rounded-lg"
+              >
+                <option value="">선택하세요</option>
+                <option
+                  v-for="value in parseAttributeValues(
+                    template.attributeValues,
+                  )"
+                  :key="value"
+                  :value="value"
+                >
+                  {{ value }}
+                </option>
+              </select>
+              <input
+                v-else
+                v-model="guestForm.templateAttributes[template.attributeKey]"
+                type="text"
+                class="w-full px-3 py-2 border rounded-lg"
+                :placeholder="`${template.attributeKey} 입력`"
+              />
+            </div>
+
+            <!-- 추가 속성 (수기) -->
+            <div class="pt-3 border-t">
+              <p class="text-sm text-gray-600 mb-2">추가 속성 (수기 입력)</p>
+              <div
+                v-for="(attr, idx) in guestForm.customAttributes"
+                :key="idx"
+                class="flex flex-col sm:flex-row gap-2 mb-2"
+              >
+                <input
+                  v-model="attr.key"
+                  placeholder="키 (예: 호차)"
+                  class="flex-1 px-3 py-2 border rounded-lg"
+                />
+                <input
+                  v-model="attr.value"
+                  placeholder="값"
+                  class="flex-1 px-3 py-2 border rounded-lg"
+                />
+                <button
+                  class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg whitespace-nowrap overflow-hidden text-ellipsis"
+                  @click="guestForm.customAttributes.splice(idx, 1)"
+                >
+                  삭제
+                </button>
+              </div>
+              <button
+                class="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-600 hover:bg-gray-50 whitespace-nowrap overflow-hidden text-ellipsis"
+                @click="guestForm.customAttributes.push({ key: '', value: '' })"
+              >
+                + 속성 추가
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">일정 배정</label>
+          <div
+            v-if="availableTemplates.length === 0"
+            class="text-sm text-gray-500 p-3 bg-gray-50 rounded"
+          >
+            일정 템플릿이 없습니다. 먼저 일정 관리에서 템플릿을 생성하세요.
+          </div>
+          <div v-else>
+            <!-- 다른 참석자 일정 복사버튼 -->
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm text-gray-600"
+                >선택: {{ guestForm.scheduleTemplateIds.length }}개</span
+              >
+              <button
+                class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis"
+                @click="showCopyScheduleModal = true"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+                다른 참석자 일정 복사
+              </button>
+            </div>
+            <div class="space-y-2 max-h-60 overflow-y-auto border rounded p-2">
+              <label
+                v-for="template in availableTemplates"
+                :key="template.id"
+                class="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer"
+              >
+                <input
+                  v-model="guestForm.scheduleTemplateIds"
+                  type="checkbox"
+                  :value="template.id"
+                  class="rounded mt-1"
+                />
+                <div class="flex-1">
+                  <div class="font-medium">{{ template.courseName }}</div>
+                  <div
+                    v-if="template.description"
+                    class="text-xs text-gray-500"
+                  >
+                    {{ template.description }}
+                  </div>
+                  <div class="text-xs text-gray-400 mt-1">
+                    일정 {{ template.scheduleItems?.length || 0 }}개
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template #footer>
+      <button
+        class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+        @click="closeGuestModal"
+      >
+        취소
+      </button>
+      <button
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+        @click="saveGuest"
+      >
+        저장
+      </button>
+    </template>
+  </BaseModal>
+
+  <!-- 일정 복사 모달 -->
+  <BaseModal
+    :is-open="showCopyScheduleModal"
+    max-width="lg"
+    @close="closeCopyScheduleModal"
+  >
+    <template #header>
+      <h2 class="text-xl font-semibold">다른 참석자 일정 복사</h2>
+    </template>
+    <template #body>
+      <div class="mb-4">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="참석자 이름 검색..."
+          class="w-full px-3 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div class="space-y-2 max-h-96 overflow-y-auto">
+        <div
+          v-for="guest in filteredGuestsForCopy"
+          :key="guest.id"
+          class="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+          @click="copyScheduleFromGuest(guest)"
+        >
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="font-medium">{{ guest.guestName }}</p>
+              <p class="text-sm text-gray-500">{{ guest.telephone }}</p>
+              <div
+                v-if="guest.scheduleTemplates.length > 0"
+                class="flex flex-wrap gap-1 mt-2"
+              >
+                <span
+                  v-for="st in guest.scheduleTemplates"
+                  :key="st.scheduleTemplateId"
+                  class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs"
+                >
+                  {{ st.courseName }}
+                </span>
+              </div>
+              <p v-else class="text-xs text-gray-400 mt-1">배정된 일정 없음</p>
+            </div>
+            <button
+              v-if="guest.scheduleTemplates.length > 0"
+              class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap overflow-hidden text-ellipsis"
+            >
+              복사
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template #footer>
+      <button
+        class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+        @click="closeCopyScheduleModal"
+      >
+        취소
+      </button>
+    </template>
+  </BaseModal>
+</template>
+
+<script setup>
+import { ref, computed, watch } from 'vue'
+import apiClient from '@/services/api'
+import BaseModal from '@/components/common/BaseModal.vue'
+
+const props = defineProps({
+  isOpen: { type: Boolean, required: true },
+  editingGuest: { type: Object, default: null },
+  availableTemplates: { type: Array, required: true },
+  attributeTemplates: { type: Array, required: true },
+  guests: { type: Array, required: true },
+  conventionId: { type: Number, required: true },
+})
+
+const emit = defineEmits(['close', 'saved'])
+
+const showCopyScheduleModal = ref(false)
+const searchQuery = ref('')
+
+const guestForm = ref({
+  guestName: '',
+  telephone: '',
+  corpPart: '',
+  residentNumber: '',
+  affiliation: '',
+  password: '',
+  scheduleTemplateIds: [],
+  templateAttributes: {},
+  customAttributes: [],
+})
+
+const filteredGuestsForCopy = computed(() => {
+  if (!searchQuery.value) return props.guests
+  return props.guests.filter((g) =>
+    g.guestName.toLowerCase().includes(searchQuery.value.toLowerCase()),
+  )
+})
+
+const parseAttributeValues = (valuesStr) => {
+  if (!valuesStr) return []
+  try {
+    return JSON.parse(valuesStr)
+  } catch {
+    return []
+  }
+}
+
+// editingGuest 변경 시 폼 초기화
+watch(
+  () => props.editingGuest,
+  (guest) => {
+    if (guest) {
+      const templateAttrs = {}
+      const customAttrs = []
+      const templateKeys = props.attributeTemplates.map((t) => t.attributeKey)
+
+      guest.attributes.forEach((attr) => {
+        if (templateKeys.includes(attr.attributeKey)) {
+          templateAttrs[attr.attributeKey] = attr.attributeValue
+        } else {
+          customAttrs.push({
+            key: attr.attributeKey,
+            value: attr.attributeValue,
+          })
+        }
+      })
+
+      guestForm.value = {
+        guestName: guest.guestName,
+        telephone: guest.telephone,
+        corpPart: guest.corpPart || '',
+        residentNumber: guest.residentNumber || '',
+        affiliation: guest.affiliation || '',
+        password: '',
+        scheduleTemplateIds: guest.scheduleTemplates.map(
+          (st) => st.scheduleTemplateId,
+        ),
+        templateAttributes: templateAttrs,
+        customAttributes: customAttrs,
+      }
+    }
+  },
+)
+
+// 모달이 열릴 때 새 참석자인 경우 폼 초기화
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (isOpen && !props.editingGuest) {
+      resetForm()
+    }
+  },
+)
+
+const resetForm = () => {
+  guestForm.value = {
+    guestName: '',
+    telephone: '',
+    corpPart: '',
+    residentNumber: '',
+    affiliation: '',
+    password: '',
+    scheduleTemplateIds: [],
+    templateAttributes: {},
+    customAttributes: [],
+  }
+}
+
+const closeGuestModal = () => {
+  resetForm()
+  emit('close')
+}
+
+const saveGuest = async () => {
+  try {
+    // 템플릿 + 커스텀 속성 병합
+    const attributes = {}
+
+    // 템플릿 속성
+    Object.entries(guestForm.value.templateAttributes).forEach(
+      ([key, value]) => {
+        if (value) {
+          attributes[key] = value
+        }
+      },
+    )
+
+    // 커스텀 속성
+    guestForm.value.customAttributes.forEach((attr) => {
+      if (attr.key && attr.value) {
+        attributes[attr.key] = attr.value
+      }
+    })
+
+    const data = {
+      name: guestForm.value.guestName,
+      phone: guestForm.value.telephone,
+      corpPart: guestForm.value.corpPart,
+      residentNumber: guestForm.value.residentNumber,
+      affiliation: guestForm.value.affiliation,
+      password: guestForm.value.password,
+      attributes: Object.keys(attributes).length > 0 ? attributes : null,
+    }
+
+    let guestId
+    if (props.editingGuest) {
+      await apiClient.put(`/admin/guests/${props.editingGuest.id}`, data)
+      guestId = props.editingGuest.id
+    } else {
+      const response = await apiClient.post(
+        `/admin/conventions/${props.conventionId}/guests`,
+        data,
+      )
+      guestId = response.data.id
+    }
+
+    // 일정 배정
+    await apiClient.post(
+      `/admin/conventions/${props.conventionId}/guests/${guestId}/schedules`,
+      {
+        scheduleTemplateIds: guestForm.value.scheduleTemplateIds,
+      },
+    )
+
+    resetForm()
+    emit('saved')
+  } catch (error) {
+    console.error('Failed to save guest:', error)
+    alert('저장 실패: ' + (error.response?.data?.message || error.message))
+  }
+}
+
+const copyScheduleFromGuest = (guest) => {
+  if (guest.scheduleTemplates.length === 0) {
+    alert('이 참석자는 배정된 일정이 없습니다.')
+    return
+  }
+
+  guestForm.value.scheduleTemplateIds = guest.scheduleTemplates.map(
+    (st) => st.scheduleTemplateId,
+  )
+  showCopyScheduleModal.value = false
+  searchQuery.value = ''
+  alert(
+    `${guest.guestName}님의 일정 ${guest.scheduleTemplates.length}개를 복사했습니다.`,
+  )
+}
+
+const closeCopyScheduleModal = () => {
+  showCopyScheduleModal.value = false
+  searchQuery.value = ''
+}
+</script>

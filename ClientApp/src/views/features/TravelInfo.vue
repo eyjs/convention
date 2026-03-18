@@ -4,8 +4,8 @@
     <header class="bg-white shadow-sm sticky top-0 z-10">
       <div class="flex items-center px-4 py-4">
         <button
-          @click="router.back()"
           class="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+          @click="router.back()"
         >
           <svg
             class="w-6 h-6 text-gray-700"
@@ -54,8 +54,8 @@
 
       <!-- 폼 -->
       <form
-        @submit.prevent="handleSubmit"
         class="bg-white rounded-xl shadow-lg p-6 space-y-6"
+        @submit.prevent="handleSubmit"
       >
         <!-- 영문 이름 -->
         <div>
@@ -112,18 +112,18 @@
 
           <!-- 파일 업로드 영역 -->
           <div
+            class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50 transition-colors"
+            :class="{ 'border-primary-500 bg-primary-50': isDragging }"
             @click="triggerFileInput"
             @drop.prevent="handleDrop"
             @dragover.prevent
-            class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50 transition-colors"
-            :class="{ 'border-primary-500 bg-primary-50': isDragging }"
           >
             <input
               ref="fileInput"
               type="file"
               accept="image/*,.pdf"
-              @change="handleFileSelect"
               class="hidden"
+              @change="handleFileSelect"
             />
 
             <div v-if="!uploadedFile">
@@ -178,8 +178,8 @@
               </div>
               <button
                 type="button"
-                @click.stop="removeFile"
                 class="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                @click.stop="removeFile"
               >
                 <svg
                   class="w-5 h-5 text-red-600"
@@ -242,8 +242,8 @@
         <div class="flex space-x-3 pt-4">
           <button
             type="button"
-            @click="router.back()"
             class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+            @click="router.back()"
           >
             취소
           </button>

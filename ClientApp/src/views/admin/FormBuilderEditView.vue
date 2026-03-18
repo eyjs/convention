@@ -20,9 +20,9 @@
               목록으로
             </router-link>
             <button
-              @click="saveForm"
               :disabled="isSaving"
               class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 disabled:opacity-50"
+              @click="saveForm"
             >
               {{ isSaving ? '저장 중...' : '저장' }}
             </button>
@@ -42,8 +42,8 @@
           <button
             v-for="fieldType in fieldPalette"
             :key="fieldType.type"
-            @click="addField(fieldType.type)"
             class="w-full flex items-center p-2 text-sm text-left text-gray-700 rounded-md hover:bg-gray-200"
+            @click="addField(fieldType.type)"
           >
             {{ fieldType.label }}
           </button>
@@ -59,8 +59,8 @@
                 >폼 이름</label
               >
               <input
-                type="text"
                 v-model="form.name"
+                type="text"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                 placeholder="예: 여권 정보 입력"
               />
@@ -96,13 +96,13 @@
             <div
               v-for="(field, index) in fields"
               :key="field.tempId || field.id"
-              @click="selectField(field)"
               :class="[
                 'p-4 border rounded-lg cursor-pointer transition-colors',
                 selectedField === field
                   ? 'border-primary-500 bg-primary-50'
                   : 'border-gray-300 hover:border-gray-400',
               ]"
+              @click="selectField(field)"
             >
               <div class="flex justify-between items-start">
                 <div>
@@ -116,9 +116,9 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <button
-                    @click.stop="moveField(index, -1)"
                     :disabled="index === 0"
                     class="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-50"
+                    @click.stop="moveField(index, -1)"
                   >
                     <svg
                       class="w-5 h-5"
@@ -135,9 +135,9 @@
                     </svg>
                   </button>
                   <button
-                    @click.stop="moveField(index, 1)"
                     :disabled="index === fields.length - 1"
                     class="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-50"
+                    @click.stop="moveField(index, 1)"
                   >
                     <svg
                       class="w-5 h-5"
@@ -180,8 +180,8 @@
                 >필드 레이블</label
               >
               <input
-                type="text"
                 v-model="selectedField.label"
+                type="text"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
               />
               <p class="mt-1 text-xs text-gray-500">
@@ -193,10 +193,10 @@
                 >필드 키 (FieldKey)</label
               >
               <input
-                type="text"
                 v-model="selectedField.fieldKey"
-                @input="sanitizeFieldKey"
+                type="text"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm font-mono"
+                @input="sanitizeFieldKey"
               />
               <p class="mt-1 text-xs text-gray-500">
                 데이터 저장에 사용될 고유한 키입니다. (영문, 숫자, _ 만 가능)
@@ -205,8 +205,8 @@
             <div class="flex items-start">
               <div class="flex items-center h-5">
                 <input
-                  type="checkbox"
                   v-model="selectedField.isRequired"
+                  type="checkbox"
                   class="h-4 w-4 text-primary-600 border-gray-300 rounded"
                 />
               </div>
@@ -219,9 +219,9 @@
             </div>
             <div class="pt-6 border-t border-gray-200">
               <button
-                @click="deleteSelectedField"
                 type="button"
                 class="w-full text-sm text-red-600 hover:text-red-900"
+                @click="deleteSelectedField"
               >
                 필드 삭제
               </button>

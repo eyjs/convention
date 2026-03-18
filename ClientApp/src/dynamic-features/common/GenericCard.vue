@@ -7,9 +7,9 @@
 <template>
   <div
     :class="cardClasses"
-    @click.prevent="handleCardClick"
     :role="isClickable ? 'button' : 'article'"
     :tabindex="isClickable ? 0 : undefined"
+    @click.prevent="handleCardClick"
     @keydown.enter.prevent="handleCardClick"
     @keydown.space.prevent="handleCardClick"
   >

@@ -1,4 +1,4 @@
-using LocalRAG.Data;
+using LocalRAG.Repositories;
 using LocalRAG.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,20 +10,20 @@ namespace LocalRAG.Controllers.Auth;
 [Route("api/[controller]")]
 public class AccountRecoveryController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ISmsService _smsService;
     private readonly IVerificationService _verificationService;
     private readonly IAuthService _authService;
     private readonly ILogger<AccountRecoveryController> _logger;
 
     public AccountRecoveryController(
-        ConventionDbContext context,
+        IUnitOfWork unitOfWork,
         ISmsService smsService,
         IVerificationService verificationService,
         IAuthService authService,
         ILogger<AccountRecoveryController> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _smsService = smsService;
         _verificationService = verificationService;
         _authService = authService;
@@ -41,7 +41,7 @@ public class AccountRecoveryController : ControllerBase
             return BadRequest(new { message = "전화번호를 입력해주세요." });
 
         // 사용자 존재 확인
-        var user = await _context.Users
+        var user = await _unitOfWork.Users.Query
             .FirstOrDefaultAsync(u => u.Name == dto.Name && u.Phone == dto.PhoneNumber);
 
         if (user == null)
@@ -53,7 +53,7 @@ public class AccountRecoveryController : ControllerBase
 
         // SMS 발송
         var sent = await _smsService.SendVerificationCodeAsync(dto.PhoneNumber, code);
-        
+
         if (!sent)
             return StatusCode(500, new { message = "SMS 발송에 실패했습니다. 잠시 후 다시 시도해주세요." });
 
@@ -79,7 +79,7 @@ public class AccountRecoveryController : ControllerBase
             return BadRequest(new { message = "인증번호가 올바르지 않거나 만료되었습니다." });
 
         // 사용자 조회
-        var user = await _context.Users
+        var user = await _unitOfWork.Users.Query
             .FirstOrDefaultAsync(u => u.Name == dto.Name && u.Phone == dto.PhoneNumber);
 
         if (user == null)
@@ -114,7 +114,7 @@ public class AccountRecoveryController : ControllerBase
             return BadRequest(new { message = "전화번호를 입력해주세요." });
 
         // 사용자 존재 확인
-        var user = await _context.Users
+        var user = await _unitOfWork.Users.Query
             .FirstOrDefaultAsync(u => u.LoginId == dto.LoginId && u.Name == dto.Name && u.Phone == dto.PhoneNumber);
 
         if (user == null)
@@ -126,7 +126,7 @@ public class AccountRecoveryController : ControllerBase
 
         // SMS 발송
         var sent = await _smsService.SendVerificationCodeAsync(dto.PhoneNumber, code);
-        
+
         if (!sent)
             return StatusCode(500, new { message = "SMS 발송에 실패했습니다. 잠시 후 다시 시도해주세요." });
 
@@ -160,8 +160,8 @@ public class AccountRecoveryController : ControllerBase
         if (!_verificationService.VerifyCode(key, dto.Code))
             return BadRequest(new { message = "인증번호가 올바르지 않거나 만료되었습니다." });
 
-        // 사용자 조회
-        var user = await _context.Users
+        // 사용자 조회 (tracked entity for update)
+        var user = await _unitOfWork.Users.Query
             .FirstOrDefaultAsync(u => u.LoginId == dto.LoginId && u.Name == dto.Name && u.Phone == dto.PhoneNumber);
 
         if (user == null)
@@ -170,7 +170,7 @@ public class AccountRecoveryController : ControllerBase
         // 비밀번호 재설정
         user.PasswordHash = _authService.HashPassword(dto.NewPassword);
         user.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         // 인증번호 삭제
         _verificationService.RemoveCode(key);
@@ -191,4 +191,3 @@ public class AccountRecoveryController : ControllerBase
         return $"{loginId[..visible]}{new string('*', masked)}{loginId[^visible..]}";
     }
 }
-

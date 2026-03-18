@@ -1,6 +1,6 @@
-using LocalRAG.Data;
+using LocalRAG.Repositories;
 using LocalRAG.Interfaces;
-
+using LocalRAG.Constants;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,12 +10,12 @@ namespace LocalRAG.Controllers.Auth;
 [Route("api/[controller]")]
 public class SetupController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IAuthService _authService;
 
-    public SetupController(ConventionDbContext context, IAuthService authService)
+    public SetupController(IUnitOfWork unitOfWork, IAuthService authService)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _authService = authService;
     }
 
@@ -27,8 +27,7 @@ public class SetupController : ControllerBase
     {
         try
         {
-            var existingAdmin = await _context.Users
-                .FirstOrDefaultAsync(u => u.LoginId == "admin");
+            var existingAdmin = await _unitOfWork.Users.GetByLoginIdAsync("admin");
 
             if (existingAdmin != null)
             {
@@ -42,7 +41,7 @@ public class SetupController : ControllerBase
                 Name = "관리자",
                 Email = "admin@convention.com",
                 Phone = "010-0000-0000",
-                Role = "Admin",
+                Role = Roles.Admin,
                 IsActive = true,
                 EmailVerified = true,
                 PhoneVerified = true,
@@ -50,8 +49,8 @@ public class SetupController : ControllerBase
                 UpdatedAt = DateTime.UtcNow
             };
 
-            _context.Users.Add(admin);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Users.AddAsync(admin);
+            await _unitOfWork.SaveChangesAsync();
 
             return Ok(new
             {

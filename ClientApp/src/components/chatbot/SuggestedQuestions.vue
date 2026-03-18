@@ -7,8 +7,8 @@
       <button
         v-for="(question, index) in visibleQuestions"
         :key="index"
-        @click="handleQuestionClick(question)"
         class="w-full text-left px-5 py-3.5 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all group"
+        @click="handleQuestionClick(question)"
       >
         <div class="flex items-center justify-between">
           <span class="text-sm text-gray-700 flex-1">
@@ -33,8 +33,8 @@
 
     <button
       v-if="questions.length > maxVisible && !showAll"
-      @click="showAll = true"
       class="w-full mt-3 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
+      @click="showAll = true"
     >
       더 보기 ({{ questions.length - maxVisible }}개)
     </button>

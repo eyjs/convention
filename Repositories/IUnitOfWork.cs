@@ -1,6 +1,8 @@
 using LocalRAG.Entities;
 using LocalRAG.Entities.Action;
+using LocalRAG.Entities.Flight;
 using LocalRAG.Entities.FormBuilder;
+using LocalRAG.Entities.PersonalTrip;
 using LocalRAG.DTOs.ScheduleModels;
 
 namespace LocalRAG.Repositories;
@@ -70,6 +72,17 @@ public interface IUnitOfWork : IDisposable
     IRepository<FormDefinition> FormDefinitions { get; }
     IRepository<FormField> FormFields { get; }
     IRepository<FormSubmission> FormSubmissions { get; }
+
+    // Flight (Incheon Airport)
+    IRepository<IncheonFlightData> IncheonFlightDatas { get; }
+
+    // Personal Trip
+    IRepository<Entities.PersonalTrip.PersonalTrip> PersonalTrips { get; }
+    IRepository<Flight> Flights { get; }
+    IRepository<Accommodation> Accommodations { get; }
+    IRepository<ItineraryItem> ItineraryItems { get; }
+    IRepository<ChecklistCategory> ChecklistCategories { get; }
+    IRepository<ChecklistItem> ChecklistItems { get; }
 
     // --- Transaction Methods ---
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

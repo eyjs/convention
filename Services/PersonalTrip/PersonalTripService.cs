@@ -1,7 +1,7 @@
-using LocalRAG.Data;
 using LocalRAG.DTOs.PersonalTrip;
 using LocalRAG.DTOs.PersonalTrip.ChecklistModels;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -12,18 +12,18 @@ namespace LocalRAG.Services.PersonalTrip
 {
     public class PersonalTripService : IPersonalTripService
     {
-        private readonly ConventionDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public PersonalTripService(ConventionDbContext context)
+        public PersonalTripService(IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
         }
 
         #region PersonalTrip CRUD
 
         public async Task<List<PersonalTripDto>> GetUserTripsAsync(int userId)
         {
-            var trips = await _context.PersonalTrips
+            var trips = await _unitOfWork.PersonalTrips.Query
                 .AsNoTracking()
                 .Where(t => t.UserId == userId && !t.IsDeleted)
                 .Include(t => t.Flights)
@@ -39,7 +39,7 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<PersonalTripDto?> GetTripByIdAsync(int tripId, int userId)
         {
-            var trip = await _context.PersonalTrips
+            var trip = await _unitOfWork.PersonalTrips.Query
                 .AsNoTracking()
                 .Include(t => t.Flights)
                 .Include(t => t.Accommodations)
@@ -75,9 +75,9 @@ namespace LocalRAG.Services.PersonalTrip
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.PersonalTrips.Add(trip);
-            await _context.SaveChangesAsync();
-            
+            await _unitOfWork.PersonalTrips.AddAsync(trip);
+            await _unitOfWork.SaveChangesAsync();
+
             await AddDefaultChecklistCategoriesAsync(trip.Id);
 
             return MapToPersonalTripDto(trip);
@@ -85,7 +85,7 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<PersonalTripDto?> UpdateTripAsync(int tripId, UpdatePersonalTripDto dto, int userId)
         {
-            var trip = await _context.PersonalTrips
+            var trip = await _unitOfWork.PersonalTrips.Query
                 .Include(t => t.Flights)
                 .Include(t => t.Accommodations)
                 .Include(t => t.ItineraryItems)
@@ -112,25 +112,26 @@ namespace LocalRAG.Services.PersonalTrip
             trip.Budget = dto.Budget;
             trip.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return MapToPersonalTripDto(trip);
         }
 
         public async Task<bool> DeleteTripAsync(int tripId, int userId)
         {
-            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId && !t.IsDeleted);
+            var trip = await _unitOfWork.PersonalTrips.Query
+                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId && !t.IsDeleted);
             if (trip == null) return false;
 
             // Soft Delete
             trip.IsDeleted = true;
             trip.DeletedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
 
         #endregion
-        
+
         #region Checklist CRUD
 
         public async Task AddDefaultChecklistCategoriesAsync(int tripId)
@@ -158,14 +159,15 @@ namespace LocalRAG.Services.PersonalTrip
                     }
                 }
             };
-            _context.ChecklistCategories.AddRange(defaultCategories);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.ChecklistCategories.AddRangeAsync(defaultCategories);
+            await _unitOfWork.SaveChangesAsync();
         }
 
 
         public async Task<ChecklistCategoryDto> AddChecklistCategoryAsync(int tripId, CreateChecklistCategoryDto dto, int userId)
         {
-            var trip = await _context.PersonalTrips.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            var trip = await _unitOfWork.PersonalTrips.Query.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
             if (trip == null) throw new ArgumentException("여행을 찾을 수 없거나 권한이 없습니다.");
 
             var category = new Entities.PersonalTrip.ChecklistCategory
@@ -173,17 +175,17 @@ namespace LocalRAG.Services.PersonalTrip
                 PersonalTripId = tripId,
                 Name = dto.Name,
                 IsDefault = false,
-                Order = await _context.ChecklistCategories.Where(c => c.PersonalTripId == tripId).CountAsync() + 1
+                Order = await _unitOfWork.ChecklistCategories.CountAsync(c => c.PersonalTripId == tripId) + 1
             };
 
-            _context.ChecklistCategories.Add(category);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.ChecklistCategories.AddAsync(category);
+            await _unitOfWork.SaveChangesAsync();
             return MapToChecklistCategoryDto(category);
         }
 
         public async Task<ChecklistItemDto> AddChecklistItemAsync(int categoryId, CreateChecklistItemDto dto, int userId)
         {
-            var category = await _context.ChecklistCategories.Include(c => c.PersonalTrip)
+            var category = await _unitOfWork.ChecklistCategories.Query.Include(c => c.PersonalTrip)
                 .FirstOrDefaultAsync(c => c.Id == categoryId && c.PersonalTrip.UserId == userId);
             if (category == null) throw new ArgumentException("카테고리를 찾을 수 없거나 권한이 없습니다.");
 
@@ -192,17 +194,17 @@ namespace LocalRAG.Services.PersonalTrip
                 ChecklistCategoryId = categoryId,
                 Task = dto.Task,
                 Description = dto.Description,
-                Order = await _context.ChecklistItems.Where(i => i.ChecklistCategoryId == categoryId).CountAsync() + 1
+                Order = await _unitOfWork.ChecklistItems.CountAsync(i => i.ChecklistCategoryId == categoryId) + 1
             };
 
-            _context.ChecklistItems.Add(item);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.ChecklistItems.AddAsync(item);
+            await _unitOfWork.SaveChangesAsync();
             return MapToChecklistItemDto(item);
         }
 
         public async Task<ChecklistItemDto?> UpdateChecklistItemAsync(int itemId, UpdateChecklistItemDto dto, int userId)
         {
-            var item = await _context.ChecklistItems
+            var item = await _unitOfWork.ChecklistItems.Query
                 .Include(i => i.Category.PersonalTrip)
                 .FirstOrDefaultAsync(i => i.Id == itemId && i.Category.PersonalTrip.UserId == userId);
             if (item == null) return null;
@@ -212,31 +214,31 @@ namespace LocalRAG.Services.PersonalTrip
             item.IsChecked = dto.IsChecked;
             item.Order = dto.Order;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             return MapToChecklistItemDto(item);
         }
 
         public async Task<bool> DeleteChecklistCategoryAsync(int categoryId, int userId)
         {
-            var category = await _context.ChecklistCategories
+            var category = await _unitOfWork.ChecklistCategories.Query
                 .Include(c => c.PersonalTrip)
                 .FirstOrDefaultAsync(c => c.Id == categoryId && !c.IsDefault && c.PersonalTrip.UserId == userId);
             if (category == null) return false;
 
-            _context.ChecklistCategories.Remove(category);
-            await _context.SaveChangesAsync();
+            _unitOfWork.ChecklistCategories.Remove(category);
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> DeleteChecklistItemAsync(int itemId, int userId)
         {
-            var item = await _context.ChecklistItems
+            var item = await _unitOfWork.ChecklistItems.Query
                 .Include(i => i.Category.PersonalTrip)
                 .FirstOrDefaultAsync(i => i.Id == itemId && i.Category.PersonalTrip.UserId == userId);
             if (item == null) return false;
 
-            _context.ChecklistItems.Remove(item);
-            await _context.SaveChangesAsync();
+            _unitOfWork.ChecklistItems.Remove(item);
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
 
@@ -246,7 +248,8 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<FlightDto> AddFlightAsync(int tripId, CreateFlightDto dto, int userId)
         {
-            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            var trip = await _unitOfWork.PersonalTrips.Query
+                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
             if (trip == null) throw new ArgumentException("여행을 찾을 수 없습니다.");
 
             var flight = new Entities.PersonalTrip.Flight
@@ -276,14 +279,15 @@ namespace LocalRAG.Services.PersonalTrip
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.Flights.Add(flight);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Flights.AddAsync(flight);
+            await _unitOfWork.SaveChangesAsync();
             return MapToFlightDto(flight);
         }
 
         public async Task<FlightDto?> UpdateFlightAsync(int flightId, CreateFlightDto dto, int userId)
         {
-            var flight = await _context.Flights.Include(f => f.PersonalTrip).FirstOrDefaultAsync(f => f.Id == flightId && f.PersonalTrip.UserId == userId);
+            var flight = await _unitOfWork.Flights.Query.Include(f => f.PersonalTrip)
+                .FirstOrDefaultAsync(f => f.Id == flightId && f.PersonalTrip.UserId == userId);
             if (flight == null) return null;
 
             flight.Category = dto.Category;
@@ -309,17 +313,18 @@ namespace LocalRAG.Services.PersonalTrip
             flight.ArrivalAirportCode = dto.ArrivalAirportCode;
             flight.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             return MapToFlightDto(flight);
         }
 
         public async Task<bool> DeleteFlightAsync(int flightId, int userId)
         {
-            var flight = await _context.Flights.Include(f => f.PersonalTrip).FirstOrDefaultAsync(f => f.Id == flightId && f.PersonalTrip.UserId == userId);
+            var flight = await _unitOfWork.Flights.Query.Include(f => f.PersonalTrip)
+                .FirstOrDefaultAsync(f => f.Id == flightId && f.PersonalTrip.UserId == userId);
             if (flight == null) return false;
 
-            _context.Flights.Remove(flight);
-            await _context.SaveChangesAsync();
+            _unitOfWork.Flights.Remove(flight);
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
 
@@ -329,7 +334,7 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<AccommodationDto> AddAccommodationAsync(int tripId, CreateAccommodationDto dto, int userId)
         {
-            var trip = await _context.PersonalTrips
+            var trip = await _unitOfWork.PersonalTrips.Query
                 .Include(t => t.ItineraryItems) // Include ItineraryItems for auto-generation logic
                 .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
             if (trip == null) throw new ArgumentException("여행을 찾을 수 없습니다.");
@@ -352,8 +357,8 @@ namespace LocalRAG.Services.PersonalTrip
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.Accommodations.Add(accommodation);
-            await _context.SaveChangesAsync(); // Save accommodation first to get its ID
+            await _unitOfWork.Accommodations.AddAsync(accommodation);
+            await _unitOfWork.SaveChangesAsync(); // Save accommodation first to get its ID
 
             // Auto-generate itinerary items for check-in/out
             await AddOrUpdateAutoGeneratedItineraryItems(trip, accommodation);
@@ -363,7 +368,7 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<AccommodationDto?> UpdateAccommodationAsync(int accommodationId, CreateAccommodationDto dto, int userId)
         {
-            var accommodation = await _context.Accommodations
+            var accommodation = await _unitOfWork.Accommodations.Query
                 .Include(a => a.PersonalTrip)
                 .ThenInclude(t => t.ItineraryItems) // Include ItineraryItems for auto-generation logic
                 .FirstOrDefaultAsync(a => a.Id == accommodationId && a.PersonalTrip.UserId == userId);
@@ -387,7 +392,7 @@ namespace LocalRAG.Services.PersonalTrip
             accommodation.ExpenseAmount = dto.ExpenseAmount; // Added ExpenseAmount mapping
             accommodation.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             // Update auto-generated itinerary items for check-in/out if times changed
             if (oldCheckInTime != accommodation.CheckInTime || oldCheckOutTime != accommodation.CheckOutTime)
@@ -400,7 +405,7 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<bool> DeleteAccommodationAsync(int accommodationId, int userId)
         {
-            var accommodation = await _context.Accommodations
+            var accommodation = await _unitOfWork.Accommodations.Query
                 .Include(a => a.PersonalTrip)
                 .ThenInclude(t => t.ItineraryItems) // Include ItineraryItems to delete auto-generated ones
                 .FirstOrDefaultAsync(a => a.Id == accommodationId && a.PersonalTrip.UserId == userId);
@@ -410,10 +415,10 @@ namespace LocalRAG.Services.PersonalTrip
             var autoGeneratedItems = accommodation.PersonalTrip.ItineraryItems
                 .Where(i => i.IsAutoGenerated && i.GooglePlaceId == $"accommodation-{accommodation.Id}") // Using GooglePlaceId to link
                 .ToList();
-            _context.ItineraryItems.RemoveRange(autoGeneratedItems);
+            _unitOfWork.ItineraryItems.RemoveRange(autoGeneratedItems);
 
-            _context.Accommodations.Remove(accommodation);
-            await _context.SaveChangesAsync();
+            _unitOfWork.Accommodations.Remove(accommodation);
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
 
@@ -423,10 +428,11 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<List<ItineraryItemDto>> GetItineraryItemsAsync(int tripId, int userId)
         {
-            var trip = await _context.PersonalTrips.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            var trip = await _unitOfWork.PersonalTrips.Query.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
             if (trip == null) throw new ArgumentException("여행을 찾을 수 없거나 접근 권한이 없습니다.");
 
-            var items = await _context.ItineraryItems
+            var items = await _unitOfWork.ItineraryItems.Query
                 .AsNoTracking()
                 .Where(i => i.PersonalTripId == tripId)
                 .OrderBy(i => i.DayNumber)
@@ -439,7 +445,8 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<ItineraryItemDto> AddItineraryItemAsync(int tripId, CreateItineraryItemDto dto, int userId)
         {
-            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            var trip = await _unitOfWork.PersonalTrips.Query
+                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
             if (trip == null) throw new ArgumentException("여행을 찾을 수 없거나 접근 권한이 없습니다.");
 
             var newItem = new Entities.PersonalTrip.ItineraryItem
@@ -461,14 +468,15 @@ namespace LocalRAG.Services.PersonalTrip
                 IsAutoGenerated = false // User-added item
             };
 
-            _context.ItineraryItems.Add(newItem);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.ItineraryItems.AddAsync(newItem);
+            await _unitOfWork.SaveChangesAsync();
             return MapToItineraryItemDto(newItem);
         }
 
         public async Task<ItineraryItemDto?> UpdateItineraryItemAsync(int itemId, UpdateItineraryItemDto dto, int userId)
         {
-            var item = await _context.ItineraryItems.Include(i => i.PersonalTrip).FirstOrDefaultAsync(i => i.Id == itemId && i.PersonalTrip.UserId == userId);
+            var item = await _unitOfWork.ItineraryItems.Query.Include(i => i.PersonalTrip)
+                .FirstOrDefaultAsync(i => i.Id == itemId && i.PersonalTrip.UserId == userId);
             if (item == null) return null;
 
             // Prevent updating auto-generated items directly through this endpoint
@@ -491,13 +499,14 @@ namespace LocalRAG.Services.PersonalTrip
             item.KakaoPlaceUrl = dto.KakaoPlaceUrl;
             item.ExpenseAmount = dto.ExpenseAmount;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             return MapToItineraryItemDto(item);
         }
 
         public async Task<bool> DeleteItineraryItemAsync(int itemId, int userId)
         {
-            var item = await _context.ItineraryItems.Include(i => i.PersonalTrip).FirstOrDefaultAsync(i => i.Id == itemId && i.PersonalTrip.UserId == userId);
+            var item = await _unitOfWork.ItineraryItems.Query.Include(i => i.PersonalTrip)
+                .FirstOrDefaultAsync(i => i.Id == itemId && i.PersonalTrip.UserId == userId);
             if (item == null) return false;
 
             // Prevent deleting auto-generated items directly through this endpoint
@@ -506,17 +515,18 @@ namespace LocalRAG.Services.PersonalTrip
                 throw new ArgumentException("자동 생성된 일정 항목은 직접 삭제할 수 없습니다.");
             }
 
-            _context.ItineraryItems.Remove(item);
-            await _context.SaveChangesAsync();
+            _unitOfWork.ItineraryItems.Remove(item);
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> BulkDeleteItineraryItemsAsync(int tripId, List<int> itemIds, int userId)
         {
-            var trip = await _context.PersonalTrips.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            var trip = await _unitOfWork.PersonalTrips.Query.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
             if (trip == null) throw new ArgumentException("여행을 찾을 수 없거나 접근 권한이 없습니다.");
 
-            var itemsToDelete = await _context.ItineraryItems
+            var itemsToDelete = await _unitOfWork.ItineraryItems.Query
                 .Where(i => i.PersonalTripId == tripId && itemIds.Contains(i.Id))
                 .ToListAsync();
 
@@ -531,18 +541,19 @@ namespace LocalRAG.Services.PersonalTrip
                 throw new ArgumentException("자동 생성된 일정 항목은 대량 삭제할 수 없습니다.");
             }
 
-            _context.ItineraryItems.RemoveRange(itemsToDelete);
-            await _context.SaveChangesAsync();
+            _unitOfWork.ItineraryItems.RemoveRange(itemsToDelete);
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> BulkUpdateItineraryItemsDayAsync(int tripId, List<UpdateItemDayDto> updates, int userId)
         {
-            var trip = await _context.PersonalTrips.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            var trip = await _unitOfWork.PersonalTrips.Query.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
             if (trip == null) throw new ArgumentException("여행을 찾을 수 없거나 접근 권한이 없습니다.");
 
             var itemIdsToUpdate = updates.Select(u => u.ItemId).ToList();
-            var items = await _context.ItineraryItems
+            var items = await _unitOfWork.ItineraryItems.Query
                 .Where(i => i.PersonalTripId == tripId && itemIdsToUpdate.Contains(i.Id))
                 .ToListAsync();
 
@@ -566,21 +577,22 @@ namespace LocalRAG.Services.PersonalTrip
                 }
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
 
         public async Task ReorderItineraryItemsAsync(int tripId, List<Controllers.PersonalTrip.ReorderItemDto> items, int userId)
         {
             // 여행이 사용자의 것인지 확인
-            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            var trip = await _unitOfWork.PersonalTrips.Query
+                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
             if (trip == null)
                 throw new ArgumentException("여행을 찾을 수 없습니다.");
 
             // 각 항목의 순서 업데이트
             foreach (var itemDto in items)
             {
-                var item = await _context.ItineraryItems
+                var item = await _unitOfWork.ItineraryItems.Query
                     .Include(i => i.PersonalTrip)
                     .FirstOrDefaultAsync(i => i.Id == itemDto.Id && i.PersonalTrip.UserId == userId);
 
@@ -595,7 +607,7 @@ namespace LocalRAG.Services.PersonalTrip
                 }
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
 
         #endregion
@@ -612,7 +624,7 @@ namespace LocalRAG.Services.PersonalTrip
             var lowerCaseUserName = userName.ToLower();
 
             // Find users whose first name, last name, or full name contains the search term
-            var userIds = await _context.Users
+            var userIds = await _unitOfWork.Users.Query
                 .AsNoTracking()
                 .Where(u => (u.FirstName != null && u.FirstName.ToLower().Contains(lowerCaseUserName)) ||
                             (u.LastName != null && u.LastName.ToLower().Contains(lowerCaseUserName)) ||
@@ -626,7 +638,7 @@ namespace LocalRAG.Services.PersonalTrip
             }
 
             // Get all personal trips for the found users
-            var trips = await _context.PersonalTrips
+            var trips = await _unitOfWork.PersonalTrips.Query
                 .AsNoTracking()
                 .Where(t => userIds.Contains(t.UserId))
                 .Include(t => t.Flights)
@@ -644,7 +656,8 @@ namespace LocalRAG.Services.PersonalTrip
 
         public async Task<string> GenerateShareTokenAsync(int tripId, int userId)
         {
-            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            var trip = await _unitOfWork.PersonalTrips.Query
+                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
             if (trip == null)
                 throw new ArgumentException("여행을 찾을 수 없거나 권한이 없습니다.");
 
@@ -656,25 +669,26 @@ namespace LocalRAG.Services.PersonalTrip
             trip.IsShared = true;
             trip.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             return trip.ShareToken;
         }
 
         public async Task DisableSharingAsync(int tripId, int userId)
         {
-            var trip = await _context.PersonalTrips.FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
+            var trip = await _unitOfWork.PersonalTrips.Query
+                .FirstOrDefaultAsync(t => t.Id == tripId && t.UserId == userId);
             if (trip == null)
                 throw new ArgumentException("여행을 찾을 수 없거나 권한이 없습니다.");
 
             trip.IsShared = false;
             trip.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
 
         public async Task<PersonalTripDto?> GetPublicTripByTokenAsync(string token)
         {
-            var trip = await _context.PersonalTrips
+            var trip = await _unitOfWork.PersonalTrips.Query
                 .AsNoTracking()
                 .Where(t => t.ShareToken == token && t.IsShared)
                 .Include(t => t.Flights)
@@ -796,7 +810,7 @@ namespace LocalRAG.Services.PersonalTrip
                 IsAutoGenerated = item.IsAutoGenerated
             };
         }
-        
+
         private ChecklistCategoryDto MapToChecklistCategoryDto(Entities.PersonalTrip.ChecklistCategory category)
         {
             var items = category.Items?.Select(MapToChecklistItemDto).OrderBy(i => i.Order).ToList() ?? new List<ChecklistItemDto>();
@@ -832,7 +846,7 @@ namespace LocalRAG.Services.PersonalTrip
             var existingAutoItems = trip.ItineraryItems
                 .Where(i => i.IsAutoGenerated && i.GooglePlaceId == $"accommodation-{accommodation.Id}")
                 .ToList();
-            _context.ItineraryItems.RemoveRange(existingAutoItems);
+            _unitOfWork.ItineraryItems.RemoveRange(existingAutoItems);
 
             if (accommodation.CheckInTime.HasValue && accommodation.CheckOutTime.HasValue)
             {
@@ -857,7 +871,7 @@ namespace LocalRAG.Services.PersonalTrip
                     IsAutoGenerated = true,
                     OrderNum = 0 // Will be reordered by the system
                 };
-                _context.ItineraryItems.Add(checkInItem);
+                await _unitOfWork.ItineraryItems.AddAsync(checkInItem);
 
                 // Calculate DayNumber for check-out
                 var checkOutDate = new DateOnly(accommodation.CheckOutTime.Value.Year, accommodation.CheckOutTime.Value.Month, accommodation.CheckOutTime.Value.Day);
@@ -880,10 +894,10 @@ namespace LocalRAG.Services.PersonalTrip
                     IsAutoGenerated = true,
                     OrderNum = 0 // Will be reordered by the system
                 };
-                _context.ItineraryItems.Add(checkOutItem);
+                await _unitOfWork.ItineraryItems.AddAsync(checkOutItem);
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
 
         #endregion

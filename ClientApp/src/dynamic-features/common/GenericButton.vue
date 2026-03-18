@@ -7,8 +7,8 @@
 <template>
   <button
     :class="buttonClasses"
-    @click.prevent="handleClick"
     :disabled="isLoading"
+    @click.prevent="handleClick"
   >
     <!-- Icon (optional) -->
     <span v-if="config.icon" class="button-icon" v-html="config.icon"></span>

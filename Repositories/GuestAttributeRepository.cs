@@ -36,16 +36,6 @@ public class GuestAttributeRepository : Repository<GuestAttribute>, IGuestAttrib
                 cancellationToken);
     }
 
-    /// <summary>
-    /// 사용자의 속성을 Upsert합니다.
-    ///
-    /// Upsert 패턴 설명:
-    /// 1. 기존 데이터 존재 여부 확인
-    /// 2. 있으면 Update, 없으면 Insert
-    ///
-    /// 주의사항:
-    /// - SaveChangesAsync는 UnitOfWork에서 호출해야 함
-    /// </summary>
     public async Task UpsertAttributeAsync(
         int userId,
         string attributeKey,
@@ -59,20 +49,16 @@ public class GuestAttributeRepository : Repository<GuestAttribute>, IGuestAttrib
 
         if (existingAttribute != null)
         {
-            // Update: 기존 값 수정
             existingAttribute.AttributeValue = attributeValue;
-            _context.Entry(existingAttribute).State = EntityState.Modified;
         }
         else
         {
-            // Insert: 새로운 속성 추가
-            var newAttribute = new GuestAttribute
+            _dbSet.Add(new GuestAttribute
             {
                 UserId = userId,
                 AttributeKey = attributeKey,
                 AttributeValue = attributeValue
-            };
-            await _dbSet.AddAsync(newAttribute, cancellationToken);
+            });
         }
     }
 }

@@ -5,30 +5,62 @@
         <div class="flex items-center gap-2">
           <button
             v-if="showBackButton"
-            @click="router.push(backPath)"
             class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             :title="backButtonTitle"
+            @click="router.push(backPath)"
           >
-            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            <svg
+              class="w-5 h-5 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
-          <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
+          <h1
+            class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate"
+          >
             {{ title }}
           </h1>
-          <span v-if="subtitle" class="ml-2 sm:ml-4 text-xs sm:text-sm text-gray-500 hidden md:block truncate">
+          <span
+            v-if="subtitle"
+            class="ml-2 sm:ml-4 text-xs sm:text-sm text-gray-500 hidden md:block truncate"
+          >
             {{ subtitle }}
           </span>
         </div>
         <div class="relative">
-          <button @click="showUserMenu = !showUserMenu" class="p-2 hover:bg-gray-100 rounded-lg">
-            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          <button
+            class="p-2 hover:bg-gray-100 rounded-lg"
+            @click="showUserMenu = !showUserMenu"
+          >
+            <svg
+              class="w-6 h-6 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
 
           <Transition name="fade-down">
-            <div v-if="showUserMenu" class="fixed inset-0 z-50" @click="showUserMenu = false" />
+            <div
+              v-if="showUserMenu"
+              class="fixed inset-0 z-50"
+              @click="showUserMenu = false"
+            />
           </Transition>
           <Transition name="fade-down">
             <div
@@ -37,17 +69,26 @@
             >
               <ul>
                 <li>
-                  <router-link to="/my-profile" class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                  <router-link
+                    to="/my-profile"
+                    class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                  >
                     내 정보
                   </router-link>
                 </li>
                 <li>
-                  <router-link to="/home" class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                  <router-link
+                    to="/home"
+                    class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                  >
                     사용자 페이지 전환
                   </router-link>
                 </li>
                 <li>
-                  <button @click="handleLogout" class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-100">
+                  <button
+                    class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-100"
+                    @click="handleLogout"
+                  >
                     로그아웃
                   </button>
                 </li>
@@ -63,9 +104,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
   title: {
@@ -88,24 +129,26 @@ const props = defineProps({
     type: String,
     default: '뒤로가기',
   },
-});
+})
 
-const router = useRouter();
-const authStore = useAuthStore();
-const showUserMenu = ref(false);
+const router = useRouter()
+const authStore = useAuthStore()
+const showUserMenu = ref(false)
 
 const handleLogout = async () => {
   if (confirm('로그아웃하시겠습니까?')) {
-    await authStore.logout();
-    router.push('/login');
+    await authStore.logout()
+    router.push('/login')
   }
-};
+}
 </script>
 
 <style scoped>
 .fade-down-enter-active,
 .fade-down-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 .fade-down-enter-from,
 .fade-down-leave-to {

@@ -4,15 +4,15 @@
       <div>
         <h2 class="font-bold text-lg">{{ conventionTitle }}</h2>
         <button
-          @click="showParticipantList = true"
           class="text-sm text-gray-600 hover:underline"
+          @click="showParticipantList = true"
         >
           {{ participantCount }}명 참여중
         </button>
       </div>
       <button
-        @click="uiStore.closeChat()"
         class="p-2 -mr-2 text-gray-500 hover:text-gray-800"
+        @click="uiStore.closeChat()"
       >
         <svg
           class="w-6 h-6"
@@ -29,11 +29,8 @@
         </svg>
       </button>
     </div>
-    <div class="messages-area" ref="messagesArea">
-      <div
-        v-if="isReconnecting"
-        class="reconnecting-banner"
-      >
+    <div ref="messagesArea" class="messages-area">
+      <div v-if="isReconnecting" class="reconnecting-banner">
         채팅 서버에 다시 연결하는 중입니다...
       </div>
       <div
@@ -46,13 +43,21 @@
         }"
       >
         <div class="message" :class="{ 'is-admin': msg.isAdmin }">
-        <div class="message-header flex items-center">
+          <div class="message-header flex items-center">
             <template v-if="msg.profileImageUrl">
-              <img :src="msg.profileImageUrl" :alt="msg.userName" class="w-6 h-6 rounded-full mr-2" />
+              <img
+                :src="msg.profileImageUrl"
+                :alt="msg.userName"
+                class="w-6 h-6 rounded-full mr-2"
+              />
             </template>
             <template v-else-if="!isMyMessage(msg)">
-              <div class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center mr-2">
-                <span class="text-xs text-gray-600">{{ msg.userName.charAt(0) }}</span>
+              <div
+                class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center mr-2"
+              >
+                <span class="text-xs text-gray-600">{{
+                  msg.userName.charAt(0)
+                }}</span>
               </div>
             </template>
             <span
@@ -85,14 +90,14 @@
       </div>
     </div>
     <div class="input-area">
-      <form @submit.prevent="handleSendMessage" class="flex">
+      <form class="flex" @submit.prevent="handleSendMessage">
         <input
-          type="text"
           v-model="newMessage"
+          type="text"
           placeholder="메시지를 입력하세요..."
-          @keydown.enter.prevent="handleSendMessage"
           class="flex-grow border rounded-l-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           :disabled="!isConnected"
+          @keydown.enter.prevent="handleSendMessage"
         />
         <button
           type="submit"

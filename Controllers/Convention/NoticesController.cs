@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using LocalRAG.Interfaces;
 using LocalRAG.Entities;
+using LocalRAG.Repositories;
 
 using LocalRAG.DTOs.NoticeModels;
 using LocalRAG.Extensions;
@@ -15,13 +15,13 @@ namespace LocalRAG.Controllers.Convention;
 public class NoticesController : ControllerBase
 {
     private readonly INoticeService _noticeService;
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<NoticesController> _logger;
 
-    public NoticesController(INoticeService noticeService, ConventionDbContext context, ILogger<NoticesController> logger)
+    public NoticesController(INoticeService noticeService, IUnitOfWork unitOfWork, ILogger<NoticesController> logger)
     {
         _noticeService = noticeService;
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -165,19 +165,19 @@ public class NoticesController : ControllerBase
             // 세션에서 조회한 공지 ID 목록 확인
             var viewedNotices = HttpContext.Session.GetString("ViewedNotices") ?? "";
             var viewedList = viewedNotices.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
-            
+
             // 이미 조회한 공지면 카운트 증가 안함
             if (viewedList.Contains(id.ToString()))
             {
                 return Ok(new { message = "Already viewed", incremented = false });
             }
-            
+
             await _noticeService.IncrementViewCountAsync(id);
-            
+
             // 세션에 조회 기록 추가
             viewedList.Add(id.ToString());
             HttpContext.Session.SetString("ViewedNotices", string.Join(",", viewedList));
-            
+
             return Ok(new { message = "View count incremented", incremented = true });
         }
         catch (Exception ex)
@@ -225,9 +225,10 @@ public class NoticesController : ControllerBase
     {
         try
         {
-                    var isAdmin = User.IsInRole("Admin");
-                    var query = _context.Comments.IgnoreQueryFilters().Where(c => c.NoticeId == noticeId);
-            var comments = await query
+            var isAdmin = User.IsInRole("Admin");
+            var comments = await _unitOfWork.Comments.Query
+                .IgnoreQueryFilters()
+                .Where(c => c.NoticeId == noticeId)
                 .Include(c => c.Author)
                 .OrderBy(c => c.CreatedAt)
                 .ToListAsync();
@@ -237,7 +238,7 @@ public class NoticesController : ControllerBase
             foreach (var comment in comments)
             {
                 string authorName = comment.Author?.Name ?? "익명";
-                
+
                 responses.Add(new CommentResponse
                 {
                     Id = comment.Id,
@@ -276,7 +277,7 @@ public class NoticesController : ControllerBase
             }
             var userId = userIdNullable.Value;
 
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _unitOfWork.Users.GetByIdAsync(userId);
             if (user == null)
             {
                 return NotFound("해당 사용자를 찾을 수 없습니다.");
@@ -294,8 +295,8 @@ public class NoticesController : ControllerBase
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.Comments.Add(comment);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Comments.AddAsync(comment);
+            await _unitOfWork.SaveChangesAsync();
 
             var response = new CommentResponse
             {
@@ -332,7 +333,7 @@ public class NoticesController : ControllerBase
             }
             var userId = userIdNullable.Value;
 
-            var comment = await _context.Comments
+            var comment = await _unitOfWork.Comments.Query
                 .Include(c => c.Author)
                 .FirstOrDefaultAsync(c => c.Id == commentId);
 
@@ -345,7 +346,7 @@ public class NoticesController : ControllerBase
             comment.Content = request.Content;
             comment.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             var response = new CommentResponse
             {
@@ -383,7 +384,7 @@ public class NoticesController : ControllerBase
             }
             var userId = userIdNullable.Value;
 
-            var comment = await _context.Comments.FindAsync(commentId);
+            var comment = await _unitOfWork.Comments.GetByIdAsync(commentId);
 
             if (comment == null) return NotFound(new { message = "댓글을 찾을 수 없습니다." });
 
@@ -394,7 +395,7 @@ public class NoticesController : ControllerBase
             }
 
             comment.IsDeleted = true;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return NoContent();
         }
@@ -405,4 +406,3 @@ public class NoticesController : ControllerBase
         }
     }
 }
-

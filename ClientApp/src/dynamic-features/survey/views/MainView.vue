@@ -10,8 +10,8 @@
       <div
         v-for="survey in surveys"
         :key="survey.id"
-        @click="selectSurvey(survey)"
         class="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+        @click="selectSurvey(survey)"
       >
         <h3 class="text-xl font-bold text-gray-900 mb-2">{{ survey.title }}</h3>
         <p class="text-gray-600 mb-4">{{ survey.description }}</p>
@@ -28,8 +28,8 @@
 
     <div v-else class="bg-white rounded-lg shadow-md p-6">
       <button
-        @click="selectedSurvey = null"
         class="mb-4 text-blue-600 hover:text-blue-800"
+        @click="selectedSurvey = null"
       >
         ← 목록으로
       </button>
@@ -56,10 +56,10 @@
               class="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
             >
               <input
+                v-model="userResponse[question.id]"
                 type="radio"
                 :name="`q${question.id}`"
                 :value="option.id"
-                v-model="userResponse[question.id]"
                 class="w-4 h-4"
               />
               <span>{{ option.text }}</span>
@@ -77,8 +77,8 @@
       </div>
 
       <button
-        @click="submitResponse"
         class="w-full mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+        @click="submitResponse"
       >
         제출하기
       </button>

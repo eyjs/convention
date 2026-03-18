@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using LocalRAG.Entities;
 using LocalRAG.Entities.Action;
 using LocalRAG.Interfaces;
@@ -15,18 +14,15 @@ namespace LocalRAG.Services.Convention;
 public class UserActionService : IUserActionService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ConventionDbContext _context;
     private readonly IActionOrchestrationService _orchestrationService;
     private readonly ILogger<UserActionService> _logger;
 
     public UserActionService(
         IUnitOfWork unitOfWork,
-        ConventionDbContext context,
         IActionOrchestrationService orchestrationService,
         ILogger<UserActionService> logger)
     {
         _unitOfWork = unitOfWork;
-        _context = context;
         _orchestrationService = orchestrationService;
         _logger = logger;
     }
@@ -35,7 +31,7 @@ public class UserActionService : IUserActionService
     {
         var now = DateTime.UtcNow;
 
-        var actions = await _context.ConventionActions
+        var actions = await _unitOfWork.ConventionActions.Query
             .Include(a => a.Template)
             .Where(a => a.ConventionId == conventionId &&
                        a.IsActive &&
@@ -63,7 +59,7 @@ public class UserActionService : IUserActionService
 
     public async Task<object> GetAllActionsAsync(int conventionId, string? targetLocation, string? actionCategory, bool? isActive = null)
     {
-        var query = _context.ConventionActions
+        var query = _unitOfWork.ConventionActions.Query
             .Include(a => a.Template)
             .Where(a => a.ConventionId == conventionId);
 
@@ -117,7 +113,7 @@ public class UserActionService : IUserActionService
 
     public async Task<object> GetUserActionStatusesAsync(int conventionId, int userId)
     {
-        var statuses = await _context.UserActionStatuses
+        var statuses = await _unitOfWork.UserActionStatuses.Query
             .Where(s => s.UserId == userId && s.ConventionAction != null && s.ConventionAction.ConventionId == conventionId)
             .ToListAsync();
 
@@ -132,7 +128,7 @@ public class UserActionService : IUserActionService
 
     public async Task<object?> GetActionDetailAsync(int conventionId, int actionId)
     {
-        var action = await _context.ConventionActions
+        var action = await _unitOfWork.ConventionActions.Query
             .Include(a => a.Template)
             .FirstOrDefaultAsync(a => a.ConventionId == conventionId &&
                                     a.Id == actionId &&
@@ -164,7 +160,7 @@ public class UserActionService : IUserActionService
         if (action == null)
             return null;
 
-        var status = await _context.UserActionStatuses
+        var status = await _unitOfWork.UserActionStatuses.Query
             .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
 
         if (status == null)
@@ -194,7 +190,7 @@ public class UserActionService : IUserActionService
         if (action == null)
             return null;
 
-        var status = await _context.UserActionStatuses
+        var status = await _unitOfWork.UserActionStatuses.Query
             .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
 
         if (status == null)
@@ -231,7 +227,7 @@ public class UserActionService : IUserActionService
         if (action.BehaviorType != BehaviorType.FormBuilder)
             return (null, "이 액션은 FormBuilder 타입이 아닙니다.", false);
 
-        var submission = await _context.ActionSubmissions
+        var submission = await _unitOfWork.ActionSubmissions.Query
             .FirstOrDefaultAsync(s => s.ConventionActionId == actionId && s.UserId == userId);
 
         if (submission != null)
@@ -251,7 +247,7 @@ public class UserActionService : IUserActionService
             await _unitOfWork.ActionSubmissions.AddAsync(submission);
         }
 
-        var status = await _context.UserActionStatuses
+        var status = await _unitOfWork.UserActionStatuses.Query
             .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == actionId);
 
         if (status == null)
@@ -276,7 +272,7 @@ public class UserActionService : IUserActionService
 
     public async Task<JsonElement?> GetUserSubmissionAsync(int actionId, int userId)
     {
-        var submission = await _context.ActionSubmissions
+        var submission = await _unitOfWork.ActionSubmissions.Query
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.ConventionActionId == actionId && s.UserId == userId);
 
@@ -296,7 +292,7 @@ public class UserActionService : IUserActionService
         if (action.BehaviorType != BehaviorType.FormBuilder)
             return (null, "이 액션은 FormBuilder 타입이 아닙니다.", false);
 
-        var submissionsRaw = await _context.ActionSubmissions
+        var submissionsRaw = await _unitOfWork.ActionSubmissions.Query
             .Include(s => s.User)
             .Where(s => s.ConventionActionId == actionId)
             .ToListAsync();
@@ -317,7 +313,7 @@ public class UserActionService : IUserActionService
 
     public async Task<object> GetChecklistStatusAsync(int conventionId, int userId)
     {
-        var actions = await _context.ConventionActions
+        var actions = await _unitOfWork.ConventionActions.Query
             .Where(a => a.ConventionId == conventionId &&
                        a.IsActive &&
                        a.Deadline.HasValue)
@@ -328,7 +324,7 @@ public class UserActionService : IUserActionService
         if (actions.Count == 0)
             return new { totalItems = 0, completedItems = 0, progressPercentage = 0, items = new List<object>() };
 
-        var statuses = await _context.UserActionStatuses
+        var statuses = await _unitOfWork.UserActionStatuses.Query
             .Where(s => s.UserId == userId)
             .ToListAsync();
 
@@ -382,7 +378,7 @@ public class UserActionService : IUserActionService
 
     public async Task<object> GetMenuActionsAsync(int conventionId)
     {
-        var actions = await _context.ConventionActions
+        var actions = await _unitOfWork.ConventionActions.Query
             .Where(a => a.ConventionId == conventionId &&
                        a.IsActive &&
                        a.ActionCategory == "MENU")

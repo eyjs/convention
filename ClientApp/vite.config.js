@@ -35,7 +35,10 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           // Quill 관련 모듈만 별도 청크로 분리 (순환참조 방지)
-          if (id.includes('node_modules/quill') || id.includes('node_modules/parchment')) {
+          if (
+            id.includes('node_modules/quill') ||
+            id.includes('node_modules/parchment')
+          ) {
             return 'quill'
           }
         },

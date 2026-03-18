@@ -29,8 +29,8 @@
     </div>
 
     <button
-      @click="closePopup"
       class="mt-4 w-full py-3 px-4 md:py-2 md:px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl md:rounded-lg font-semibold hover:shadow-lg active:scale-95 transition-all"
+      @click="closePopup"
     >
       닫기
     </button>

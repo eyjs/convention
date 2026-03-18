@@ -2,8 +2,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using LocalRAG.DTOs.FlightModels;
-using LocalRAG.Data;
 using LocalRAG.Entities.Flight;
+using LocalRAG.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Services.Flight
@@ -26,18 +26,18 @@ namespace LocalRAG.Services.Flight
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<FlightService> _logger;
-        private readonly ConventionDbContext _dbContext;
+        private readonly IUnitOfWork _unitOfWork;
 
         public FlightService(
             HttpClient httpClient,
             IConfiguration configuration,
             ILogger<FlightService> logger,
-            ConventionDbContext dbContext)
+            IUnitOfWork unitOfWork)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
-            _dbContext = dbContext;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<List<FlightDto>> GetFlights(string flightType, string searchDate, string? fromTime = null, string? toTime = null)
@@ -191,7 +191,7 @@ namespace LocalRAG.Services.Flight
                 foreach (var item in apiResponse.Response.Body.Items)
                 {
                     // 중복 체크: FlightId + ScheduleDate + FlightType 조합
-                    var exists = await _dbContext.IncheonFlightData
+                    var exists = await _unitOfWork.IncheonFlightDatas.Query
                         .AnyAsync(f => f.FlightId == item.FlightId
                                     && f.ScheduleDate == formattedDate
                                     && f.FlightType == flightType.ToUpper());
@@ -215,11 +215,11 @@ namespace LocalRAG.Services.Flight
                             MasterFlightId = item.Codeshare == "Slave" ? item.Masterflightid : null
                         };
 
-                        _dbContext.IncheonFlightData.Add(flightData);
+                        await _unitOfWork.IncheonFlightDatas.AddAsync(flightData);
                     }
                 }
 
-                await _dbContext.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
                 _logger.LogInformation("Successfully synced {count} flights to database", apiResponse.Response.Body.Items.Count);
             }
             catch (Exception ex)
@@ -243,7 +243,7 @@ namespace LocalRAG.Services.Flight
 
             var formattedDate = searchDate.Replace("-", "");
 
-            var flights = await _dbContext.IncheonFlightData
+            var flights = await _unitOfWork.IncheonFlightDatas.Query
                 .Where(f => (f.FlightId == formattedFlightId || f.MasterFlightId == formattedFlightId) && f.ScheduleDate == formattedDate)
                 .OrderBy(f => f.FlightType)
                 .ToListAsync();
@@ -259,15 +259,15 @@ namespace LocalRAG.Services.Flight
                 // 기존 데이터 삭제 (갱신을 위해)
                 if (flights.Any())
                 {
-                    _dbContext.IncheonFlightData.RemoveRange(flights);
-                    await _dbContext.SaveChangesAsync();
+                    _unitOfWork.IncheonFlightDatas.RemoveRange(flights);
+                    await _unitOfWork.SaveChangesAsync();
                 }
 
                 await SyncFlightDataFromApi(searchDate, DEPARTURE_TYPE);
                 await SyncFlightDataFromApi(searchDate, "ARRIVAL");
 
                 // 재조회
-                flights = await _dbContext.IncheonFlightData
+                flights = await _unitOfWork.IncheonFlightDatas.Query
                     .Where(f => f.FlightId == formattedFlightId && f.ScheduleDate == formattedDate)
                     .OrderBy(f => f.FlightType)
                     .ToListAsync();
@@ -283,7 +283,7 @@ namespace LocalRAG.Services.Flight
         {
             var formattedDate = searchDate.Replace("-", "");
 
-            var flights = await _dbContext.IncheonFlightData
+            var flights = await _unitOfWork.IncheonFlightDatas.Query
                 .Where(f => f.ScheduleDate == formattedDate && f.FlightType == flightType.ToUpper())
                 .OrderBy(f => f.ScheduleTime)
                 .ToListAsync();
@@ -299,14 +299,14 @@ namespace LocalRAG.Services.Flight
                 // 기존 데이터 삭제 (갱신을 위해)
                 if (flights.Any())
                 {
-                    _dbContext.IncheonFlightData.RemoveRange(flights);
-                    await _dbContext.SaveChangesAsync();
+                    _unitOfWork.IncheonFlightDatas.RemoveRange(flights);
+                    await _unitOfWork.SaveChangesAsync();
                 }
 
                 await SyncFlightDataFromApi(searchDate, flightType);
 
                 // 재조회
-                flights = await _dbContext.IncheonFlightData
+                flights = await _unitOfWork.IncheonFlightDatas.Query
                     .Where(f => f.ScheduleDate == formattedDate && f.FlightType == flightType.ToUpper())
                     .OrderBy(f => f.ScheduleTime)
                     .ToListAsync();

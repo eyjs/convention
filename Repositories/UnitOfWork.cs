@@ -1,7 +1,9 @@
 using LocalRAG.Data;
 using LocalRAG.Entities;
 using LocalRAG.Entities.Action;
+using LocalRAG.Entities.Flight;
 using LocalRAG.Entities.FormBuilder;
+using LocalRAG.Entities.PersonalTrip;
 using LocalRAG.DTOs.ScheduleModels;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -57,6 +59,13 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<FormDefinition>? _formDefinitions;
     private IRepository<FormField>? _formFields;
     private IRepository<FormSubmission>? _formSubmissions;
+    private IRepository<Entities.PersonalTrip.PersonalTrip>? _personalTrips;
+    private IRepository<Flight>? _flights;
+    private IRepository<Accommodation>? _accommodations;
+    private IRepository<ItineraryItem>? _itineraryItems;
+    private IRepository<ChecklistCategory>? _checklistCategories;
+    private IRepository<ChecklistItem>? _checklistItems;
+    private IRepository<IncheonFlightData>? _incheonFlightDatas;
 
     public UnitOfWork(ConventionDbContext context)
     {
@@ -187,6 +196,29 @@ public class UnitOfWork : IUnitOfWork
 
     public IRepository<FormSubmission> FormSubmissions =>
         _formSubmissions ??= new Repository<FormSubmission>(_context);
+
+    // Flight (Incheon Airport)
+    public IRepository<IncheonFlightData> IncheonFlightDatas =>
+        _incheonFlightDatas ??= new Repository<IncheonFlightData>(_context);
+
+    // Personal Trip
+    public IRepository<Entities.PersonalTrip.PersonalTrip> PersonalTrips =>
+        _personalTrips ??= new Repository<Entities.PersonalTrip.PersonalTrip>(_context);
+
+    public IRepository<Flight> Flights =>
+        _flights ??= new Repository<Flight>(_context);
+
+    public IRepository<Accommodation> Accommodations =>
+        _accommodations ??= new Repository<Accommodation>(_context);
+
+    public IRepository<ItineraryItem> ItineraryItems =>
+        _itineraryItems ??= new Repository<ItineraryItem>(_context);
+
+    public IRepository<ChecklistCategory> ChecklistCategories =>
+        _checklistCategories ??= new Repository<ChecklistCategory>(_context);
+
+    public IRepository<ChecklistItem> ChecklistItems =>
+        _checklistItems ??= new Repository<ChecklistItem>(_context);
 
     // ============================================================
     // Transaction Methods

@@ -87,8 +87,8 @@
     <template #footer>
       <button
         type="button"
-        @click="close"
         class="w-full px-4 py-2.5 text-sm font-medium bg-[#17B185] text-white rounded-lg hover:bg-[#149B75] transition-colors"
+        @click="close"
       >
         닫기
       </button>

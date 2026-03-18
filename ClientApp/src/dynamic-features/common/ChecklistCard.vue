@@ -1,18 +1,18 @@
 <template>
   <div
-    @click.prevent="handleCardClick"
     class="bg-white rounded-lg p-4 flex items-center gap-3 cursor-pointer transition-all duration-200 hover:shadow-md border border-gray-200"
     :class="{ 'opacity-60': isCompleted }"
+    @click.prevent="handleCardClick"
   >
     <!-- 체크박스 (이벤트 전파 중지) -->
     <div
-      @click.stop="toggleStatus"
       class="flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-all duration-200 z-10"
       :class="[
         isCompleted
           ? 'bg-[#17B185] border-[#17B185]'
           : 'border-gray-300 hover:border-[#17B185]',
       ]"
+      @click.stop="toggleStatus"
     >
       <svg
         v-if="isCompleted"

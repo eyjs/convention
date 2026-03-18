@@ -1,5 +1,4 @@
-using LocalRAG.Data;
-
+using LocalRAG.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,27 +8,29 @@ namespace LocalRAG.Controllers.System;
 [Route("api/test")]
 public class DatabaseTestController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public DatabaseTestController(ConventionDbContext context)
+    public DatabaseTestController(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     [HttpGet("check/{conventionId}")]
     public async Task<IActionResult> CheckData(int conventionId)
     {
-        var guestCount = await _context.UserConventions.CountAsync(uc => uc.ConventionId == conventionId);
-        var templateCount = await _context.ScheduleTemplates.CountAsync(st => st.ConventionId == conventionId);
-        var itemCount = await _context.ScheduleItems.CountAsync();
+        var guestCount = await _unitOfWork.UserConventions.Query
+            .CountAsync(uc => uc.ConventionId == conventionId);
+        var templateCount = await _unitOfWork.ScheduleTemplates.Query
+            .CountAsync(st => st.ConventionId == conventionId);
+        var itemCount = await _unitOfWork.ScheduleItems.Query.CountAsync();
 
-        var guests = await _context.UserConventions
+        var guests = await _unitOfWork.UserConventions.Query
             .Where(uc => uc.ConventionId == conventionId)
             .Include(uc => uc.User)
             .Select(uc => new { Id = uc.UserId, GuestName = uc.User.Name, uc.ConventionId })
             .ToListAsync();
 
-        var templates = await _context.ScheduleTemplates
+        var templates = await _unitOfWork.ScheduleTemplates.Query
             .Where(st => st.ConventionId == conventionId)
             .Select(st => new { st.Id, st.CourseName, st.ConventionId })
             .ToListAsync();
@@ -51,7 +52,7 @@ public class DatabaseTestController : ControllerBase
     {
         try
         {
-            var userConventions = await _context.UserConventions
+            var userConventions = await _unitOfWork.UserConventions.Query
                 .Where(uc => uc.ConventionId == conventionId)
                 .Include(uc => uc.User)
                     .ThenInclude(u => u.GuestAttributes)

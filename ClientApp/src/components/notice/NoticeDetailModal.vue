@@ -1,6 +1,5 @@
 <template>
   <SlideUpModal :is-open="isOpen" @close="closeModal">
-
     <template #header-title>공지사항 상세보기</template>
     <template #body>
       <!-- 로딩 상태 -->
@@ -100,8 +99,8 @@
     <template #footer>
       <button
         type="button"
-        @click="closeModal"
         class="w-full px-4 md:px-6 py-3 text-sm md:text-base bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+        @click="closeModal"
       >
         닫기
       </button>
@@ -129,7 +128,8 @@ export default {
       type: Number,
       required: true,
     },
-    isOpen: { // Add this prop
+    isOpen: {
+      // Add this prop
       type: Boolean,
       default: false,
     },
@@ -205,7 +205,6 @@ export default {
     )
 
     return {
-      noticeId: props.noticeId,
       loading,
       notice,
       closeModal,

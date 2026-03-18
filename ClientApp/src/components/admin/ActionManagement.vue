@@ -11,8 +11,8 @@
         </p>
       </div>
       <button
-        @click="openCreateModal"
         class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+        @click="openCreateModal"
       >
         액션 추가
       </button>
@@ -21,57 +21,57 @@
     <!-- BehaviorType 필터 버튼 -->
     <div class="mb-6 flex flex-wrap gap-2">
       <button
-        @click="selectedBehaviorType = 'All'"
         :class="[
           'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
           selectedBehaviorType === 'All'
             ? 'bg-primary-600 text-white'
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
         ]"
+        @click="selectedBehaviorType = 'All'"
       >
         전체
       </button>
       <button
-        @click="selectedBehaviorType = 'StatusOnly'"
         :class="[
           'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
           selectedBehaviorType === 'StatusOnly'
             ? 'bg-primary-600 text-white'
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
         ]"
+        @click="selectedBehaviorType = 'StatusOnly'"
       >
         단순 완료
       </button>
       <button
-        @click="selectedBehaviorType = 'FormBuilder'"
         :class="[
           'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
           selectedBehaviorType === 'FormBuilder'
             ? 'bg-primary-600 text-white'
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
         ]"
+        @click="selectedBehaviorType = 'FormBuilder'"
       >
         폼 빌더
       </button>
       <button
-        @click="selectedBehaviorType = 'ModuleLink'"
         :class="[
           'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
           selectedBehaviorType === 'ModuleLink'
             ? 'bg-primary-600 text-white'
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
         ]"
+        @click="selectedBehaviorType = 'ModuleLink'"
       >
         모듈 연동
       </button>
       <button
-        @click="selectedBehaviorType = 'Link'"
         :class="[
           'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
           selectedBehaviorType === 'Link'
             ? 'bg-primary-600 text-white'
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
         ]"
+        @click="selectedBehaviorType = 'Link'"
       >
         링크
       </button>
@@ -172,9 +172,9 @@
 
           <div class="flex items-center gap-2 flex-shrink-0">
             <button
-              @click="toggleAction(action)"
               :title="action.isActive ? '비활성화' : '활성화'"
               class="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              @click="toggleAction(action)"
             >
               <svg
                 v-if="action.isActive"
@@ -205,9 +205,9 @@
               </svg>
             </button>
             <button
-              @click="openEditModal(action)"
               class="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors flex-shrink-0"
               title="수정"
+              @click="openEditModal(action)"
             >
               <svg
                 class="w-5 h-5"
@@ -224,9 +224,9 @@
               </svg>
             </button>
             <button
-              @click="deleteAction(action)"
               class="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors flex-shrink-0"
               title="삭제"
+              @click="deleteAction(action)"
             >
               <svg
                 class="w-5 h-5"
@@ -256,14 +256,14 @@
       </h3>
       <p class="text-gray-600 mb-4">참석자가 완료해야 할 액션을 추가해보세요</p>
       <button
-        @click="openCreateModal"
         class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+        @click="openCreateModal"
       >
         첫 액션 만들기
       </button>
     </div>
 
-    <BaseModal :is-open="showModal" @close="closeModal" max-width="lg">
+    <BaseModal :is-open="showModal" max-width="lg" @close="closeModal">
       <template #header>
         <h3 class="text-lg font-bold text-gray-900">
           {{ editingAction ? '액션 수정' : '새 액션 추가' }}
@@ -318,13 +318,13 @@
               <div
                 v-for="category in actionCategories"
                 :key="category.key"
-                @click="selectCategory(category)"
                 :class="[
                   'p-4 border-2 rounded-lg cursor-pointer transition-all',
                   form.actionCategory === category.key
                     ? 'border-primary-600 bg-primary-50'
                     : 'border-gray-200 hover:border-blue-300',
                 ]"
+                @click="selectCategory(category)"
               >
                 <div class="font-semibold text-sm">
                   {{ category.displayName }}
@@ -400,11 +400,11 @@
                 >
                 <input
                   v-model="form.mapsTo"
-                  @input="stripFeaturePrefix"
                   type="text"
                   required
                   placeholder="surveys/2"
                   class="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  @input="stripFeaturePrefix"
                 />
               </div>
               <p class="text-xs text-gray-500 mt-1">
@@ -493,9 +493,9 @@
 
           <div class="flex items-center">
             <input
+              id="isActive"
               v-model="form.isActive"
               type="checkbox"
-              id="isActive"
               class="w-4 h-4 text-primary-600 rounded"
             />
             <label for="isActive" class="ml-2 text-sm text-gray-700"
@@ -515,15 +515,15 @@
       <template #footer>
         <button
           type="button"
-          @click="closeModal"
           class="px-4 py-2 border rounded-lg"
+          @click="closeModal"
         >
           취소
         </button>
         <button
-          @click="saveAction"
           :disabled="submitting"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg disabled:opacity-50"
+          @click="saveAction"
         >
           {{ submitting ? '저장 중...' : '저장' }}
         </button>

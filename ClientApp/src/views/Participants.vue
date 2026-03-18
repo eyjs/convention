@@ -83,7 +83,11 @@
       >
         <div class="flex flex-col items-center text-center">
           <template v-if="participant.profileImageUrl">
-            <img :src="participant.profileImageUrl" :alt="participant.name" class="w-20 h-20 rounded-full object-cover mb-4" />
+            <img
+              :src="participant.profileImageUrl"
+              :alt="participant.name"
+              class="w-20 h-20 rounded-full object-cover mb-4"
+            />
           </template>
           <template v-else>
             <div
@@ -143,7 +147,9 @@ const fetchParticipants = async () => {
       )
       return
     }
-    const response = await apiClient.get('/api/users/participants', { params: { conventionId } })
+    const response = await apiClient.get('/api/users/participants', {
+      params: { conventionId },
+    })
     participants.value = response.data
   } catch (error) {
     console.error('Failed to fetch participants:', error)
@@ -159,7 +165,9 @@ onMounted(async () => {
     if (!conventionStore.currentConvention) {
       const selectedConventionId = localStorage.getItem('selectedConventionId')
       if (selectedConventionId) {
-        await conventionStore.setCurrentConvention(parseInt(selectedConventionId))
+        await conventionStore.setCurrentConvention(
+          parseInt(selectedConventionId),
+        )
       }
     }
 

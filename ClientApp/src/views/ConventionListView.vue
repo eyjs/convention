@@ -7,17 +7,27 @@
           <button
             v-for="tab in tabs"
             :key="tab.id"
-            @click="activeTab = tab.id"
             :class="[
               'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
               activeTab === tab.id
                 ? 'border-primary-600 text-primary-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
             ]"
+            @click="activeTab = tab.id"
           >
             <div class="flex items-center space-x-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="tab.icon" />
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  :d="tab.icon"
+                />
               </svg>
               <span>{{ tab.label }}</span>
             </div>
@@ -37,15 +47,28 @@
             </p>
           </div>
           <div class="flex items-center space-x-2">
-            <router-link to="/admin/name-tag-printing"
+            <router-link
+              to="/admin/name-tag-printing"
               class="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors shadow-sm"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                ></path>
+              </svg>
               <span>명찰 일괄 인쇄</span>
             </router-link>
             <button
-              @click="showCreateModal = true"
               class="flex items-center space-x-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors shadow-sm"
+              @click="showCreateModal = true"
             >
               <svg
                 class="w-5 h-5"
@@ -143,19 +166,19 @@
               </div>
               <div class="mt-4 pt-4 border-t flex justify-end space-x-2">
                 <button
-                  @click.stop="editConvention(convention)"
                   class="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                  @click.stop="editConvention(convention)"
                 >
                   수정
                 </button>
                 <button
-                  @click.stop="completeConvention(convention.id)"
                   :class="
                     convention.completeYn === 'Y'
                       ? 'bg-green-500 hover:bg-green-600'
                       : 'bg-red-500 hover:bg-red-600'
                   "
                   class="px-3 py-1 text-sm font-medium text-white rounded-md"
+                  @click.stop="completeConvention(convention.id)"
                 >
                   {{ convention.completeYn === 'Y' ? '재개' : '종료' }}
                 </button>
@@ -286,13 +309,13 @@
               <button
                 v-for="tab in chatbotTabs"
                 :key="tab.id"
-                @click="activeChatbotTab = tab.id"
                 :class="[
                   'px-6 py-3 text-sm font-medium border-b-2 transition-colors',
                   activeChatbotTab === tab.id
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                 ]"
+                @click="activeChatbotTab = tab.id"
               >
                 {{ tab.label }}
               </button>
@@ -331,9 +354,9 @@
                     </ul>
                   </div>
                   <button
-                    @click="handleFullReindex"
                     :disabled="reindexing"
                     class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+                    @click="handleFullReindex"
                   >
                     <span v-if="reindexing">색인 중...</span>
                     <span v-else>재색인 시작</span>
@@ -411,30 +434,30 @@
                     </div>
                     <div class="flex gap-2">
                       <button
-                        @click="showIndexedItems(convention.id)"
                         class="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
+                        @click="showIndexedItems(convention.id)"
                       >
                         색인 상세
                       </button>
                       <button
-                        @click="reindexConvention(convention.id)"
                         class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                        @click="reindexConvention(convention.id)"
                       >
                         재색인
                       </button>
                       <button
-                        @click="
-                          toggleChatbot(
-                            convention.id,
-                            !convention.chatbotEnabled,
-                          )
-                        "
                         :class="[
                           'px-3 py-1 text-sm rounded transition-colors',
                           convention.chatbotEnabled
                             ? 'bg-red-100 text-red-700 hover:bg-red-200'
                             : 'bg-green-100 text-green-700 hover:bg-green-200',
                         ]"
+                        @click="
+                          toggleChatbot(
+                            convention.id,
+                            !convention.chatbotEnabled,
+                          )
+                        "
                       >
                         {{ convention.chatbotEnabled ? '비활성화' : '활성화' }}
                       </button>
@@ -505,8 +528,8 @@
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900">시스템 로그</h3>
                 <button
-                  @click="fetchLogs"
                   class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm"
+                  @click="fetchLogs"
                 >
                   로그 새로고침
                 </button>
@@ -671,8 +694,8 @@
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-xl font-bold text-gray-900">색인 상세 정보</h3>
           <button
-            @click="showIndexDetailModal = false"
             class="text-gray-400 hover:text-gray-600"
+            @click="showIndexDetailModal = false"
           >
             <svg
               class="w-6 h-6"
@@ -884,8 +907,8 @@
 
           <div class="flex justify-end pt-4 border-t">
             <button
-              @click="showIndexDetailModal = false"
               class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              @click="showIndexDetailModal = false"
             >
               닫기
             </button>
@@ -900,11 +923,12 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/services/api'
-import { chatbotAdminAPI } from '@/services/chatbotAdminService'
+// 챗봇 기능 비활성화 (필요 시 주석 해제)
+// import { chatbotAdminAPI } from '@/services/chatbotAdminService'
 
 import AdminHeader from '@/components/admin/AdminHeader.vue'
 import UserManagement from '@/components/admin/UserManagement.vue'
-import LlmProviderManagement from '@/components/admin/LlmProviderManagement.vue'
+// import LlmProviderManagement from '@/components/admin/LlmProviderManagement.vue'
 import ConventionFormModal from '@/components/admin/ConventionFormModal.vue'
 
 const router = useRouter()
@@ -988,11 +1012,12 @@ const tabs = [
     label: '행사 관리',
     icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
   },
-  {
-    id: 'chatbot',
-    label: '챗봇 관리',
-    icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-  },
+  // 챗봇 기능 비활성화 (필요 시 주석 해제)
+  // {
+  //   id: 'chatbot',
+  //   label: '챗봇 관리',
+  //   icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+  // },
   {
     id: 'users',
     label: '회원 관리',

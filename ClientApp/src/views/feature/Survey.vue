@@ -32,8 +32,8 @@
 
           <div v-if="question.type === 'SHORT_TEXT'" class="mt-3">
             <input
-              type="text"
               v-model="responses[question.id]"
+              type="text"
               class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
@@ -53,11 +53,11 @@
               class="flex items-center p-3 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
               <input
-                type="radio"
                 :id="'option-' + option.id"
+                v-model="responses[question.id]"
+                type="radio"
                 :name="'question-' + question.id"
                 :value="option.id"
-                v-model="responses[question.id]"
                 class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
               />
               <label
@@ -78,10 +78,10 @@
               class="flex items-center p-3 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
               <input
-                type="checkbox"
                 :id="'option-' + option.id"
-                :value="option.id"
                 v-model="responses[question.id]"
+                type="checkbox"
+                :value="option.id"
                 class="h-4 w-4 text-indigo-600 border-gray-300 rounded"
               />
               <label
@@ -96,8 +96,8 @@
         <div class="mt-10 flex justify-between space-x-4">
           <button
             type="button"
-            @click="router.back()"
             class="w-1/2 bg-gray-300 text-gray-800 py-3 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 font-semibold"
+            @click="router.back()"
           >
             뒤로가기
           </button>
@@ -117,10 +117,10 @@
 <script setup>
 import { ref, computed, onMounted, watch, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '@/api'
+import api from '@/services/api'
 
 const props = defineProps({
-  id: String,  // 라우터에서 자동 주입 (params.id)
+  id: String, // 라우터에서 자동 주입 (params.id)
 })
 
 const router = useRouter()
@@ -205,11 +205,14 @@ onMounted(() => {
 })
 
 // Watch for route changes (when navigating between different surveys)
-watch(() => props.id, (newId, oldId) => {
-  if (newId && newId !== oldId) {
-    loadSurvey()
-  }
-})
+watch(
+  () => props.id,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      loadSurvey()
+    }
+  },
+)
 
 async function submitSurvey() {
   isSubmitting.value = true

@@ -1,19 +1,19 @@
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using LocalRAG.Interfaces;
 using LocalRAG.Entities;
 using LocalRAG.DTOs.NoticeModels;
+using LocalRAG.Repositories;
 
 namespace LocalRAG.Services.Convention;
 
 public class NoticeService : INoticeService
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<NoticeService> _logger;
 
-    public NoticeService(ConventionDbContext context, ILogger<NoticeService> logger)
+    public NoticeService(IUnitOfWork unitOfWork, ILogger<NoticeService> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -24,7 +24,7 @@ public class NoticeService : INoticeService
         string? searchType,
         string? searchKeyword)
     {
-        var query = _context.Notices
+        var query = _unitOfWork.Notices.Query
             .Where(n => n.ConventionId == conventionId && !n.IsDeleted)
             .Include(n => n.Author)
             .Include(n => n.Attachments)
@@ -79,7 +79,7 @@ public class NoticeService : INoticeService
 
     public async Task<NoticeResponse> GetNoticeAsync(int id)
     {
-        var notice = await _context.Notices
+        var notice = await _unitOfWork.Notices.Query
             .Include(n => n.Author)
             .Include(n => n.Attachments)
             .Include(n => n.NoticeCategory)
@@ -89,13 +89,13 @@ public class NoticeService : INoticeService
             throw new KeyNotFoundException("공지사항을 찾을 수 없습니다.");
 
         // 이전글/다음글 조회
-        var prevNotice = await _context.Notices
+        var prevNotice = await _unitOfWork.Notices.Query
             .Where(n => n.ConventionId == notice.ConventionId && !n.IsDeleted && n.CreatedAt < notice.CreatedAt)
             .OrderByDescending(n => n.CreatedAt)
             .Select(n => new NoticeNavigationItem { Id = n.Id, Title = n.Title })
             .FirstOrDefaultAsync();
 
-        var nextNotice = await _context.Notices
+        var nextNotice = await _unitOfWork.Notices.Query
             .Where(n => n.ConventionId == notice.ConventionId && !n.IsDeleted && n.CreatedAt > notice.CreatedAt)
             .OrderBy(n => n.CreatedAt)
             .Select(n => new NoticeNavigationItem { Id = n.Id, Title = n.Title })
@@ -144,13 +144,13 @@ public class NoticeService : INoticeService
             CreatedAt = DateTime.Now
         };
 
-        _context.Notices.Add(notice);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.Notices.AddAsync(notice);
+        await _unitOfWork.SaveChangesAsync();
 
         // 첨부파일 연결
         if (request.AttachmentIds != null && request.AttachmentIds.Any())
         {
-            var attachments = await _context.FileAttachments
+            var attachments = await _unitOfWork.FileAttachments.Query
                 .Where(f => request.AttachmentIds.Contains(f.Id))
                 .ToListAsync();
 
@@ -159,7 +159,7 @@ public class NoticeService : INoticeService
                 attachment.NoticeId = notice.Id;
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
 
         return await GetNoticeAsync(notice.Id);
@@ -168,7 +168,7 @@ public class NoticeService : INoticeService
     public async Task<NoticeResponse> UpdateNoticeAsync(int id, UpdateNoticeRequest request, int userId)
     {
         _logger.LogInformation("Updating notice {Id} by user {UserId}. Request: {@Request}", id, userId, request);
-        var notice = await _context.Notices
+        var notice = await _unitOfWork.Notices.Query
             .Include(n => n.Attachments)
             .FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
 
@@ -176,7 +176,7 @@ public class NoticeService : INoticeService
             throw new KeyNotFoundException("공지사항을 찾을 수 없습니다.");
 
         // 권한 확인 (작성자 또는 관리자만 수정 가능)
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (notice.AuthorId != userId && user?.Role != "Admin")
             throw new UnauthorizedAccessException("수정 권한이 없습니다.");
 
@@ -196,7 +196,7 @@ public class NoticeService : INoticeService
             }
 
             // 새 첨부파일 연결
-            var newAttachments = await _context.FileAttachments
+            var newAttachments = await _unitOfWork.FileAttachments.Query
                 .Where(f => request.AttachmentIds.Contains(f.Id))
                 .ToListAsync();
 
@@ -206,52 +206,52 @@ public class NoticeService : INoticeService
             }
         }
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return await GetNoticeAsync(id);
     }
 
     public async Task DeleteNoticeAsync(int id, int userId)
     {
-        var notice = await _context.Notices.FindAsync(id);
+        var notice = await _unitOfWork.Notices.GetByIdAsync(id);
 
         if (notice == null || notice.IsDeleted)
             throw new KeyNotFoundException("공지사항을 찾을 수 없습니다.");
 
         // 권한 확인
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (notice.AuthorId != userId && user?.Role != "Admin")
             throw new UnauthorizedAccessException("삭제 권한이 없습니다.");
 
         notice.IsDeleted = true;
         notice.UpdatedAt = DateTime.Now;
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task IncrementViewCountAsync(int id)
     {
-        var notice = await _context.Notices.FindAsync(id);
+        var notice = await _unitOfWork.Notices.GetByIdAsync(id);
         if (notice != null && !notice.IsDeleted)
         {
             notice.ViewCount++;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 
     public async Task<NoticeResponse> TogglePinAsync(int id, int userId)
     {
-        var notice = await _context.Notices.FindAsync(id);
+        var notice = await _unitOfWork.Notices.GetByIdAsync(id);
 
         if (notice == null || notice.IsDeleted)
             throw new KeyNotFoundException("공지사항을 찾을 수 없습니다.");
 
         // 권한 확인
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (user?.Role != "Admin")
             throw new UnauthorizedAccessException("관리자만 고정할 수 있습니다.");
 
         notice.IsPinned = !notice.IsPinned;
         notice.UpdatedAt = DateTime.Now;
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return await GetNoticeAsync(id);
     }
@@ -259,14 +259,14 @@ public class NoticeService : INoticeService
     public async Task UpdateNoticeOrderAsync(List<NoticeOrderItem> orders, int userId)
     {
         // 권한 확인
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (user?.Role != "Admin")
             throw new UnauthorizedAccessException("관리자만 순서를 변경할 수 있습니다.");
 
         // 각 공지사항의 DisplayOrder 업데이트
         foreach (var order in orders)
         {
-            var notice = await _context.Notices.FindAsync(order.Id);
+            var notice = await _unitOfWork.Notices.GetByIdAsync(order.Id);
             if (notice != null && !notice.IsDeleted)
             {
                 notice.DisplayOrder = order.DisplayOrder;
@@ -274,6 +274,6 @@ public class NoticeService : INoticeService
             }
         }
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
     }
 }

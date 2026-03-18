@@ -12,8 +12,8 @@
           </p>
         </div>
         <button
-          @click="openCreateModal"
           class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+          @click="openCreateModal"
         >
           새 폼 만들기
         </button>
@@ -57,9 +57,9 @@
             <!-- 액션 버튼 -->
             <div class="flex items-center gap-2 flex-shrink-0">
               <button
-                @click="copyFormId(form.id)"
                 class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Form ID 복사"
+                @click="copyFormId(form.id)"
               >
                 <svg
                   class="w-5 h-5 text-gray-600"
@@ -76,9 +76,9 @@
                 </svg>
               </button>
               <button
-                @click="showEditView(form.id)"
                 class="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
                 title="수정"
+                @click="showEditView(form.id)"
               >
                 <svg
                   class="w-5 h-5"
@@ -95,9 +95,9 @@
                 </svg>
               </button>
               <button
-                @click="deleteForm(form)"
                 class="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
                 title="삭제"
+                @click="deleteForm(form)"
               >
                 <svg
                   class="w-5 h-5"
@@ -141,8 +141,8 @@
         </h3>
         <p class="text-gray-600 mb-4">새로운 폼을 만들어보세요</p>
         <button
-          @click="openCreateModal"
           class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+          @click="openCreateModal"
         >
           첫 폼 만들기
         </button>
@@ -162,8 +162,8 @@
     <!-- 생성 모달 -->
     <BaseModal
       :is-open="isCreateModalVisible"
-      @close="isCreateModalVisible = false"
       max-width="sm"
+      @close="isCreateModalVisible = false"
     >
       <template #header>새 폼 만들기</template>
       <template #body>
@@ -196,15 +196,15 @@
       <template #footer>
         <button
           type="button"
-          @click="isCreateModalVisible = false"
           class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          @click="isCreateModalVisible = false"
         >
           취소
         </button>
         <button
-          @click="createForm"
           :disabled="!newFormName.trim()"
           class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="createForm"
         >
           생성
         </button>

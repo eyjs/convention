@@ -22,7 +22,11 @@
           <!-- Avatar -->
           <div class="w-12 h-12 rounded-full flex-shrink-0">
             <template v-if="participant.profileImageUrl">
-              <img :src="participant.profileImageUrl" :alt="participant.name" class="w-full h-full rounded-full object-cover" />
+              <img
+                :src="participant.profileImageUrl"
+                :alt="participant.name"
+                class="w-full h-full rounded-full object-cover"
+              />
             </template>
             <template v-else>
               <div

@@ -3,8 +3,8 @@
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl font-semibold">속성 템플릿 관리</h2>
       <button
-        @click="showCreateModal = true"
         class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+        @click="showCreateModal = true"
       >
         + 속성 템플릿 추가
       </button>
@@ -43,14 +43,14 @@
           </div>
           <div class="flex gap-2">
             <button
-              @click="editTemplate(template)"
               class="px-3 py-1.5 text-sm bg-white border rounded hover:bg-gray-50"
+              @click="editTemplate(template)"
             >
               수정
             </button>
             <button
-              @click="deleteTemplate(template.id)"
               class="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100"
+              @click="deleteTemplate(template.id)"
             >
               삭제
             </button>
@@ -62,8 +62,8 @@
     <!-- 속성 템플릿 생성/수정 모달 -->
     <BaseModal
       :is-open="showCreateModal || !!editingTemplate"
-      @close="closeModal"
       max-width="lg"
+      @close="closeModal"
     >
       <template #header>
         <h2 class="text-xl font-semibold">
@@ -100,14 +100,14 @@
       </template>
       <template #footer>
         <button
-          @click="closeModal"
           class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+          @click="closeModal"
         >
           취소
         </button>
         <button
-          @click="saveTemplate"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+          @click="saveTemplate"
         >
           저장
         </button>

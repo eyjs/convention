@@ -88,8 +88,8 @@
         <div class="p-4 sm:p-6 border-b flex justify-between items-center">
           <h3 class="text-lg font-semibold">속성별 통계</h3>
           <button
-            @click="showAllAttributes = !showAllAttributes"
             class="text-sm text-primary-600 hover:text-primary-700"
+            @click="showAllAttributes = !showAllAttributes"
           >
             {{ showAllAttributes ? '접기' : '전체 보기' }}
           </button>
@@ -129,8 +129,8 @@
 
                 <button
                   v-if="attr.values.length > 3"
-                  @click="toggleShowAllValues(index)"
                   class="text-xs text-primary-600 hover:text-primary-700 mt-2 w-full text-left"
+                  @click="toggleShowAllValues(index)"
                 >
                   {{
                     showAllValues[index]
@@ -152,9 +152,9 @@
             <h3 class="text-lg font-semibold">최근 문자 발송 이력</h3>
             <span class="text-xs text-gray-400">최근 20건</span>
           </div>
-          <button 
-            @click="showSmsModal = true"
+          <button
             class="text-sm text-primary-600 hover:text-primary-700 font-medium ml-auto"
+            @click="showSmsModal = true"
           >
             + 문자 발송 관리
           </button>
@@ -167,7 +167,10 @@
             발송 이력이 없습니다
           </div>
           <!-- 6명 높이로 고정하고 스크롤 추가 -->
-          <div v-else class="space-y-3 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
+          <div
+            v-else
+            class="space-y-3 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar"
+          >
             <div
               v-for="sms in smsHistory"
               :key="sms.id"
@@ -175,18 +178,24 @@
             >
               <div class="flex-1 min-w-0 mr-4">
                 <div class="flex justify-between mb-1">
-                  <span class="font-medium text-gray-900">{{ sms.receiverName }}</span>
+                  <span class="font-medium text-gray-900">{{
+                    sms.receiverName
+                  }}</span>
                   <span class="text-xs text-gray-500">{{ sms.sentAt }}</span>
                 </div>
-                <p class="text-sm text-gray-600 whitespace-pre-wrap line-clamp-2">{{ sms.message }}</p>
+                <p
+                  class="text-sm text-gray-600 whitespace-pre-wrap line-clamp-2"
+                >
+                  {{ sms.message }}
+                </p>
               </div>
               <div class="flex-shrink-0">
-                <span 
+                <span
                   class="px-2 py-1 text-xs font-semibold rounded-full"
                   :class="{
                     'bg-green-100 text-green-800': sms.status === 'success',
                     'bg-red-100 text-red-800': sms.status === 'failed',
-                    'bg-yellow-100 text-yellow-800': sms.status === 'pending'
+                    'bg-yellow-100 text-yellow-800': sms.status === 'pending',
                   }"
                 >
                   {{ sms.statusText }}
@@ -228,9 +237,9 @@
         </div>
       </div>
     </div>
-    
+
     <!-- SMS 관리 모달 -->
-    <SmsManagementModal 
+    <SmsManagementModal
       v-if="showSmsModal"
       :convention-id="conventionId"
       @close="showSmsModal = false"
@@ -284,7 +293,7 @@ const loadStats = async () => {
       totalSchedules: response.data.totalSchedules,
       scheduleAssignments: response.data.scheduleAssignments,
     }
-    // recentGuests.value = response.data.recentGuests 
+    // recentGuests.value = response.data.recentGuests
     smsHistory.value = response.data.smsHistory || []
     scheduleStats.value = response.data.scheduleStats
     attributeStats.value = response.data.attributeStats || []

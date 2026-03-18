@@ -43,9 +43,9 @@
           </div>
 
           <button
-            @click="sendCode"
             :disabled="loading || !form.name || !form.phoneNumber"
             class="w-full mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
+            @click="sendCode"
           >
             {{ loading ? '전송 중...' : '인증번호 발송' }}
           </button>
@@ -78,15 +78,15 @@
 
           <div class="flex gap-3 mt-6">
             <button
-              @click="step = 1"
               class="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+              @click="step = 1"
             >
               이전
             </button>
             <button
-              @click="verifyCode"
               :disabled="loading || form.code.length !== 6"
               class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
+              @click="verifyCode"
             >
               {{ loading ? '확인 중...' : '확인' }}
             </button>
@@ -130,14 +130,14 @@
 
           <div class="space-y-3">
             <button
-              @click="$router.push('/login')"
               class="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+              @click="$router.push('/login')"
             >
               로그인하기
             </button>
             <button
-              @click="$router.push('/find-password')"
               class="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+              @click="$router.push('/find-password')"
             >
               비밀번호 찾기
             </button>

@@ -1,8 +1,8 @@
-using LocalRAG.Data;
 using LocalRAG.DTOs.ActionModels;
 using LocalRAG.DTOs.UserModels;
 using LocalRAG.Entities;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,18 +13,18 @@ namespace LocalRAG.Services.UserProfile;
 /// </summary>
 public class UserProfileService : IUserProfileService
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IChecklistService _checklistService;
     private readonly IFileUploadService _fileUploadService;
     private readonly ILogger<UserProfileService> _logger;
 
     public UserProfileService(
-        ConventionDbContext context,
+        IUnitOfWork unitOfWork,
         IChecklistService checklistService,
         IFileUploadService fileUploadService,
         ILogger<UserProfileService> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _checklistService = checklistService;
         _fileUploadService = fileUploadService;
         _logger = logger;
@@ -32,7 +32,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<object> GetMySchedulesAsync(int userId, int conventionId)
     {
-        var user = await _context.Users
+        var user = await _unitOfWork.Users.Query
             .Include(u => u.GuestScheduleTemplates)
                 .ThenInclude(gst => gst.ScheduleTemplate)
                     .ThenInclude(st => st!.ScheduleItems)
@@ -62,7 +62,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<object> GetParticipantsAsync(int conventionId, string? search)
     {
-        var query = _context.UserConventions
+        var query = _unitOfWork.UserConventions.Query
             .Where(uc => uc.ConventionId == conventionId)
             .Select(uc => uc.User);
 
@@ -98,7 +98,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<object?> GetParticipantDetailAsync(int id)
     {
-        var participant = await _context.Users
+        var participant = await _unitOfWork.Users.Query
             .Include(u => u.GuestAttributes)
             .Include(u => u.GuestScheduleTemplates)
                 .ThenInclude(gst => gst.ScheduleTemplate)
@@ -133,105 +133,99 @@ public class UserProfileService : IUserProfileService
 
     public async Task<BulkAssignResult> BulkAssignAttributesAsync(BulkAssignAttributesDto dto)
     {
-        var strategy = _context.Database.CreateExecutionStrategy();
-
-        return await strategy.ExecuteAsync(async () =>
+        try
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
-            try
+            await _unitOfWork.BeginTransactionAsync();
+            var result = new BulkAssignResult
             {
-                var result = new BulkAssignResult
+                TotalProcessed = dto.UserMappings.Count
+            };
+
+            var userIds = dto.UserMappings.Select(m => m.UserId).ToList();
+
+            var existingUsersInConvention = await _unitOfWork.UserConventions.Query
+                .Where(uc => uc.ConventionId == dto.ConventionId && userIds.Contains(uc.UserId))
+                .Select(uc => uc.UserId)
+                .ToListAsync();
+
+            var invalidUserIds = userIds.Except(existingUsersInConvention).ToList();
+            if (invalidUserIds.Any())
+            {
+                result.Errors.Add($"컨벤션에 속하지 않거나 존재하지 않는 사용자 ID: {string.Join(", ", invalidUserIds)}");
+            }
+
+            var validUserIds = userIds.Except(invalidUserIds).ToList();
+
+            var existingAttributes = await _unitOfWork.GuestAttributes.Query
+                .Where(ga => validUserIds.Contains(ga.UserId))
+                .ToListAsync();
+
+            var newAttributeKeys = dto.UserMappings
+                .SelectMany(m => m.Attributes.Keys)
+                .Distinct()
+                .ToList();
+
+            var attributesToRemove = existingAttributes
+                .Where(ea => newAttributeKeys.Contains(ea.AttributeKey))
+                .ToList();
+
+            _unitOfWork.GuestAttributes.RemoveRange(attributesToRemove);
+
+            var newAttributes = new List<GuestAttribute>();
+
+            foreach (var mapping in dto.UserMappings)
+            {
+                if (!validUserIds.Contains(mapping.UserId))
                 {
-                    TotalProcessed = dto.UserMappings.Count
-                };
-
-                var userIds = dto.UserMappings.Select(m => m.UserId).ToList();
-
-                var existingUsersInConvention = await _context.UserConventions
-                    .Where(uc => uc.ConventionId == dto.ConventionId && userIds.Contains(uc.UserId))
-                    .Select(uc => uc.UserId)
-                    .ToListAsync();
-
-                var invalidUserIds = userIds.Except(existingUsersInConvention).ToList();
-                if (invalidUserIds.Any())
-                {
-                    result.Errors.Add($"컨벤션에 속하지 않거나 존재하지 않는 사용자 ID: {string.Join(", ", invalidUserIds)}");
+                    result.FailCount++;
+                    continue;
                 }
 
-                var validUserIds = userIds.Except(invalidUserIds).ToList();
-
-                var existingAttributes = await _context.GuestAttributes
-                    .Where(ga => validUserIds.Contains(ga.UserId))
-                    .ToListAsync();
-
-                var newAttributeKeys = dto.UserMappings
-                    .SelectMany(m => m.Attributes.Keys)
-                    .Distinct()
-                    .ToList();
-
-                var attributesToRemove = existingAttributes
-                    .Where(ea => newAttributeKeys.Contains(ea.AttributeKey))
-                    .ToList();
-
-                _context.GuestAttributes.RemoveRange(attributesToRemove);
-
-                var newAttributes = new List<GuestAttribute>();
-
-                foreach (var mapping in dto.UserMappings)
+                foreach (var attr in mapping.Attributes)
                 {
-                    if (!validUserIds.Contains(mapping.UserId))
-                    {
-                        result.FailCount++;
+                    if (string.IsNullOrWhiteSpace(attr.Value))
                         continue;
-                    }
 
-                    foreach (var attr in mapping.Attributes)
+                    newAttributes.Add(new GuestAttribute
                     {
-                        if (string.IsNullOrWhiteSpace(attr.Value))
-                            continue;
-
-                        newAttributes.Add(new GuestAttribute
-                        {
-                            UserId = mapping.UserId,
-                            AttributeKey = attr.Key,
-                            AttributeValue = attr.Value
-                        });
-                    }
-
-                    result.SuccessCount++;
+                        UserId = mapping.UserId,
+                        AttributeKey = attr.Key,
+                        AttributeValue = attr.Value
+                    });
                 }
 
-                await _context.GuestAttributes.AddRangeAsync(newAttributes);
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                result.Success = true;
-                result.Message = $"{result.SuccessCount}명의 참석자에게 속성이 성공적으로 할당되었습니다.";
-
-                _logger.LogInformation("일괄 속성 할당 완료: 성공 {Success}명, 실패 {Fail}명",
-                    result.SuccessCount, result.FailCount);
-
-                return result;
+                result.SuccessCount++;
             }
-            catch (Exception ex)
+
+            await _unitOfWork.GuestAttributes.AddRangeAsync(newAttributes);
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitTransactionAsync();
+
+            result.Success = true;
+            result.Message = $"{result.SuccessCount}명의 참석자에게 속성이 성공적으로 할당되었습니다.";
+
+            _logger.LogInformation("일괄 속성 할당 완료: 성공 {Success}명, 실패 {Fail}명",
+                result.SuccessCount, result.FailCount);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            _logger.LogError(ex, "일괄 속성 할당 실패");
+
+            return new BulkAssignResult
             {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "일괄 속성 할당 실패");
-
-                return new BulkAssignResult
-                {
-                    Success = false,
-                    Message = "속성 할당 중 오류가 발생했습니다.",
-                    Errors = new List<string> { ex.Message }
-                };
-            }
-        });
+                Success = false,
+                Message = "속성 할당 중 오류가 발생했습니다.",
+                Errors = new List<string> { ex.Message }
+            };
+        }
     }
 
     public async Task<List<UserWithAttributesDto>> GetParticipantsWithAttributesAsync(int conventionId)
     {
-        var users = await _context.UserConventions
+        var users = await _unitOfWork.UserConventions.Query
             .Where(uc => uc.ConventionId == conventionId)
             .Select(uc => uc.User)
             .Include(u => u.GuestAttributes)
@@ -255,7 +249,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<(bool Success, string Message)> SubmitTravelInfoAsync(int userId, int conventionId, TravelInfoDto dto)
     {
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.");
@@ -264,14 +258,14 @@ public class UserProfileService : IUserProfileService
         user.PassportNumber = dto.PassportNumber;
         user.PassportExpiryDate = dto.PassportExpiryDate;
 
-        var action = await _context.ConventionActions
+        var action = await _unitOfWork.ConventionActions.Query
             .FirstOrDefaultAsync(a =>
                 a.ConventionId == conventionId &&
                 a.MapsTo == "/feature/travel-info");
 
         if (action != null)
         {
-            var status = await _context.UserActionStatuses
+            var status = await _unitOfWork.UserActionStatuses.Query
                 .FirstOrDefaultAsync(s =>
                     s.UserId == user.Id &&
                     s.ConventionActionId == action.Id);
@@ -287,7 +281,7 @@ public class UserProfileService : IUserProfileService
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
-                _context.UserActionStatuses.Add(status);
+                await _unitOfWork.UserActionStatuses.AddAsync(status);
             }
             else
             {
@@ -297,7 +291,7 @@ public class UserProfileService : IUserProfileService
             }
         }
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation(
             "Travel info updated for User {UserId}, Action completed",
@@ -308,8 +302,8 @@ public class UserProfileService : IUserProfileService
 
     public async Task<(bool Exists, object? Checklist)> GetMyChecklistAsync(int userId, int conventionId)
     {
-        var userExistsInConvention = await _context.UserConventions
-            .AnyAsync(uc => uc.UserId == userId && uc.ConventionId == conventionId);
+        var userExistsInConvention = await _unitOfWork.UserConventions
+            .ExistsAsync(uc => uc.UserId == userId && uc.ConventionId == conventionId);
 
         if (!userExistsInConvention)
             return (false, null);
@@ -320,7 +314,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<UserProfileDto?> GetProfileAsync(int userId)
     {
-        var user = await _context.Users
+        var user = await _unitOfWork.Users.Query
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == userId);
 
@@ -347,7 +341,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<(bool Success, string? ErrorMessage)> UpdateProfileAsync(int userId, UpdateUserProfileDto dto)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _unitOfWork.Users.GetAsync(u => u.Id == userId);
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.");
@@ -375,14 +369,14 @@ public class UserProfileService : IUserProfileService
         }
 
         user.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return (true, null);
     }
 
     public async Task<(bool Success, string? ErrorMessage)> UpdateProfileFieldAsync(int userId, UpdateProfileFieldRequest request)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _unitOfWork.Users.GetAsync(u => u.Id == userId);
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.");
@@ -431,14 +425,14 @@ public class UserProfileService : IUserProfileService
         }
 
         user.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return (true, null);
     }
 
     public async Task<(bool Success, string? ErrorMessage)> ChangePasswordAsync(int userId, ChangePasswordDto dto)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _unitOfWork.Users.GetAsync(u => u.Id == userId);
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.");
@@ -449,14 +443,14 @@ public class UserProfileService : IUserProfileService
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return (true, null);
     }
 
     public async Task<(bool Success, string? ErrorMessage, string? Url)> UploadProfilePhotoAsync(int userId, IFormFile file)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _unitOfWork.Users.GetAsync(u => u.Id == userId);
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.", null);
@@ -469,14 +463,14 @@ public class UserProfileService : IUserProfileService
         user.ProfileImageUrl = uploadResult.Url;
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return (true, null, user.ProfileImageUrl);
     }
 
     public async Task<(bool Success, string? ErrorMessage, string? Url)> UploadPassportImageAsync(int userId, IFormFile file)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _unitOfWork.Users.GetAsync(u => u.Id == userId);
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.", null);
@@ -489,14 +483,14 @@ public class UserProfileService : IUserProfileService
         user.PassportImageUrl = uploadResult.Url;
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return (true, null, user.PassportImageUrl);
     }
 
     public async Task<object> GetUserConventionsAsync(int userId)
     {
-        var conventions = await _context.UserConventions
+        var conventions = await _unitOfWork.UserConventions.Query
             .Where(uc => uc.UserId == userId)
             .Select(uc => new
             {

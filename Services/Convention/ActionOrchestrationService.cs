@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using LocalRAG.DTOs.ActionModels;
 using LocalRAG.Entities.Action;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 
 namespace LocalRAG.Services.Convention;
 
@@ -33,24 +33,21 @@ public class ActionOrchestrationService : IActionOrchestrationService
         public const string PopupReady = "팝업 준비";
     }
 
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ActionOrchestrationService> _logger;
-    private readonly HttpClient _httpClient;
 
     public ActionOrchestrationService(
-        ConventionDbContext context,
-        ILogger<ActionOrchestrationService> logger,
-        HttpClient httpClient)
+        IUnitOfWork unitOfWork,
+        ILogger<ActionOrchestrationService> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
-        _httpClient = httpClient;
     }
 
     public async Task<IEnumerable<OrchestratedActionDto>> GetUserActionsAsync(int conventionId, int userId)
     {
         // 1. 행사의 모든 활성 액션 조회
-        var actions = await _context.ConventionActions
+        var actions = await _unitOfWork.ConventionActions.Query
             .Include(a => a.Template)
             .Where(a => a.ConventionId == conventionId && a.IsActive)
             .OrderBy(a => a.Category)
@@ -70,7 +67,7 @@ public class ActionOrchestrationService : IActionOrchestrationService
 
     public async Task<OrchestratedActionDto?> GetUserActionAsync(int actionId, int userId)
     {
-        var action = await _context.ConventionActions
+        var action = await _unitOfWork.ConventionActions.Query
             .Include(a => a.Template)
             .FirstOrDefaultAsync(a => a.Id == actionId);
 
@@ -146,8 +143,8 @@ public class ActionOrchestrationService : IActionOrchestrationService
     /// </summary>
     private async Task PopulateStatusOnlyData(OrchestratedActionDto dto, int actionId, int userId)
     {
-        var status = await _context.UserActionStatuses
-            .FirstOrDefaultAsync(s => s.ConventionActionId == actionId && s.UserId == userId);
+        var status = await _unitOfWork.UserActionStatuses
+            .GetAsync(s => s.ConventionActionId == actionId && s.UserId == userId);
 
         if (status != null && status.IsComplete)
         {
@@ -174,8 +171,8 @@ public class ActionOrchestrationService : IActionOrchestrationService
             return;
         }
 
-        var submission = await _context.FormSubmissions
-            .FirstOrDefaultAsync(s => s.FormDefinitionId == formDefinitionId.Value && s.UserId == userId);
+        var submission = await _unitOfWork.FormSubmissions
+            .GetAsync(s => s.FormDefinitionId == formDefinitionId.Value && s.UserId == userId);
 
         if (submission != null)
         {
@@ -240,9 +237,7 @@ public class ActionOrchestrationService : IActionOrchestrationService
     private async Task PopulateSurveyModuleData(OrchestratedActionDto dto, int surveyId, int userId)
     {
         // Survey 테이블 조회
-        var survey = await _context.Surveys
-            .Include(s => s.Questions)
-            .FirstOrDefaultAsync(s => s.Id == surveyId);
+        var survey = await _unitOfWork.Surveys.GetSurveyWithQuestionsAndOptionsAsync(surveyId);
 
         if (survey == null)
         {
@@ -252,7 +247,7 @@ public class ActionOrchestrationService : IActionOrchestrationService
         }
 
         // SurveyResponse 조회
-        var response = await _context.SurveyResponses
+        var response = await _unitOfWork.SurveyResponses.Query
             .Include(r => r.Details)
             .FirstOrDefaultAsync(r => r.SurveyId == surveyId && r.UserId == userId);
 

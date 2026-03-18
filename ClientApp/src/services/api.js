@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -46,8 +46,14 @@ apiClient.interceptors.response.use(
 
     // 401 에러이고 재시도하지 않은 경우 (로그인 요청은 토큰 갱신 불필요)
     const requestUrl = originalRequest?.url || ''
-    const isAuthRequest = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/guest-login')
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
+    const isAuthRequest =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/guest-login')
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthRequest
+    ) {
       // 이미 토큰 갱신 중이면 큐에 추가
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -141,25 +147,29 @@ export const uploadAPI = {
     })
   },
   uploadNameTags: (conventionId, file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    return apiClient.post(`/upload/conventions/${conventionId}/name-tags`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post(
+      `/upload/conventions/${conventionId}/name-tags`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      },
+    )
   },
   deleteFile: (fileId) => apiClient.delete(`/upload/${fileId}`),
 }
 
 export const userAPI = {
-    updateProfileField: (fieldName, fieldValue) => 
-        apiClient.patch('/users/profile/field', { fieldName, fieldValue }),
-    uploadPassportImage: (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        return apiClient.post('/users/profile/passport-image', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-    }
+  updateProfileField: (fieldName, fieldValue) =>
+    apiClient.patch('/users/profile/field', { fieldName, fieldValue }),
+  uploadPassportImage: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post('/users/profile/passport-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }
 
 export default apiClient

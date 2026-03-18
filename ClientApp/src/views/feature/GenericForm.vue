@@ -16,8 +16,8 @@
       >
         <p class="text-red-600">{{ error }}</p>
         <button
-          @click="router.back()"
           class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          @click="router.back()"
         >
           돌아가기
         </button>
@@ -57,7 +57,7 @@
         </div>
 
         <!-- 동적 폼 필드 -->
-        <form @submit.prevent="handleSubmit" class="space-y-6">
+        <form class="space-y-6" @submit.prevent="handleSubmit">
           <div v-for="field in formFields" :key="field.key" class="form-group">
             <label
               :for="field.key"
@@ -142,9 +142,9 @@
                 class="flex items-center"
               >
                 <input
+                  v-model="formData[field.key]"
                   type="radio"
                   :name="field.key"
-                  v-model="formData[field.key]"
                   :value="option.value"
                   :required="field.required"
                   class="mr-2"
@@ -160,8 +160,8 @@
             >
               <input
                 :id="field.key"
-                type="checkbox"
                 v-model="formData[field.key]"
+                type="checkbox"
                 class="mr-2 w-4 h-4 text-blue-600"
               />
               <span>{{ field.checkboxLabel || field.label }}</span>
@@ -177,8 +177,8 @@
           <div class="flex gap-4 pt-6 border-t">
             <button
               type="button"
-              @click="router.back()"
               class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+              @click="router.back()"
             >
               취소
             </button>
@@ -214,7 +214,7 @@ import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
 
 const props = defineProps({
-  actionId: String,  // 라우터에서 자동 주입 (params.actionId)
+  actionId: String, // 라우터에서 자동 주입 (params.actionId)
 })
 
 const router = useRouter()
@@ -342,7 +342,9 @@ async function initForm() {
     if (!conventionStore.currentConvention) {
       const selectedConventionId = localStorage.getItem('selectedConventionId')
       if (selectedConventionId) {
-        await conventionStore.setCurrentConvention(parseInt(selectedConventionId, 10))
+        await conventionStore.setCurrentConvention(
+          parseInt(selectedConventionId, 10),
+        )
       }
     }
 
@@ -370,11 +372,14 @@ onMounted(() => {
 })
 
 // Watch for route changes (when navigating between different forms)
-watch(() => props.actionId, (newId, oldId) => {
-  if (newId && newId !== oldId) {
-    initForm()
-  }
-})
+watch(
+  () => props.actionId,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      initForm()
+    }
+  },
+)
 </script>
 
 <style scoped>

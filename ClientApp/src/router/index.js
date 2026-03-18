@@ -106,101 +106,101 @@ const routes = [
       showNav: false,
     },
   },
-      {
-        path: '/trips/new',
-        name: 'NewTrip',
-        component: () => import('@/views/trip/TripDetail.vue'),
-        meta: { requiresAuth: true, title: '새 여행' }
-      },
-      {
-        path: '/trips/share/:shareToken',
-        name: 'SharedTripDetail',
-        component: () => import('@/views/trip/TripDetail.vue'),
-        props: route => ({
-          shareToken: route.params.shareToken,
-          readonly: true
-        }),
-        meta: { requiresAuth: false, title: '공유된 여행' }
-      },
-      {
-        path: '/trips/share/:shareToken/itinerary',
-        name: 'SharedTripItinerary',
-        component: () => import('@/views/trip/TripItinerary.vue'),
-        props: route => ({
-          shareToken: route.params.shareToken,
-          readonly: true
-        }),
-        meta: { requiresAuth: false, title: '공유된 여행 일정표' }
-      },
-      {
-        path: '/trips/share/:shareToken/expenses',
-        name: 'SharedTripExpenses',
-        component: () => import('@/views/trip/TripExpenses.vue'),
-        props: route => ({
-          shareToken: route.params.shareToken,
-          readonly: true
-        }),
-        meta: { requiresAuth: false, title: '공유된 여행 가계부' }
-      },
-      {
-        path: '/trips/share/:shareToken/notes',
-        name: 'SharedTripNotes',
-        component: () => import('@/views/trip/TripNotes.vue'),
-        props: route => ({
-          shareToken: route.params.shareToken,
-          readonly: true
-        }),
-        meta: { requiresAuth: false, title: '공유된 여행 노트' }
-      },
-      {
-        path: '/trips/share/:shareToken/transportation',
-        name: 'SharedTripTransportation',
-        component: () => import('@/views/trip/TripTransportation.vue'),
-        props: route => ({
-          shareToken: route.params.shareToken,
-          readonly: true
-        }),
-        meta: { requiresAuth: false, title: '공유된 여행 교통편' }
-      },
-      {
-        path: '/trips/:id',
-        name: 'TripDetail',
-        component: () => import('@/views/trip/TripDetail.vue'),
-        props: true,
-        meta: { requiresAuth: true, title: '여행 상세' }
-      },
-      
-      {
-        path: '/trips/:id/itinerary',
-        name: 'TripItinerary',
-        component: () => import('@/views/trip/TripItinerary.vue'),
-        props: true,
-        meta: { requiresAuth: true, title: '여행 일정표' }
-      },
-      {
-        path: '/trips/:id/expenses',
-        name: 'TripExpenses',
-        component: () => import('@/views/trip/TripExpenses.vue'),
-        props: true,
-        meta: { requiresAuth: true, title: '여행 가계부' }
-      },
-      {
-        path: '/trips/:id/notes',
-        name: 'TripNotes',
-        component: () => import('@/views/trip/TripNotes.vue'),
-        props: true,
-        meta: { requiresAuth: true, title: '여행 노트' }
-      },
-      {
-        path: '/trips/:id/transportation',
-        name: 'TripTransportation',
-        component: () => import('@/views/trip/TripTransportation.vue'),
-        props: true,
-        meta: { requiresAuth: true, title: '여행 교통편' }
-      },
-      // ----------------------------------------------------------------
-      // 동적 라우팅
-      // ----------------------------------------------------------------
+  {
+    path: '/trips/new',
+    name: 'NewTrip',
+    component: () => import('@/views/trip/TripDetail.vue'),
+    meta: { requiresAuth: true, title: '새 여행' },
+  },
+  {
+    path: '/trips/share/:shareToken',
+    name: 'SharedTripDetail',
+    component: () => import('@/views/trip/TripDetail.vue'),
+    props: (route) => ({
+      shareToken: route.params.shareToken,
+      readonly: true,
+    }),
+    meta: { requiresAuth: false, title: '공유된 여행' },
+  },
+  {
+    path: '/trips/share/:shareToken/itinerary',
+    name: 'SharedTripItinerary',
+    component: () => import('@/views/trip/TripItinerary.vue'),
+    props: (route) => ({
+      shareToken: route.params.shareToken,
+      readonly: true,
+    }),
+    meta: { requiresAuth: false, title: '공유된 여행 일정표' },
+  },
+  {
+    path: '/trips/share/:shareToken/expenses',
+    name: 'SharedTripExpenses',
+    component: () => import('@/views/trip/TripExpenses.vue'),
+    props: (route) => ({
+      shareToken: route.params.shareToken,
+      readonly: true,
+    }),
+    meta: { requiresAuth: false, title: '공유된 여행 가계부' },
+  },
+  {
+    path: '/trips/share/:shareToken/notes',
+    name: 'SharedTripNotes',
+    component: () => import('@/views/trip/TripNotes.vue'),
+    props: (route) => ({
+      shareToken: route.params.shareToken,
+      readonly: true,
+    }),
+    meta: { requiresAuth: false, title: '공유된 여행 노트' },
+  },
+  {
+    path: '/trips/share/:shareToken/transportation',
+    name: 'SharedTripTransportation',
+    component: () => import('@/views/trip/TripTransportation.vue'),
+    props: (route) => ({
+      shareToken: route.params.shareToken,
+      readonly: true,
+    }),
+    meta: { requiresAuth: false, title: '공유된 여행 교통편' },
+  },
+  {
+    path: '/trips/:id',
+    name: 'TripDetail',
+    component: () => import('@/views/trip/TripDetail.vue'),
+    props: true,
+    meta: { requiresAuth: true, title: '여행 상세' },
+  },
+
+  {
+    path: '/trips/:id/itinerary',
+    name: 'TripItinerary',
+    component: () => import('@/views/trip/TripItinerary.vue'),
+    props: true,
+    meta: { requiresAuth: true, title: '여행 일정표' },
+  },
+  {
+    path: '/trips/:id/expenses',
+    name: 'TripExpenses',
+    component: () => import('@/views/trip/TripExpenses.vue'),
+    props: true,
+    meta: { requiresAuth: true, title: '여행 가계부' },
+  },
+  {
+    path: '/trips/:id/notes',
+    name: 'TripNotes',
+    component: () => import('@/views/trip/TripNotes.vue'),
+    props: true,
+    meta: { requiresAuth: true, title: '여행 노트' },
+  },
+  {
+    path: '/trips/:id/transportation',
+    name: 'TripTransportation',
+    component: () => import('@/views/trip/TripTransportation.vue'),
+    props: true,
+    meta: { requiresAuth: true, title: '여행 교통편' },
+  },
+  // ----------------------------------------------------------------
+  // 동적 라우팅
+  // ----------------------------------------------------------------
 
   {
     path: '/',
@@ -239,18 +239,19 @@ const routes = [
       showNav: false,
     },
   },
-  {
-    path: '/admin/chatbot',
-    name: 'AdminChatbotManagement',
-    component: () => import('@/views/AdminChatbotManagement.vue'),
-    meta: {
-      title: '챗봇 관리',
-      requiresAuth: true,
-      requiresAdmin: true,
-      layout: 'DefaultLayout',
-      showNav: false,
-    },
-  },
+  // 챗봇 기능 비활성화 (필요 시 주석 해제)
+  // {
+  //   path: '/admin/chatbot',
+  //   name: 'AdminChatbotManagement',
+  //   component: () => import('@/views/AdminChatbotManagement.vue'),
+  //   meta: {
+  //     title: '챗봇 관리',
+  //     requiresAuth: true,
+  //     requiresAdmin: true,
+  //     layout: 'DefaultLayout',
+  //     showNav: false,
+  //   },
+  // },
   {
     path: '/admin/form-builder',
     name: 'FormBuilderList',
@@ -500,7 +501,10 @@ router.beforeEach((to, from, next) => {
 
     // [방어] LocalStorage 무결성 검사 - "undefined" 문자열 오염 정화
     let selectedConventionId = localStorage.getItem('selectedConventionId')
-    if (selectedConventionId === 'undefined' || selectedConventionId === 'null') {
+    if (
+      selectedConventionId === 'undefined' ||
+      selectedConventionId === 'null'
+    ) {
       console.warn('Corrupted localStorage detected. Cleaning up...')
       localStorage.removeItem('selectedConventionId')
       selectedConventionId = null
@@ -548,7 +552,10 @@ router.beforeEach((to, from, next) => {
     next()
   } catch (error) {
     // iOS Safari localStorage 접근 오류(비공개 모드, 개인정보 보호 설정) 또는 예상치 못한 에러 처리
-    console.error('[Router Guard Error] iOS Safari localStorage 접근 오류 또는 예상치 못한 에러:', error)
+    console.error(
+      '[Router Guard Error] iOS Safari localStorage 접근 오류 또는 예상치 못한 에러:',
+      error,
+    )
     // 에러가 발생해도 라우팅은 계속 진행되도록 보장하여 앱 먹통 방지
     next()
   }

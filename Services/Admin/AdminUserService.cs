@@ -1,8 +1,8 @@
 using LocalRAG.Constants;
-using LocalRAG.Data;
 using LocalRAG.DTOs.AdminModels;
 using LocalRAG.Entities;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -10,23 +10,23 @@ namespace LocalRAG.Services.Admin;
 
 public class AdminUserService : IAdminUserService
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IAuthService _authService;
     private readonly ILogger<AdminUserService> _logger;
 
     public AdminUserService(
-        ConventionDbContext context,
+        IUnitOfWork unitOfWork,
         IAuthService authService,
         ILogger<AdminUserService> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _authService = authService;
         _logger = logger;
     }
 
     public async Task<object> GetGuestsAsync(int conventionId)
     {
-        var guests = await _context.UserConventions
+        var guests = await _unitOfWork.UserConventions.Query
             .Where(uc => uc.ConventionId == conventionId)
             .Include(uc => uc.User)
                 .ThenInclude(u => u.GuestAttributes)
@@ -66,7 +66,7 @@ public class AdminUserService : IAdminUserService
 
     public async Task<object?> GetGuestDetailAsync(int guestId)
     {
-        var user = await _context.Users
+        var user = await _unitOfWork.Users.Query
             .Include(u => u.GuestAttributes)
             .Include(u => u.GuestScheduleTemplates)
                 .ThenInclude(gst => gst.ScheduleTemplate)
@@ -114,7 +114,7 @@ public class AdminUserService : IAdminUserService
 
         var passwordToSet = ResolveGuestPassword(dto);
 
-        var existingUser = await _context.Users
+        var existingUser = await _unitOfWork.Users.Query
             .FirstOrDefaultAsync(u => u.Phone == dto.Phone.Trim());
 
         User user;
@@ -143,8 +143,8 @@ public class AdminUserService : IAdminUserService
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Users.AddAsync(user);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         var userConvention = new UserConvention
@@ -154,21 +154,21 @@ public class AdminUserService : IAdminUserService
             AccessToken = GenerateAccessToken(),
             CreatedAt = DateTime.UtcNow
         };
-        _context.UserConventions.Add(userConvention);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.UserConventions.AddAsync(userConvention);
+        await _unitOfWork.SaveChangesAsync();
 
         if (dto.Attributes != null)
         {
             foreach (var attr in dto.Attributes)
             {
-                _context.Set<GuestAttribute>().Add(new GuestAttribute
+                await _unitOfWork.GuestAttributes.AddAsync(new GuestAttribute
                 {
                     UserId = user.Id,
                     AttributeKey = attr.Key,
                     AttributeValue = attr.Value
                 });
             }
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
 
         return (true, new { Id = user.Id, Name = user.Name, message = "비회원 참석자가 성공적으로 생성되었습니다." }, 200);
@@ -182,7 +182,7 @@ public class AdminUserService : IAdminUserService
         if (string.IsNullOrWhiteSpace(dto.Phone))
             return (false, new { field = "phone", message = "전화번호를 입력해주세요." }, 400);
 
-        var user = await _context.Users
+        var user = await _unitOfWork.Users.Query
             .Include(u => u.GuestAttributes)
             .FirstOrDefaultAsync(u => u.Id == id);
 
@@ -204,11 +204,11 @@ public class AdminUserService : IAdminUserService
         if (dto.Attributes != null)
         {
             var existingAttrs = user.GuestAttributes.ToList();
-            _context.Set<GuestAttribute>().RemoveRange(existingAttrs);
+            _unitOfWork.GuestAttributes.RemoveRange(existingAttrs);
 
             foreach (var attr in dto.Attributes)
             {
-                _context.Set<GuestAttribute>().Add(new GuestAttribute
+                await _unitOfWork.GuestAttributes.AddAsync(new GuestAttribute
                 {
                     UserId = user.Id,
                     AttributeKey = attr.Key,
@@ -217,17 +217,17 @@ public class AdminUserService : IAdminUserService
             }
         }
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return (true, new { Id = user.Id, Name = user.Name }, 200);
     }
 
     public async Task<(bool Found, int StatusCode)> DeleteGuestAsync(int id)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _unitOfWork.Users.GetByIdAsync(id);
         if (user == null) return (false, 404);
 
-        _context.Users.Remove(user);
-        await _context.SaveChangesAsync();
+        _unitOfWork.Users.Remove(user);
+        await _unitOfWork.SaveChangesAsync();
         return (true, 200);
     }
 
@@ -242,14 +242,14 @@ public class AdminUserService : IAdminUserService
         if (dto.Password.Length < 6)
             return (false, new { field = "password", message = "비밀번호는 최소 6자 이상이어야 합니다." }, 400);
 
-        var user = await _context.Users.FindAsync(guestId);
+        var user = await _unitOfWork.Users.GetByIdAsync(guestId);
         if (user == null)
             return (false, new { message = "참석자를 찾을 수 없습니다." }, 404);
 
         if (!string.IsNullOrEmpty(user.LoginId))
             return (false, new { message = "이미 회원입니다." }, 400);
 
-        var existing = await _context.Users
+        var existing = await _unitOfWork.Users.Query
             .FirstOrDefaultAsync(u => u.LoginId == dto.LoginId && u.Id != guestId);
         if (existing != null)
             return (false, new { field = "loginId", message = "이미 사용 중인 로그인 ID입니다." }, 400);
@@ -259,27 +259,27 @@ public class AdminUserService : IAdminUserService
         user.Role = dto.Role;
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return (true, new { message = "회원으로 전환되었습니다.", userId = user.Id }, 200);
     }
 
     public async Task<(bool Success, object Result, int StatusCode)> UpdateUserRoleAsync(int guestId, UpdateUserDto dto)
     {
-        var user = await _context.Users.FindAsync(guestId);
+        var user = await _unitOfWork.Users.GetByIdAsync(guestId);
         if (user == null)
             return (false, new { message = "계정을 찾을 수 없습니다." }, 404);
 
         user.Role = dto.Role;
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return (true, new { message = "권한이 수정되었습니다." }, 200);
     }
 
     public async Task<object> GetUsersAsync(string? searchTerm, string? role, int page, int pageSize)
     {
-        var query = _context.Users.AsQueryable();
+        var query = _unitOfWork.Users.Query;
 
         if (!string.IsNullOrWhiteSpace(role))
             query = query.Where(u => u.Role == role);
@@ -317,19 +317,19 @@ public class AdminUserService : IAdminUserService
 
     public async Task<(bool Found, object? Result, int StatusCode)> ToggleUserStatusAsync(int id, UpdateUserStatusDto dto)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _unitOfWork.Users.GetByIdAsync(id);
         if (user == null) return (false, null, 404);
 
         user.IsActive = dto.IsActive;
         user.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return (true, new { message = $"사용자 상태가 {(dto.IsActive ? "활성" : "비활성")}으로 변경되었습니다." }, 200);
     }
 
     public async Task<(bool Success, object Result, int StatusCode)> UpdateUserRoleDirectAsync(int id, UpdateUserRoleDto dto)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _unitOfWork.Users.GetByIdAsync(id);
         if (user == null)
             return (false, new { message = "사용자를 찾을 수 없습니다." }, 404);
 
@@ -338,7 +338,7 @@ public class AdminUserService : IAdminUserService
 
         user.Role = dto.Role;
         user.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return (true, new { message = $"사용자 역할이 '{dto.Role}'(으)로 변경되었습니다." }, 200);
     }
@@ -351,20 +351,20 @@ public class AdminUserService : IAdminUserService
         if (dto.NewPassword.Length < 6)
             return (false, new { message = "비밀번호는 최소 6자 이상이어야 합니다." }, 400);
 
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (user == null)
             return (false, new { message = "사용자를 찾을 수 없습니다." }, 404);
 
         user.PasswordHash = _authService.HashPassword(dto.NewPassword);
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return (true, new { message = "비밀번호가 재설정되었습니다." }, 200);
     }
 
     public async Task<(bool Found, object? Result)> GetAccessLinkAsync(int guestId, int? conventionId, string baseUrl)
     {
-        var query = _context.UserConventions
+        var query = _unitOfWork.UserConventions.Query
             .Include(uc => uc.Convention)
             .Where(uc => uc.UserId == guestId);
 

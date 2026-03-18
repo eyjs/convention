@@ -18,8 +18,8 @@
 
       <div class="space-y-4">
         <button
-          @click="count++"
           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          @click="count++"
         >
           클릭 횟수: {{ count }}
         </button>

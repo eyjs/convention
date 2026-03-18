@@ -13,13 +13,18 @@
  * @returns {number} 두 지점 간의 거리 (km)
  */
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const nLat1 = Number(lat1);
-  const nLon1 = Number(lon1);
-  const nLat2 = Number(lat2);
-  const nLon2 = Number(lon2);
+  const nLat1 = Number(lat1)
+  const nLon1 = Number(lon1)
+  const nLat2 = Number(lat2)
+  const nLon2 = Number(lon2)
 
-  if (!isFinite(nLat1) || !isFinite(nLon1) || !isFinite(nLat2) || !isFinite(nLon2)) {
-    return Number.MAX_VALUE;
+  if (
+    !isFinite(nLat1) ||
+    !isFinite(nLon1) ||
+    !isFinite(nLat2) ||
+    !isFinite(nLon2)
+  ) {
+    return Number.MAX_VALUE
   }
 
   const R = 6371 // 지구 반경 (km)
@@ -28,8 +33,10 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(nLat1)) * Math.cos(toRad(nLat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    Math.cos(toRad(nLat1)) *
+      Math.cos(toRad(nLat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   const distance = R * c
@@ -69,25 +76,27 @@ function calculateItemDistances(items) {
 
       // 둘 다 위치 정보가 있는 경우에만 거리 계산
       if (
-        item.latitude && item.longitude &&
-        nextItem.latitude && nextItem.longitude
+        item.latitude &&
+        item.longitude &&
+        nextItem.latitude &&
+        nextItem.longitude
       ) {
         const distance = calculateDistance(
           item.latitude,
           item.longitude,
           nextItem.latitude,
-          nextItem.longitude
+          nextItem.longitude,
         )
         distanceToNext = {
           raw: distance,
-          formatted: formatDistance(distance)
+          formatted: formatDistance(distance),
         }
       }
     }
 
     return {
       ...item,
-      distanceToNext
+      distanceToNext,
     }
   })
 }
@@ -99,38 +108,38 @@ function calculateItemDistances(items) {
  * @returns {Array} 최적화된 순서의 일정 배열
  */
 function optimizeRouteByDistance(items) {
-  if (!items || items.length <= 1) return items;
+  if (!items || items.length <= 1) return items
 
   const itemsWithLocation = items.filter(
-    item => item.latitude && item.longitude
-  );
+    (item) => item.latitude && item.longitude,
+  )
 
-  if (itemsWithLocation.length <= 1) return items;
+  if (itemsWithLocation.length <= 1) return items
 
   // The first item is the fixed reference point.
-  const referenceItem = itemsWithLocation[0];
+  const referenceItem = itemsWithLocation[0]
 
   // Calculate distances from the reference item to all other items.
-  const otherItems = itemsWithLocation.slice(1).map(item => {
+  const otherItems = itemsWithLocation.slice(1).map((item) => {
     const distance = calculateDistance(
       referenceItem.latitude,
       referenceItem.longitude,
       item.latitude,
-      item.longitude
-    );
-    return { ...item, distanceToRef: distance }; // Temporarily store distance for sorting
-  });
+      item.longitude,
+    )
+    return { ...item, distanceToRef: distance } // Temporarily store distance for sorting
+  })
 
   // Sort other items by their distance to the reference item.
-  otherItems.sort((a, b) => a.distanceToRef - b.distanceToRef);
+  otherItems.sort((a, b) => a.distanceToRef - b.distanceToRef)
 
   // Construct the final optimized list: reference item + sorted other items.
-  const optimized = [referenceItem, ...otherItems];
+  const optimized = [referenceItem, ...otherItems]
 
   // Remove the temporary distanceToRef property before returning.
-  optimized.forEach(item => delete item.distanceToRef);
+  optimized.forEach((item) => delete item.distanceToRef)
 
-  return optimized;
+  return optimized
 }
 
 /**
@@ -150,21 +159,23 @@ function calculateTotalDistance(items) {
     const next = items[i + 1]
 
     if (
-      current.latitude && current.longitude &&
-      next.latitude && next.longitude
+      current.latitude &&
+      current.longitude &&
+      next.latitude &&
+      next.longitude
     ) {
       total += calculateDistance(
         current.latitude,
         current.longitude,
         next.latitude,
-        next.longitude
+        next.longitude,
       )
     }
   }
 
   return {
     total,
-    formatted: formatDistance(total)
+    formatted: formatDistance(total),
   }
 }
 
@@ -174,6 +185,6 @@ export function useDistance() {
     formatDistance,
     calculateItemDistances,
     optimizeRouteByDistance,
-    calculateTotalDistance
+    calculateTotalDistance,
   }
 }

@@ -1,14 +1,10 @@
-import axios from 'axios'
+import apiClient from './api'
 
 class FeatureService {
-  constructor() {
-    this.baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
-  }
-
   async getFeaturesByConvention(conventionId) {
     try {
-      const response = await axios.get(
-        `${this.baseURL}/conventions/${conventionId}/features`,
+      const response = await apiClient.get(
+        `/conventions/${conventionId}/features`,
       )
       return response
     } catch (error) {
@@ -19,7 +15,7 @@ class FeatureService {
 
   async getFeatureById(featureId) {
     try {
-      const response = await axios.get(`${this.baseURL}/features/${featureId}`)
+      const response = await apiClient.get(`/features/${featureId}`)
       return response
     } catch (error) {
       console.error('Error fetching feature details:', error)
@@ -29,10 +25,9 @@ class FeatureService {
 
   async updateFeatureStatus(featureId, isActive) {
     try {
-      const response = await axios.patch(
-        `${this.baseURL}/features/${featureId}/status`,
-        { isActive },
-      )
+      const response = await apiClient.patch(`/features/${featureId}/status`, {
+        isActive,
+      })
       return response
     } catch (error) {
       console.error('Error updating feature status:', error)
@@ -42,7 +37,7 @@ class FeatureService {
 
   async createFeature(featureData) {
     try {
-      const response = await axios.post(`${this.baseURL}/features`, featureData)
+      const response = await apiClient.post(`/features`, featureData)
       return response
     } catch (error) {
       console.error('Error creating feature:', error)
@@ -52,8 +47,8 @@ class FeatureService {
 
   async updateFeature(featureId, featureData) {
     try {
-      const response = await axios.put(
-        `${this.baseURL}/features/${featureId}`,
+      const response = await apiClient.put(
+        `/features/${featureId}`,
         featureData,
       )
       return response
@@ -65,9 +60,7 @@ class FeatureService {
 
   async deleteFeature(featureId) {
     try {
-      const response = await axios.delete(
-        `${this.baseURL}/features/${featureId}`,
-      )
+      const response = await apiClient.delete(`/features/${featureId}`)
       return response
     } catch (error) {
       console.error('Error deleting feature:', error)

@@ -1,32 +1,32 @@
-using LocalRAG.Data;
 using LocalRAG.Entities;
 using LocalRAG.Interfaces;
 using LocalRAG.Providers;
+using LocalRAG.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Services.Ai;
 
 public class LlmProviderManager
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<LlmProviderManager> _logger;
     private ILlmProvider? _cachedProvider;
     private string? _cachedProviderName;
 
     public LlmProviderManager(
-        ConventionDbContext context,
+        IUnitOfWork unitOfWork,
         IServiceProvider serviceProvider,
         ILogger<LlmProviderManager> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _serviceProvider = serviceProvider;
         _logger = logger;
     }
 
     public async Task<ILlmProvider> GetActiveProviderAsync()
     {
-        var activeSetting = await _context.LlmSettings
+        var activeSetting = await _unitOfWork.LlmSettings.Query
             .Where(s => s.IsActive)
             .OrderByDescending(s => s.UpdatedAt ?? s.CreatedAt)
             .FirstOrDefaultAsync();
@@ -70,7 +70,7 @@ public class LlmProviderManager
 
     public async Task<LlmSetting?> GetActiveSettingAsync()
     {
-        return await _context.LlmSettings
+        return await _unitOfWork.LlmSettings.Query
             .Where(s => s.IsActive)
             .OrderByDescending(s => s.UpdatedAt ?? s.CreatedAt)
             .FirstOrDefaultAsync();
@@ -78,7 +78,7 @@ public class LlmProviderManager
 
     public async Task<List<LlmSetting>> GetAllSettingsAsync()
     {
-        return await _context.LlmSettings
+        return await _unitOfWork.LlmSettings.Query
             .OrderByDescending(s => s.IsActive)
             .ThenBy(s => s.ProviderName)
             .ToListAsync();
@@ -86,7 +86,7 @@ public class LlmProviderManager
 
     public async Task<LlmSetting> CreateSettingAsync(LlmSetting setting)
     {
-        var existing = await _context.LlmSettings
+        var existing = await _unitOfWork.LlmSettings.Query
             .FirstOrDefaultAsync(s => s.ProviderName == setting.ProviderName);
 
         if (existing != null)
@@ -94,8 +94,8 @@ public class LlmProviderManager
             throw new InvalidOperationException($"Provider '{setting.ProviderName}' already exists");
         }
 
-        _context.LlmSettings.Add(setting);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.LlmSettings.AddAsync(setting);
+        await _unitOfWork.SaveChangesAsync();
 
         _cachedProvider = null;
         _cachedProviderName = null;
@@ -105,7 +105,7 @@ public class LlmProviderManager
 
     public async Task<LlmSetting> UpdateSettingAsync(int id, LlmSetting setting)
     {
-        var existing = await _context.LlmSettings.FindAsync(id);
+        var existing = await _unitOfWork.LlmSettings.GetByIdAsync(id);
         if (existing == null)
         {
             throw new KeyNotFoundException($"LlmSetting with ID {id} not found");
@@ -119,7 +119,8 @@ public class LlmProviderManager
         existing.AdditionalSettings = setting.AdditionalSettings;
         existing.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        _unitOfWork.LlmSettings.Update(existing);
+        await _unitOfWork.SaveChangesAsync();
 
         _cachedProvider = null;
         _cachedProviderName = null;
@@ -129,19 +130,18 @@ public class LlmProviderManager
 
     public async Task<bool> ActivateProviderAsync(int id)
     {
-        var setting = await _context.LlmSettings.FindAsync(id);
+        var setting = await _unitOfWork.LlmSettings.GetByIdAsync(id);
         if (setting == null) return false;
 
-        var allSettings = await _context.LlmSettings.ToListAsync();
-        foreach (var s in allSettings)
-        {
-            s.IsActive = false;
-        }
+        // 모든 설정을 비활성화
+        await _unitOfWork.LlmSettings.Query
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.IsActive, false));
 
         setting.IsActive = true;
         setting.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        _unitOfWork.LlmSettings.Update(setting);
+        await _unitOfWork.SaveChangesAsync();
 
         _cachedProvider = null;
         _cachedProviderName = null;
@@ -152,7 +152,7 @@ public class LlmProviderManager
 
     public async Task<bool> DeleteSettingAsync(int id)
     {
-        var setting = await _context.LlmSettings.FindAsync(id);
+        var setting = await _unitOfWork.LlmSettings.GetByIdAsync(id);
         if (setting == null) return false;
 
         if (setting.IsActive)
@@ -160,8 +160,8 @@ public class LlmProviderManager
             throw new InvalidOperationException("Cannot delete active provider");
         }
 
-        _context.LlmSettings.Remove(setting);
-        await _context.SaveChangesAsync();
+        _unitOfWork.LlmSettings.Remove(setting);
+        await _unitOfWork.SaveChangesAsync();
 
         return true;
     }

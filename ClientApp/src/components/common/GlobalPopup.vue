@@ -3,8 +3,8 @@
   <component
     :is="currentModalComponent"
     :is-open="popupStore.isOpen"
-    @close="popupStore.closePopup"
     :z-index-class="popupStore.options.zIndexClass || 'z-[50]'"
+    @close="popupStore.closePopup"
   >
     <template #header-title>{{ popupStore.title }}</template>
     <template #body>

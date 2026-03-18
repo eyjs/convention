@@ -53,9 +53,9 @@
           </div>
 
           <button
-            @click="createAdmin"
             :disabled="loading"
             class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
+            @click="createAdmin"
           >
             <svg
               v-if="loading"

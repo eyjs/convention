@@ -45,8 +45,8 @@
           현재 사용 가능한 액션이 없습니다.
         </p>
         <button
-          @click="router.push('/')"
           class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          @click="router.push('/')"
         >
           홈으로 돌아가기
         </button>

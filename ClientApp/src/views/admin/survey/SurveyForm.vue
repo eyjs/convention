@@ -8,9 +8,9 @@
           >설문 제목</label
         >
         <input
-          type="text"
-          v-model="survey.title"
           id="title"
+          v-model="survey.title"
+          type="text"
           class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
       </div>
@@ -32,8 +32,8 @@
       <div class="mb-6">
         <label class="flex items-center">
           <input
-            type="checkbox"
             v-model="survey.isActive"
+            type="checkbox"
             class="rounded text-indigo-600 shadow-sm"
           />
           <span class="ml-2 text-gray-700 dark:text-gray-300">활성 상태</span>
@@ -49,8 +49,8 @@
           </h3>
           <button
             type="button"
-            @click="addQuestion"
             class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium"
+            @click="addQuestion"
           >
             질문 추가
           </button>
@@ -67,8 +67,8 @@
             </h4>
             <button
               type="button"
-              @click="removeQuestion(qIndex)"
               class="text-red-500 hover:text-red-700 font-semibold"
+              @click="removeQuestion(qIndex)"
             >
               삭제
             </button>
@@ -81,8 +81,8 @@
                 >질문 내용</label
               >
               <input
-                type="text"
                 v-model="question.questionText"
+                type="text"
                 class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 shadow-sm"
               />
             </div>
@@ -93,8 +93,8 @@
               >
               <select
                 v-model="question.type"
-                @change="onQuestionTypeChange(question)"
                 class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 shadow-sm"
+                @change="onQuestionTypeChange(question)"
               >
                 <option value="SHORT_TEXT">단답형</option>
                 <option value="LONG_TEXT">장문형</option>
@@ -107,8 +107,8 @@
           <div class="mt-4">
             <label class="flex items-center">
               <input
-                type="checkbox"
                 v-model="question.isRequired"
+                type="checkbox"
                 class="rounded text-indigo-600"
               />
               <span class="ml-2 text-sm text-gray-700 dark:text-gray-300"
@@ -130,8 +130,8 @@
               </h5>
               <button
                 type="button"
-                @click="addOption(qIndex)"
                 class="text-sm text-indigo-600 hover:underline"
+                @click="addOption(qIndex)"
               >
                 + 선택지 추가
               </button>
@@ -145,14 +145,14 @@
                 >({{ oIndex + 1 }})</span
               >
               <input
-                type="text"
                 v-model="option.optionText"
+                type="text"
                 class="flex-grow rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 shadow-sm text-sm"
               />
               <button
                 type="button"
-                @click="removeOption(qIndex, oIndex)"
                 class="ml-2 text-red-500 hover:text-red-700"
+                @click="removeOption(qIndex, oIndex)"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -175,8 +175,8 @@
       <div class="mt-8 flex justify-end space-x-4">
         <button
           type="button"
-          @click="emit('cancel')"
           class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 font-semibold"
+          @click="emit('cancel')"
         >
           취소
         </button>
@@ -193,7 +193,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import api from '@/api'
+import api from '@/services/api'
 
 const props = defineProps({
   surveyId: {

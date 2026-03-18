@@ -1,6 +1,6 @@
-using LocalRAG.Data;
 using LocalRAG.Entities;
 using LocalRAG.DTOs.ConventionModels;
+using LocalRAG.Repositories;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,18 +14,18 @@ namespace LocalRAG.Controllers.Convention;
 [Authorize(Roles = Roles.Admin)]
 public class AttributeTemplateController : ControllerBase
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public AttributeTemplateController(ConventionDbContext context)
+    public AttributeTemplateController(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     // 속성 템플릿 목록 조회
     [HttpGet("conventions/{conventionId}")]
     public async Task<IActionResult> GetAttributeTemplates(int conventionId)
     {
-        var templates = await _context.AttributeTemplates
+        var templates = await _unitOfWork.AttributeTemplates.Query
             .Where(at => at.ConventionId == conventionId)
             .OrderBy(at => at.OrderNum)
             .Select(at => new
@@ -55,8 +55,8 @@ public class AttributeTemplateController : ControllerBase
             OrderNum = dto.OrderNum
         };
 
-        _context.AttributeTemplates.Add(template);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.AttributeTemplates.AddAsync(template);
+        await _unitOfWork.SaveChangesAsync();
 
         return Ok(template);
     }
@@ -65,14 +65,14 @@ public class AttributeTemplateController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateAttributeTemplate(int id, [FromBody] AttributeTemplateDto dto)
     {
-        var template = await _context.AttributeTemplates.FindAsync(id);
+        var template = await _unitOfWork.AttributeTemplates.GetByIdAsync(id);
         if (template == null) return NotFound();
 
         template.AttributeKey = dto.AttributeKey.Trim();
         template.AttributeValues = dto.AttributeValues;
         template.OrderNum = dto.OrderNum;
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return Ok(template);
     }
 
@@ -80,12 +80,11 @@ public class AttributeTemplateController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAttributeTemplate(int id)
     {
-        var template = await _context.AttributeTemplates.FindAsync(id);
+        var template = await _unitOfWork.AttributeTemplates.GetByIdAsync(id);
         if (template == null) return NotFound();
 
-        _context.AttributeTemplates.Remove(template);
-        await _context.SaveChangesAsync();
+        _unitOfWork.AttributeTemplates.Remove(template);
+        await _unitOfWork.SaveChangesAsync();
         return Ok();
     }
 }
-

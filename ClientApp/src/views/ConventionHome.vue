@@ -120,7 +120,7 @@
       <ChecklistProgress
         v-if="checklistStatus && checklistStatus.totalItems > 0"
         :checklist="checklistStatus"
-        :brandColor="brandColor"
+        :brand-color="brandColor"
       />
 
       <!-- 공지사항 -->
@@ -129,8 +129,8 @@
           <h2 class="text-lg font-bold text-gray-900">공지사항</h2>
           <button
             v-if="remainingNoticesCount > 0"
-            @click="navigateTo('/notices')"
             class="text-sm text-primary-600 font-medium flex items-center"
+            @click="navigateTo('/notices')"
           >
             +{{ remainingNoticesCount }}개 더보기
             <svg
@@ -149,8 +149,8 @@
           </button>
           <button
             v-else-if="recentNotices.length > 0"
-            @click="navigateTo('/notices')"
             class="text-sm text-primary-600 font-medium flex items-center"
+            @click="navigateTo('/notices')"
           >
             전체보기
             <svg
@@ -173,8 +173,8 @@
           <div
             v-for="notice in recentNotices"
             :key="notice.id"
-            @click="openNotice(notice)"
             class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md hover:shadow-lg transition-all p-4 cursor-pointer border border-gray-100"
+            @click="openNotice(notice)"
           >
             <div class="flex items-start justify-between mb-2">
               <h3 class="font-bold text-gray-900 text-base flex-1 line-clamp-2">
@@ -250,8 +250,8 @@
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-gray-900">나의 일정</h2>
           <button
-            @click="navigateTo('/my-schedule')"
             class="text-sm text-primary-600 font-medium flex items-center"
+            @click="navigateTo('/my-schedule')"
           >
             전체보기
             <svg
@@ -337,8 +337,8 @@
     <div class="text-center">
       <p class="text-gray-600">행사 정보를 불러오지 못했습니다.</p>
       <button
-        @click="handleLogout"
         class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg"
+        @click="handleLogout"
       >
         로그아웃
       </button>

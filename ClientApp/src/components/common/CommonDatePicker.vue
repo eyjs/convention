@@ -4,17 +4,16 @@
     v-if="isMobile"
     :type="nativeInputType"
     :value="nativeValue"
-    @input="onNativeInput"
     :placeholder="placeholder"
     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
     :class="{ 'text-gray-400': !value }"
+    @input="onNativeInput"
   />
 
   <!-- 데스크톱: vue-datepicker-next -->
   <date-picker
     v-else
     :value="value"
-    @update:value="onDatePickerUpdate"
     :type="type"
     :format="format"
     :value-type="valueType"
@@ -27,6 +26,7 @@
     class="common-datepicker w-full"
     input-class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
     :popup-style="{ zIndex: 99999 }"
+    @update:value="onDatePickerUpdate"
   ></date-picker>
 </template>
 
@@ -71,8 +71,8 @@ const isMobile = ref(false)
 onMounted(() => {
   // 터치 디바이스 또는 화면 너비로 모바일 판별
   isMobile.value =
-    ('ontouchstart' in window) ||
-    (navigator.maxTouchPoints > 0) ||
+    'ontouchstart' in window ||
+    navigator.maxTouchPoints > 0 ||
     window.innerWidth < 768
 })
 
@@ -111,11 +111,15 @@ function onNativeInput(event) {
   try {
     // datetime-local: 2024-12-25T14:30 -> YYYY-MM-DD HH:mm:ss
     if (props.type === 'datetime') {
-      const formatted = dayjs(inputValue).format(props.valueType || 'YYYY-MM-DD HH:mm:ss')
+      const formatted = dayjs(inputValue).format(
+        props.valueType || 'YYYY-MM-DD HH:mm:ss',
+      )
       emit('update:value', formatted)
     } else {
       // date: 2024-12-25 -> YYYY-MM-DD
-      const formatted = dayjs(inputValue).format(props.valueType || 'YYYY-MM-DD')
+      const formatted = dayjs(inputValue).format(
+        props.valueType || 'YYYY-MM-DD',
+      )
       emit('update:value', formatted)
     }
   } catch (e) {
@@ -144,14 +148,14 @@ function onDatePickerUpdate(newValue) {
 }
 
 /* 네이티브 input placeholder 스타일 */
-input[type="date"]::-webkit-calendar-picker-indicator,
-input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='datetime-local']::-webkit-calendar-picker-indicator {
   cursor: pointer;
   filter: opacity(0.6);
 }
 
-input[type="date"]:hover::-webkit-calendar-picker-indicator,
-input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
+input[type='date']:hover::-webkit-calendar-picker-indicator,
+input[type='datetime-local']:hover::-webkit-calendar-picker-indicator {
   filter: opacity(1);
 }
 </style>

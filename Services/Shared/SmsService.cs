@@ -1,6 +1,6 @@
-using LocalRAG.Data;
 using LocalRAG.Entities;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 
 namespace LocalRAG.Services.Shared;
 
@@ -11,13 +11,13 @@ namespace LocalRAG.Services.Shared;
 public class SmsService : ISmsService
 {
     private readonly ISmsSender _smsSender;
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<SmsService> _logger;
 
-    public SmsService(ISmsSender smsSender, ConventionDbContext context, ILogger<SmsService> logger)
+    public SmsService(ISmsSender smsSender, IUnitOfWork unitOfWork, ILogger<SmsService> logger)
     {
         _smsSender = smsSender;
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -27,14 +27,14 @@ public class SmsService : ISmsService
     public async Task<bool> SendVerificationCodeAsync(string phoneNumber, string code)
     {
         string message = $"[StarTour] 인증번호는 [{code}] 입니다.";
-        
+
         // Core Sender 호출
         var msgId = await _smsSender.SendSmsAsync(phoneNumber, message, "Guest");
 
         if (!string.IsNullOrEmpty(msgId))
         {
             _logger.LogInformation("Verification SMS sent. Code: {Code}, MsgId: {MsgId}", code, msgId);
-            
+
             // 로그 저장 (인증번호는 특정 행사와 무관하므로 ConventionId = null)
             await SaveSmsLogAsync(null, "Guest", phoneNumber, message, msgId);
             return true;
@@ -56,7 +56,7 @@ public class SmsService : ISmsService
             await SaveSmsLogAsync(conventionId, receiverName, phoneNumber, message, msgId);
             return true;
         }
-        
+
         return false;
     }
 
@@ -74,8 +74,8 @@ public class SmsService : ISmsService
                 SentAt = DateTime.UtcNow
             };
 
-            _context.SmsLogs.Add(log);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SmsLogs.AddAsync(log);
+            await _unitOfWork.SaveChangesAsync();
         }
         catch (Exception ex)
         {

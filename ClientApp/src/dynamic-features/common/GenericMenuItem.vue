@@ -9,9 +9,9 @@
 <template>
   <div
     :class="menuItemClasses"
-    @click="handleClick"
     role="button"
     tabindex="0"
+    @click="handleClick"
     @keydown.enter="handleClick"
     @keydown.space.prevent="handleClick"
   >

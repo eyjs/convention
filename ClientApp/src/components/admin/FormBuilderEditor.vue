@@ -4,8 +4,8 @@
     <div class="flex justify-between items-center">
       <div>
         <button
-          @click="$emit('cancel')"
           class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-2"
+          @click="$emit('cancel')"
         >
           <svg
             class="w-5 h-5"
@@ -30,9 +30,9 @@
         </p>
       </div>
       <button
-        @click="saveForm"
         :disabled="saving"
         class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors disabled:opacity-50"
+        @click="saveForm"
       >
         {{ saving ? '저장 중...' : '저장' }}
       </button>
@@ -46,8 +46,8 @@
           <button
             v-for="fieldType in fieldTypes"
             :key="fieldType.type"
-            @click="addField(fieldType.type)"
             class="w-full flex items-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-primary-500 transition-colors text-left"
+            @click="addField(fieldType.type)"
           >
             <svg
               class="w-5 h-5 text-gray-600"
@@ -110,8 +110,8 @@
             </h3>
             <button
               v-if="formDefinition.fields.length > 0"
-              @click="clearAllFields"
               class="text-sm text-red-600 hover:text-red-700"
+              @click="clearAllFields"
             >
               모두 삭제
             </button>
@@ -255,9 +255,9 @@
                     <!-- 필수 여부 -->
                     <div class="flex items-center gap-2">
                       <input
+                        :id="`required-${index}`"
                         v-model="element.isRequired"
                         type="checkbox"
-                        :id="`required-${index}`"
                         class="w-4 h-4 text-primary-600 rounded"
                       />
                       <label
@@ -271,9 +271,9 @@
 
                   <!-- 삭제 버튼 -->
                   <button
-                    @click="removeField(index)"
                     class="flex-shrink-0 p-1 hover:bg-red-50 text-red-600 rounded transition-colors"
                     title="필드 삭제"
+                    @click="removeField(index)"
                   >
                     <svg
                       class="w-5 h-5"

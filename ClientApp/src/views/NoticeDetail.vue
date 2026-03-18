@@ -18,8 +18,8 @@
       <!-- 상단 버튼 -->
       <div class="mb-6">
         <button
-          @click="goBack"
           class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+          @click="goBack"
         >
           <span>←</span>
           <span>목록으로</span>
@@ -96,8 +96,8 @@
       <div class="mt-6 bg-white rounded-lg shadow-sm overflow-hidden divide-y">
         <div
           v-if="navigation.prev"
-          @click="goToNotice(navigation.prev.id)"
           class="px-8 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+          @click="goToNotice(navigation.prev.id)"
         >
           <div class="flex items-center gap-4">
             <span class="text-gray-500 font-medium w-16">이전글</span>
@@ -106,8 +106,8 @@
         </div>
         <div
           v-if="navigation.next"
-          @click="goToNotice(navigation.next.id)"
           class="px-8 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+          @click="goToNotice(navigation.next.id)"
         >
           <div class="flex items-center gap-4">
             <span class="text-gray-500 font-medium w-16">다음글</span>
@@ -119,8 +119,8 @@
       <!-- 하단 버튼 -->
       <div class="mt-6 flex justify-center">
         <button
-          @click="goBack"
           class="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          @click="goBack"
         >
           목록으로
         </button>
@@ -142,7 +142,7 @@ import 'quill/dist/quill.snow.css'
 export default {
   name: 'NoticeDetail',
   props: {
-    id: String,  // 라우터에서 자동 주입 (params.id)
+    id: String, // 라우터에서 자동 주입 (params.id)
   },
   setup(props) {
     const router = useRouter()
@@ -222,11 +222,14 @@ export default {
     })
 
     // Watch for route changes (when navigating between different notices)
-    watch(() => props.id, async (newId, oldId) => {
-      if (newId && newId !== oldId) {
-        await fetchNotice()
-      }
-    })
+    watch(
+      () => props.id,
+      async (newId, oldId) => {
+        if (newId && newId !== oldId) {
+          await fetchNotice()
+        }
+      },
+    )
 
     return {
       loading,

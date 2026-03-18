@@ -2,25 +2,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using LocalRAG.Entities;
 using LocalRAG.Interfaces;
 using LocalRAG.DTOs.NoticeModels;
+using LocalRAG.Repositories;
 
 namespace LocalRAG.Services.Convention
 {
     public class NoticeCategoryService : INoticeCategoryService
     {
-        private readonly ConventionDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public NoticeCategoryService(ConventionDbContext context)
+        public NoticeCategoryService(IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<List<NoticeCategoryDto>> GetCategoriesAsync(int conventionId)
         {
-            return await _context.NoticeCategories
+            return await _unitOfWork.NoticeCategories.Query
                 .Where(c => c.ConventionId == conventionId && !c.IsDeleted)
                 .OrderBy(c => c.DisplayOrder)
                 .Select(c => new NoticeCategoryDto
@@ -36,7 +36,7 @@ namespace LocalRAG.Services.Convention
 
         public async Task<NoticeCategoryDto> GetCategoryAsync(int id)
         {
-            var category = await _context.NoticeCategories
+            var category = await _unitOfWork.NoticeCategories.Query
                 .Where(c => c.Id == id && !c.IsDeleted)
                 .Select(c => new NoticeCategoryDto
                 {
@@ -67,8 +67,8 @@ namespace LocalRAG.Services.Convention
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.NoticeCategories.Add(category);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.NoticeCategories.AddAsync(category);
+            await _unitOfWork.SaveChangesAsync();
 
             return new NoticeCategoryDto
             {
@@ -82,7 +82,9 @@ namespace LocalRAG.Services.Convention
 
         public async Task<NoticeCategoryDto> UpdateCategoryAsync(int id, UpdateNoticeCategoryDto dto)
         {
-            var category = await _context.NoticeCategories.Include(c => c.Notices).FirstOrDefaultAsync(c => c.Id == id);
+            var category = await _unitOfWork.NoticeCategories.Query
+                .Include(c => c.Notices)
+                .FirstOrDefaultAsync(c => c.Id == id);
 
             if (category == null || category.IsDeleted)
             {
@@ -92,7 +94,7 @@ namespace LocalRAG.Services.Convention
             category.Name = dto.Name;
             category.Description = dto.Description;
             category.DisplayOrder = dto.DisplayOrder;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return new NoticeCategoryDto
             {
@@ -106,7 +108,7 @@ namespace LocalRAG.Services.Convention
 
         public async Task DeleteCategoryAsync(int id)
         {
-            var category = await _context.NoticeCategories.FindAsync(id);
+            var category = await _unitOfWork.NoticeCategories.GetByIdAsync(id);
 
             if (category == null || category.IsDeleted)
             {
@@ -114,7 +116,7 @@ namespace LocalRAG.Services.Convention
             }
 
             category.IsDeleted = true;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }

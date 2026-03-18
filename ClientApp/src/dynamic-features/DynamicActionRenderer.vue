@@ -22,8 +22,8 @@
         <h2 class="text-lg font-bold text-gray-900">자가 체크리스트</h2>
         <button
           v-if="checklistItems.length > 3"
-          @click="isChecklistExpanded = !isChecklistExpanded"
           class="text-sm text-[#17B185] font-medium flex items-center hover:underline"
+          @click="isChecklistExpanded = !isChecklistExpanded"
         >
           {{
             isChecklistExpanded
@@ -48,9 +48,9 @@
       </div>
       <div class="space-y-3">
         <component
-          v-for="(feature, index) in displayedChecklistItems"
-          :key="feature.id"
           :is="resolveComponent('CHECKLIST_CARD')"
+          v-for="feature in displayedChecklistItems"
+          :key="feature.id"
           :feature="feature"
         />
       </div>
@@ -62,8 +62,8 @@
       :key="feature.id || feature.actionType"
     >
       <component
-        v-if="resolveComponent(feature.actionCategory)"
         :is="resolveComponent(feature.actionCategory)"
+        v-if="resolveComponent(feature.actionCategory)"
         :feature="feature"
       />
       <div

@@ -1,21 +1,24 @@
 <template>
   <div class="relative">
     <input
-      type="text"
       ref="autocompleteInput"
       v-model="searchTerm"
+      type="text"
+      :placeholder="placeholder"
+      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
       @input="onInput"
       @focus="showSuggestions = true"
       @blur="onBlur"
-      :placeholder="placeholder"
-      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
     />
-    <ul v-if="showSuggestions && filteredResults.length" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-scroll">
+    <ul
+      v-if="showSuggestions && filteredResults.length"
+      class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-scroll"
+    >
       <li
         v-for="result in filteredResults"
         :key="result.id"
-        @mousedown.prevent="selectResult(result)"
         class="px-4 py-2 cursor-pointer hover:bg-gray-100"
+        @mousedown.prevent="selectResult(result)"
       >
         {{ result.place_name }} ({{ result.address_name }})
       </li>
@@ -30,12 +33,18 @@ import axios from 'axios'
 const props = defineProps({
   modelValue: {
     type: Object,
-    default: () => ({ name: '', address: '', latitude: null, longitude: null, kakaoPlaceId: null })
+    default: () => ({
+      name: '',
+      address: '',
+      latitude: null,
+      longitude: null,
+      kakaoPlaceId: null,
+    }),
   },
   placeholder: {
     type: String,
-    default: '장소 검색 (카카오맵)'
-  }
+    default: '장소 검색 (카카오맵)',
+  },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -46,11 +55,14 @@ const showSuggestions = ref(false)
 
 let searchTimeout = null
 
-watch(() => props.modelValue.name, (newName) => {
-  if (newName !== searchTerm.value) {
-    searchTerm.value = newName
-  }
-})
+watch(
+  () => props.modelValue.name,
+  (newName) => {
+    if (newName !== searchTerm.value) {
+      searchTerm.value = newName
+    }
+  },
+)
 
 async function onInput() {
   showSuggestions.value = true
@@ -61,10 +73,15 @@ async function onInput() {
       return
     }
     try {
-      const response = await axios.get('https://dapi.kakao.com/v2/local/search/keyword.json', {
-        params: { query: searchTerm.value },
-        headers: { Authorization: `KakaoAK ${import.meta.env.VITE_KAKAO_MAP_API_KEY}` }
-      })
+      const response = await axios.get(
+        'https://dapi.kakao.com/v2/local/search/keyword.json',
+        {
+          params: { query: searchTerm.value },
+          headers: {
+            Authorization: `KakaoAK ${import.meta.env.VITE_KAKAO_MAP_API_KEY}`,
+          },
+        },
+      )
       filteredResults.value = response.data.documents
     } catch (error) {
       console.error('Kakao Places API search failed:', error)
@@ -82,7 +99,7 @@ function selectResult(result) {
     address: result.address_name,
     latitude: parseFloat(result.y),
     longitude: parseFloat(result.x),
-    kakaoPlaceId: result.id
+    kakaoPlaceId: result.id,
   }
   emit('update:modelValue', newPlaceData)
 }

@@ -4,8 +4,8 @@
     <MainHeader title="나의 일정" :show-back="true">
       <template #actions>
         <button
-          @click="showCalendarView = !showCalendarView"
           class="p-2 hover:bg-gray-100 rounded-lg"
+          @click="showCalendarView = !showCalendarView"
         >
           <svg
             v-if="!showCalendarView"
@@ -46,7 +46,6 @@
           <button
             v-for="date in dates"
             :key="date.date"
-            @click="selectedDate = date.date"
             :class="[
               'flex-shrink-0 px-3 py-2 rounded-xl text-center transition-all',
               selectedDate === date.date
@@ -60,6 +59,7 @@
                   }
                 : {}
             "
+            @click="selectedDate = date.date"
           >
             <div class="text-xs font-medium mb-0.5">{{ date.day }}</div>
             <div class="text-sm font-bold">
@@ -79,13 +79,27 @@
     <div v-if="!showCalendarView" class="px-4 py-6 space-y-4">
       <!-- 빈 상태 -->
       <div v-if="groupedSchedules.length === 0" class="text-center py-12">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <div
+          class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4"
+        >
+          <svg
+            class="w-8 h-8 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
           </svg>
         </div>
         <p class="text-gray-500 font-medium">등록된 일정이 없습니다</p>
-        <p class="text-gray-400 text-sm mt-2">새로운 일정이 추가되면 여기에 표시됩니다</p>
+        <p class="text-gray-400 text-sm mt-2">
+          새로운 일정이 추가되면 여기에 표시됩니다
+        </p>
       </div>
 
       <!-- 날짜별 그룹 -->
@@ -112,7 +126,6 @@
               if (currentSchedule?.id === schedule.id) currentScheduleRef = el
             }
           "
-          @click="openScheduleDetail(schedule)"
           :class="[
             'rounded-xl shadow-sm hover:shadow-md transition-all p-4 cursor-pointer border-l-4',
             currentSchedule?.id === schedule.id ? 'ring-2' : 'bg-white',
@@ -125,9 +138,12 @@
                   '--tw-ring-color': brandColor + '50',
                 }
               : {
-                  borderLeftColor: schedule.isOptionTour ? brandColor : '#e5e7eb',
+                  borderLeftColor: schedule.isOptionTour
+                    ? brandColor
+                    : '#e5e7eb',
                 }
           "
+          @click="openScheduleDetail(schedule)"
         >
           <!-- 1행: 시간, 제목, 태그 -->
           <div class="flex items-center justify-between gap-2 mb-2">
@@ -161,12 +177,10 @@
                 'px-2 py-1 rounded text-xs font-medium flex-shrink-0',
                 schedule.isOptionTour
                   ? 'text-white'
-                  : 'bg-blue-100 text-blue-700'
+                  : 'bg-blue-100 text-blue-700',
               ]"
               :style="
-                schedule.isOptionTour
-                  ? { backgroundColor: brandColor }
-                  : {}
+                schedule.isOptionTour ? { backgroundColor: brandColor } : {}
               "
             >
               {{ schedule.category }}
@@ -232,8 +246,8 @@
         <!-- 캘린더 헤더: 월/년 표시 및 네비게이션 -->
         <div class="flex items-center justify-between mb-6">
           <button
-            @click="changeMonth(-1)"
             class="p-2 hover:bg-gray-100 rounded-lg transition-all"
+            @click="changeMonth(-1)"
           >
             <svg
               class="w-5 h-5 text-gray-600"
@@ -255,8 +269,8 @@
           </h3>
 
           <button
-            @click="changeMonth(1)"
             class="p-2 hover:bg-gray-100 rounded-lg transition-all"
+            @click="changeMonth(1)"
           >
             <svg
               class="w-5 h-5 text-gray-600"
@@ -287,7 +301,6 @@
           <div
             v-for="day in calendarDays"
             :key="day.date"
-            @click="selectCalendarDay(day)"
             :class="[
               'aspect-square flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all',
               day.isToday ? 'border-2' : '',
@@ -306,6 +319,7 @@
                   }
                 : {}
             "
+            @click="selectCalendarDay(day)"
           >
             <span
               :class="[
@@ -351,9 +365,14 @@
     <!-- 일정 상세 모달 -->
     <SlideUpModal :is-open="!!selectedSchedule" @close="closeScheduleDetail">
       <template #header-title>
-        <span v-if="selectedSchedule?.isOptionTour" class="flex items-center space-x-2">
+        <span
+          v-if="selectedSchedule?.isOptionTour"
+          class="flex items-center space-x-2"
+        >
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+            <path
+              d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"
+            />
           </svg>
           <span>옵션투어 상세</span>
         </span>
@@ -369,7 +388,7 @@
                 'px-3 py-1 rounded-full text-sm font-medium',
                 selectedSchedule.isOptionTour
                   ? 'text-white'
-                  : 'bg-blue-100 text-blue-700'
+                  : 'bg-blue-100 text-blue-700',
               ]"
               :style="
                 selectedSchedule.isOptionTour
@@ -446,7 +465,10 @@
           </div>
 
           <!-- 참여 그룹 & 참석자 보기 (편의 옵션) - 옵션투어는 제외 -->
-          <div v-if="selectedSchedule.group && !selectedSchedule.isOptionTour" class="pt-4 border-t mt-6">
+          <div
+            v-if="selectedSchedule.group && !selectedSchedule.isOptionTour"
+            class="pt-4 border-t mt-6"
+          >
             <div class="p-4 bg-gray-50 rounded-xl">
               <div class="flex items-center space-x-2 mb-3">
                 <svg
@@ -470,14 +492,14 @@
                 >
               </div>
               <button
+                class="w-full px-4 py-2.5 rounded-lg text-white font-medium transition-all hover:opacity-90 flex items-center justify-center space-x-2"
+                :style="{ backgroundColor: brandColor }"
                 @click="
                   loadParticipants(
                     selectedSchedule.scheduleTemplateId,
                     selectedSchedule.group,
                   )
                 "
-                class="w-full px-4 py-2.5 rounded-lg text-white font-medium transition-all hover:opacity-90 flex items-center justify-center space-x-2"
-                :style="{ backgroundColor: brandColor }"
               >
                 <svg
                   class="w-5 h-5"
@@ -619,7 +641,9 @@ const dates = computed(() => {
   if (mergedSchedules.value.length === 0) return []
 
   // 일정에서 고유 날짜 추출
-  const uniqueDates = [...new Set(mergedSchedules.value.map((s) => s.date))].sort()
+  const uniqueDates = [
+    ...new Set(mergedSchedules.value.map((s) => s.date)),
+  ].sort()
 
   return uniqueDates.map((dateStr) => {
     const date = parseLocalDate(dateStr)

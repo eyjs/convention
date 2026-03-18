@@ -1,6 +1,6 @@
-using LocalRAG.Data;
 using LocalRAG.DTOs.ScheduleModels;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Services.Convention;
@@ -11,12 +11,12 @@ namespace LocalRAG.Services.Convention;
 /// </summary>
 public class ScheduleService : IScheduleService
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ScheduleService> _logger;
 
-    public ScheduleService(ConventionDbContext context, ILogger<ScheduleService> logger)
+    public ScheduleService(IUnitOfWork unitOfWork, ILogger<ScheduleService> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -26,7 +26,7 @@ public class ScheduleService : IScheduleService
 
     public async Task<object> GetScheduleTemplatesAsync(int conventionId)
     {
-        var templates = await _context.ScheduleTemplates
+        var templates = await _unitOfWork.ScheduleTemplates.Query
             .Where(st => st.ConventionId == conventionId)
             .Include(st => st.ScheduleItems)
             .Include(st => st.GuestScheduleTemplates)
@@ -59,28 +59,28 @@ public class ScheduleService : IScheduleService
             OrderNum = dto.OrderNum
         };
 
-        _context.ScheduleTemplates.Add(template);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.ScheduleTemplates.AddAsync(template);
+        await _unitOfWork.SaveChangesAsync();
 
         return template;
     }
 
     public async Task<ScheduleTemplate?> UpdateScheduleTemplateAsync(int id, ScheduleTemplateDto dto)
     {
-        var template = await _context.ScheduleTemplates.FindAsync(id);
+        var template = await _unitOfWork.ScheduleTemplates.GetByIdAsync(id);
         if (template == null) return null;
 
         template.CourseName = dto.CourseName;
         template.Description = dto.Description;
         template.OrderNum = dto.OrderNum;
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return template;
     }
 
     public async Task<bool> DeleteScheduleTemplateAsync(int id)
     {
-        var template = await _context.ScheduleTemplates
+        var template = await _unitOfWork.ScheduleTemplates.Query
             .Include(st => st.ScheduleItems)
             .Include(st => st.GuestScheduleTemplates)
             .FirstOrDefaultAsync(st => st.Id == id);
@@ -88,13 +88,13 @@ public class ScheduleService : IScheduleService
         if (template == null) return false;
 
         if (template.GuestScheduleTemplates.Any())
-            _context.Set<GuestScheduleTemplate>().RemoveRange(template.GuestScheduleTemplates);
+            _unitOfWork.GuestScheduleTemplates.RemoveRange(template.GuestScheduleTemplates);
 
         if (template.ScheduleItems.Any())
-            _context.ScheduleItems.RemoveRange(template.ScheduleItems);
+            _unitOfWork.ScheduleItems.RemoveRange(template.ScheduleItems);
 
-        _context.ScheduleTemplates.Remove(template);
-        await _context.SaveChangesAsync();
+        _unitOfWork.ScheduleTemplates.Remove(template);
+        await _unitOfWork.SaveChangesAsync();
 
         return true;
     }
@@ -117,15 +117,15 @@ public class ScheduleService : IScheduleService
             OrderNum = dto.OrderNum
         };
 
-        _context.ScheduleItems.Add(item);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.ScheduleItems.AddAsync(item);
+        await _unitOfWork.SaveChangesAsync();
 
         return item;
     }
 
     public async Task<ScheduleItem?> UpdateScheduleItemAsync(int id, ScheduleItemDto dto)
     {
-        var item = await _context.ScheduleItems.FindAsync(id);
+        var item = await _unitOfWork.ScheduleItems.GetByIdAsync(id);
         if (item == null) return null;
 
         item.ScheduleDate = dto.ScheduleDate;
@@ -136,17 +136,17 @@ public class ScheduleService : IScheduleService
         item.Content = dto.Content;
         item.OrderNum = dto.OrderNum;
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return item;
     }
 
     public async Task<bool> DeleteScheduleItemAsync(int id)
     {
-        var item = await _context.ScheduleItems.FindAsync(id);
+        var item = await _unitOfWork.ScheduleItems.GetByIdAsync(id);
         if (item == null) return false;
 
-        _context.ScheduleItems.Remove(item);
-        await _context.SaveChangesAsync();
+        _unitOfWork.ScheduleItems.Remove(item);
+        await _unitOfWork.SaveChangesAsync();
         return true;
     }
 
@@ -167,8 +167,8 @@ public class ScheduleService : IScheduleService
             OrderNum = itemDto.OrderNum
         }).ToList();
 
-        _context.ScheduleItems.AddRange(items);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.ScheduleItems.AddRangeAsync(items);
+        await _unitOfWork.SaveChangesAsync();
 
         return (items.Count, $"{items.Count}개 일정이 추가되었습니다.");
     }
@@ -179,7 +179,7 @@ public class ScheduleService : IScheduleService
 
     public async Task<object> GetTemplateGuestsAsync(int templateId)
     {
-        var guests = await _context.Set<GuestScheduleTemplate>()
+        var guests = await _unitOfWork.GuestScheduleTemplates.Query
             .Where(gst => gst.ScheduleTemplateId == templateId)
             .Include(gst => gst.User)
             .Select(gst => new
@@ -199,17 +199,17 @@ public class ScheduleService : IScheduleService
     public async Task<(bool Success, string? Error)> AssignSchedulesToGuestAsync(
         int conventionId, int guestId, AssignSchedulesDto dto)
     {
-        var user = await _context.Users.FindAsync(guestId);
+        var user = await _unitOfWork.Users.GetByIdAsync(guestId);
         if (user == null) return (false, "User not found");
 
-        var existing = await _context.Set<GuestScheduleTemplate>()
+        var existing = await _unitOfWork.GuestScheduleTemplates.Query
             .Where(gst => gst.UserId == guestId && gst.ScheduleTemplate.ConventionId == conventionId)
             .ToListAsync();
-        _context.Set<GuestScheduleTemplate>().RemoveRange(existing);
+        _unitOfWork.GuestScheduleTemplates.RemoveRange(existing);
 
         foreach (var templateId in dto.ScheduleTemplateIds)
         {
-            _context.Set<GuestScheduleTemplate>().Add(new GuestScheduleTemplate
+            await _unitOfWork.GuestScheduleTemplates.AddAsync(new GuestScheduleTemplate
             {
                 UserId = guestId,
                 ScheduleTemplateId = templateId,
@@ -217,25 +217,25 @@ public class ScheduleService : IScheduleService
             });
         }
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return (true, null);
     }
 
     public async Task<bool> RemoveGuestFromScheduleAsync(int userId, int templateId)
     {
-        var assignment = await _context.Set<GuestScheduleTemplate>()
+        var assignment = await _unitOfWork.GuestScheduleTemplates.Query
             .FirstOrDefaultAsync(gst => gst.UserId == userId && gst.ScheduleTemplateId == templateId);
 
         if (assignment == null) return false;
 
-        _context.Set<GuestScheduleTemplate>().Remove(assignment);
-        await _context.SaveChangesAsync();
+        _unitOfWork.GuestScheduleTemplates.Remove(assignment);
+        await _unitOfWork.SaveChangesAsync();
         return true;
     }
 
     public async Task<object> GetAllSchedulesAsync(int conventionId)
     {
-        var items = await _context.ScheduleItems
+        var items = await _unitOfWork.ScheduleItems.Query
             .Include(si => si.ScheduleTemplate)
             .Where(si => si.ScheduleTemplate!.ConventionId == conventionId)
             .OrderBy(si => si.ScheduleDate)
@@ -260,13 +260,13 @@ public class ScheduleService : IScheduleService
     {
         try
         {
-            var userInConvention = await _context.UserConventions
+            var userInConvention = await _unitOfWork.UserConventions.Query
                 .AnyAsync(uc => uc.UserId == userId && uc.ConventionId == conventionId);
 
             if (!userInConvention)
                 return (null, "User not found in this convention", 404);
 
-            var user = await _context.Users
+            var user = await _unitOfWork.Users.Query
                 .Include(u => u.GuestScheduleTemplates)
                     .ThenInclude(gst => gst.ScheduleTemplate)
                         .ThenInclude(st => st!.ScheduleItems)
@@ -288,7 +288,7 @@ public class ScheduleService : IScheduleService
                 .ToList();
 
             var templateIds = schedules.Select(s => s.TemplateId).Distinct().ToList();
-            var participantCounts = await _context.GuestScheduleTemplates
+            var participantCounts = await _unitOfWork.GuestScheduleTemplates.Query
                 .Where(gst => templateIds.Contains(gst.ScheduleTemplateId))
                 .GroupBy(gst => gst.ScheduleTemplateId)
                 .Select(g => new { TemplateId = g.Key, Count = g.Count() })
@@ -321,15 +321,15 @@ public class ScheduleService : IScheduleService
     public async Task<(GuestScheduleTemplate? Result, string? Error, int StatusCode)> AddUserScheduleAsync(
         UserScheduleDto dto)
     {
-        var user = await _context.Users.FindAsync(dto.UserId);
+        var user = await _unitOfWork.Users.GetByIdAsync(dto.UserId);
         if (user is null)
             return (null, "User not found.", 404);
 
-        var scheduleTemplate = await _context.ScheduleTemplates.FindAsync(dto.ScheduleTemplateId);
+        var scheduleTemplate = await _unitOfWork.ScheduleTemplates.GetByIdAsync(dto.ScheduleTemplateId);
         if (scheduleTemplate is null)
             return (null, "Schedule Template not found.", 404);
 
-        var existing = await _context.GuestScheduleTemplates
+        var existing = await _unitOfWork.GuestScheduleTemplates.Query
             .FirstOrDefaultAsync(gst => gst.UserId == dto.UserId && gst.ScheduleTemplateId == dto.ScheduleTemplateId);
 
         if (existing is not null)
@@ -341,28 +341,28 @@ public class ScheduleService : IScheduleService
             ScheduleTemplateId = dto.ScheduleTemplateId
         };
 
-        _context.GuestScheduleTemplates.Add(userSchedule);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.GuestScheduleTemplates.AddAsync(userSchedule);
+        await _unitOfWork.SaveChangesAsync();
 
         return (userSchedule, null, 200);
     }
 
     public async Task<bool> RemoveUserScheduleAsync(int userId, int scheduleTemplateId)
     {
-        var userSchedule = await _context.GuestScheduleTemplates
+        var userSchedule = await _unitOfWork.GuestScheduleTemplates.Query
             .FirstOrDefaultAsync(gst => gst.UserId == userId && gst.ScheduleTemplateId == scheduleTemplateId);
 
         if (userSchedule is null) return false;
 
-        _context.GuestScheduleTemplates.Remove(userSchedule);
-        await _context.SaveChangesAsync();
+        _unitOfWork.GuestScheduleTemplates.Remove(userSchedule);
+        await _unitOfWork.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<(object? Result, bool Found)> GetAssignedTemplatesAsync(int userId)
     {
-        var user = await _context.Users
+        var user = await _unitOfWork.Users.Query
             .Include(u => u.GuestScheduleTemplates)
             .ThenInclude(gst => gst.ScheduleTemplate)
             .FirstOrDefaultAsync(u => u.Id == userId);
@@ -382,13 +382,13 @@ public class ScheduleService : IScheduleService
     {
         try
         {
-            var userInConvention = await _context.UserConventions
+            var userInConvention = await _unitOfWork.UserConventions.Query
                 .AnyAsync(uc => uc.UserId == userId && uc.ConventionId == conventionId);
 
             if (!userInConvention)
                 return (null, "User not found in this convention", 404);
 
-            var optionToursData = await _context.UserOptionTours
+            var optionToursData = await _unitOfWork.UserOptionTours.Query
                 .Where(uot => uot.UserId == userId && uot.ConventionId == conventionId)
                 .Include(uot => uot.OptionTour)
                 .OrderBy(uot => uot.OptionTour!.Date)
@@ -420,7 +420,7 @@ public class ScheduleService : IScheduleService
     {
         try
         {
-            var template = await _context.ScheduleTemplates
+            var template = await _unitOfWork.ScheduleTemplates.Query
                 .FirstOrDefaultAsync(st => st.Id == scheduleTemplateId);
 
             if (template is null)
@@ -428,7 +428,7 @@ public class ScheduleService : IScheduleService
 
             var isAdmin = userRole == "Admin";
 
-            var participants = await _context.GuestScheduleTemplates
+            var participants = await _unitOfWork.GuestScheduleTemplates.Query
                 .Where(gst => gst.ScheduleTemplateId == scheduleTemplateId)
                 .Include(gst => gst.User)
                 .Select(gst => new

@@ -1,25 +1,25 @@
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using LocalRAG.Interfaces;
 using LocalRAG.Entities;
 using LocalRAG.DTOs.GalleryModels;
+using LocalRAG.Repositories;
 
 namespace LocalRAG.Services.Convention;
 
 public class GalleryService : IGalleryService
 {
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GalleryService> _logger;
 
-    public GalleryService(ConventionDbContext context, ILogger<GalleryService> logger)
+    public GalleryService(IUnitOfWork unitOfWork, ILogger<GalleryService> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
     public async Task<PagedGalleryResponse> GetGalleriesAsync(int conventionId, int page, int pageSize)
     {
-        var query = _context.Set<Gallery>()
+        var query = _unitOfWork.Galleries.Query
             .Where(g => g.ConventionId == conventionId && !g.IsDeleted)
             .Include(g => g.Author)
             .Include(g => g.Images)
@@ -39,8 +39,8 @@ public class GalleryService : IGalleryService
                 AuthorName = g.Author.Name ?? "관리자",
                 CreatedAt = g.CreatedAt,
                 ImageCount = g.Images.Count,
-                ThumbnailUrl = g.Images.OrderBy(i => i.OrderNum).FirstOrDefault() != null 
-                    ? g.Images.OrderBy(i => i.OrderNum).First().ImageUrl 
+                ThumbnailUrl = g.Images.OrderBy(i => i.OrderNum).FirstOrDefault() != null
+                    ? g.Images.OrderBy(i => i.OrderNum).First().ImageUrl
                     : null
             })
             .ToListAsync();
@@ -56,7 +56,7 @@ public class GalleryService : IGalleryService
 
     public async Task<GalleryResponse> GetGalleryAsync(int id)
     {
-        var gallery = await _context.Set<Gallery>()
+        var gallery = await _unitOfWork.Galleries.Query
             .Include(g => g.Author)
             .Include(g => g.Images)
             .FirstOrDefaultAsync(g => g.Id == id && !g.IsDeleted);
@@ -95,8 +95,8 @@ public class GalleryService : IGalleryService
             CreatedAt = DateTime.Now
         };
 
-        _context.Set<Gallery>().Add(gallery);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.Galleries.AddAsync(gallery);
+        await _unitOfWork.SaveChangesAsync();
 
         // 이미지 추가
         if (request.Images != null && request.Images.Any())
@@ -110,8 +110,8 @@ public class GalleryService : IGalleryService
                 UploadedAt = DateTime.Now
             }).ToList();
 
-            _context.Set<GalleryImage>().AddRange(images);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.GalleryImages.AddRangeAsync(images);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         return await GetGalleryAsync(gallery.Id);
@@ -119,7 +119,7 @@ public class GalleryService : IGalleryService
 
     public async Task<GalleryResponse> UpdateGalleryAsync(int id, UpdateGalleryRequest request, int userId)
     {
-        var gallery = await _context.Set<Gallery>()
+        var gallery = await _unitOfWork.Galleries.Query
             .Include(g => g.Images)
             .FirstOrDefaultAsync(g => g.Id == id && !g.IsDeleted);
 
@@ -127,7 +127,7 @@ public class GalleryService : IGalleryService
             throw new KeyNotFoundException("갤러리를 찾을 수 없습니다.");
 
         // 권한 확인
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (gallery.AuthorId != userId && user?.Role != "Admin")
             throw new UnauthorizedAccessException("수정 권한이 없습니다.");
 
@@ -136,7 +136,7 @@ public class GalleryService : IGalleryService
         gallery.UpdatedAt = DateTime.Now;
 
         // 기존 이미지 삭제
-        _context.Set<GalleryImage>().RemoveRange(gallery.Images);
+        _unitOfWork.GalleryImages.RemoveRange(gallery.Images);
 
         // 새 이미지 추가
         if (request.Images != null && request.Images.Any())
@@ -150,27 +150,27 @@ public class GalleryService : IGalleryService
                 UploadedAt = DateTime.Now
             }).ToList();
 
-            _context.Set<GalleryImage>().AddRange(images);
+            await _unitOfWork.GalleryImages.AddRangeAsync(images);
         }
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return await GetGalleryAsync(id);
     }
 
     public async Task DeleteGalleryAsync(int id, int userId)
     {
-        var gallery = await _context.Set<Gallery>().FindAsync(id);
+        var gallery = await _unitOfWork.Galleries.GetByIdAsync(id);
 
         if (gallery == null || gallery.IsDeleted)
             throw new KeyNotFoundException("갤러리를 찾을 수 없습니다.");
 
         // 권한 확인
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (gallery.AuthorId != userId && user?.Role != "Admin")
             throw new UnauthorizedAccessException("삭제 권한이 없습니다.");
 
         gallery.IsDeleted = true;
         gallery.UpdatedAt = DateTime.Now;
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
     }
 }

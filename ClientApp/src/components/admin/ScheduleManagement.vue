@@ -3,8 +3,8 @@
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl font-semibold">일정 관리</h2>
       <button
-        @click="showCreateModal = true"
         class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+        @click="showCreateModal = true"
       >
         + 일정 코스 추가
       </button>
@@ -14,26 +14,26 @@
     <div class="mb-4 overflow-x-auto scrollbar-hide">
       <div class="flex gap-2 min-w-max pb-2">
         <button
-          @click="selectedTemplateId = 'all'"
           :class="[
             'flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all',
             selectedTemplateId === 'all'
               ? 'bg-primary-600 text-white'
               : 'bg-white text-gray-700 hover:bg-gray-100 border',
           ]"
+          @click="selectedTemplateId = 'all'"
         >
           전체
         </button>
         <button
           v-for="template in templates"
           :key="template.id"
-          @click="selectedTemplateId = template.id"
           :class="[
             'flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all',
             selectedTemplateId === template.id
               ? 'bg-primary-600 text-white'
               : 'bg-white text-gray-700 hover:bg-gray-100 border',
           ]"
+          @click="selectedTemplateId = template.id"
         >
           {{ template.courseName }}
         </button>
@@ -60,20 +60,20 @@
           </div>
           <div class="flex gap-2">
             <button
-              @click="viewAssignedGuests(template)"
               class="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+              @click="viewAssignedGuests(template)"
             >
               참석자 보기
             </button>
             <button
-              @click="editTemplate(template)"
               class="px-3 py-1.5 text-sm bg-white border rounded hover:bg-gray-50"
+              @click="editTemplate(template)"
             >
               수정
             </button>
             <button
-              @click="deleteTemplate(template.id)"
               class="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100"
+              @click="deleteTemplate(template.id)"
             >
               삭제
             </button>
@@ -112,9 +112,9 @@
               </div>
               <div class="flex gap-1">
                 <button
-                  @click="editScheduleItem(template, item)"
                   class="p-1.5 hover:bg-gray-200 rounded"
                   title="수정"
+                  @click="editScheduleItem(template, item)"
                 >
                   <svg
                     class="w-4 h-4"
@@ -131,9 +131,9 @@
                   </svg>
                 </button>
                 <button
-                  @click="deleteScheduleItem(item.id)"
                   class="p-1.5 hover:bg-red-100 text-red-600 rounded"
                   title="삭제"
+                  @click="deleteScheduleItem(item.id)"
                 >
                   <svg
                     class="w-4 h-4"
@@ -154,14 +154,14 @@
 
             <div class="flex gap-2">
               <button
-                @click="addScheduleItem(template)"
                 class="flex-1 py-2 text-sm text-primary-600 border-2 border-dashed border-primary-300 rounded-lg hover:bg-primary-50"
+                @click="addScheduleItem(template)"
               >
                 + 수기 등록
               </button>
               <button
-                @click="showCopyItemsModal(template)"
                 class="flex-1 py-2 text-sm text-green-600 border-2 border-dashed border-green-300 rounded-lg hover:bg-green-50 flex items-center justify-center gap-1"
+                @click="showCopyItemsModal(template)"
               >
                 <svg
                   class="w-4 h-4"
@@ -194,8 +194,8 @@
     <!-- 템플릿 생성/수정 모달 -->
     <BaseModal
       :is-open="showCreateModal || !!editingTemplate"
-      @close="closeTemplateModal"
       max-width="md"
+      @close="closeTemplateModal"
     >
       <template #header>
         <h2 class="text-xl font-semibold">
@@ -227,14 +227,14 @@
       </template>
       <template #footer>
         <button
-          @click="closeTemplateModal"
           class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+          @click="closeTemplateModal"
         >
           취소
         </button>
         <button
-          @click="saveTemplate"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+          @click="saveTemplate"
         >
           저장
         </button>
@@ -242,7 +242,7 @@
     </BaseModal>
 
     <!-- 일정 항목 생성/수정 모달 -->
-    <BaseModal :is-open="showItemModal" @close="closeItemModal" max-width="lg">
+    <BaseModal :is-open="showItemModal" max-width="lg" @close="closeItemModal">
       <template #header>
         <h2 class="text-xl font-semibold">
           {{ editingItem ? '일정 수정' : '일정 추가' }}
@@ -311,14 +311,14 @@
       </template>
       <template #footer>
         <button
-          @click="closeItemModal"
           class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+          @click="closeItemModal"
         >
           취소
         </button>
         <button
-          @click="saveScheduleItem"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+          @click="saveScheduleItem"
         >
           저장
         </button>
@@ -328,8 +328,8 @@
     <!-- 할당된 참석자 목록 모달 -->
     <BaseModal
       :is-open="showGuestsModal"
-      @close="closeGuestsModal"
       max-width="2xl"
+      @close="closeGuestsModal"
     >
       <template #header>
         <h2 class="text-xl font-semibold">
@@ -359,8 +359,8 @@
                 </p>
               </div>
               <button
-                @click="removeGuestFromSchedule(guest.id)"
                 class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
+                @click="removeGuestFromSchedule(guest.id)"
               >
                 제거
               </button>
@@ -371,7 +371,7 @@
     </BaseModal>
 
     <!-- 기존 일정 복사 모달 -->
-    <BaseModal :is-open="showCopyModal" @close="closeCopyModal" max-width="4xl">
+    <BaseModal :is-open="showCopyModal" max-width="4xl" @close="closeCopyModal">
       <template #header>
         <h2 class="text-xl font-semibold">
           {{ targetTemplate?.courseName }} - 기존 일정 복사
@@ -405,8 +405,8 @@
                   </p>
                 </div>
                 <button
-                  @click="copyAllItemsFromTemplate(template)"
                   class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  @click="copyAllItemsFromTemplate(template)"
                 >
                   전체 복사
                 </button>
@@ -422,9 +422,9 @@
                 >
                   <div class="flex-shrink-0">
                     <input
+                      v-model="selectedItemsToCopy"
                       type="checkbox"
                       :value="item.id"
-                      v-model="selectedItemsToCopy"
                       class="rounded mt-1"
                     />
                   </div>
@@ -461,14 +461,14 @@
           >
           <div class="flex gap-2">
             <button
-              @click="selectedItemsToCopy = []"
               class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              @click="selectedItemsToCopy = []"
             >
               선택 취소
             </button>
             <button
-              @click="copySelectedItems"
               class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              @click="copySelectedItems"
             >
               선택한 일정 복사
             </button>

@@ -6,9 +6,9 @@
       content-type="html"
       :toolbar="toolbarOptions"
       :modules="editorModules"
-      @ready="onEditorReady"
       theme="snow"
       :style="{ height: editorHeight }"
+      @ready="onEditorReady"
     />
   </div>
 </template>

@@ -36,9 +36,9 @@
         >
           <!-- Close Button -->
           <button
-            @click="handleClose"
             class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
             aria-label="닫기"
+            @click="handleClose"
           >
             <svg
               class="w-6 h-6"

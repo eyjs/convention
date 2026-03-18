@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using LocalRAG.DTOs.FormBuilder;
 using LocalRAG.Entities.FormBuilder;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 using System.Text.Json;
 using System.IO;
 
@@ -12,20 +12,20 @@ public class FormBuilderService : IFormBuilderService
 {
     private const string UPLOADS_FOLDER = "uploads";
 
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<FormBuilderService> _logger;
 
     public FormBuilderService(
-        ConventionDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<FormBuilderService> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
     public async Task<FormDefinitionDto?> GetFormDefinitionAsync(int formDefinitionId)
     {
-        var formDto = await _context.FormDefinitions
+        var formDto = await _unitOfWork.FormDefinitions.Query
             .Where(f => f.Id == formDefinitionId)
             .Select(f => new FormDefinitionDto
             {
@@ -55,7 +55,7 @@ public class FormBuilderService : IFormBuilderService
 
     public async Task<string?> GetUserSubmissionAsync(int formDefinitionId, int userId)
     {
-        var submission = await _context.FormSubmissions
+        var submission = await _unitOfWork.FormSubmissions.Query
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.FormDefinitionId == formDefinitionId && s.UserId == userId);
 
@@ -72,7 +72,7 @@ public class FormBuilderService : IFormBuilderService
         _logger.LogInformation("SubmitFormData called for FormDefinitionId: {FormDefinitionId}", formDefinitionId);
 
         // FormDefinition 존재 확인
-        if (!await _context.FormDefinitions.AnyAsync(f => f.Id == formDefinitionId))
+        if (!await _unitOfWork.FormDefinitions.ExistsAsync(f => f.Id == formDefinitionId))
         {
             _logger.LogWarning("FormDefinition not found: {FormDefinitionId}", formDefinitionId);
             return false;
@@ -112,7 +112,7 @@ public class FormBuilderService : IFormBuilderService
             formDataJson = JsonSerializer.Serialize(tempDict);
         }
 
-        var submission = await _context.FormSubmissions
+        var submission = await _unitOfWork.FormSubmissions.Query
             .FirstOrDefaultAsync(s => s.FormDefinitionId == formDefinitionId && s.UserId == userId);
 
         if (submission != null)
@@ -130,22 +130,22 @@ public class FormBuilderService : IFormBuilderService
                 UserId = userId,
                 SubmissionDataJson = formDataJson,
             };
-            _context.FormSubmissions.Add(submission);
+            await _unitOfWork.FormSubmissions.AddAsync(submission);
         }
 
         // 연결된 ConventionAction의 상태 업데이트
-        var action = await _context.ConventionActions
+        var action = await _unitOfWork.ConventionActions.Query
             .FirstOrDefaultAsync(a => a.TargetId == formDefinitionId &&
                                      a.BehaviorType == Entities.Action.BehaviorType.FormBuilder);
 
         if (action != null)
         {
-            var status = await _context.UserActionStatuses
+            var status = await _unitOfWork.UserActionStatuses.Query
                 .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
 
             if (status == null)
             {
-                _context.UserActionStatuses.Add(new Entities.UserActionStatus
+                await _unitOfWork.UserActionStatuses.AddAsync(new Entities.UserActionStatus
                 {
                     UserId = userId,
                     ConventionActionId = action.Id,
@@ -162,7 +162,7 @@ public class FormBuilderService : IFormBuilderService
             }
         }
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
         return true;
     }
 
@@ -185,12 +185,12 @@ public class FormBuilderService : IFormBuilderService
 
     public async Task<List<FormSubmissionDto>> GetAllSubmissionsAsync(int formDefinitionId)
     {
-        if (!await _context.FormDefinitions.AnyAsync(f => f.Id == formDefinitionId))
+        if (!await _unitOfWork.FormDefinitions.ExistsAsync(f => f.Id == formDefinitionId))
         {
             return new List<FormSubmissionDto>();
         }
 
-        var submissionsRaw = await _context.FormSubmissions
+        var submissionsRaw = await _unitOfWork.FormSubmissions.Query
             .Include(s => s.User)
             .Where(s => s.FormDefinitionId == formDefinitionId)
             .ToListAsync();

@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-screen min-h-dvh bg-gray-50">
-    <AdminHeader 
-      title="행사 관리" 
+    <AdminHeader
+      title="행사 관리"
       :subtitle="convention ? convention.title : ''"
-      show-back-button 
+      show-back-button
       back-path="/admin"
       back-button-title="행사 목록으로"
     />
@@ -15,26 +15,26 @@
           <button
             v-for="tab in tabs"
             :key="tab.id"
-            @click="activeTab = tab.id"
             :class="[
               'pb-3 px-3 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors',
               activeTab === tab.id
                 ? 'border-primary-600 text-primary-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
             ]"
+            @click="activeTab = tab.id"
           >
             <span class="hidden sm:inline">{{ tab.name }}</span>
             <span class="sm:hidden">{{ tab.shortName || tab.name }}</span>
           </button>
           <!-- Form Builder Tab -->
           <button
-            @click="activeTab = 'formbuilder'"
             :class="[
               'pb-3 px-3 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors',
               activeTab === 'formbuilder'
                 ? 'border-primary-600 text-primary-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
             ]"
+            @click="activeTab = 'formbuilder'"
           >
             <span class="hidden sm:inline">폼 빌더</span>
             <span class="sm:hidden">폼 빌더</span>
@@ -95,7 +95,7 @@
         <DatabaseMigration />
       </div>
     </div>
-    
+
     <ConventionFormModal
       v-if="showEditModal"
       :convention="convention"
@@ -138,14 +138,14 @@ const showGuestFromDashboard = (guestId) => {
 }
 
 const tabs = [
-    { id: 'dashboard', name: '대시보드', shortName: '대시보드' },
-    { id: 'guests', name: '참석자 관리', shortName: '참석자' },
-    { id: 'board', name: '게시판 관리', shortName: '게시판' },
-    { id: 'schedules', name: '일정 관리', shortName: '일정' },
-    { id: 'attributes', name: '속성 템플릿', shortName: '속성' },
-    { id: 'actions', name: '액션 관리', shortName: '액션' },
-    { id: 'surveys', name: '설문 관리', shortName: '설문' },
-    { id: 'upload', name: '엑셀 업로드', shortName: '업로드' },
+  { id: 'dashboard', name: '대시보드', shortName: '대시보드' },
+  { id: 'guests', name: '참석자 관리', shortName: '참석자' },
+  { id: 'board', name: '게시판 관리', shortName: '게시판' },
+  { id: 'schedules', name: '일정 관리', shortName: '일정' },
+  { id: 'attributes', name: '속성 템플릿', shortName: '속성' },
+  { id: 'actions', name: '액션 관리', shortName: '액션' },
+  { id: 'surveys', name: '설문 관리', shortName: '설문' },
+  { id: 'upload', name: '엑셀 업로드', shortName: '업로드' },
   /*{ id: 'database', name: 'DB 관리', shortName: 'DB' },*/
 ]
 

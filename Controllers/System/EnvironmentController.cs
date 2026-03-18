@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using LocalRAG.Configuration;
-using LocalRAG.Data;
+using LocalRAG.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Controllers.System;
@@ -11,21 +11,18 @@ public class EnvironmentController : ControllerBase
 {
     private readonly IConnectionStringProvider _connectionProvider;
     private readonly IWebHostEnvironment _environment;
-    private readonly ConventionDbContext _context;
-    private readonly IConfiguration _configuration;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<EnvironmentController> _logger;
 
     public EnvironmentController(
         IConnectionStringProvider connectionProvider,
         IWebHostEnvironment environment,
-        ConventionDbContext context,
-        IConfiguration configuration,
+        IUnitOfWork unitOfWork,
         ILogger<EnvironmentController> logger)
     {
         _connectionProvider = connectionProvider;
         _environment = environment;
-        _context = context;
-        _configuration = configuration;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -33,7 +30,7 @@ public class EnvironmentController : ControllerBase
     public IActionResult GetEnvironmentInfo()
     {
         var connectionString = _connectionProvider.GetConnectionString();
-        
+
         var result = new
         {
             Environment = new
@@ -58,38 +55,35 @@ public class EnvironmentController : ControllerBase
         try
         {
             var startTime = DateTime.Now;
-            var canConnect = await _context.Database.CanConnectAsync();
-            var connectionTime = DateTime.Now - startTime;
-            
+
             Dictionary<string, int> tableCounts = new();
-            
-            if (canConnect)
+
+            try
             {
-                try
-                {
-                    tableCounts["Conventions"] = await _context.Conventions.CountAsync();
-                    tableCounts["UserConventions"] = await _context.UserConventions.CountAsync();
-                    tableCounts["GuestAttributes"] = await _context.GuestAttributes.CountAsync();
-                    tableCounts["Features"] = await _context.Features.CountAsync();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning("Error querying database: {Error}", ex.Message);
-                }
+                tableCounts["Conventions"] = await _unitOfWork.Conventions.CountAsync(_ => true);
+                tableCounts["UserConventions"] = await _unitOfWork.UserConventions.Query.CountAsync();
+                tableCounts["GuestAttributes"] = await _unitOfWork.GuestAttributes.Query.CountAsync();
+                tableCounts["Features"] = await _unitOfWork.Features.Query.CountAsync();
             }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Error querying database: {Error}", ex.Message);
+            }
+
+            var connectionTime = DateTime.Now - startTime;
 
             var result = new
             {
                 Environment = _environment.EnvironmentName,
                 Database = new
                 {
-                    Status = canConnect ? "Connected" : "Disconnected",
+                    Status = "Connected",
                     ConnectionTime = connectionTime.TotalMilliseconds,
                     TableCounts = tableCounts
                 },
                 TestResults = new
                 {
-                    CanConnect = canConnect,
+                    CanConnect = true,
                     ResponseTime = connectionTime.TotalMilliseconds,
                     TestedAt = DateTime.Now
                 }

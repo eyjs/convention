@@ -1,6 +1,9 @@
 <template>
   <Transition name="slide-up">
-    <nav v-if="show" class="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0_-4px_6px_-1px_rgb(0_0_0_/_0.1),_0_-2px_4px_-2px_rgb(0_0_0_/_0.1)] py-2">
+    <nav
+      v-if="show"
+      class="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0_-4px_6px_-1px_rgb(0_0_0_/_0.1),_0_-2px_4px_-2px_rgb(0_0_0_/_0.1)] py-2"
+    >
       <div class="max-w-xl mx-auto flex justify-around items-center h-full">
         <router-link :to="homeUrl" class="nav-link">
           <Home class="w-6 h-6" />
@@ -28,8 +31,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { Home, CalendarDays, Receipt, NotebookText, Car } from 'lucide-vue-next';
+import { computed } from 'vue'
+import { Home, CalendarDays, Receipt, NotebookText, Car } from 'lucide-vue-next'
 
 const props = defineProps({
   tripId: {
@@ -38,41 +41,44 @@ const props = defineProps({
   },
   shareToken: {
     type: String,
-    default: null
+    default: null,
   },
   show: {
     type: Boolean,
     default: true,
-  }
-});
+  },
+})
 
 // A helper function to create safe URLs.
 const createUrl = (path) => {
-  const tripId = props.tripId;
-  const shareToken = props.shareToken;
+  const tripId = props.tripId
+  const shareToken = props.shareToken
 
   // A value is valid if it's not null, not undefined, and not the string 'undefined'.
-  const isTripIdValid = tripId !== null && tripId !== undefined && tripId !== 'undefined';
-  const isShareTokenValid = shareToken !== null && shareToken !== undefined && shareToken !== 'undefined';
+  const isTripIdValid =
+    tripId !== null && tripId !== undefined && tripId !== 'undefined'
+  const isShareTokenValid =
+    shareToken !== null &&
+    shareToken !== undefined &&
+    shareToken !== 'undefined'
 
   if (isShareTokenValid) {
-    return `/trips/share/${shareToken}${path}`;
+    return `/trips/share/${shareToken}${path}`
   }
 
   if (isTripIdValid) {
-    return `/trips/${tripId}${path}`;
+    return `/trips/${tripId}${path}`
   }
 
-  return '#'; // Fallback
-};
+  return '#' // Fallback
+}
 
 // Computed URLs based on share mode
-const homeUrl = computed(() => createUrl(''));
-const itineraryUrl = computed(() => createUrl('/itinerary'));
-const expensesUrl = computed(() => createUrl('/expenses'));
-const notesUrl = computed(() => createUrl('/notes'));
-const transportationUrl = computed(() => createUrl('/transportation'));
-
+const homeUrl = computed(() => createUrl(''))
+const itineraryUrl = computed(() => createUrl('/itinerary'))
+const expensesUrl = computed(() => createUrl('/expenses'))
+const notesUrl = computed(() => createUrl('/notes'))
+const transportationUrl = computed(() => createUrl('/transportation'))
 </script>
 
 <style scoped>

@@ -14,13 +14,13 @@
         <button
           v-for="item in navItems"
           :key="item.path"
-          @click="navigateTo(item.path)"
           :class="[
             'flex flex-col items-center justify-center flex-1 h-full transition-all relative',
             currentRoute === item.path
               ? 'text-primary-600'
               : 'text-gray-500 active:scale-95',
           ]"
+          @click="navigateTo(item.path)"
         >
           <svg
             class="w-6 h-6 mb-1"
@@ -62,10 +62,12 @@
         </div>
       </div>
     </Transition>
+    <!-- 챗봇 기능 비활성화 (필요 시 주석 해제)
     <ChatWindow />
     <ChatFloatingButton
       v-if="showNav && !uiStore.isChatOpen && currentRoute === '/'"
     />
+    -->
   </div>
 </template>
 
@@ -75,8 +77,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import { useUIStore } from '@/stores/ui'
-import ChatWindow from '@/components/chatbot/ChatWindow.vue'
-import ChatFloatingButton from '@/components/chatbot/ChatFloatingButton.vue'
+// 챗봇 기능 비활성화 (필요 시 주석 해제)
+// import ChatWindow from '@/components/chatbot/ChatWindow.vue'
+// import ChatFloatingButton from '@/components/chatbot/ChatFloatingButton.vue'
 import ConventionChat from '@/components/ConventionChat.vue'
 
 const router = useRouter()
@@ -134,7 +137,9 @@ watch(
       // 채팅 모달이 열릴 때
       if (!conventionId.value || !token.value) {
         uiStore.isChatOpen = false
-        alert('채팅 기능이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.')
+        alert(
+          '채팅 기능이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.',
+        )
       }
     }
   },
@@ -145,7 +150,7 @@ function navigateTo(path) {
     uiStore.toggleChat()
   } else if (path) {
     // path가 유효한 경우에만 router.push 호출
-    router.push(path).catch(err => {
+    router.push(path).catch((err) => {
       console.error('Navigation error:', err)
     })
   } else {

@@ -1,6 +1,5 @@
 <template>
   <button
-    @click="toggleChat"
     :class="[
       'fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full shadow-float transition-all duration-200 flex items-center justify-center',
       'hover:scale-110 active:scale-95',
@@ -9,6 +8,7 @@
         : 'bg-gradient-to-br from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700',
     ]"
     :title="chatStore.isOpen ? '채팅 닫기' : 'AI 챗봇'"
+    @click="toggleChat"
   >
     <transition name="icon-fade" mode="out-in">
       <svg

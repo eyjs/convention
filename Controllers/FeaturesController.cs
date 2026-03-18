@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using LocalRAG.Entities;
 using LocalRAG.DTOs.ConventionModels;
+using LocalRAG.Repositories;
 
 namespace LocalRAG.Controllers
 {
@@ -10,14 +10,14 @@ namespace LocalRAG.Controllers
     [Route("api/conventions/{conventionId}/features")]
     public class FeaturesController : ControllerBase
     {
-        private readonly ConventionDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<FeaturesController> _logger;
 
         public FeaturesController(
-            ConventionDbContext context,
+            IUnitOfWork unitOfWork,
             ILogger<FeaturesController> logger)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _logger = logger;
         }
 
@@ -26,7 +26,7 @@ namespace LocalRAG.Controllers
         {
             try
             {
-                var features = await _context.Features
+                var features = await _unitOfWork.Features.Query
                     .Where(f => f.ConventionId == conventionId)
                     .OrderBy(f => f.MenuName)
                     .ToListAsync();
@@ -45,7 +45,7 @@ namespace LocalRAG.Controllers
         {
             try
             {
-                var feature = await _context.Features
+                var feature = await _unitOfWork.Features.Query
                     .FirstOrDefaultAsync(f => f.Id == id && f.ConventionId == conventionId);
 
                 if (feature == null)
@@ -69,7 +69,7 @@ namespace LocalRAG.Controllers
         {
             try
             {
-                var conventionExists = await _context.Conventions
+                var conventionExists = await _unitOfWork.Conventions.Query
                     .AnyAsync(c => c.Id == conventionId);
 
                 if (!conventionExists)
@@ -81,8 +81,8 @@ namespace LocalRAG.Controllers
                 feature.CreatedAt = DateTime.UtcNow;
                 feature.UpdatedAt = DateTime.UtcNow;
 
-                _context.Features.Add(feature);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Features.AddAsync(feature);
+                await _unitOfWork.SaveChangesAsync();
 
                 return CreatedAtAction(
                     nameof(GetFeature),
@@ -110,7 +110,7 @@ namespace LocalRAG.Controllers
 
             try
             {
-                var existingFeature = await _context.Features
+                var existingFeature = await _unitOfWork.Features.Query
                     .FirstOrDefaultAsync(f => f.Id == id && f.ConventionId == conventionId);
 
                 if (existingFeature == null)
@@ -124,7 +124,7 @@ namespace LocalRAG.Controllers
                 existingFeature.IconUrl = feature.IconUrl;
                 existingFeature.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 return NoContent();
             }
@@ -143,7 +143,7 @@ namespace LocalRAG.Controllers
         {
             try
             {
-                var feature = await _context.Features
+                var feature = await _unitOfWork.Features.Query
                     .FirstOrDefaultAsync(f => f.Id == id && f.ConventionId == conventionId);
 
                 if (feature == null)
@@ -154,7 +154,7 @@ namespace LocalRAG.Controllers
                 feature.IsActive = statusUpdate.IsActive;
                 feature.UpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 return Ok(feature);
             }
@@ -170,7 +170,7 @@ namespace LocalRAG.Controllers
         {
             try
             {
-                var feature = await _context.Features
+                var feature = await _unitOfWork.Features.Query
                     .FirstOrDefaultAsync(f => f.Id == id && f.ConventionId == conventionId);
 
                 if (feature == null)
@@ -178,8 +178,8 @@ namespace LocalRAG.Controllers
                     return NotFound("기능을 찾을 수 없습니다.");
                 }
 
-                _context.Features.Remove(feature);
-                await _context.SaveChangesAsync();
+                _unitOfWork.Features.Remove(feature);
+                await _unitOfWork.SaveChangesAsync();
 
                 return NoContent();
             }

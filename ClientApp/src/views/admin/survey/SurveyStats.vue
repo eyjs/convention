@@ -7,8 +7,8 @@
         설문 통계
       </h1>
       <button
-        @click="emit('back')"
         class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 font-semibold"
+        @click="emit('back')"
       >
         목록으로 돌아가기
       </button>
@@ -108,7 +108,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import api from '@/api'
+import api from '@/services/api'
 
 const props = defineProps({
   surveyId: {

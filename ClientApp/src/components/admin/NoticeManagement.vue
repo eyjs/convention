@@ -10,14 +10,14 @@
           </p>
         </div>
         <button
-          @click="showCategoryModal = true"
           class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
+          @click="showCategoryModal = true"
         >
           <span>카테고리 관리</span>
         </button>
         <button
-          @click="openCreateModal"
           class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          @click="openCreateModal"
         >
           <span>+</span>
           <span>새 공지사항</span>
@@ -45,8 +45,8 @@
           />
 
           <button
-            @click="handleSearch"
             class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            @click="handleSearch"
           >
             검색
           </button>
@@ -123,7 +123,6 @@
               </td>
               <td class="px-6 py-4">
                 <button
-                  @click="togglePin(notice.id)"
                   :class="[
                     'flex',
                     'items-center',
@@ -138,6 +137,7 @@
                       ? 'bg-red-100 text-red-800 hover:bg-red-200'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
                   ]"
+                  @click="togglePin(notice.id)"
                 >
                   <span>{{ notice.isPinned ? '📌' : '📍' }}</span>
                   <span>{{ notice.isPinned ? '고정됨' : '고정' }}</span>
@@ -149,13 +149,13 @@
               <td class="px-6 py-4">
                 <div
                   class="flex items-center gap-2 cursor-pointer"
+                  style="background-color: rgba(255, 0, 0, 0.1)"
                   @click="
                     () => {
                       alert('클릭됨!')
                       openDetailModal(notice.id)
                     }
                   "
-                  style="background-color: rgba(255, 0, 0, 0.1)"
                 >
                   <span
                     class="text-sm text-gray-900 font-medium hover:text-blue-600 transition-colors"
@@ -178,14 +178,14 @@
               <td class="px-6 py-4">
                 <div class="flex items-center justify-center gap-2">
                   <button
-                    @click="openEditModal(notice)"
                     class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-sm"
+                    @click="openEditModal(notice)"
                   >
                     수정
                   </button>
                   <button
-                    @click="confirmDelete(notice.id)"
                     class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-sm"
+                    @click="confirmDelete(notice.id)"
                   >
                     삭제
                   </button>
@@ -208,9 +208,9 @@
       <div v-if="totalPages > 1" class="mt-6 flex justify-center">
         <nav class="flex items-center gap-2">
           <button
-            @click="goToPage(currentPage - 1)"
             :disabled="currentPage === 1 ? true : null"
             class="px-3 py-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="goToPage(currentPage - 1)"
           >
             이전
           </button>
@@ -218,21 +218,21 @@
           <button
             v-for="page in visiblePages"
             :key="page"
-            @click="goToPage(page)"
             :class="[
               'px-4 py-2 rounded-lg border',
               currentPage === page
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'hover:bg-gray-50',
             ]"
+            @click="goToPage(page)"
           >
             {{ page }}
           </button>
 
           <button
-            @click="goToPage(currentPage + 1)"
             :disabled="currentPage === totalPages ? true : null"
             class="px-3 py-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="goToPage(currentPage + 1)"
           >
             다음
           </button>

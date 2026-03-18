@@ -40,8 +40,8 @@
               {{ vectorStatus?.isConnected ? '연결됨' : '연결 안됨' }}
             </p>
             <button
-              @click="showVectorDetailModal = true"
               class="text-xs text-blue-600 hover:underline mt-1"
+              @click="showVectorDetailModal = true"
             >
               상세보기
             </button>
@@ -100,8 +100,8 @@
       <div class="p-4 border-b flex items-center justify-between">
         <h4 class="font-semibold text-gray-900">LLM Provider 목록</h4>
         <button
-          @click="showAddModal = true"
           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center gap-2"
+          @click="showAddModal = true"
         >
           <svg
             class="w-4 h-4"
@@ -193,23 +193,23 @@
             <div class="flex gap-2">
               <button
                 v-if="!provider.isCurrent"
-                @click="swapProvider(provider)"
                 class="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm text-sm font-medium"
                 :disabled="swapping"
+                @click="swapProvider(provider)"
               >
                 <span v-if="swapping">전환중...</span>
                 <span v-else>즉시 전환</span>
               </button>
               <button
-                @click="editProvider(provider)"
                 class="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                @click="editProvider(provider)"
               >
                 수정
               </button>
               <button
                 v-if="!provider.isCurrent"
-                @click="deleteProvider(provider.id)"
                 class="px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                @click="deleteProvider(provider.id)"
               >
                 삭제
               </button>
@@ -293,8 +293,8 @@
 
         <div class="flex justify-end mt-6">
           <button
-            @click="showVectorDetailModal = false"
             class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            @click="showVectorDetailModal = false"
           >
             닫기
           </button>
@@ -384,14 +384,14 @@
 
         <div class="flex gap-3 mt-6">
           <button
-            @click="saveProvider"
             class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            @click="saveProvider"
           >
             저장
           </button>
           <button
-            @click="closeModal"
             class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            @click="closeModal"
           >
             취소
           </button>

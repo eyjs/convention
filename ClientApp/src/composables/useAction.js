@@ -20,7 +20,7 @@ export function useAction() {
     }
     try {
       const response = await apiClient.get(
-        `/api/conventions/${conventionId.value}/actions/checklist`,
+        `/conventions/${conventionId.value}/actions/checklist`,
       )
       return response.data
     } catch (error) {

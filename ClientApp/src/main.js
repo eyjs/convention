@@ -12,9 +12,9 @@ import 'v-calendar/style.css'
 import Viewer from 'v-viewer'
 import VCalendar from 'v-calendar'
 
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
-dayjs.extend(duration);
+import dayjs from 'dayjs'
+import duration from 'dayjs/plugin/duration'
+dayjs.extend(duration)
 
 // Directives
 import numberFormat from './directives/numberFormat'

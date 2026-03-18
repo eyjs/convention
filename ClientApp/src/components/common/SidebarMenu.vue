@@ -18,8 +18,8 @@
         <div class="p-4">
           <h2 class="text-xl font-bold">메뉴</h2>
           <button
-            @click="close"
             class="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            @click="close"
           >
             ✕
           </button>
@@ -28,8 +28,8 @@
           <li>
             <router-link
               to="/home"
-              @click="close"
               class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-md mb-2"
+              @click="close"
             >
               <div class="flex items-center gap-2">
                 <svg
@@ -52,8 +52,8 @@
           <li>
             <router-link
               to="/my-profile"
-              @click="close"
               class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-md mb-2"
+              @click="close"
             >
               <div class="flex items-center gap-2">
                 <svg
@@ -76,8 +76,8 @@
           <li>
             <router-link
               to="/trips"
-              @click="close"
               class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-md mb-2"
+              @click="close"
             >
               <div class="flex items-center gap-2">
                 <svg
@@ -105,8 +105,8 @@
           >
             <router-link
               :to="action.mapsTo"
-              @click="close"
               class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-md mb-2"
+              @click="close"
             >
               <div class="flex items-center justify-between">
                 <span>{{ action.title }}</span>
@@ -134,8 +134,8 @@
           </li>
           <li>
             <button
-              @click="handleLogout"
               class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-100 rounded-md mb-2"
+              @click="handleLogout"
             >
               로그아웃
             </button>

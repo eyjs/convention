@@ -1,6 +1,6 @@
-﻿using LocalRAG.Data;
 using LocalRAG.Interfaces;
 using LocalRAG.DTOs;
+using LocalRAG.Repositories;
 using LocalRAG.Services.Shared.Builders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -20,18 +20,18 @@ public class IndexingService
 {
     private readonly IRagService _ragService;
     private readonly ILogger<IndexingService> _logger;
-    private readonly ConventionDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ConventionDocumentBuilder _documentBuilder;
 
     public IndexingService(
         IRagService ragService,
         ILogger<IndexingService> logger,
-        ConventionDbContext context,
+        IUnitOfWork unitOfWork,
         ConventionDocumentBuilder documentBuilder)
     {
         _ragService = ragService;
         _logger = logger;
-        _context = context;
+        _unitOfWork = unitOfWork;
         _documentBuilder = documentBuilder;
     }
 
@@ -41,7 +41,7 @@ public class IndexingService
     public async Task<IndexingResult> ReindexAllConventionsAsync()
     {
         var result = new IndexingResult();
-        var conventionIds = await _context.Conventions
+        var conventionIds = await _unitOfWork.Conventions.Query
             .Where(c => c.DeleteYn == "N")
             .Select(c => c.Id)
             .ToListAsync();
@@ -77,7 +77,7 @@ public class IndexingService
         await _ragService.DeleteDocumentsByConventionIdAsync(conventionId);
 
         // 1.색인에 필요한 모든 '공용' 데이터를 여기서 한번에 조회합니다.
-        var convention = await _context.Conventions
+        var convention = await _unitOfWork.Conventions.Query
             .Include(c => c.UserConventions).ThenInclude(uc => uc.User) // guest_summary 청크를 만들기 위해 UserConventions와 User 정보는 필요합니다.
             .Include(c => c.ScheduleTemplates).ThenInclude(st => st.ScheduleItems)
             .AsNoTracking()
@@ -87,11 +87,11 @@ public class IndexingService
             throw new ArgumentException($"Convention {conventionId} not found");
 
 
-        var notices = await _context.Notices
+        var notices = await _unitOfWork.Notices.Query
           .Where(n => n.ConventionId == conventionId && !n.IsDeleted)
           .ToListAsync();
 
-        var conventionActions = await _context.ConventionActions
+        var conventionActions = await _unitOfWork.ConventionActions.Query
           .Where(a => a.ConventionId == conventionId && a.IsActive)
           .OrderBy(a => a.OrderNum)
           .ToListAsync();

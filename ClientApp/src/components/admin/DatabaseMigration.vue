@@ -61,8 +61,8 @@
       <div class="flex items-center justify-between">
         <h4 class="font-bold text-gray-900">Migration 상세 분석</h4>
         <button
-          @click="showAnalysisDetails = !showAnalysisDetails"
           class="text-sm text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+          @click="showAnalysisDetails = !showAnalysisDetails"
         >
           <span>{{ showAnalysisDetails ? '접기' : '펼치기' }}</span>
           <svg
@@ -227,9 +227,9 @@
     <!-- 액션 버튼 -->
     <div class="flex flex-wrap gap-3 mb-6">
       <button
-        @click="checkStatus"
         :disabled="loading"
         class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center space-x-2"
+        @click="checkStatus"
       >
         <svg
           class="w-4 h-4"
@@ -250,9 +250,9 @@
 
       <button
         v-if="status?.needsMigration"
-        @click="analyzeMigrations"
         :disabled="loading"
         class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 transition-colors flex items-center space-x-2"
+        @click="analyzeMigrations"
       >
         <svg
           class="w-4 h-4"
@@ -273,9 +273,9 @@
 
       <button
         v-if="status?.needsMigration && !hasCriticalRisk"
-        @click="dryRunMigration"
         :disabled="loading"
         class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-400 transition-colors"
+        @click="dryRunMigration"
       >
         <span v-if="loading">확인 중...</span>
         <span v-else>미리보기 (Dry Run)</span>
@@ -283,7 +283,6 @@
 
       <button
         v-if="status?.needsMigration"
-        @click="confirmMigration"
         :disabled="loading || (hasCriticalRisk && !userApprovedCritical)"
         :class="[
           'px-4 py-2 rounded-lg transition-colors flex items-center space-x-2',
@@ -291,6 +290,7 @@
             ? 'bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-400'
             : 'bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400',
         ]"
+        @click="confirmMigration"
       >
         <svg
           v-if="hasCriticalRisk"
@@ -310,9 +310,9 @@
       </button>
 
       <button
-        @click="testConnection"
         :disabled="loading"
         class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 transition-colors"
+        @click="testConnection"
       >
         연결 테스트
       </button>
@@ -345,8 +345,8 @@
           </p>
           <label class="flex items-center space-x-2 cursor-pointer">
             <input
-              type="checkbox"
               v-model="userApprovedCritical"
+              type="checkbox"
               class="w-4 h-4 text-red-600 focus:ring-red-500"
             />
             <span class="text-sm font-semibold text-red-900">
@@ -362,8 +362,8 @@
       <div class="flex items-center justify-between mb-2">
         <h4 class="font-semibold text-gray-900">실행 로그</h4>
         <button
-          @click="logs = []"
           class="text-xs text-gray-500 hover:text-gray-700"
+          @click="logs = []"
         >
           지우기
         </button>

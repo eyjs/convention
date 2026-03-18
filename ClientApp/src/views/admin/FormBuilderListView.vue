@@ -9,9 +9,9 @@
       </div>
       <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
         <button
-          @click="createNewForm"
           type="button"
           class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 sm:w-auto"
+          @click="createNewForm"
         >
           새 폼 만들기
         </button>
@@ -90,14 +90,14 @@
                     class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6"
                   >
                     <button
-                      @click="editForm(form.id)"
                       class="text-primary-600 hover:text-primary-900"
+                      @click="editForm(form.id)"
                     >
                       편집
                     </button>
                     <button
-                      @click="confirmDelete(form.id)"
                       class="ml-4 text-red-600 hover:text-red-900"
+                      @click="confirmDelete(form.id)"
                     >
                       삭제
                     </button>

@@ -2,7 +2,6 @@ using LocalRAG.DTOs.UploadModels;
 using LocalRAG.DTOs.ScheduleModels;
 using LocalRAG.Interfaces;
 using LocalRAG.Repositories;
-using LocalRAG.Data;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 
@@ -24,16 +23,13 @@ namespace LocalRAG.Services.Upload;
 public class ScheduleUploadService : IScheduleTemplateUploadService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ConventionDbContext _context;
     private readonly ILogger<ScheduleUploadService> _logger;
 
     public ScheduleUploadService(
         IUnitOfWork unitOfWork,
-        ConventionDbContext context,
         ILogger<ScheduleUploadService> logger)
     {
         _unitOfWork = unitOfWork;
-        _context = context;
         _logger = logger;
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
     }
@@ -75,7 +71,7 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
             try
             {
                 // 현재 Convention의 최대 OrderNum 조회
-                var maxOrderNum = await _context.ScheduleTemplates
+                var maxOrderNum = await _unitOfWork.ScheduleTemplates.Query
                     .Where(st => st.ConventionId == conventionId)
                     .MaxAsync(st => (int?)st.OrderNum) ?? 0;
 
@@ -89,7 +85,7 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                     CreatedAt = DateTime.UtcNow
                 };
 
-                _context.ScheduleTemplates.Add(scheduleTemplate);
+                await _unitOfWork.ScheduleTemplates.AddAsync(scheduleTemplate);
 
                 // ScheduleItems 목록
                 var scheduleItems = new List<ScheduleItem>();
@@ -168,7 +164,7 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                 scheduleTemplate.ScheduleItems = scheduleItems;
 
                 // 한 번의 SaveChanges로 모든 변경사항 커밋 (암시적 트랜잭션)
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
                 result.Success = true;
                 result.TemplatesCreated = 1; // 템플릿 1개 생성

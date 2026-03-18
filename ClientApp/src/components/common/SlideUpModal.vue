@@ -23,8 +23,8 @@
             <slot name="header-title"></slot>
           </h2>
           <button
-            @click="close"
             class="p-2.5 md:p-2 -mr-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg z-10 text-gray-500 transition-colors"
+            @click="close"
           >
             <svg
               class="w-6 h-6 md:w-5 md:h-5"
@@ -48,7 +48,10 @@
         </main>
 
         <!-- Footer -->
-        <footer v-if="$slots.footer" class="px-4 py-4 md:px-6 md:py-4 border-t flex-shrink-0">
+        <footer
+          v-if="$slots.footer"
+          class="px-4 py-4 md:px-6 md:py-4 border-t flex-shrink-0"
+        >
           <slot name="footer"></slot>
         </footer>
       </div>
@@ -76,27 +79,30 @@ const startPos = ref({ x: 0, y: 0 })
 const modalId = Symbol('modal') // 고유 ID
 
 // 모달 열림/닫힘 시 body 스크롤 제어 및 스택 관리
-watch(() => props.isOpen, (newValue, oldValue) => {
-  if (newValue && !oldValue) {
-    // 모달이 열릴 때
-    uiStore.openModal()
-    document.body.style.overflow = 'hidden'
-    document.body.style.touchAction = 'none'
+watch(
+  () => props.isOpen,
+  (newValue, oldValue) => {
+    if (newValue && !oldValue) {
+      // 모달이 열릴 때
+      uiStore.openModal()
+      document.body.style.overflow = 'hidden'
+      document.body.style.touchAction = 'none'
 
-    // UI Store에 모달 등록
-    uiStore.registerModal(modalId, () => {
-      emit('close')
-    })
-  } else if (!newValue && oldValue) {
-    // 모달이 닫힐 때
-    uiStore.closeModal()
-    document.body.style.overflow = ''
-    document.body.style.touchAction = ''
+      // UI Store에 모달 등록
+      uiStore.registerModal(modalId, () => {
+        emit('close')
+      })
+    } else if (!newValue && oldValue) {
+      // 모달이 닫힐 때
+      uiStore.closeModal()
+      document.body.style.overflow = ''
+      document.body.style.touchAction = ''
 
-    // UI Store에서 모달 제거
-    uiStore.unregisterModal(modalId)
-  }
-})
+      // UI Store에서 모달 제거
+      uiStore.unregisterModal(modalId)
+    }
+  },
+)
 
 // 컴포넌트가 언마운트될 때 스크롤 복원 및 스택에서 제거
 onUnmounted(() => {

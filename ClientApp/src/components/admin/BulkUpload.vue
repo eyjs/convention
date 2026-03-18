@@ -8,13 +8,13 @@
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          @click="activeTab = tab.id"
           :class="[
             'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
             activeTab === tab.id
               ? 'border-primary-500 text-primary-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
           ]"
+          @click="activeTab = tab.id"
         >
           {{ tab.name }}
         </button>
@@ -29,9 +29,9 @@
         </label>
         <input
           type="file"
-          @change="handleFileGuests"
           accept=".xlsx"
           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+          @change="handleFileGuests"
         />
       </div>
 
@@ -53,9 +53,9 @@
       </div>
 
       <button
-        @click="uploadGuests"
         :disabled="!fileGuests || uploadingGuests"
         class="w-full px-6 py-3 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
+        @click="uploadGuests"
       >
         {{ uploadingGuests ? '업로드 중...' : '참석자 업로드' }}
       </button>
@@ -82,9 +82,9 @@
         </label>
         <input
           type="file"
-          @change="handleFileSchedules"
           accept=".xlsx"
           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+          @change="handleFileSchedules"
         />
       </div>
 
@@ -112,9 +112,9 @@
       </div>
 
       <button
-        @click="uploadSchedules"
         :disabled="!fileSchedules || uploadingSchedules"
         class="w-full px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
+        @click="uploadSchedules"
       >
         {{ uploadingSchedules ? '업로드 중...' : '일정 업로드' }}
       </button>
@@ -145,9 +145,9 @@
         </label>
         <input
           type="file"
-          @change="handleFileOptionTours"
           accept=".xlsx"
           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+          @change="handleFileOptionTours"
         />
       </div>
 
@@ -173,14 +173,14 @@
             <p><strong>D열:</strong> 주민번호 (조건부 필수) - 참석자 매칭용</p>
             <p><strong>E열:</strong> 연락처 (조건부 필수) - 참석자 매칭용</p>
             <p><strong>F열:</strong> 그룹 (선택)</p>
-            <p><strong>G열:</strong> 옵션 ID (필수) - 콤마로 구분 (예: 1,2,3)</p>
+            <p>
+              <strong>G열:</strong> 옵션 ID (필수) - 콤마로 구분 (예: 1,2,3)
+            </p>
           </div>
           <p class="mt-3 text-orange-600">
             ※ 참석자는 이름 + (전화번호 OR 주민번호)로 매칭됩니다
           </p>
-          <p class="text-orange-600">
-            ※ 참석자가 미리 등록되어 있어야 합니다
-          </p>
+          <p class="text-orange-600">※ 참석자가 미리 등록되어 있어야 합니다</p>
           <p class="text-orange-600">
             ※ 프론트엔드에서 일정 + 옵션 = 일정표로 조합됩니다
           </p>
@@ -188,9 +188,9 @@
       </div>
 
       <button
-        @click="uploadOptionTours"
         :disabled="!fileOptionTours || uploadingOptionTours"
         class="w-full px-6 py-3 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
+        @click="uploadOptionTours"
       >
         {{ uploadingOptionTours ? '업로드 중...' : '옵션투어 업로드' }}
       </button>
@@ -221,9 +221,9 @@
         </label>
         <input
           type="file"
-          @change="handleFileAttributes"
           accept=".xlsx"
           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+          @change="handleFileAttributes"
         />
       </div>
 
@@ -244,9 +244,9 @@
       </div>
 
       <button
-        @click="uploadAttributes"
         :disabled="!fileAttributes || uploadingAttributes"
         class="w-full px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
+        @click="uploadAttributes"
       >
         {{ uploadingAttributes ? '업로드 중...' : '속성 업로드' }}
       </button>
@@ -268,8 +268,8 @@
             📥 속성 업로드 샘플
           </a>
           <button
-            @click="downloadGuests"
             class="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-md hover:bg-green-200"
+            @click="downloadGuests"
           >
             📥 전체 참석자 속성 다운로드
           </button>
@@ -543,7 +543,9 @@ const uploadOptionTours = async () => {
 
     // 시트 확인
     if (workbook.SheetNames.length < 2) {
-      throw new Error('엑셀 파일에 2개의 시트가 필요합니다 (옵션, 참석자별 매핑)')
+      throw new Error(
+        '엑셀 파일에 2개의 시트가 필요합니다 (옵션, 참석자별 매핑)',
+      )
     }
 
     const optionsSheetName = workbook.SheetNames[0]
@@ -587,7 +589,9 @@ const uploadOptionTours = async () => {
       const [num, division, name, idNumber, phone, group, optionIds] = row
 
       if (!name || !phone) {
-        console.warn(`참석자 매핑 시트 ${i + 1}행 스킵: 이름 또는 전화번호 누락`)
+        console.warn(
+          `참석자 매핑 시트 ${i + 1}행 스킵: 이름 또는 전화번호 누락`,
+        )
         continue
       }
 

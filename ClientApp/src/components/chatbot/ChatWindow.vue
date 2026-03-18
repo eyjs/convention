@@ -44,9 +44,9 @@
 
           <div class="flex items-center space-x-1">
             <button
-              @click="handleRefresh"
               class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               title="새 채팅"
+              @click="handleRefresh"
             >
               <svg
                 class="w-5 h-5"
@@ -64,9 +64,9 @@
             </button>
 
             <button
-              @click="handleClose"
               class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               title="닫기"
+              @click="handleClose"
             >
               <svg
                 class="w-5 h-5"

@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using LocalRAG.Data;
 using LocalRAG.DTOs.SurveyModels;
 using LocalRAG.Entities;
 using System.Linq;
@@ -7,22 +6,23 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using LocalRAG.Interfaces;
 using LocalRAG.Entities.Action;
+using LocalRAG.Repositories;
 using System.Text.Json;
 
 namespace LocalRAG.Services.Convention
 {
     public class SurveyService : ISurveyService
     {
-        private readonly ConventionDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public SurveyService(ConventionDbContext context)
+        public SurveyService(IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<IEnumerable<SurveyDto>> GetAllSurveysAsync()
         {
-            var surveys = await _context.Surveys
+            var surveys = await _unitOfWork.Surveys.Query
                 .AsNoTracking()
                 .OrderByDescending(s => s.Id)
                 .Select(s => new SurveyDto
@@ -41,7 +41,7 @@ namespace LocalRAG.Services.Convention
 
         public async Task<SurveyDto> GetSurveyAsync(int id)
         {
-            var survey = await _context.Surveys
+            var survey = await _unitOfWork.Surveys.Query
                 .Include(s => s.Questions)
                 .ThenInclude(q => q.Options)
                 .AsNoTracking()
@@ -109,10 +109,10 @@ namespace LocalRAG.Services.Convention
                 survey.Questions.Add(question);
             }
 
-            _context.Surveys.Add(survey);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Surveys.AddAsync(survey);
+            await _unitOfWork.SaveChangesAsync();
 
-            // Automatically create a ConventionAction linked to this survey
+            // TODO: domain boundary violation — ConventionAction 생성은 Action 도메인 영역
             if (survey.ConventionId.HasValue)
             {
                 var conventionAction = new ConventionAction
@@ -127,8 +127,8 @@ namespace LocalRAG.Services.Convention
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
-                _context.ConventionActions.Add(conventionAction);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.ConventionActions.AddAsync(conventionAction);
+                await _unitOfWork.SaveChangesAsync();
             }
 
             return await GetSurveyAsync(survey.Id);
@@ -136,7 +136,7 @@ namespace LocalRAG.Services.Convention
 
         public async Task<SurveyDto> UpdateSurveyAsync(int id, SurveyCreateDto updateDto)
         {
-            var survey = await _context.Surveys
+            var survey = await _unitOfWork.Surveys.Query
                 .Include(s => s.Questions)
                 .ThenInclude(q => q.Options)
                 .FirstOrDefaultAsync(s => s.Id == id);
@@ -158,7 +158,7 @@ namespace LocalRAG.Services.Convention
             // updateDto에 없는 질문 제거
             foreach (var questionToRemove in survey.Questions.Where(q => !updatedQuestionIds.Contains(q.Id)).ToList())
             {
-                _context.SurveyQuestions.Remove(questionToRemove);
+                _unitOfWork.SurveyQuestions.Remove(questionToRemove);
             }
 
             foreach (var qDto in updateDto.Questions)
@@ -191,7 +191,7 @@ namespace LocalRAG.Services.Convention
                 // qDto에 없는 옵션 제거
                 foreach (var optionToRemove in question.Options.Where(o => !updatedOptionIds.Contains(o.Id)).ToList())
                 {
-                    _context.QuestionOptions.Remove(optionToRemove);
+                    _unitOfWork.QuestionOptions.Remove(optionToRemove);
                 }
 
                 foreach (var oDto in qDto.Options)
@@ -215,79 +215,72 @@ namespace LocalRAG.Services.Convention
                 }
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return await GetSurveyAsync(survey.Id);
         }
 
         public async Task SubmitSurveyAsync(int surveyId, SurveySubmissionDto submissionDto, int userId)
         {
-            var survey = await _context.Surveys.FindAsync(surveyId);
+            var survey = await _unitOfWork.Surveys.GetByIdAsync(surveyId);
             if (survey == null)
             {
                 throw new KeyNotFoundException("Survey not found.");
             }
 
-            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+            var user = await _unitOfWork.Users.Query.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null)
             {
                 throw new KeyNotFoundException("User not found.");
             }
 
+            await _unitOfWork.BeginTransactionAsync();
 
-
-            var strategy = _context.Database.CreateExecutionStrategy();
-
-            await strategy.ExecuteAsync(async () =>
+            try
             {
-                using var transaction = await _context.Database.BeginTransactionAsync();
+                // 1. SurveyResponse를 찾거나 새로 생성 (Idempotent)
+                var response = await _unitOfWork.SurveyResponses.Query
+                    .Include(r => r.Details)
+                    .FirstOrDefaultAsync(r => r.SurveyId == surveyId && r.UserId == userId);
 
-                try
+                if (response == null)
                 {
-                    // 1. SurveyResponse를 찾거나 새로 생성 (Idempotent)
-                    var response = await _context.SurveyResponses
-                        .Include(r => r.Details)
-                        .FirstOrDefaultAsync(r => r.SurveyId == surveyId && r.UserId == userId);
-
-                    if (response == null)
+                    response = new SurveyResponse
                     {
-                        response = new SurveyResponse
-                        {
-                            SurveyId = surveyId,
-                            UserId = userId,
-                        };
-                        _context.SurveyResponses.Add(response);
-                    }
-                    else
-                    {
-                        // 기존 답변 삭제
-                        _context.SurveyResponseDetails.RemoveRange(response.Details);
-                    }
-                    
-                    response.SubmittedAt = DateTime.UtcNow; // 제출 시간 업데이트
-
-                    // 새로운 답변 추가
-                    AddAnswerDetails(response, submissionDto);
-
-                    // 2. ConventionAction 연동 로직
-                    await UpdateConventionActionStatusAsync(survey, submissionDto, userId);
-
-                    // 3. 모든 변경사항을 한 번에 커밋
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
+                        SurveyId = surveyId,
+                        UserId = userId,
+                    };
+                    await _unitOfWork.SurveyResponses.AddAsync(response);
                 }
-                catch (Exception)
+                else
                 {
-                    await transaction.RollbackAsync();
-                    throw;
+                    // 기존 답변 삭제
+                    _unitOfWork.SurveyResponseDetails.RemoveRange(response.Details);
                 }
-            });
+
+                response.SubmittedAt = DateTime.UtcNow; // 제출 시간 업데이트
+
+                // 새로운 답변 추가
+                AddAnswerDetails(response, submissionDto);
+
+                // 2. ConventionAction 연동 로직
+                await UpdateConventionActionStatusAsync(survey, submissionDto, userId);
+
+                // 3. 모든 변경사항을 한 번에 커밋
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
 
         }
 
         public async Task<SurveyStatsDto> GetSurveyStatsAsync(int id)
         {
-            var survey = await _context.Surveys
+            var survey = await _unitOfWork.Surveys.Query
                 .Include(s => s.Questions)
                 .ThenInclude(q => q.Options)
                 .Include(s => s.Responses)
@@ -320,7 +313,7 @@ namespace LocalRAG.Services.Convention
 
         public async Task<SurveyResponseDto> GetUserSurveyResponseAsync(int surveyId, int userId)
         {
-            var response = await _context.SurveyResponses
+            var response = await _unitOfWork.SurveyResponses.Query
                 .Include(r => r.Details)
                 .FirstOrDefaultAsync(r => r.SurveyId == surveyId && r.UserId == userId);
 
@@ -370,9 +363,10 @@ namespace LocalRAG.Services.Convention
             }
         }
 
+        // TODO: domain boundary violation — ConventionAction/UserActionStatus는 Action 도메인 영역
         private async Task UpdateConventionActionStatusAsync(Survey survey, SurveySubmissionDto submissionDto, int userId)
         {
-            var action = await _context.ConventionActions
+            var action = await _unitOfWork.ConventionActions.Query
                 .FirstOrDefaultAsync(a => a.ConventionId == survey.ConventionId &&
                                           a.BehaviorType == BehaviorType.ModuleLink &&
                                           a.TargetModuleId == survey.Id);
@@ -381,7 +375,7 @@ namespace LocalRAG.Services.Convention
             {
                 // ActionSubmissions 테이블에 JSON 데이터 저장
                 var submissionJson = JsonSerializer.Serialize(submissionDto);
-                var actionSubmission = await _context.ActionSubmissions
+                var actionSubmission = await _unitOfWork.ActionSubmissions.Query
                     .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
 
                 if (actionSubmission == null)
@@ -393,7 +387,7 @@ namespace LocalRAG.Services.Convention
                         SubmissionDataJson = submissionJson,
                         SubmittedAt = DateTime.UtcNow
                     };
-                    _context.ActionSubmissions.Add(actionSubmission);
+                    await _unitOfWork.ActionSubmissions.AddAsync(actionSubmission);
                 }
                 else
                 {
@@ -402,7 +396,7 @@ namespace LocalRAG.Services.Convention
                 }
 
                 // UserActionStatus를 완료로 표시
-                var userActionStatus = await _context.UserActionStatuses
+                var userActionStatus = await _unitOfWork.UserActionStatuses.Query
                     .FirstOrDefaultAsync(s => s.UserId == userId && s.ConventionActionId == action.Id);
 
                 if (userActionStatus == null)
@@ -415,7 +409,7 @@ namespace LocalRAG.Services.Convention
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
-                    _context.UserActionStatuses.Add(userActionStatus);
+                    await _unitOfWork.UserActionStatuses.AddAsync(userActionStatus);
                 }
                 else
                 {

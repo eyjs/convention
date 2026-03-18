@@ -1,12 +1,12 @@
 <template>
-  <BaseModal :is-open="true" @close="closeModal" max-width="5xl">
+  <BaseModal :is-open="true" max-width="5xl" @close="closeModal">
     <template #header>
       <h2 class="text-2xl font-bold text-gray-900">
         {{ isEdit ? '공지사항 수정' : '새 공지사항 작성' }}
       </h2>
     </template>
     <template #body>
-      <form @submit.prevent="handleSubmit" class="space-y-6">
+      <form class="space-y-6" @submit.prevent="handleSubmit">
         <!-- 카테고리 -->
         <div>
           <label
@@ -47,9 +47,9 @@
         <!-- 고정 여부 (관리자만) -->
         <div v-if="authStore.isAdmin" class="flex items-center gap-2">
           <input
+            id="isPinned"
             v-model="form.isPinned"
             type="checkbox"
-            id="isPinned"
             class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
           />
           <label
@@ -90,13 +90,13 @@
               ref="fileInput"
               type="file"
               multiple
-              @change="handleFileSelect"
               class="hidden"
+              @change="handleFileSelect"
             />
             <button
               type="button"
-              @click="$refs.fileInput.click()"
               class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+              @click="$refs.fileInput.click()"
             >
               <span>📎</span>
               <span>파일 선택</span>
@@ -124,8 +124,8 @@
               </div>
               <button
                 type="button"
-                @click="removeFile(index)"
                 class="text-red-600 hover:text-red-800 transition-colors"
+                @click="removeFile(index)"
               >
                 <span class="text-xl">×</span>
               </button>
@@ -147,15 +147,15 @@
     <template #footer>
       <button
         type="button"
-        @click="closeModal"
         class="px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors"
+        @click="closeModal"
       >
         취소
       </button>
       <button
-        @click="handleSubmit"
         :disabled="saving || !isFormValid"
         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        @click="handleSubmit"
       >
         <span
           v-if="saving"
