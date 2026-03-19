@@ -433,17 +433,16 @@ function goToTripDetail(tripId) {
 }
 
 async function goToConvention(convention) {
-  console.log('goToConvention called with:', convention)
-  // [방어] convention.id가 유효한지 확인
-  if (!convention || !convention.id || convention.id === 'undefined') {
+  if (!convention?.id) {
     console.warn('Invalid convention:', convention)
-    alert(`Invalid convention: ${JSON.stringify(convention)}`)
     return
   }
-  console.log('Selecting convention:', convention.id)
-  await conventionStore.selectConvention(convention.id)
-  console.log('Navigating to: /')
-  router.push('/')
+  try {
+    await conventionStore.selectConvention(convention.id)
+    router.push('/')
+  } catch (error) {
+    console.error('행사 선택 실패:', error)
+  }
 }
 
 // 날짜 포맷
