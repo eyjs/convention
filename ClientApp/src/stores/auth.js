@@ -24,6 +24,16 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value?.unreadCount || 0
   })
 
+  function isTokenExpired(token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      // 만료 10초 전이면 만료로 판단
+      return payload.exp * 1000 < Date.now() - 10000
+    } catch {
+      return true
+    }
+  }
+
   function initAuth() {
     const storedToken = localStorage.getItem('accessToken')
     const storedRefreshToken = localStorage.getItem('refreshToken')
@@ -35,13 +45,21 @@ export const useAuthStore = defineStore('auth', () => {
       storedUser !== 'undefined' &&
       storedUser !== 'null'
     ) {
+      // JWT 만료 확인 — 만료됐으면 즉시 정리
+      if (isTokenExpired(storedToken)) {
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('user')
+        localStorage.removeItem('selectedConventionId')
+        return
+      }
+
       try {
         accessToken.value = storedToken
         refreshToken.value = storedRefreshToken
         user.value = JSON.parse(storedUser)
       } catch (e) {
         console.error('Failed to parse user from localStorage', e)
-        // 파싱 실패 시 모든 관련 정보를 깨끗이 지웁니다.
         logout()
       }
     }
