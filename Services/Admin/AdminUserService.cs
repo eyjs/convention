@@ -75,7 +75,13 @@ public class AdminUserService : IAdminUserService
                     HasImage = !string.IsNullOrEmpty(uc.User.PassportImageUrl),
                     uc.User.PassportVerified,
                     uc.User.PassportVerifiedAt,
-                    uc.User.PassportExpiryDate
+                    PassportExpiryDate = uc.User.PassportExpiryDate.HasValue
+                        ? uc.User.PassportExpiryDate.Value.ToString("yyyy-MM-dd")
+                        : (string?)null,
+                    uc.User.PassportNumber,
+                    uc.User.PassportImageUrl,
+                    uc.User.FirstName,
+                    uc.User.LastName
                 }
             })
             .ToListAsync();
@@ -90,6 +96,8 @@ public class AdminUserService : IAdminUserService
             .Include(u => u.GuestScheduleTemplates)
                 .ThenInclude(gst => gst.ScheduleTemplate)
                     .ThenInclude(st => st!.ScheduleItems.OrderBy(si => si.OrderNum))
+            .Include(u => u.UserOptionTours)
+                .ThenInclude(uot => uot.OptionTour)
             .FirstOrDefaultAsync(u => u.Id == guestId);
 
         if (user == null) return null;
@@ -118,6 +126,25 @@ public class AdminUserService : IAdminUserService
                     si.Title, si.Content, si.Location, si.OrderNum
                 }).ToList()
             }).ToList(),
+            optionTours = user.UserOptionTours.Select(uot => new
+            {
+                uot.OptionTourId,
+                uot.OptionTour!.Name,
+                Date = uot.OptionTour.Date.ToString("yyyy-MM-dd"),
+                uot.OptionTour.StartTime,
+                uot.OptionTour.EndTime,
+                uot.OptionTour.Content
+            }).ToList(),
+            passport = new
+            {
+                user.PassportNumber,
+                PassportExpiryDate = user.PassportExpiryDate?.ToString("yyyy-MM-dd"),
+                user.PassportImageUrl,
+                user.FirstName,
+                user.LastName,
+                user.PassportVerified,
+                user.PassportVerifiedAt
+            },
             attributes = user.GuestAttributes
                 .ToDictionary(ga => ga.AttributeKey, ga => ga.AttributeValue)
         };
@@ -222,6 +249,18 @@ public class AdminUserService : IAdminUserService
         user.CorpPart = dto.CorpPart?.Trim();
         user.ResidentNumber = dto.ResidentNumber?.Trim();
         user.Affiliation = dto.Affiliation?.Trim();
+        user.FirstName = dto.FirstName?.Trim();
+        user.LastName = dto.LastName?.Trim();
+        user.PassportNumber = dto.PassportNumber?.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.PassportExpiryDate))
+        {
+            if (DateOnly.TryParse(dto.PassportExpiryDate, out var expiryDate))
+                user.PassportExpiryDate = expiryDate;
+        }
+        else
+        {
+            user.PassportExpiryDate = null;
+        }
         user.UpdatedAt = DateTime.UtcNow;
 
         if (!string.IsNullOrWhiteSpace(dto.Password))

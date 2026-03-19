@@ -51,6 +51,87 @@
           </div>
         </div>
 
+        <!-- 여권 정보 -->
+        <div
+          v-if="guestDetail?.passport"
+          class="mb-6 border rounded-lg p-4 bg-gray-50"
+        >
+          <h3 class="font-semibold mb-3">여권 정보</h3>
+          <dl class="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <dt class="text-gray-500">영문명</dt>
+              <dd class="font-medium">
+                {{
+                  guestDetail.passport.firstName ||
+                  guestDetail.passport.lastName
+                    ? `${guestDetail.passport.firstName || ''} ${guestDetail.passport.lastName || ''}`
+                    : '-'
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-gray-500">여권번호</dt>
+              <dd class="font-medium">
+                {{ guestDetail.passport.passportNumber || '-' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-gray-500">만료일</dt>
+              <dd class="font-medium">
+                {{ guestDetail.passport.passportExpiryDate || '-' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-gray-500">여권사본</dt>
+              <dd class="font-medium">
+                {{
+                  guestDetail.passport.passportImageUrl ? '업로드됨' : '미등록'
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-gray-500">검증 상태</dt>
+              <dd>
+                <span
+                  class="px-2 py-0.5 rounded text-xs font-medium"
+                  :class="
+                    guestDetail.passport.passportVerified
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-500'
+                  "
+                >
+                  {{
+                    guestDetail.passport.passportVerified
+                      ? '검증완료'
+                      : '미검증'
+                  }}
+                </span>
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- 옵션투어 -->
+        <div
+          v-if="guestDetail?.optionTours && guestDetail.optionTours.length > 0"
+          class="mb-6"
+        >
+          <h3 class="font-semibold mb-3">옵션투어</h3>
+          <div class="flex flex-wrap gap-2">
+            <div
+              v-for="tour in guestDetail.optionTours"
+              :key="tour.optionTourId"
+              class="px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg text-sm"
+            >
+              <div class="font-medium text-purple-800">{{ tour.name }}</div>
+              <div class="text-xs text-purple-600">
+                {{ tour.date }} {{ tour.startTime
+                }}{{ tour.endTime ? ` ~ ${tour.endTime}` : '' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div v-if="guestDetail?.schedules && guestDetail.schedules.length > 0">
           <h3 class="font-semibold mb-3">배정된 일정</h3>
           <div class="space-y-4">

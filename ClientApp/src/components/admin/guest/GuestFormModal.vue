@@ -283,6 +283,54 @@
           />
         </div>
 
+        <!-- 여권 정보 -->
+        <div class="border rounded-lg p-4 bg-gray-50 space-y-4">
+          <h3 class="text-sm font-semibold text-gray-700">여권 정보</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1"
+                >영문 이름 (First Name)</label
+              >
+              <input
+                v-model="guestForm.firstName"
+                type="text"
+                placeholder="GILDONG"
+                class="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1"
+                >영문 성 (Last Name)</label
+              >
+              <input
+                v-model="guestForm.lastName"
+                type="text"
+                placeholder="HONG"
+                class="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">여권번호</label>
+              <input
+                v-model="guestForm.passportNumber"
+                type="text"
+                placeholder="M12345678"
+                class="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">여권 만료일</label>
+              <input
+                v-model="guestForm.passportExpiryDate"
+                type="date"
+                class="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+
         <div>
           <label class="block text-sm font-medium mb-1"
             >초기 비밀번호 (선택)</label
@@ -611,6 +659,10 @@ const guestForm = ref({
   residentNumber: '',
   affiliation: '',
   password: '',
+  firstName: '',
+  lastName: '',
+  passportNumber: '',
+  passportExpiryDate: '',
   scheduleTemplateIds: [],
   optionTourIds: [],
   templateAttributes: {},
@@ -782,6 +834,10 @@ watch(
         residentNumber: guest.residentNumber || '',
         affiliation: guest.affiliation || '',
         password: '',
+        firstName: guest.passport?.firstName || '',
+        lastName: guest.passport?.lastName || '',
+        passportNumber: guest.passport?.passportNumber || '',
+        passportExpiryDate: guest.passport?.passportExpiryDate || '',
         scheduleTemplateIds: guest.scheduleTemplates.map(
           (st) => st.scheduleTemplateId,
         ),
@@ -813,6 +869,10 @@ const resetForm = () => {
     residentNumber: '',
     affiliation: '',
     password: '',
+    firstName: '',
+    lastName: '',
+    passportNumber: '',
+    passportExpiryDate: '',
     scheduleTemplateIds: [],
     optionTourIds: [],
     templateAttributes: {},
@@ -856,6 +916,10 @@ const saveGuest = async () => {
       residentNumber: guestForm.value.residentNumber,
       affiliation: guestForm.value.affiliation,
       password: guestForm.value.password,
+      firstName: guestForm.value.firstName || null,
+      lastName: guestForm.value.lastName || null,
+      passportNumber: guestForm.value.passportNumber || null,
+      passportExpiryDate: guestForm.value.passportExpiryDate || null,
       attributes: Object.keys(attributes).length > 0 ? attributes : null,
     }
 

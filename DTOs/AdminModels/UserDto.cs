@@ -8,5 +8,9 @@ public class UserDto
     public string? ResidentNumber { get; set; }
     public string? Affiliation { get; set; }
     public string? Password { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? PassportNumber { get; set; }
+    public string? PassportExpiryDate { get; set; }
     public Dictionary<string, string>? Attributes { get; set; }
 }
