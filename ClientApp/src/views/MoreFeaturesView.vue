@@ -46,7 +46,7 @@
         </p>
         <button
           class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          @click="router.push('/')"
+          @click="router.push(`/conventions/${route.params.conventionId}`)"
         >
           홈으로 돌아가기
         </button>
@@ -57,24 +57,18 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import apiClient from '@/services/api'
 import MainHeader from '@/components/common/MainHeader.vue'
 import GenericMenuItem from '@/dynamic-features/common/GenericMenuItem.vue'
 
 const router = useRouter()
+const route = useRoute()
 const allActions = ref([])
 const isLoading = ref(false)
 
 onMounted(async () => {
-  const conventionId = localStorage.getItem('selectedConventionId')
-  console.log('ConventionId:', conventionId)
-
-  if (!conventionId) {
-    console.log('No conventionId found, redirecting to home')
-    router.push('/')
-    return
-  }
+  const conventionId = route.params.conventionId
 
   isLoading.value = true
   try {

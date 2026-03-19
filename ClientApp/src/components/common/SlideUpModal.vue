@@ -83,22 +83,16 @@ watch(
   () => props.isOpen,
   (newValue, oldValue) => {
     if (newValue && !oldValue) {
-      // 모달이 열릴 때
-      uiStore.openModal()
       document.body.style.overflow = 'hidden'
       document.body.style.touchAction = 'none'
 
-      // UI Store에 모달 등록
       uiStore.registerModal(modalId, () => {
         emit('close')
       })
     } else if (!newValue && oldValue) {
-      // 모달이 닫힐 때
-      uiStore.closeModal()
       document.body.style.overflow = ''
       document.body.style.touchAction = ''
 
-      // UI Store에서 모달 제거
       uiStore.unregisterModal(modalId)
     }
   },
@@ -107,7 +101,6 @@ watch(
 // 컴포넌트가 언마운트될 때 스크롤 복원 및 스택에서 제거
 onUnmounted(() => {
   if (props.isOpen) {
-    uiStore.closeModal()
     uiStore.unregisterModal(modalId)
   }
   document.body.style.overflow = ''

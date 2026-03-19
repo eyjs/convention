@@ -2,7 +2,7 @@ import { useConventionStore } from '@/stores/convention'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
 import { computed, defineAsyncComponent } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { usePopupStore } from '@/stores/popup'
 import { popupComponents } from '@/popups/popupComponents'
 
@@ -10,8 +10,22 @@ export function useAction() {
   const conventionStore = useConventionStore()
   const authStore = useAuthStore()
   const router = useRouter()
+  const route = useRoute()
   const conventionId = computed(() => conventionStore.currentConvention?.id)
   const popupStore = usePopupStore()
+
+  // 행사 컨텍스트 내에서의 경로를 절대 경로로 변환
+  function toConventionPath(path) {
+    const cid = route.params.conventionId || conventionId.value
+    if (!cid) return path
+    // 이미 /conventions/ 로 시작하면 그대로 사용
+    if (path.startsWith('/conventions/')) return path
+    // /feature/xxx → /conventions/:id/feature/xxx
+    if (path.startsWith('/')) {
+      return `/conventions/${cid}${path}`
+    }
+    return `/conventions/${cid}/${path}`
+  }
 
   async function fetchChecklist() {
     if (!conventionId.value) {
@@ -69,7 +83,7 @@ export function useAction() {
 
       case 'ModuleLink':
         if (mapsTo) {
-          router.push(mapsTo)
+          router.push(toConventionPath(mapsTo))
         } else {
           console.warn('ModuleLink action without mapsTo path:', action)
         }
@@ -80,7 +94,7 @@ export function useAction() {
           if (mapsTo.startsWith('http://') || mapsTo.startsWith('https://')) {
             window.open(mapsTo, '_blank', 'noopener,noreferrer')
           } else {
-            router.push(mapsTo)
+            router.push(toConventionPath(mapsTo))
           }
         }
         break

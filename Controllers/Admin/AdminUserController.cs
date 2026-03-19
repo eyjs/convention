@@ -111,6 +111,13 @@ public class AdminUserController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("conventions/{conventionId}/guests/link")]
+    public async Task<IActionResult> LinkExistingUsers(int conventionId, [FromBody] LinkUserDto dto)
+    {
+        var (success, result, statusCode) = await _adminUserService.LinkExistingUsersAsync(conventionId, dto.UserIds, dto.GroupName);
+        return StatusCode(statusCode, result);
+    }
+
     [HttpPost("guests/{guestId}/send-sms")]
     public async Task<IActionResult> SendSMS(int guestId, [FromQuery] int? conventionId = null)
     {

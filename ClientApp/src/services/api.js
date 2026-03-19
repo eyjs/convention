@@ -33,28 +33,25 @@ apiClient.interceptors.request.use(
     }
     return config
   },
-  (error) => {
-    return Promise.reject(error)
-  },
+  (error) => Promise.reject(error),
 )
 
-// 응답 인터셉터 - 토큰 만료 처리 (경쟁 조건 방지)
+// 응답 인터셉터 - 토큰 만료 처리
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
 
-    // 401 에러이고 재시도하지 않은 경우 (로그인 요청은 토큰 갱신 불필요)
     const requestUrl = originalRequest?.url || ''
     const isAuthRequest =
       requestUrl.includes('/auth/login') ||
       requestUrl.includes('/auth/guest-login')
+
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !isAuthRequest
     ) {
-      // 이미 토큰 갱신 중이면 큐에 추가
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
@@ -70,33 +67,27 @@ apiClient.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken')
-        if (!refreshToken) {
+        const currentRefreshToken = localStorage.getItem('refreshToken')
+        if (!currentRefreshToken) {
           throw new Error('No refresh token')
         }
 
         const response = await axios.post(`${API_URL}/auth/refresh`, {
-          refreshToken,
+          refreshToken: currentRefreshToken,
         })
 
         const { accessToken, refreshToken: newRefreshToken } = response.data
+
         localStorage.setItem('accessToken', accessToken)
         localStorage.setItem('refreshToken', newRefreshToken)
 
-        // 대기 중인 모든 요청 처리
         processQueue(null, accessToken)
-
         originalRequest.headers.Authorization = `Bearer ${accessToken}`
         return apiClient(originalRequest)
       } catch (err) {
-        // 토큰 갱신 실패 - 대기 중인 요청들도 실패 처리
         processQueue(err, null)
-
-        // 로그아웃 처리
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
-        localStorage.removeItem('user')
-        localStorage.removeItem('selectedConventionId')
         window.location.href = '/login'
         return Promise.reject(err)
       } finally {
@@ -112,7 +103,7 @@ apiClient.interceptors.response.use(
 export const authAPI = {
   register: (data) => apiClient.post('/auth/register', data),
   login: (data) => apiClient.post('/auth/login', data),
-  guestLogin: (data) => apiClient.post('/auth/guest-login', data), // 👈 비회원 로그인 추가
+  guestLogin: (data) => apiClient.post('/auth/guest-login', data),
   logout: () => apiClient.post('/auth/logout'),
   getCurrentUser: () => apiClient.get('/auth/me'),
   refreshToken: (refreshToken) =>
@@ -140,9 +131,7 @@ export const chatAPI = {
 export const uploadAPI = {
   uploadFile: (formData, onProgress) => {
     return apiClient.post('/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: onProgress,
     })
   },
@@ -152,9 +141,7 @@ export const uploadAPI = {
     return apiClient.post(
       `/upload/conventions/${conventionId}/name-tags`,
       formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      },
+      { headers: { 'Content-Type': 'multipart/form-data' } },
     )
   },
   deleteFile: (fileId) => apiClient.delete(`/upload/${fileId}`),

@@ -907,12 +907,9 @@ onMounted(async () => {
       await authStore.fetchCurrentUser()
     }
     if (!conventionStore.currentConvention) {
-      const selectedConventionId = localStorage.getItem('selectedConventionId')
-      if (selectedConventionId) {
-        await conventionStore.setCurrentConvention(
-          parseInt(selectedConventionId),
-        )
-      }
+      await conventionStore.selectConvention(
+        parseInt(route.params.conventionId),
+      )
     }
 
     // 2. Load data

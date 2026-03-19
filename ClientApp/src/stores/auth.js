@@ -6,10 +6,11 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const accessToken = ref(null)
   const refreshToken = ref(null)
-  const conventions = ref([])
-  const checklistStatus = ref(null) // 체크리스트 상태
+  const checklistStatus = ref(null)
   const loading = ref(false)
   const error = ref(null)
+  const _initialized = ref(false)
+  let _initPromise = null
 
   const isAuthenticated = computed(() => !!accessToken.value)
   const isAdmin = computed(() => user.value?.role === 'Admin')
@@ -27,7 +28,6 @@ export const useAuthStore = defineStore('auth', () => {
   function isTokenExpired(token) {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]))
-      // 만료 10초 전이면 만료로 판단
       return payload.exp * 1000 < Date.now() - 10000
     } catch {
       return true
@@ -37,32 +37,33 @@ export const useAuthStore = defineStore('auth', () => {
   function initAuth() {
     const storedToken = localStorage.getItem('accessToken')
     const storedRefreshToken = localStorage.getItem('refreshToken')
-    const storedUser = localStorage.getItem('user')
 
-    if (
-      storedToken &&
-      storedUser &&
-      storedUser !== 'undefined' &&
-      storedUser !== 'null'
-    ) {
-      // JWT 만료 확인 — 만료됐으면 즉시 정리
-      if (isTokenExpired(storedToken)) {
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('user')
-        localStorage.removeItem('selectedConventionId')
-        return
-      }
+    if (!storedToken) return
 
-      try {
-        accessToken.value = storedToken
-        refreshToken.value = storedRefreshToken
-        user.value = JSON.parse(storedUser)
-      } catch (e) {
-        console.error('Failed to parse user from localStorage', e)
-        logout()
-      }
+    if (isTokenExpired(storedToken)) {
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      return
     }
+
+    accessToken.value = storedToken
+    refreshToken.value = storedRefreshToken
+  }
+
+  // 라우터 가드에서 호출 — 인증 초기화 + 사용자 정보 로드 완료 보장
+  async function ensureInitialized() {
+    if (_initialized.value) return
+    if (_initPromise) return _initPromise
+
+    _initPromise = (async () => {
+      initAuth()
+      if (accessToken.value) {
+        await fetchCurrentUser()
+      }
+      _initialized.value = true
+    })()
+
+    return _initPromise
   }
 
   async function login(loginId, password) {
@@ -82,10 +83,6 @@ export const useAuthStore = defineStore('auth', () => {
 
       localStorage.setItem('accessToken', token)
       localStorage.setItem('refreshToken', refresh)
-      localStorage.setItem('user', JSON.stringify(userData))
-
-      // Clear any previously selected convention on a new login
-      localStorage.removeItem('selectedConventionId')
 
       return { success: true }
     } catch (err) {
@@ -98,23 +95,16 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     try {
-      // API 호출은 실패할 수도 있으므로, finally 블록에서 상태를 확실히 초기화합니다.
       await authAPI.logout()
     } catch (err) {
       console.error('Logout API call failed:', err)
     } finally {
-      // 1. 인증 관련 상태와 localStorage를 먼저 비웁니다.
       accessToken.value = null
       refreshToken.value = null
       user.value = null
-      conventions.value = []
       checklistStatus.value = null
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
-      localStorage.removeItem('user')
-      localStorage.removeItem('selectedConventionId')
-
-      console.log('Logout successful and all states have been reset.')
     }
   }
 
@@ -137,7 +127,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authAPI.getCurrentUser()
       user.value = response.data
-      checklistStatus.value = response.data.checklistStatus // 체크리스트 상태 저장
+      checklistStatus.value = response.data.checklistStatus
     } catch (err) {
       console.error('Failed to fetch user', err)
       if (err.response?.status === 401) {
@@ -150,7 +140,6 @@ export const useAuthStore = defineStore('auth', () => {
     if (!user.value) return
 
     if (user.value.conventions && Array.isArray(user.value.conventions)) {
-      // user.value 전체를 새 객체로 교체하여 reactivity 트리거
       user.value = {
         ...user.value,
         conventions: user.value.conventions.map((c) => {
@@ -160,15 +149,11 @@ export const useAuthStore = defineStore('auth', () => {
           return c
         }),
       }
-      // localStorage 업데이트
-      localStorage.setItem('user', JSON.stringify(user.value))
     } else if (user.value.conventionId === conventionId) {
       user.value = {
         ...user.value,
         unreadCount: (user.value.unreadCount || 0) + 1,
       }
-      // localStorage 업데이트
-      localStorage.setItem('user', JSON.stringify(user.value))
     }
   }
 
@@ -176,7 +161,6 @@ export const useAuthStore = defineStore('auth', () => {
     if (!user.value) return
 
     if (user.value.conventions && Array.isArray(user.value.conventions)) {
-      // user.value 전체를 새 객체로 교체하여 reactivity 트리거
       user.value = {
         ...user.value,
         conventions: user.value.conventions.map((c) => {
@@ -186,29 +170,26 @@ export const useAuthStore = defineStore('auth', () => {
           return c
         }),
       }
-      // localStorage 업데이트
-      localStorage.setItem('user', JSON.stringify(user.value))
     } else if (user.value.conventionId === conventionId) {
       user.value = {
         ...user.value,
         unreadCount: 0,
       }
-      // localStorage 업데이트
-      localStorage.setItem('user', JSON.stringify(user.value))
     }
   }
+
   return {
     user,
     accessToken,
     refreshToken,
-    conventions,
-    checklistStatus, // export
+    checklistStatus,
     loading,
     error,
     isAuthenticated,
     isAdmin,
     totalUnreadCount,
     initAuth,
+    ensureInitialized,
     register,
     login,
     logout,

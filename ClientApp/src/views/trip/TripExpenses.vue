@@ -402,9 +402,8 @@
 
     <BottomNavigationBar
       v-if="
-        ((tripId && tripId !== 'undefined') ||
-          (shareToken && shareToken !== 'undefined')) &&
-        !uiStore.isModalOpen
+        (tripId && tripId !== 'undefined') ||
+        (shareToken && shareToken !== 'undefined')
       "
       :trip-id="tripId || trip.id"
       :share-token="shareToken"
@@ -417,7 +416,6 @@ import { ref, computed, onMounted, watch, createApp } from 'vue'
 import { useRouter } from 'vue-router'
 import MainHeader from '@/components/common/MainHeader.vue'
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue'
-import { useUIStore } from '@/stores/ui'
 import apiClient from '@/services/api'
 import dayjs from 'dayjs'
 import * as XLSX from 'xlsx'
@@ -432,7 +430,6 @@ const props = defineProps({
   readonly: { type: Boolean, default: false },
 })
 
-const uiStore = useUIStore()
 const router = useRouter()
 
 const tripId = computed(() => props.id || null)

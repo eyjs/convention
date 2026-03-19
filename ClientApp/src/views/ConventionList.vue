@@ -152,12 +152,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useConventionStore } from '@/stores/convention'
 import MainHeader from '@/components/common/MainHeader.vue'
 import apiClient from '@/services/api'
 
 const router = useRouter()
-const conventionStore = useConventionStore()
 const loading = ref(true)
 const conventions = ref([])
 
@@ -182,8 +180,7 @@ async function goToConvention(convention) {
     console.warn('Invalid convention:', convention)
     return
   }
-  await conventionStore.selectConvention(convention.id)
-  router.push('/')
+  router.push(`/conventions/${convention.id}`)
 }
 
 // 날짜 포맷

@@ -231,9 +231,8 @@
   <!-- Bottom Navigation Bar -->
   <BottomNavigationBar
     v-if="
-      ((tripId && tripId !== 'undefined') ||
-        (shareToken && shareToken !== 'undefined')) &&
-      !uiStore.isModalOpen
+      (tripId && tripId !== 'undefined') ||
+      (shareToken && shareToken !== 'undefined')
     "
     :trip-id="tripId || trip.id"
     :share-token="shareToken"
@@ -242,7 +241,6 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useUIStore } from '@/stores/ui'
 import MainHeader from '@/components/common/MainHeader.vue'
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
@@ -273,7 +271,6 @@ const props = defineProps({
 })
 
 const router = useRouter()
-const uiStore = useUIStore()
 
 // Determine tripId and readonly mode
 const tripId = computed(() => props.id || null)

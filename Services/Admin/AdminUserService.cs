@@ -112,10 +112,19 @@ public class AdminUserService : IAdminUserService
         if (string.IsNullOrWhiteSpace(dto.Phone))
             return (false, new { field = "phone", message = "전화번호를 입력해주세요." }, 400);
 
-        var passwordToSet = ResolveGuestPassword(dto);
-
+        // 동일 전화번호의 기존 사용자가 이미 해당 컨벤션에 등록되어 있는지 확인
         var existingUser = await _unitOfWork.Users.Query
             .FirstOrDefaultAsync(u => u.Phone == dto.Phone.Trim());
+
+        if (existingUser != null)
+        {
+            var alreadyLinked = await _unitOfWork.UserConventions.Query
+                .AnyAsync(uc => uc.UserId == existingUser.Id && uc.ConventionId == conventionId);
+            if (alreadyLinked)
+                return (false, new { message = "이미 해당 행사에 등록된 참석자입니다." }, 409);
+        }
+
+        var passwordToSet = ResolveGuestPassword(dto);
 
         User user;
         if (existingUser != null)
@@ -377,6 +386,56 @@ public class AdminUserService : IAdminUserService
         var link = $"{baseUrl}/guest/{userConvention.Convention.Id}/{userConvention.AccessToken}";
 
         return (true, new { link, accessToken = userConvention.AccessToken });
+    }
+
+    public async Task<(bool Success, object Result, int StatusCode)> LinkExistingUsersAsync(int conventionId, List<int> userIds, string? groupName)
+    {
+        if (userIds == null || userIds.Count == 0)
+            return (false, new { message = "추가할 사용자를 선택해주세요." }, 400);
+
+        var conventionExists = await _unitOfWork.Conventions.Query
+            .AnyAsync(c => c.Id == conventionId);
+        if (!conventionExists)
+            return (false, new { message = "행사를 찾을 수 없습니다." }, 404);
+
+        var users = await _unitOfWork.Users.Query
+            .Where(u => userIds.Contains(u.Id))
+            .ToListAsync();
+
+        if (users.Count == 0)
+            return (false, new { message = "사용자를 찾을 수 없습니다." }, 404);
+
+        var existingLinks = await _unitOfWork.UserConventions.Query
+            .Where(uc => userIds.Contains(uc.UserId) && uc.ConventionId == conventionId)
+            .Select(uc => uc.UserId)
+            .ToListAsync();
+
+        var newUserIds = userIds.Except(existingLinks).ToList();
+        var skippedCount = userIds.Count - newUserIds.Count;
+
+        foreach (var uid in newUserIds)
+        {
+            await _unitOfWork.UserConventions.AddAsync(new UserConvention
+            {
+                UserId = uid,
+                ConventionId = conventionId,
+                GroupName = groupName,
+                AccessToken = GenerateAccessToken(),
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        if (newUserIds.Count > 0)
+            await _unitOfWork.SaveChangesAsync();
+
+        return (true, new
+        {
+            addedCount = newUserIds.Count,
+            skippedCount,
+            message = skippedCount > 0
+                ? $"{newUserIds.Count}명 추가, {skippedCount}명 이미 등록됨"
+                : $"{newUserIds.Count}명이 참석자로 추가되었습니다."
+        }, 200);
     }
 
     private static string ResolveGuestPassword(UserDto dto)

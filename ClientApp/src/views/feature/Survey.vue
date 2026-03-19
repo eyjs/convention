@@ -116,7 +116,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import api from '@/services/api'
 
 const props = defineProps({
@@ -124,6 +124,7 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const route = useRoute()
 const survey = ref(null)
 const loading = ref(true)
 const error = ref(null)
@@ -266,7 +267,7 @@ async function submitSurvey() {
     if (window.history.length > 1) {
       router.go(-1)
     } else {
-      router.push('/')
+      router.push(`/conventions/${route.params.conventionId}`)
     }
   } catch (err) {
     console.error('Error submitting survey:', err)

@@ -1,12 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useUIStore } from '@/stores/ui'
+import { useConventionStore } from '@/stores/convention'
 import { dynamicFeatureRoutes } from './dynamic'
-
-// ============================================
-// Lazy Loading으로 모든 컴포넌트 import
-// 필요할 때만 로드되어 초기 번들 크기 감소
-// ============================================
 
 const routes = [
   // === Auth Routes (No Layout) ===
@@ -14,71 +9,168 @@ const routes = [
     path: '/setup',
     name: 'Setup',
     component: () => import('@/views/SetupView.vue'),
-    meta: {
-      title: '초기 설정',
-      requiresAuth: false,
-      layout: null,
-      showNav: false,
-    },
+    meta: { title: '초기 설정', requiresAuth: false },
   },
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/LoginView.vue'),
-    meta: {
-      title: '로그인',
-      requiresAuth: false,
-      layout: null,
-      showNav: false,
-    },
+    meta: { title: '로그인', requiresAuth: false },
   },
   {
     path: '/find-id',
     name: 'FindId',
     component: () => import('@/views/FindId.vue'),
-    meta: {
-      title: '아이디 찾기',
-      requiresAuth: false,
-      layout: null,
-      showNav: false,
-    },
+    meta: { title: '아이디 찾기', requiresAuth: false },
   },
   {
     path: '/find-password',
     name: 'FindPassword',
     component: () => import('@/views/FindPassword.vue'),
-    meta: {
-      title: '비밀번호 찾기',
-      requiresAuth: false,
-      layout: null,
-      showNav: false,
-    },
+    meta: { title: '비밀번호 찾기', requiresAuth: false },
   },
 
-  // === Main Routes (Default Layout) ===
+  // === Main Home (행사 목록) ===
+  {
+    path: '/',
+    name: 'MainHome',
+    component: () => import('@/views/MainHome.vue'),
+    meta: { title: '홈', requiresAuth: true },
+  },
+
+  // === User Profile ===
   {
     path: '/my-profile',
     name: 'MyProfile',
     component: () => import('@/views/user/MyProfile.vue'),
-    meta: {
-      title: '내 정보',
-      requiresAuth: true,
-      layout: null,
-      showNav: false,
-    },
+    meta: { title: '내 정보', requiresAuth: true },
   },
 
-  // === Main Home ===
+  // === Convention Routes (행사 상세 + 하위 페이지) ===
   {
-    path: '/home',
-    name: 'MainHome',
-    component: () => import('@/views/MainHome.vue'),
-    meta: {
-      title: '홈',
-      requiresAuth: true,
-      layout: null,
-      showNav: false,
+    path: '/conventions/:conventionId',
+    component: () => import('@/layouts/ConventionLayout.vue'),
+    meta: { requiresAuth: true },
+    async beforeEnter(to) {
+      const conventionStore = useConventionStore()
+      const id = parseInt(to.params.conventionId)
+      if (isNaN(id)) return { name: 'MainHome' }
+
+      if (conventionStore.currentConvention?.id !== id) {
+        await conventionStore.selectConvention(id)
+        if (!conventionStore.currentConvention) {
+          return { name: 'MainHome' }
+        }
+      }
     },
+    children: [
+      {
+        path: '',
+        name: 'ConventionHome',
+        component: () => import('@/views/ConventionHome.vue'),
+        meta: { title: '행사 홈', showNav: true },
+      },
+      {
+        path: 'schedule',
+        name: 'MySchedule',
+        component: () => import('@/views/MySchedule.vue'),
+        meta: { title: '나의일정', showNav: true },
+      },
+      {
+        path: 'notices',
+        name: 'Board',
+        component: () => import('@/views/Board.vue'),
+        meta: { title: '공지사항', showNav: true },
+      },
+      {
+        path: 'notices/:id',
+        name: 'NoticeDetail',
+        component: () => import('@/views/NoticeDetail.vue'),
+        props: true,
+        meta: { title: '공지사항 상세', showNav: true },
+      },
+      {
+        path: 'features',
+        name: 'MoreFeatures',
+        component: () => import('@/views/MoreFeaturesView.vue'),
+        meta: { title: '추가 기능', showNav: true },
+      },
+      {
+        path: 'participants',
+        name: 'Participants',
+        component: () => import('@/views/Participants.vue'),
+        meta: { title: '주체국', showNav: true },
+      },
+      {
+        path: 'group-schedule',
+        name: 'GroupSchedule',
+        component: () => import('@/views/GroupSchedule.vue'),
+        meta: { title: '합창국', showNav: true },
+      },
+      {
+        path: 'location',
+        name: 'LocationInfo',
+        component: () => import('@/views/LocationInfo.vue'),
+        meta: { title: '장소 정보', showNav: true },
+      },
+      {
+        path: 'hotspot',
+        name: 'HotSpot',
+        component: () => import('@/views/HotSpot.vue'),
+        meta: { title: '핫스팟', showNav: true },
+      },
+      {
+        path: 'tastespot',
+        name: 'TasteSpot',
+        component: () => import('@/views/TasteSpot.vue'),
+        meta: { title: '맛스팟', showNav: true },
+      },
+      {
+        path: 'event-place',
+        name: 'EventPlace',
+        component: () => import('@/views/EventPlace.vue'),
+        meta: { title: '사진첩', showNav: true },
+      },
+      {
+        path: 'travel-info',
+        name: 'TravelInfo',
+        component: () => import('@/views/features/TravelInfo.vue'),
+        meta: { title: '여행 서류 제출', showNav: false },
+      },
+      {
+        path: 'surveys/:id',
+        name: 'Survey',
+        component: () => import('@/views/feature/Survey.vue'),
+        props: true,
+        meta: { title: 'Survey', showNav: false },
+      },
+      {
+        path: 'generic-form/:actionId',
+        name: 'GenericForm',
+        component: () => import('@/views/feature/GenericForm.vue'),
+        props: true,
+        meta: { title: '폼 작성', showNav: false },
+      },
+      {
+        path: 'form/:formDefinitionId',
+        name: 'DynamicFormRenderer',
+        component: () => import('@/views/feature/DynamicFormRenderer.vue'),
+        props: true,
+        meta: { title: '양식 작성', showNav: false },
+      },
+      {
+        path: 'feature',
+        children: dynamicFeatureRoutes,
+      },
+    ],
+  },
+
+  // === Convention List (legacy redirect) ===
+  {
+    path: '/conventions',
+    name: 'ConventionList',
+    component: () => import('@/views/ConventionList.vue'),
+    meta: { title: '스타투어', requiresAuth: true },
   },
 
   // === Personal Trip Routes ===
@@ -86,25 +178,7 @@ const routes = [
     path: '/trips',
     name: 'TripList',
     component: () => import('@/views/trip/TripList.vue'),
-    meta: {
-      title: '내 여행',
-      requiresAuth: true,
-      layout: null,
-      showNav: false,
-    },
-  },
-
-  // === Convention List ===
-  {
-    path: '/conventions',
-    name: 'ConventionList',
-    component: () => import('@/views/ConventionList.vue'),
-    meta: {
-      title: '스타투어',
-      requiresAuth: true,
-      layout: null,
-      showNav: false,
-    },
+    meta: { title: '내 여행', requiresAuth: true },
   },
   {
     path: '/trips/new',
@@ -169,7 +243,6 @@ const routes = [
     props: true,
     meta: { requiresAuth: true, title: '여행 상세' },
   },
-
   {
     path: '/trips/:id/itinerary',
     name: 'TripItinerary',
@@ -198,21 +271,6 @@ const routes = [
     props: true,
     meta: { requiresAuth: true, title: '여행 교통편' },
   },
-  // ----------------------------------------------------------------
-  // 동적 라우팅
-  // ----------------------------------------------------------------
-
-  {
-    path: '/',
-    name: 'Home',
-    component: () => import('@/views/ConventionHome.vue'),
-    meta: {
-      title: '행사 홈',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-    },
-  },
 
   // === Admin Routes ===
   {
@@ -223,8 +281,6 @@ const routes = [
       title: '행사 관리',
       requiresAuth: true,
       requiresAdmin: true,
-      layout: 'DefaultLayout',
-      showNav: false,
     },
   },
   {
@@ -235,23 +291,8 @@ const routes = [
       title: '행사 대시보드',
       requiresAuth: true,
       requiresAdmin: true,
-      layout: 'DefaultLayout',
-      showNav: false,
     },
   },
-  // 챗봇 기능 비활성화 (필요 시 주석 해제)
-  // {
-  //   path: '/admin/chatbot',
-  //   name: 'AdminChatbotManagement',
-  //   component: () => import('@/views/AdminChatbotManagement.vue'),
-  //   meta: {
-  //     title: '챗봇 관리',
-  //     requiresAuth: true,
-  //     requiresAdmin: true,
-  //     layout: 'DefaultLayout',
-  //     showNav: false,
-  //   },
-  // },
   {
     path: '/admin/form-builder',
     name: 'FormBuilderList',
@@ -260,8 +301,6 @@ const routes = [
       title: '폼 빌더',
       requiresAuth: true,
       requiresAdmin: true,
-      layout: 'DefaultLayout',
-      showNav: false,
     },
   },
   {
@@ -272,8 +311,6 @@ const routes = [
       title: '폼 편집',
       requiresAuth: true,
       requiresAdmin: true,
-      layout: 'DefaultLayout',
-      showNav: false,
     },
   },
   {
@@ -284,281 +321,58 @@ const routes = [
       title: '명찰 인쇄',
       requiresAuth: true,
       requiresAdmin: true,
-      layout: null, // No layout for this special page
-      showNav: false,
     },
   },
 
-  // === Convention Features ===
-  {
-    path: '/my-schedule',
-    name: 'MySchedule',
-    component: () => import('@/views/MySchedule.vue'),
-    meta: {
-      title: '나의일정',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-    },
-  },
-
-  {
-    path: '/feature/travel-info',
-    name: 'TravelInfo',
-    component: () => import('@/views/features/TravelInfo.vue'),
-    meta: {
-      title: '여행 서류 제출',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-      showNav: false,
-    },
-  },
-  {
-    path: '/feature/surveys/:id',
-    name: 'Survey',
-    component: () => import('@/views/feature/Survey.vue'),
-    props: true,
-    meta: {
-      title: 'Survey',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-      showNav: false,
-    },
-  },
-  {
-    path: '/feature/generic-form/:actionId',
-    name: 'GenericForm',
-    component: () => import('@/views/feature/GenericForm.vue'),
-    props: true,
-    meta: {
-      title: '폼 작성',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-      showNav: false,
-    },
-  },
-  {
-    path: '/feature/form/:formDefinitionId',
-    name: 'DynamicFormRenderer',
-    component: () => import('@/views/feature/DynamicFormRenderer.vue'),
-    props: true,
-    meta: {
-      title: '양식 작성',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-      showNav: false,
-    },
-  },
-  {
-    path: '/participants',
-    name: 'Participants',
-    component: () => import('@/views/Participants.vue'),
-    meta: {
-      title: '주체국',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-    },
-  },
-  {
-    path: '/group-schedule',
-    name: 'GroupSchedule',
-    component: () => import('@/views/GroupSchedule.vue'),
-    meta: {
-      title: '합창국',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-    },
-  },
-
-  // === Location Features ===
-  {
-    path: '/location',
-    name: 'LocationInfo',
-    component: () => import('@/views/LocationInfo.vue'),
-    meta: {
-      title: '로마 정보',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-    },
-  },
-  {
-    path: '/hotspot',
-    name: 'HotSpot',
-    component: () => import('@/views/HotSpot.vue'),
-    meta: {
-      title: '핫스팟',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-    },
-  },
-  {
-    path: '/tastespot',
-    name: 'TasteSpot',
-    component: () => import('@/views/TasteSpot.vue'),
-    meta: {
-      title: '맛스팟',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-    },
-  },
-
-  // === Media Features ===
-  {
-    path: '/event-place',
-    name: 'EventPlace',
-    component: () => import('@/views/EventPlace.vue'),
-    meta: {
-      title: '사진첩',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-    },
-  },
-
-  // === Notice Features ===
-  {
-    path: '/notices',
-    name: 'Board',
-    component: () => import('@/views/Board.vue'),
-    meta: {
-      title: '공지사항',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-    },
-  },
-  {
-    path: '/notices/:id',
-    name: 'NoticeDetail',
-    component: () => import('@/views/NoticeDetail.vue'),
-    props: true,
-    meta: {
-      title: '공지사항 상세',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-    },
-  },
-
-  // === Dynamic Features ===
-  {
-    path: '/features',
-    name: 'MoreFeatures',
-    component: () => import('@/views/MoreFeaturesView.vue'),
-    meta: {
-      title: '추가 기능',
-      requiresAuth: true,
-      requiresConvention: true,
-      layout: 'DefaultLayout',
-    },
-  },
-  {
-    path: '/feature',
-    children: dynamicFeatureRoutes,
-    meta: {
-      requiresAuth: true,
-      requiresConvention: true,
-    },
-  },
+  // === Legacy redirects ===
+  { path: '/home', redirect: '/' },
+  { path: '/my-schedule', redirect: '/' },
+  { path: '/notices', redirect: '/' },
+  { path: '/features', redirect: '/' },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior(to, from, savedPosition) {
-    if (savedPosition) {
-      return savedPosition
-    } else {
-      return { top: 0 }
-    }
+    if (savedPosition) return savedPosition
+    return { top: 0 }
   },
 })
 
-router.beforeEach((to, from, next) => {
-  try {
-    document.title = to.meta.title || 'iFA Convention'
+router.beforeEach(async (to, from, next) => {
+  document.title = to.meta.title || 'iFA Convention'
 
-    const authStore = useAuthStore()
-    const uiStore = useUIStore()
-    const requiresAuth = to.meta.requiresAuth !== false
-    const requiresAdmin = to.meta.requiresAdmin || false
+  const authStore = useAuthStore()
 
-    // 0. 모달 체크 - 뒤로가기 시 모달부터 닫기
-    if (uiStore.hasOpenModal()) {
-      uiStore.closeTopModal()
-      next(false) // 라우팅 취소
-      return
-    }
-
-    // [방어] LocalStorage 무결성 검사 - "undefined" 문자열 오염 정화
-    let selectedConventionId = localStorage.getItem('selectedConventionId')
-    if (
-      selectedConventionId === 'undefined' ||
-      selectedConventionId === 'null'
-    ) {
-      console.warn('Corrupted localStorage detected. Cleaning up...')
-      localStorage.removeItem('selectedConventionId')
-      selectedConventionId = null
-    }
-
-    // 1. 로그인 페이지 접근 시
-    if (to.path === '/login' && authStore.isAuthenticated) {
-      // 어드민은 어드민 페이지로
-      if (authStore.isAdmin) {
-        next('/admin')
-        return
-      }
-      // 일반 유저는 홈으로
-      next('/home')
-      return
-    }
-
-    // 2. 인증 필요 체크
-    if (requiresAuth && !authStore.isAuthenticated) {
-      next('/login')
-      return
-    }
-
-    // 3. 어드민 권한 체크
-    if (requiresAdmin && !authStore.isAdmin) {
-      next('/')
-      return
-    }
-
-    // 4. Convention이 필요한 페이지 체크 (메타 정보 활용)
-    // 각 라우트의 meta.requiresConvention 플래그 확인
-    const requiresConvention = to.meta.requiresConvention === true
-
-    // Convention이 필요한 페이지인데 선택된 Convention이 없으면 /home으로
-    if (
-      authStore.isAuthenticated &&
-      !authStore.isAdmin &&
-      requiresConvention &&
-      !selectedConventionId
-    ) {
-      next('/home')
-      return
-    }
-
+  // 인증 불필요 페이지
+  if (to.meta.requiresAuth === false) {
     next()
-  } catch (error) {
-    // iOS Safari localStorage 접근 오류(비공개 모드, 개인정보 보호 설정) 또는 예상치 못한 에러 처리
-    console.error(
-      '[Router Guard Error] iOS Safari localStorage 접근 오류 또는 예상치 못한 에러:',
-      error,
-    )
-    // 에러가 발생해도 라우팅은 계속 진행되도록 보장하여 앱 먹통 방지
-    next()
+    return
   }
+
+  // 인증 초기화 완료 대기 (토큰 복원 + 사용자 정보 로드)
+  await authStore.ensureInitialized()
+
+  // 로그인 페이지 접근 시 이미 인증된 경우
+  if (to.path === '/login' && authStore.isAuthenticated) {
+    next(authStore.isAdmin ? '/admin' : '/')
+    return
+  }
+
+  // 인증 필요한데 미인증
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next('/login')
+    return
+  }
+
+  // 어드민 권한 체크
+  if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    next('/')
+    return
+  }
+
+  next()
 })
 
 export default router

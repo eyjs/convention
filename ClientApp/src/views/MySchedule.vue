@@ -526,6 +526,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
@@ -535,6 +536,7 @@ import ParticipantList from '@/components/ParticipantList.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import dayjs from 'dayjs'
 
+const route = useRoute()
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
 
@@ -848,12 +850,9 @@ onMounted(async () => {
       await authStore.fetchCurrentUser()
     }
     if (!conventionStore.currentConvention) {
-      const selectedConventionId = localStorage.getItem('selectedConventionId')
-      if (selectedConventionId) {
-        await conventionStore.setCurrentConvention(
-          parseInt(selectedConventionId),
-        )
-      }
+      await conventionStore.selectConvention(
+        parseInt(route.params.conventionId),
+      )
     }
 
     // 2. Get IDs from stores

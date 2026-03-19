@@ -1090,9 +1090,8 @@
     <!-- Bottom Navigation Bar -->
     <BottomNavigationBar
       v-if="
-        ((tripId && tripId !== 'undefined') ||
-          (shareToken && shareToken !== 'undefined')) &&
-        !uiStore.isModalOpen
+        (tripId && tripId !== 'undefined') ||
+        (shareToken && shareToken !== 'undefined')
       "
       :trip-id="tripId || trip.id"
       :share-token="shareToken"
@@ -1110,7 +1109,6 @@ import FlightSearchModal from '@/components/trip/FlightSearchModal.vue'
 import FlightAddEditModal from '@/components/personalTrip/FlightAddEditModal.vue'
 import CommonDatePicker from '@/components/common/CommonDatePicker.vue'
 import 'vue-datepicker-next/index.css'
-import { useUIStore } from '@/stores/ui'
 import apiClient from '@/services/api'
 import dayjs from 'dayjs'
 import {
@@ -1215,7 +1213,6 @@ const formatDate = (date) =>
 const formatDateTime = (dateTime) =>
   dateTime ? dayjs(dateTime).format('YYYY-MM-DD HH:mm') : ''
 
-const uiStore = useUIStore()
 const router = useRouter()
 
 // Determine tripId and readonly mode
@@ -1306,7 +1303,7 @@ async function loadTrip() {
     console.error('Failed to load trip:', error)
     alert('여행 정보를 불러오는데 실패했습니다.')
     if (isSharedView.value) {
-      router.push('/home')
+      router.push('/')
     } else {
       router.push('/trips')
     }

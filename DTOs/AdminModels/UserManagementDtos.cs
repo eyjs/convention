@@ -9,4 +9,10 @@ namespace LocalRAG.DTOs.AdminModels
     {
         public string Role { get; set; } = string.Empty;
     }
+
+    public class LinkUserDto
+    {
+        public List<int> UserIds { get; set; } = new();
+        public string? GroupName { get; set; }
+    }
 }

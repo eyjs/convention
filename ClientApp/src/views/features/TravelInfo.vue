@@ -262,11 +262,12 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const form = ref({
@@ -408,7 +409,7 @@ async function handleSubmit() {
     await authStore.fetchCurrentUser()
 
     alert('여행 정보가 성공적으로 제출되었습니다!')
-    router.push('/')
+    router.push(`/conventions/${route.params.conventionId}`)
   } catch (error) {
     console.error('Travel info submission failed:', error)
     errorMessage.value =

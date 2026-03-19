@@ -124,9 +124,6 @@ watch(
   () => props.isOpen,
   (isOpen, wasOpen) => {
     if (isOpen && !wasOpen) {
-      // 모달이 열릴 때
-      uiStore.openModal()
-
       // 현재 스크롤 위치 저장
       const scrollY = window.scrollY
       document.body.style.position = 'fixed'
@@ -134,14 +131,10 @@ watch(
       document.body.style.width = '100%'
       document.body.style.overflowY = 'scroll'
 
-      // UI Store에 모달 등록
       uiStore.registerModal(modalId, () => {
         emit('close')
       })
     } else if (!isOpen && wasOpen) {
-      // 모달이 닫힐 때
-      uiStore.closeModal()
-
       // 스크롤 위치 복원
       const scrollY = document.body.style.top
       document.body.style.position = ''
@@ -150,7 +143,6 @@ watch(
       document.body.style.overflowY = ''
       window.scrollTo(0, parseInt(scrollY || '0') * -1)
 
-      // UI Store에서 모달 제거
       uiStore.unregisterModal(modalId)
     }
   },
@@ -159,7 +151,6 @@ watch(
 // 컴포넌트 unmount 시 body 스타일 복원 및 스택에서 제거
 onUnmounted(() => {
   if (props.isOpen) {
-    uiStore.closeModal()
     uiStore.unregisterModal(modalId)
   }
 

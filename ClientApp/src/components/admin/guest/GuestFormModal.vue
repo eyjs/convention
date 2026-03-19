@@ -1,13 +1,240 @@
 <template>
   <!-- 참석자 생성/수정 모달 -->
-  <BaseModal :is-open="isOpen" max-width="2xl" @close="closeGuestModal">
+  <BaseModal
+    :is-open="isOpen"
+    :max-width="activeTab === 'existing' && !editingGuest ? '5xl' : '2xl'"
+    @close="closeGuestModal"
+  >
     <template #header>
       <h2 class="text-xl font-semibold">
         {{ editingGuest ? '참석자 수정' : '참석자 추가' }}
       </h2>
     </template>
     <template #body>
-      <div class="space-y-4">
+      <!-- 탭 선택 (새 참석자 생성 시에만 표시) -->
+      <div v-if="!editingGuest" class="flex border-b mb-4">
+        <button
+          class="flex-1 py-2.5 text-sm font-medium text-center transition-colors"
+          :class="
+            activeTab === 'manual'
+              ? 'text-primary-600 border-b-2 border-primary-600'
+              : 'text-gray-500 hover:text-gray-700'
+          "
+          @click="activeTab = 'manual'"
+        >
+          새 참석자 수기 입력
+        </button>
+        <button
+          class="flex-1 py-2.5 text-sm font-medium text-center transition-colors"
+          :class="
+            activeTab === 'existing'
+              ? 'text-primary-600 border-b-2 border-primary-600'
+              : 'text-gray-500 hover:text-gray-700'
+          "
+          @click="switchToExistingTab"
+        >
+          기존 사용자 추가
+        </button>
+      </div>
+
+      <!-- 기존 사용자 추가 탭: 좌우 2패널 -->
+      <div
+        v-if="activeTab === 'existing' && !editingGuest"
+        class="flex flex-col h-[60vh]"
+      >
+        <!-- 그룹명 입력 -->
+        <div class="mb-3 flex-shrink-0">
+          <label class="block text-sm font-medium mb-1">그룹명 (선택)</label>
+          <input
+            v-model="linkGroupName"
+            type="text"
+            placeholder="그룹명 입력 (선택사항)"
+            class="w-full px-3 py-2 border rounded-lg"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
+          <!-- 왼쪽: 전체 명단 탐색기 -->
+          <div class="border rounded-lg flex flex-col min-h-0">
+            <div class="p-3 bg-gray-50 border-b rounded-t-lg flex-shrink-0">
+              <h3 class="text-sm font-semibold text-gray-700 mb-2">
+                전체 사용자 명단
+              </h3>
+              <input
+                v-model="userSearchTerm"
+                type="text"
+                placeholder="이름, 전화번호, 로그인ID 검색..."
+                class="w-full px-3 py-2 border rounded-lg text-sm"
+                @input="onSearchInput"
+              />
+            </div>
+
+            <div class="flex-1 overflow-y-auto min-h-0">
+              <!-- 로딩 -->
+              <div
+                v-if="userSearchLoading"
+                class="flex items-center justify-center py-8 text-gray-500 text-sm"
+              >
+                검색 중...
+              </div>
+
+              <!-- 초기 상태 -->
+              <div
+                v-else-if="
+                  !userSearchTerm && filteredSearchResults.length === 0
+                "
+                class="flex items-center justify-center py-8 text-gray-400 text-sm"
+              >
+                검색어를 입력하면 사용자 목록이 표시됩니다
+              </div>
+
+              <!-- 결과 없음 -->
+              <div
+                v-else-if="filteredSearchResults.length === 0"
+                class="flex items-center justify-center py-8 text-gray-400 text-sm"
+              >
+                검색 결과가 없습니다 (이미 등록된 사용자 제외)
+              </div>
+
+              <!-- 검색 결과 목록 -->
+              <div v-else>
+                <div
+                  v-for="user in filteredSearchResults"
+                  :key="user.id"
+                  class="flex items-center gap-3 px-3 py-2.5 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer transition-colors"
+                  :class="{
+                    'bg-primary-50': isUserSelected(user.id),
+                  }"
+                  @click="toggleUserSelection(user)"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="isUserSelected(user.id)"
+                    class="rounded flex-shrink-0"
+                    @click.stop
+                    @change="toggleUserSelection(user)"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">
+                      {{ user.name }}
+                    </p>
+                    <p class="text-xs text-gray-500 truncate">
+                      {{ user.phone || '-' }} /
+                      {{ user.loginId || '비회원' }}
+                    </p>
+                  </div>
+                  <span
+                    class="px-2 py-0.5 text-xs rounded-full flex-shrink-0"
+                    :class="
+                      user.role === 'Admin'
+                        ? 'bg-red-100 text-red-800'
+                        : user.role === 'User'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                    "
+                  >
+                    {{ user.role }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 페이지네이션 -->
+            <div
+              v-if="userSearchTotalPages > 1"
+              class="p-2 border-t bg-gray-50 flex items-center justify-between text-xs flex-shrink-0"
+            >
+              <button
+                class="px-2 py-1 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="userSearchPage <= 1"
+                @click="goToPage(userSearchPage - 1)"
+              >
+                이전
+              </button>
+              <span class="text-gray-600">
+                {{ userSearchPage }} / {{ userSearchTotalPages }} 페이지 ({{
+                  userSearchTotalCount
+                }}명)
+              </span>
+              <button
+                class="px-2 py-1 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="userSearchPage >= userSearchTotalPages"
+                @click="goToPage(userSearchPage + 1)"
+              >
+                다음
+              </button>
+            </div>
+          </div>
+
+          <!-- 오른쪽: 선택된 명단 -->
+          <div class="border rounded-lg flex flex-col min-h-0">
+            <div
+              class="p-3 bg-primary-50 border-b rounded-t-lg flex items-center justify-between flex-shrink-0"
+            >
+              <h3 class="text-sm font-semibold text-primary-700">
+                추가할 참석자 ({{ selectedUsers.length }}명)
+              </h3>
+              <button
+                v-if="selectedUsers.length > 0"
+                class="text-xs text-red-500 hover:text-red-700"
+                @click="selectedUsers = []"
+              >
+                전체 해제
+              </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto min-h-0">
+              <!-- 비어있는 상태 -->
+              <div
+                v-if="selectedUsers.length === 0"
+                class="flex items-center justify-center h-full text-gray-400 text-sm"
+              >
+                왼쪽 목록에서 사용자를 선택하세요
+              </div>
+
+              <!-- 선택된 사용자 목록 -->
+              <div v-else>
+                <div
+                  v-for="user in selectedUsers"
+                  :key="user.id"
+                  class="flex items-center gap-3 px-3 py-2.5 border-b last:border-b-0 group"
+                >
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">
+                      {{ user.name }}
+                    </p>
+                    <p class="text-xs text-gray-500 truncate">
+                      {{ user.phone || '-' }} /
+                      {{ user.loginId || '비회원' }}
+                    </p>
+                  </div>
+                  <button
+                    class="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                    @click="removeSelectedUser(user.id)"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 수기 입력 탭 (기존 폼) -->
+      <div v-if="activeTab === 'manual' || editingGuest" class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium mb-1">이름 *</label>
@@ -216,6 +443,15 @@
         취소
       </button>
       <button
+        v-if="activeTab === 'existing' && !editingGuest"
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        :disabled="selectedUsers.length === 0 || linkLoading"
+        @click="linkExistingUsers"
+      >
+        {{ linkLoading ? '추가 중...' : `${selectedUsers.length}명 일괄 추가` }}
+      </button>
+      <button
+        v-else
         class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
         @click="saveGuest"
       >
@@ -290,7 +526,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
 
@@ -305,6 +541,26 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'saved'])
 
+// 탭 상태
+const activeTab = ref('manual')
+
+// 기존 사용자 검색 상태
+const userSearchTerm = ref('')
+const userSearchResults = ref([])
+const userSearchLoading = ref(false)
+const userSearchPage = ref(1)
+const userSearchTotalPages = ref(0)
+const userSearchTotalCount = ref(0)
+const selectedUsers = ref([])
+const linkGroupName = ref('')
+const linkLoading = ref(false)
+let searchTimeout = null
+
+onUnmounted(() => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+})
+
+// 수기 입력 상태
 const showCopyScheduleModal = ref(false)
 const searchQuery = ref('')
 
@@ -318,6 +574,18 @@ const guestForm = ref({
   scheduleTemplateIds: [],
   templateAttributes: {},
   customAttributes: [],
+})
+
+// 이미 해당 행사에 등록된 사용자 ID Set
+const registeredUserIds = computed(() => {
+  return new Set(props.guests.map((g) => g.id))
+})
+
+// 검색 결과에서 이미 등록된 사용자 제외
+const filteredSearchResults = computed(() => {
+  return userSearchResults.value.filter(
+    (u) => !registeredUserIds.value.has(u.id),
+  )
 })
 
 const filteredGuestsForCopy = computed(() => {
@@ -336,11 +604,121 @@ const parseAttributeValues = (valuesStr) => {
   }
 }
 
+// 기존 사용자 탭으로 전환 시 전체 목록 로드
+const switchToExistingTab = () => {
+  activeTab.value = 'existing'
+  if (userSearchResults.value.length === 0 && !userSearchTerm.value) {
+    loadAllUsers()
+  }
+}
+
+const loadAllUsers = async () => {
+  userSearchLoading.value = true
+  try {
+    const response = await apiClient.get('/admin/users', {
+      params: { page: 1, pageSize: 30 },
+    })
+    userSearchResults.value = response.data.items || []
+    userSearchTotalPages.value = response.data.totalPages || 0
+    userSearchTotalCount.value = response.data.totalCount || 0
+    userSearchPage.value = 1
+  } catch (error) {
+    console.error('Failed to load users:', error)
+  } finally {
+    userSearchLoading.value = false
+  }
+}
+
+// 사용자 검색 (debounce)
+const onSearchInput = () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    userSearchPage.value = 1
+    searchUsers()
+  }, 300)
+}
+
+const searchUsers = async () => {
+  const term = userSearchTerm.value.trim()
+
+  userSearchLoading.value = true
+  try {
+    const params = { page: userSearchPage.value, pageSize: 30 }
+    if (term) params.searchTerm = term
+
+    const response = await apiClient.get('/admin/users', { params })
+    userSearchResults.value = response.data.items || []
+    userSearchTotalPages.value = response.data.totalPages || 0
+    userSearchTotalCount.value = response.data.totalCount || 0
+  } catch (error) {
+    console.error('Failed to search users:', error)
+    userSearchResults.value = []
+  } finally {
+    userSearchLoading.value = false
+  }
+}
+
+const goToPage = (page) => {
+  userSearchPage.value = page
+  searchUsers()
+}
+
+const isUserSelected = (userId) => {
+  return selectedUsers.value.some((u) => u.id === userId)
+}
+
+const toggleUserSelection = (user) => {
+  const idx = selectedUsers.value.findIndex((u) => u.id === user.id)
+  if (idx >= 0) {
+    selectedUsers.value.splice(idx, 1)
+  } else {
+    selectedUsers.value.push({ ...user })
+  }
+}
+
+const removeSelectedUser = (userId) => {
+  selectedUsers.value = selectedUsers.value.filter((u) => u.id !== userId)
+}
+
+const linkExistingUsers = async () => {
+  if (selectedUsers.value.length === 0) return
+
+  linkLoading.value = true
+  try {
+    const response = await apiClient.post(
+      `/admin/conventions/${props.conventionId}/guests/link`,
+      {
+        userIds: selectedUsers.value.map((u) => u.id),
+        groupName: linkGroupName.value || null,
+      },
+    )
+    alert(response.data.message)
+    resetExistingUserForm()
+    emit('saved')
+  } catch (error) {
+    console.error('Failed to link users:', error)
+    alert('추가 실패: ' + (error.response?.data?.message || error.message))
+  } finally {
+    linkLoading.value = false
+  }
+}
+
+const resetExistingUserForm = () => {
+  userSearchTerm.value = ''
+  userSearchResults.value = []
+  userSearchPage.value = 1
+  userSearchTotalPages.value = 0
+  userSearchTotalCount.value = 0
+  selectedUsers.value = []
+  linkGroupName.value = ''
+}
+
 // editingGuest 변경 시 폼 초기화
 watch(
   () => props.editingGuest,
   (guest) => {
     if (guest) {
+      activeTab.value = 'manual'
       const templateAttrs = {}
       const customAttrs = []
       const templateKeys = props.attributeTemplates.map((t) => t.attributeKey)
@@ -379,6 +757,8 @@ watch(
   (isOpen) => {
     if (isOpen && !props.editingGuest) {
       resetForm()
+      resetExistingUserForm()
+      activeTab.value = 'manual'
     }
   },
 )
@@ -399,6 +779,7 @@ const resetForm = () => {
 
 const closeGuestModal = () => {
   resetForm()
+  resetExistingUserForm()
   emit('close')
 }
 

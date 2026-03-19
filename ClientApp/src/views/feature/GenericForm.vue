@@ -208,7 +208,7 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useConventionStore } from '@/stores/convention'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/services/api'
@@ -218,6 +218,7 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const route = useRoute()
 const conventionStore = useConventionStore()
 const authStore = useAuthStore()
 
@@ -340,12 +341,9 @@ async function initForm() {
   try {
     // Ensure convention store is ready
     if (!conventionStore.currentConvention) {
-      const selectedConventionId = localStorage.getItem('selectedConventionId')
-      if (selectedConventionId) {
-        await conventionStore.setCurrentConvention(
-          parseInt(selectedConventionId, 10),
-        )
-      }
+      await conventionStore.selectConvention(
+        parseInt(route.params.conventionId),
+      )
     }
 
     if (!conventionId.value) {

@@ -348,7 +348,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import { useNoticeNavigation } from '@/composables/useNoticeNavigation'
@@ -359,6 +359,7 @@ import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 import MainHeader from '@/components/common/MainHeader.vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
 const { setPendingNotice } = useNoticeNavigation()
@@ -613,13 +614,7 @@ async function loadDynamicActions() {
 onMounted(async () => {
   loading.value = true
 
-  // 1. 행사 정보 먼저 로드 (필수)
-  const selectedConventionId = localStorage.getItem('selectedConventionId')
-  if (selectedConventionId && !conventionStore.currentConvention) {
-    await conventionStore.setCurrentConvention(parseInt(selectedConventionId))
-  }
-
-  // 2. 사용자 정보 로드 (필수)
+  // 1. 사용자 정보 로드 (필수, 행사는 부모 라우트에서 이미 로드됨)
   if (!authStore.user) {
     await authStore.fetchCurrentUser()
   }

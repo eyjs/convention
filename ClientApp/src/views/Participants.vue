@@ -115,9 +115,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
 
+const route = useRoute()
 const conventionStore = useConventionStore()
 
 const loading = ref(true)
@@ -163,12 +165,9 @@ onMounted(async () => {
   try {
     // Ensure convention store is ready
     if (!conventionStore.currentConvention) {
-      const selectedConventionId = localStorage.getItem('selectedConventionId')
-      if (selectedConventionId) {
-        await conventionStore.setCurrentConvention(
-          parseInt(selectedConventionId),
-        )
-      }
+      await conventionStore.selectConvention(
+        parseInt(route.params.conventionId),
+      )
     }
 
     await fetchParticipants()

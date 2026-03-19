@@ -642,7 +642,7 @@ async function handleLogin() {
     if (authStore.isAdmin) {
       router.push('/admin')
     } else {
-      router.push('/home')
+      router.push('/')
     }
   } else {
     errorMessage.value = result.error

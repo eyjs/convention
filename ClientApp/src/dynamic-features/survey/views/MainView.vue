@@ -88,13 +88,16 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
+
+const route = useRoute()
 
 const props = defineProps({
   featureMetadata: { type: Object, default: () => ({}) },
 })
 
-const conventionId = localStorage.getItem('selectedConventionId')
+const conventionId = route.params.conventionId
 const surveys = ref([
   {
     id: 1,

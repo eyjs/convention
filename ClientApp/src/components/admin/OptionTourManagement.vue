@@ -78,11 +78,7 @@
     </div>
 
     <!-- 생성/수정 모달 -->
-    <BaseModal
-      :is-open="showFormModal"
-      max-width="md"
-      @close="closeFormModal"
-    >
+    <BaseModal :is-open="showFormModal" max-width="md" @close="closeFormModal">
       <template #header>
         <h2 class="text-xl font-semibold">
           {{ editingTour ? '옵션투어 수정' : '옵션투어 추가' }}
@@ -205,10 +201,7 @@
                 <p v-if="participant.corpPart" class="text-sm text-gray-500">
                   {{ participant.corpPart }}
                 </p>
-                <p
-                  v-if="participant.affiliation"
-                  class="text-sm text-gray-500"
-                >
+                <p v-if="participant.affiliation" class="text-sm text-gray-500">
                   {{ participant.affiliation }}
                 </p>
               </div>
@@ -429,7 +422,11 @@ const saveTour = async () => {
 }
 
 const deleteTour = async (id) => {
-  if (!confirm('옵션투어를 삭제하면 참석자 매핑도 함께 삭제됩니다. 계속하시겠습니까?'))
+  if (
+    !confirm(
+      '옵션투어를 삭제하면 참석자 매핑도 함께 삭제됩니다. 계속하시겠습니까?',
+    )
+  )
     return
 
   try {

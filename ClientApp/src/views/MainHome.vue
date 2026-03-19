@@ -437,9 +437,7 @@ function goToConvention(convention) {
     console.warn('goToConvention: invalid convention', convention)
     return
   }
-  // localStorage에 행사 ID 저장 후 즉시 이동 (ConventionHome에서 상세 로드)
-  localStorage.setItem('selectedConventionId', convention.id.toString())
-  router.push('/')
+  router.push(`/conventions/${convention.id}`)
 }
 
 // 날짜 포맷

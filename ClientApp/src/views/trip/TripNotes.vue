@@ -212,9 +212,8 @@
 
     <BottomNavigationBar
       v-if="
-        ((tripId && tripId !== 'undefined') ||
-          (shareToken && shareToken !== 'undefined')) &&
-        !uiStore.isModalOpen
+        (tripId && tripId !== 'undefined') ||
+        (shareToken && shareToken !== 'undefined')
       "
       :trip-id="tripId || trip.id"
       :share-token="shareToken"
@@ -317,7 +316,6 @@ import { useRouter } from 'vue-router'
 import MainHeader from '@/components/common/MainHeader.vue'
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
-import { useUIStore } from '@/stores/ui'
 import apiClient from '@/services/api'
 import { Check } from 'lucide-vue-next'
 
@@ -332,7 +330,6 @@ const props = defineProps({
   },
 })
 
-const uiStore = useUIStore()
 const router = useRouter()
 
 // Determine tripId and readonly mode
@@ -402,7 +399,7 @@ async function fetchTripData() {
     console.error('Failed to fetch trip data:', error)
     alert('데이터를 불러오는데 실패했습니다.')
     if (isSharedView.value) {
-      router.push('/home')
+      router.push('/')
     } else {
       router.push('/trips')
     }
