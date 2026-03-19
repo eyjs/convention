@@ -1,7 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <AdminHeader title="명찰 일괄 인쇄" show-back-button />
-
+  <div>
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="bg-white p-8 rounded-lg shadow-md">
@@ -62,7 +60,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/services/api'
-import AdminHeader from '@/components/admin/AdminHeader.vue'
 import TablePrint from '@/components/admin/TablePrint.vue'
 
 const router = useRouter()

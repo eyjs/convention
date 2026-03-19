@@ -33,6 +33,9 @@ public class AdminUserService : IAdminUserService
             .Include(uc => uc.User)
                 .ThenInclude(u => u.GuestScheduleTemplates)
                     .ThenInclude(gst => gst.ScheduleTemplate)
+            .Include(uc => uc.User)
+                .ThenInclude(u => u.UserOptionTours)
+                    .ThenInclude(uot => uot.OptionTour)
             .OrderBy(uc => uc.User.Name)
             .Select(uc => new
             {
@@ -57,7 +60,23 @@ public class AdminUserService : IAdminUserService
                         gst.ScheduleTemplate!.CourseName
                     }).ToList(),
                 attributes = uc.User.GuestAttributes
-                    .Select(ga => new { ga.AttributeKey, ga.AttributeValue }).ToList()
+                    .Select(ga => new { ga.AttributeKey, ga.AttributeValue }).ToList(),
+                optionTours = uc.User.UserOptionTours
+                    .Where(uot => uot.ConventionId == conventionId)
+                    .Select(uot => new
+                    {
+                        uot.OptionTourId,
+                        uot.OptionTour!.Name
+                    }).ToList(),
+                passport = new
+                {
+                    HasNumber = !string.IsNullOrEmpty(uc.User.PassportNumber),
+                    HasExpiry = uc.User.PassportExpiryDate != null,
+                    HasImage = !string.IsNullOrEmpty(uc.User.PassportImageUrl),
+                    uc.User.PassportVerified,
+                    uc.User.PassportVerifiedAt,
+                    uc.User.PassportExpiryDate
+                }
             })
             .ToListAsync();
 
@@ -435,6 +454,26 @@ public class AdminUserService : IAdminUserService
             message = skippedCount > 0
                 ? $"{newUserIds.Count}명 추가, {skippedCount}명 이미 등록됨"
                 : $"{newUserIds.Count}명이 참석자로 추가되었습니다."
+        }, 200);
+    }
+
+    public async Task<(bool Success, object Result, int StatusCode)> TogglePassportVerificationAsync(int userId, bool verified)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        if (user == null)
+            return (false, new { message = "사용자를 찾을 수 없습니다." }, 404);
+
+        user.PassportVerified = verified;
+        user.PassportVerifiedAt = verified ? DateTime.UtcNow : null;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _unitOfWork.SaveChangesAsync();
+
+        return (true, new
+        {
+            message = verified ? "여권 정보가 검증 완료되었습니다." : "여권 검증이 해제되었습니다.",
+            passportVerified = user.PassportVerified,
+            passportVerifiedAt = user.PassportVerifiedAt
         }, 200);
     }
 

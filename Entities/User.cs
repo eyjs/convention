@@ -108,6 +108,17 @@ public class User
     /// </summary>
     public DateOnly? PassportExpiryDate { get; set; }
 
+    /// <summary>
+    /// 관리자가 여권 정보를 수기 검증 완료했는지 여부
+    /// User 레벨 (행사 무관, 한번 검증하면 모든 행사에서 신뢰)
+    /// </summary>
+    public bool PassportVerified { get; set; } = false;
+
+    /// <summary>
+    /// 여권 검증 완료 시각
+    /// </summary>
+    public DateTime? PassportVerifiedAt { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -117,4 +128,5 @@ public class User
     public virtual ICollection<GuestAttribute> GuestAttributes { get; set; } = new List<GuestAttribute>();
     public virtual ICollection<UserActionStatus> UserActionStatuses { get; set; } = new List<UserActionStatus>();
     public virtual ICollection<GuestScheduleTemplate> GuestScheduleTemplates { get; set; } = new List<GuestScheduleTemplate>();
+    public virtual ICollection<UserOptionTour> UserOptionTours { get; set; } = new List<UserOptionTour>();
 }

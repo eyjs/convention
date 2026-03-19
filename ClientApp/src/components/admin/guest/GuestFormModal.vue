@@ -433,6 +433,43 @@
             </div>
           </div>
         </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">옵션투어 배정</label>
+          <div
+            v-if="availableOptionTours.length === 0"
+            class="text-sm text-gray-500 p-3 bg-gray-50 rounded"
+          >
+            등록된 옵션투어가 없습니다.
+          </div>
+          <div v-else>
+            <span class="text-sm text-gray-600 mb-2 block"
+              >선택: {{ guestForm.optionTourIds.length }}개</span
+            >
+            <div class="space-y-2 max-h-60 overflow-y-auto border rounded p-2">
+              <label
+                v-for="tour in availableOptionTours"
+                :key="tour.id"
+                class="flex items-start gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer"
+              >
+                <input
+                  v-model="guestForm.optionTourIds"
+                  type="checkbox"
+                  :value="tour.id"
+                  class="rounded mt-1"
+                />
+                <div class="flex-1">
+                  <div class="font-medium">{{ tour.name }}</div>
+                  <div class="text-xs text-gray-500">
+                    {{ tour.date }}
+                    {{ tour.startTime
+                    }}{{ tour.endTime ? ` ~ ${tour.endTime}` : '' }}
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
     </template>
     <template #footer>
@@ -452,10 +489,11 @@
       </button>
       <button
         v-else
-        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        :disabled="saving"
         @click="saveGuest"
       >
-        저장
+        {{ saving ? '저장 중...' : '저장' }}
       </button>
     </template>
   </BaseModal>
@@ -534,6 +572,7 @@ const props = defineProps({
   isOpen: { type: Boolean, required: true },
   editingGuest: { type: Object, default: null },
   availableTemplates: { type: Array, required: true },
+  availableOptionTours: { type: Array, default: () => [] },
   attributeTemplates: { type: Array, required: true },
   guests: { type: Array, required: true },
   conventionId: { type: Number, required: true },
@@ -554,6 +593,7 @@ const userSearchTotalCount = ref(0)
 const selectedUsers = ref([])
 const linkGroupName = ref('')
 const linkLoading = ref(false)
+const saving = ref(false)
 let searchTimeout = null
 
 onUnmounted(() => {
@@ -572,6 +612,7 @@ const guestForm = ref({
   affiliation: '',
   password: '',
   scheduleTemplateIds: [],
+  optionTourIds: [],
   templateAttributes: {},
   customAttributes: [],
 })
@@ -744,6 +785,7 @@ watch(
         scheduleTemplateIds: guest.scheduleTemplates.map(
           (st) => st.scheduleTemplateId,
         ),
+        optionTourIds: (guest.optionTours || []).map((ot) => ot.optionTourId),
         templateAttributes: templateAttrs,
         customAttributes: customAttrs,
       }
@@ -772,6 +814,7 @@ const resetForm = () => {
     affiliation: '',
     password: '',
     scheduleTemplateIds: [],
+    optionTourIds: [],
     templateAttributes: {},
     customAttributes: [],
   }
@@ -784,6 +827,8 @@ const closeGuestModal = () => {
 }
 
 const saveGuest = async () => {
+  if (saving.value) return
+  saving.value = true
   try {
     // 템플릿 + 커스텀 속성 병합
     const attributes = {}
@@ -827,18 +872,50 @@ const saveGuest = async () => {
     }
 
     // 일정 배정
-    await apiClient.post(
-      `/admin/conventions/${props.conventionId}/guests/${guestId}/schedules`,
-      {
-        scheduleTemplateIds: guestForm.value.scheduleTemplateIds,
-      },
-    )
+    try {
+      await apiClient.post(
+        `/admin/conventions/${props.conventionId}/guests/${guestId}/schedules`,
+        {
+          scheduleTemplateIds: guestForm.value.scheduleTemplateIds,
+        },
+      )
+    } catch (scheduleError) {
+      console.error('Failed to assign schedules:', scheduleError)
+      alert(
+        '참석자는 저장되었으나 일정 배정에 실패했습니다: ' +
+          (scheduleError.response?.data?.message || scheduleError.message),
+      )
+      emit('saved')
+      return
+    }
+
+    // 옵션투어 배정
+    if (guestForm.value.optionTourIds.length > 0 || props.editingGuest) {
+      try {
+        await apiClient.post(
+          `/admin/conventions/${props.conventionId}/guests/${guestId}/option-tours`,
+          {
+            optionTourIds: guestForm.value.optionTourIds,
+          },
+        )
+      } catch (tourError) {
+        console.error('Failed to assign option tours:', tourError)
+        alert(
+          '참석자/일정은 저장되었으나 옵션투어 배정에 실패했습니다: ' +
+            (tourError.response?.data?.message || tourError.message),
+        )
+        emit('saved')
+        return
+      }
+    }
 
     resetForm()
     emit('saved')
   } catch (error) {
     console.error('Failed to save guest:', error)
     alert('저장 실패: ' + (error.response?.data?.message || error.message))
+  } finally {
+    saving.value = false
   }
 }
 

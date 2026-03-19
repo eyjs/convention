@@ -14,3 +14,8 @@ public class AddParticipantsDto
 {
     public List<int> UserIds { get; set; } = new();
 }
+
+public class AssignOptionToursDto
+{
+    public List<int> OptionTourIds { get; set; } = new();
+}

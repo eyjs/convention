@@ -17,4 +17,5 @@ public interface IAdminUserService
     Task<(bool Success, object Result, int StatusCode)> ResetPasswordAsync(int userId, ResetPasswordDto dto);
     Task<(bool Found, object? Result)> GetAccessLinkAsync(int guestId, int? conventionId, string baseUrl);
     Task<(bool Success, object Result, int StatusCode)> LinkExistingUsersAsync(int conventionId, List<int> userIds, string? groupName);
+    Task<(bool Success, object Result, int StatusCode)> TogglePassportVerificationAsync(int userId, bool verified);
 }

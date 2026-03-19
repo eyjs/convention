@@ -95,6 +95,14 @@ public class AdminScheduleController : ControllerBase
         return Ok(new { message = "일정이 배정되었습니다." });
     }
 
+    [HttpPost("conventions/{conventionId}/guests/{guestId}/option-tours")]
+    public async Task<IActionResult> AssignOptionTours(int conventionId, int guestId, [FromBody] AssignOptionToursDto dto)
+    {
+        var (success, error) = await _scheduleService.AssignOptionToursToGuestAsync(conventionId, guestId, dto.OptionTourIds);
+        if (!success) return NotFound(new { message = error });
+        return Ok(new { message = "옵션투어가 배정되었습니다." });
+    }
+
     [HttpDelete("guests/{guestId}/schedules/{templateId}")]
     public async Task<IActionResult> RemoveGuestSchedule(int guestId, int templateId)
     {

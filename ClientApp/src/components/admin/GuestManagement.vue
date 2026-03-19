@@ -126,6 +126,16 @@
       </div>
     </div>
 
+    <!-- 검색 -->
+    <div class="mb-4">
+      <input
+        v-model="searchTerm"
+        type="text"
+        placeholder="이름, 전화번호, 부서, 소속으로 검색..."
+        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+      />
+    </div>
+
     <div v-if="loading" class="text-center py-8">로딩 중...</div>
     <div
       v-else-if="guests.length === 0"
@@ -139,6 +149,14 @@
         첫 참석자 추가하기
       </button>
     </div>
+    <div
+      v-else-if="filteredGuests.length === 0 && searchTerm"
+      class="text-center py-8 bg-white rounded-lg shadow"
+    >
+      <p class="text-gray-500">
+        "{{ searchTerm }}" 검색 결과가 없습니다 (전체 {{ guests.length }}명)
+      </p>
+    </div>
     <div v-else class="bg-white rounded-lg shadow overflow-hidden">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -148,7 +166,8 @@
                 <input
                   type="checkbox"
                   :checked="
-                    selectedGuests.length === guests.length && guests.length > 0
+                    selectedGuests.length === filteredGuests.length &&
+                    filteredGuests.length > 0
                   "
                   class="rounded"
                   @change="toggleSelectAll"
@@ -180,6 +199,11 @@
                 속성
               </th>
               <th
+                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+              >
+                여권
+              </th>
+              <th
                 class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
               >
                 작업
@@ -188,7 +212,7 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr
-              v-for="guest in guests"
+              v-for="guest in filteredGuests"
               :key="guest.id"
               class="hover:bg-gray-50"
             >
@@ -239,6 +263,61 @@
                 >
               </td>
               <td
+                class="px-6 py-4 whitespace-nowrap text-center text-sm"
+                @click.stop
+              >
+                <div class="flex items-center justify-center gap-1">
+                  <!-- 여권번호 -->
+                  <span
+                    class="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold"
+                    :class="
+                      guest.passport?.hasNumber
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    "
+                    :title="
+                      guest.passport?.hasNumber
+                        ? '여권번호 입력됨'
+                        : '여권번호 미입력'
+                    "
+                  >
+                    #
+                  </span>
+                  <!-- 만료일 -->
+                  <span
+                    class="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold"
+                    :class="getExpiryClass(guest.passport)"
+                    :title="getExpiryTitle(guest.passport)"
+                  >
+                    D
+                  </span>
+                  <!-- 이미지 -->
+                  <span
+                    class="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold"
+                    :class="
+                      guest.passport?.hasImage
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    "
+                    :title="
+                      guest.passport?.hasImage
+                        ? '여권이미지 업로드됨'
+                        : '여권이미지 미업로드'
+                    "
+                  >
+                    P
+                  </span>
+                  <!-- 검증 토글 -->
+                  <!-- prettier-ignore -->
+                  <button
+                    class="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold ml-1"
+                    :class="guest.passport?.passportVerified ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'"
+                    :title="guest.passport?.passportVerified ? `검증완료 (${formatDate(guest.passport.passportVerifiedAt)})` : '미검증 — 클릭하여 검증'"
+                    @click="togglePassportVerification(guest)"
+                  >V</button>
+                </div>
+              </td>
+              <td
                 class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                 @click.stop
               >
@@ -266,6 +345,7 @@
       :is-open="showCreateModal || !!editingGuest"
       :editing-guest="editingGuest"
       :available-templates="availableTemplates"
+      :available-option-tours="availableOptionTours"
       :attribute-templates="attributeTemplates"
       :guests="guests"
       :convention-id="conventionId"
@@ -312,7 +392,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import apiClient from '@/services/api'
 import GuestFormModal from '@/components/admin/guest/GuestFormModal.vue'
 import GuestDetailModal from '@/components/admin/guest/GuestDetailModal.vue'
@@ -326,9 +406,23 @@ const props = defineProps({
 // 공유 상태
 const guests = ref([])
 const availableTemplates = ref([])
+const availableOptionTours = ref([])
 const attributeTemplates = ref([])
 const loading = ref(true)
 const selectedGuests = ref([])
+const searchTerm = ref('')
+
+const filteredGuests = computed(() => {
+  if (!searchTerm.value) return guests.value
+  const term = searchTerm.value.toLowerCase()
+  return guests.value.filter(
+    (g) =>
+      (g.guestName && g.guestName.toLowerCase().includes(term)) ||
+      (g.telephone && g.telephone.includes(term)) ||
+      (g.corpPart && g.corpPart.toLowerCase().includes(term)) ||
+      (g.affiliation && g.affiliation.toLowerCase().includes(term)),
+  )
+})
 
 // 모달 가시성
 const showCreateModal = ref(false)
@@ -367,6 +461,17 @@ const loadTemplates = async () => {
   }
 }
 
+const loadOptionTours = async () => {
+  try {
+    const response = await apiClient.get(
+      `/admin/conventions/${props.conventionId}/option-tours`,
+    )
+    availableOptionTours.value = response.data
+  } catch (error) {
+    console.error('Failed to load option tours:', error)
+  }
+}
+
 const loadAttributeTemplates = async () => {
   try {
     const response = await apiClient.get(
@@ -378,10 +483,57 @@ const loadAttributeTemplates = async () => {
   }
 }
 
+// 여권 상태 헬퍼
+const getExpiryClass = (passport) => {
+  if (!passport?.hasExpiry) return 'bg-red-100 text-red-700'
+  const expiry = passport.passportExpiryDate
+  if (!expiry) return 'bg-red-100 text-red-700'
+  const expiryDate = new Date(expiry)
+  const sixMonthsFromNow = new Date()
+  sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6)
+  if (expiryDate < new Date()) return 'bg-red-100 text-red-700'
+  if (expiryDate < sixMonthsFromNow) return 'bg-yellow-100 text-yellow-700'
+  return 'bg-green-100 text-green-700'
+}
+
+const getExpiryTitle = (passport) => {
+  if (!passport?.hasExpiry) return '만료일 미입력'
+  const expiry = passport.passportExpiryDate
+  if (!expiry) return '만료일 미입력'
+  const expiryDate = new Date(expiry)
+  if (expiryDate < new Date()) return `만료됨 (${expiry})`
+  const sixMonthsFromNow = new Date()
+  sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6)
+  if (expiryDate < sixMonthsFromNow) return `6개월 이내 만료 (${expiry})`
+  return `유효 (${expiry})`
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString('ko-KR')
+}
+
+const togglePassportVerification = async (guest) => {
+  const currentStatus = guest.passport?.passportVerified
+  const action = currentStatus ? '검증 해제' : '검증 완료'
+  if (!confirm(`${guest.guestName}님의 여권을 ${action} 처리하시겠습니까?`))
+    return
+
+  try {
+    await apiClient.put(`/admin/users/${guest.id}/passport-verification`, {
+      verified: !currentStatus,
+    })
+    await loadGuests()
+  } catch (error) {
+    console.error('Failed to toggle passport verification:', error)
+    alert('처리 실패')
+  }
+}
+
 // 테이블 조작
 const toggleSelectAll = (event) => {
   if (event.target.checked) {
-    selectedGuests.value = guests.value.map((g) => g.id)
+    selectedGuests.value = filteredGuests.value.map((g) => g.id)
   } else {
     selectedGuests.value = []
   }
@@ -443,6 +595,7 @@ const onGroupCompleted = async () => {
 onMounted(() => {
   loadGuests()
   loadTemplates()
+  loadOptionTours()
   loadAttributeTemplates()
 })
 </script>

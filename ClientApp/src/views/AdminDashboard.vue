@@ -1,13 +1,5 @@
 <template>
-  <div class="min-h-screen min-h-dvh bg-gray-50">
-    <AdminHeader
-      title="행사 관리"
-      :subtitle="convention ? convention.title : ''"
-      show-back-button
-      back-path="/admin"
-      back-button-title="행사 목록으로"
-    />
-
+  <div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <!-- 탭 네비게이션 -->
       <div class="mb-6 overflow-x-auto">
@@ -106,10 +98,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { conventionAPI } from '@/services/api'
-import AdminHeader from '@/components/admin/AdminHeader.vue'
 import DashboardOverview from '@/components/admin/DashboardOverview.vue'
 import GuestManagement from '@/components/admin/GuestManagement.vue'
 import DatabaseMigration from '@/components/admin/DatabaseMigration.vue'
@@ -123,6 +114,7 @@ import FormBuilderManagement from '@/components/admin/FormBuilderManagement.vue'
 
 const router = useRouter()
 const route = useRoute()
+const adminHeader = inject('adminHeader', null)
 const conventionId = computed(() => {
   const id = parseInt(route.params.id)
   return isNaN(id) ? null : id
@@ -161,6 +153,9 @@ onMounted(async () => {
   try {
     const response = await conventionAPI.getConvention(conventionId.value)
     convention.value = response.data
+    if (convention.value?.title) {
+      adminHeader?.setSubtitle(convention.value.title)
+    }
   } catch (error) {
     console.error('Failed to load convention:', error)
     alert('행사 정보를 불러오는데 실패했습니다.')

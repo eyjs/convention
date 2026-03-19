@@ -275,53 +275,56 @@ const routes = [
   // === Admin Routes ===
   {
     path: '/admin',
-    name: 'Admin',
-    component: () => import('@/views/ConventionListView.vue'),
-    meta: {
-      title: '행사 관리',
-      requiresAuth: true,
-      requiresAdmin: true,
-    },
-  },
-  {
-    path: '/admin/conventions/:id',
-    name: 'AdminDashboard',
-    component: () => import('@/views/AdminDashboard.vue'),
-    meta: {
-      title: '행사 대시보드',
-      requiresAuth: true,
-      requiresAdmin: true,
-    },
-  },
-  {
-    path: '/admin/form-builder',
-    name: 'FormBuilderList',
-    component: () => import('@/views/admin/FormBuilderListView.vue'),
-    meta: {
-      title: '폼 빌더',
-      requiresAuth: true,
-      requiresAdmin: true,
-    },
-  },
-  {
-    path: '/admin/form-builder/:id',
-    name: 'FormBuilderEdit',
-    component: () => import('@/views/admin/FormBuilderEditView.vue'),
-    meta: {
-      title: '폼 편집',
-      requiresAuth: true,
-      requiresAdmin: true,
-    },
-  },
-  {
-    path: '/admin/name-tag-printing',
-    name: 'NameTagPrinting',
-    component: () => import('@/views/admin/NameTagPrintingView.vue'),
-    meta: {
-      title: '명찰 인쇄',
-      requiresAuth: true,
-      requiresAdmin: true,
-    },
+    component: () => import('@/layouts/AdminLayout.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true },
+    children: [
+      {
+        path: '',
+        name: 'Admin',
+        component: () => import('@/views/ConventionListView.vue'),
+        meta: { title: '행사 관리', adminTitle: '관리자 대시보드' },
+      },
+      {
+        path: 'conventions/:id',
+        name: 'AdminDashboard',
+        component: () => import('@/views/AdminDashboard.vue'),
+        meta: {
+          title: '행사 대시보드',
+          adminTitle: '행사 관리',
+          adminBackPath: '/admin',
+        },
+      },
+      {
+        path: 'form-builder',
+        name: 'FormBuilderList',
+        component: () => import('@/views/admin/FormBuilderListView.vue'),
+        meta: {
+          title: '폼 빌더',
+          adminTitle: '폼 빌더',
+          adminBackPath: '/admin',
+        },
+      },
+      {
+        path: 'form-builder/:id',
+        name: 'FormBuilderEdit',
+        component: () => import('@/views/admin/FormBuilderEditView.vue'),
+        meta: {
+          title: '폼 편집',
+          hideAdminHeader: true,
+          adminFullScreen: true,
+        },
+      },
+      {
+        path: 'name-tag-printing',
+        name: 'NameTagPrinting',
+        component: () => import('@/views/admin/NameTagPrintingView.vue'),
+        meta: {
+          title: '명찰 인쇄',
+          adminTitle: '명찰 일괄 인쇄',
+          adminBackPath: '/admin',
+        },
+      },
+    ],
   },
 
   // === Legacy redirects ===

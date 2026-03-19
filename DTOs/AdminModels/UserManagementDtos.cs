@@ -15,4 +15,9 @@ namespace LocalRAG.DTOs.AdminModels
         public List<int> UserIds { get; set; } = new();
         public string? GroupName { get; set; }
     }
+
+    public class PassportVerificationDto
+    {
+        public bool Verified { get; set; }
+    }
 }

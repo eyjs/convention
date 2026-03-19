@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <AdminHeader title="관리자 대시보드">
+  <div>
+    <Teleport defer to="#admin-header-slot">
       <!-- 탭 메뉴 -->
       <div class="border-t">
         <nav class="-mb-px flex space-x-8">
@@ -34,7 +34,7 @@
           </button>
         </nav>
       </div>
-    </AdminHeader>
+    </Teleport>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- 행사 관리 탭 -->
@@ -323,10 +323,10 @@
           </div>
 
           <div class="p-6">
-            <!-- LLM Provider 관리 -->
-            <div v-show="activeChatbotTab === 'providers'">
+            <!-- LLM Provider 관리 (비활성화) -->
+            <!-- <div v-show="activeChatbotTab === 'providers'">
               <LlmProviderManagement />
-            </div>
+            </div> -->
 
             <!-- 전체 재색인 -->
             <div v-show="activeChatbotTab === 'reindex'" class="space-y-6">
@@ -926,7 +926,6 @@ import apiClient from '@/services/api'
 // 챗봇 기능 비활성화 (필요 시 주석 해제)
 // import { chatbotAdminAPI } from '@/services/chatbotAdminService'
 
-import AdminHeader from '@/components/admin/AdminHeader.vue'
 import UserManagement from '@/components/admin/UserManagement.vue'
 // import LlmProviderManagement from '@/components/admin/LlmProviderManagement.vue'
 import ConventionFormModal from '@/components/admin/ConventionFormModal.vue'

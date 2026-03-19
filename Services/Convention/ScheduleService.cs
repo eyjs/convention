@@ -197,11 +197,46 @@ public class ScheduleService : IScheduleService
         return guests;
     }
 
+    public async Task<(bool Success, string? Error)> AssignOptionToursToGuestAsync(
+        int conventionId, int guestId, List<int> optionTourIds)
+    {
+        var userExists = await _unitOfWork.Users.ExistsAsync(u => u.Id == guestId);
+        if (!userExists) return (false, "User not found");
+
+        // 기존 옵션투어 배정 삭제
+        var existing = await _unitOfWork.UserOptionTours.Query
+            .Where(uot => uot.UserId == guestId && uot.ConventionId == conventionId)
+            .ToListAsync();
+        _unitOfWork.UserOptionTours.RemoveRange(existing);
+
+        if (optionTourIds is { Count: > 0 })
+        {
+            // 유효한 옵션투어 ID만 필터링
+            var validTourIds = await _unitOfWork.OptionTours.Query
+                .Where(ot => optionTourIds.Contains(ot.Id) && ot.ConventionId == conventionId)
+                .Select(ot => ot.Id)
+                .ToListAsync();
+
+            foreach (var optionTourId in validTourIds)
+            {
+                await _unitOfWork.UserOptionTours.AddAsync(new UserOptionTour
+                {
+                    UserId = guestId,
+                    OptionTourId = optionTourId,
+                    ConventionId = conventionId
+                });
+            }
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+        return (true, null);
+    }
+
     public async Task<(bool Success, string? Error)> AssignSchedulesToGuestAsync(
         int conventionId, int guestId, AssignSchedulesDto dto)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(guestId);
-        if (user == null) return (false, "User not found");
+        var userExists = await _unitOfWork.Users.ExistsAsync(u => u.Id == guestId);
+        if (!userExists) return (false, "User not found");
 
         var existing = await _unitOfWork.GuestScheduleTemplates.Query
             .Where(gst => gst.UserId == guestId && gst.ScheduleTemplate.ConventionId == conventionId)

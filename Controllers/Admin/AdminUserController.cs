@@ -118,6 +118,13 @@ public class AdminUserController : ControllerBase
         return StatusCode(statusCode, result);
     }
 
+    [HttpPut("users/{userId}/passport-verification")]
+    public async Task<IActionResult> TogglePassportVerification(int userId, [FromBody] PassportVerificationDto dto)
+    {
+        var (success, result, statusCode) = await _adminUserService.TogglePassportVerificationAsync(userId, dto.Verified);
+        return StatusCode(statusCode, result);
+    }
+
     [HttpPost("guests/{guestId}/send-sms")]
     public async Task<IActionResult> SendSMS(int guestId, [FromQuery] int? conventionId = null)
     {

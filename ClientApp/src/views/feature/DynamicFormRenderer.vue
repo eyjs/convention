@@ -666,9 +666,7 @@ async function initForm() {
   error.value = null
 
   if (!conventionStore.currentConvention) {
-    await conventionStore.selectConvention(
-      parseInt(route.params.conventionId),
-    )
+    await conventionStore.selectConvention(parseInt(route.params.conventionId))
   }
 
   await loadFormDefinition()
