@@ -432,17 +432,14 @@ function goToTripDetail(tripId) {
   router.push(`/trips/${tripId}`)
 }
 
-async function goToConvention(convention) {
+function goToConvention(convention) {
   if (!convention?.id) {
-    console.warn('Invalid convention:', convention)
+    console.warn('goToConvention: invalid convention', convention)
     return
   }
-  try {
-    await conventionStore.selectConvention(convention.id)
-    router.push('/')
-  } catch (error) {
-    console.error('행사 선택 실패:', error)
-  }
+  // localStorage에 행사 ID 저장 후 즉시 이동 (ConventionHome에서 상세 로드)
+  localStorage.setItem('selectedConventionId', convention.id.toString())
+  router.push('/')
 }
 
 // 날짜 포맷
