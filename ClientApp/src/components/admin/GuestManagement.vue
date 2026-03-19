@@ -262,59 +262,62 @@
                   >{{ guest.attributes.length }}개</span
                 >
               </td>
-              <td
-                class="px-6 py-4 whitespace-nowrap text-center text-sm"
-                @click.stop
-              >
-                <div class="flex items-center justify-center gap-1">
-                  <!-- 여권번호 -->
-                  <span
-                    class="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold"
-                    :class="
-                      guest.passport?.hasNumber
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                    "
-                    :title="
-                      guest.passport?.hasNumber
-                        ? '여권번호 입력됨'
-                        : '여권번호 미입력'
-                    "
-                  >
-                    #
-                  </span>
-                  <!-- 만료일 -->
-                  <span
-                    class="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold"
-                    :class="getExpiryClass(guest.passport)"
-                    :title="getExpiryTitle(guest.passport)"
-                  >
-                    D
-                  </span>
-                  <!-- 이미지 -->
-                  <span
-                    class="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold"
-                    :class="
-                      guest.passport?.hasImage
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                    "
-                    :title="
-                      guest.passport?.hasImage
-                        ? '여권이미지 업로드됨'
-                        : '여권이미지 미업로드'
-                    "
-                  >
-                    P
-                  </span>
+              <td class="px-6 py-4 whitespace-nowrap text-sm" @click.stop>
+                <div class="flex flex-col gap-1">
+                  <!-- 여권 항목별 상태 -->
+                  <div class="flex items-center gap-2 text-xs">
+                    <span
+                      class="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                      :class="
+                        guest.passport?.hasNumber
+                          ? 'bg-green-500'
+                          : 'bg-red-400'
+                      "
+                    ></span>
+                    <span
+                      :class="
+                        guest.passport?.hasNumber
+                          ? 'text-gray-700'
+                          : 'text-red-500'
+                      "
+                    >
+                      {{ guest.passport?.hasNumber ? '번호' : '번호 미입력' }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs">
+                    <span
+                      class="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                      :class="getExpiryDotClass(guest.passport)"
+                    ></span>
+                    <span :class="getExpiryTextClass(guest.passport)">
+                      {{ getExpiryLabel(guest.passport) }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs">
+                    <span
+                      class="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                      :class="
+                        guest.passport?.hasImage ? 'bg-green-500' : 'bg-red-400'
+                      "
+                    ></span>
+                    <span
+                      :class="
+                        guest.passport?.hasImage
+                          ? 'text-gray-700'
+                          : 'text-red-500'
+                      "
+                    >
+                      {{ guest.passport?.hasImage ? '사본' : '사본 미등록' }}
+                    </span>
+                  </div>
                   <!-- 검증 토글 -->
                   <!-- prettier-ignore -->
                   <button
-                    class="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold ml-1"
-                    :class="guest.passport?.passportVerified ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'"
-                    :title="guest.passport?.passportVerified ? `검증완료 (${formatDate(guest.passport.passportVerifiedAt)})` : '미검증 — 클릭하여 검증'"
+                    class="mt-1 px-2 py-0.5 rounded text-xs font-medium transition-colors"
+                    :class="guest.passport?.passportVerified ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
+                    :title="guest.passport?.passportVerified ? `검증완료 (${formatDate(guest.passport.passportVerifiedAt)})` : '클릭하여 검증 완료 처리'"
                     @click="togglePassportVerification(guest)"
-                  >V</button>
+                  >{{ guest.passport?.passportVerified ? '검증완료' : '미검증' }}</button>
                 </div>
               </td>
               <td
@@ -484,28 +487,37 @@ const loadAttributeTemplates = async () => {
 }
 
 // 여권 상태 헬퍼
-const getExpiryClass = (passport) => {
-  if (!passport?.hasExpiry) return 'bg-red-100 text-red-700'
-  const expiry = passport.passportExpiryDate
-  if (!expiry) return 'bg-red-100 text-red-700'
-  const expiryDate = new Date(expiry)
-  const sixMonthsFromNow = new Date()
-  sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6)
-  if (expiryDate < new Date()) return 'bg-red-100 text-red-700'
-  if (expiryDate < sixMonthsFromNow) return 'bg-yellow-100 text-yellow-700'
-  return 'bg-green-100 text-green-700'
+const getExpiryStatus = (passport) => {
+  if (!passport?.hasExpiry || !passport.passportExpiryDate) return 'missing'
+  const expiryDate = new Date(passport.passportExpiryDate)
+  if (expiryDate < new Date()) return 'expired'
+  const sixMonths = new Date()
+  sixMonths.setMonth(sixMonths.getMonth() + 6)
+  if (expiryDate < sixMonths) return 'expiring'
+  return 'valid'
 }
 
-const getExpiryTitle = (passport) => {
-  if (!passport?.hasExpiry) return '만료일 미입력'
-  const expiry = passport.passportExpiryDate
-  if (!expiry) return '만료일 미입력'
-  const expiryDate = new Date(expiry)
-  if (expiryDate < new Date()) return `만료됨 (${expiry})`
-  const sixMonthsFromNow = new Date()
-  sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6)
-  if (expiryDate < sixMonthsFromNow) return `6개월 이내 만료 (${expiry})`
-  return `유효 (${expiry})`
+const getExpiryDotClass = (passport) => {
+  const status = getExpiryStatus(passport)
+  if (status === 'valid') return 'bg-green-500'
+  if (status === 'expiring') return 'bg-yellow-500'
+  return 'bg-red-400'
+}
+
+const getExpiryTextClass = (passport) => {
+  const status = getExpiryStatus(passport)
+  if (status === 'valid') return 'text-gray-700'
+  if (status === 'expiring') return 'text-yellow-600'
+  return 'text-red-500'
+}
+
+const getExpiryLabel = (passport) => {
+  const status = getExpiryStatus(passport)
+  const date = passport?.passportExpiryDate
+  if (status === 'missing') return '만료일 미입력'
+  if (status === 'expired') return `만료됨 (${date})`
+  if (status === 'expiring') return `곧 만료 (${date})`
+  return `유효 (${date})`
 }
 
 const formatDate = (dateStr) => {
