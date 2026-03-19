@@ -462,7 +462,7 @@ public class UserOptionTourConfiguration : IEntityTypeConfiguration<UserOptionTo
               .HasDatabaseName("UQ_UserOptionTour_UserId_ConventionId_OptionTourId");
 
         entity.HasOne(e => e.User)
-              .WithMany()
+              .WithMany(u => u.UserOptionTours)
               .HasForeignKey(e => e.UserId)
               .OnDelete(DeleteBehavior.NoAction);
 
