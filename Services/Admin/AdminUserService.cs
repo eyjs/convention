@@ -47,7 +47,7 @@ public class AdminUserService : IAdminUserService
                 GroupName = uc.GroupName,
                 ConventionId = uc.ConventionId,
                 AccessToken = uc.AccessToken,
-                IsRegisteredUser = !string.IsNullOrEmpty(uc.User.LoginId),
+                IsRegisteredUser = !string.IsNullOrEmpty(uc.User.LoginId) && !uc.User.LoginId.StartsWith("guest_"),
                 user = new { uc.User.Id, uc.User.LoginId, uc.User.Role },
                 scheduleTemplates = uc.User.GuestScheduleTemplates
                     .Where(gst => gst.ScheduleTemplate.ConventionId == conventionId)
@@ -86,7 +86,7 @@ public class AdminUserService : IAdminUserService
             ResidentNumber = user.ResidentNumber,
             Affiliation = user.Affiliation,
             AccessToken = (string?)null,
-            IsRegisteredUser = !string.IsNullOrEmpty(user.LoginId),
+            IsRegisteredUser = !string.IsNullOrEmpty(user.LoginId) && !user.LoginId.StartsWith("guest_"),
             user = new { user.Id, user.LoginId, user.Role },
             schedules = user.GuestScheduleTemplates.Select(gst => new
             {
@@ -140,7 +140,7 @@ public class AdminUserService : IAdminUserService
         {
             user = new User
             {
-                LoginId = string.Empty,
+                LoginId = $"guest_{Guid.NewGuid():N}",
                 PasswordHash = _authService.HashPassword(passwordToSet),
                 Name = dto.Name.Trim(),
                 Phone = dto.Phone.Trim(),
@@ -255,7 +255,7 @@ public class AdminUserService : IAdminUserService
         if (user == null)
             return (false, new { message = "참석자를 찾을 수 없습니다." }, 404);
 
-        if (!string.IsNullOrEmpty(user.LoginId))
+        if (!string.IsNullOrEmpty(user.LoginId) && !user.LoginId.StartsWith("guest_"))
             return (false, new { message = "이미 회원입니다." }, 400);
 
         var existing = await _unitOfWork.Users.Query

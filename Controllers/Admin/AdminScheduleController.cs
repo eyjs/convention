@@ -96,9 +96,9 @@ public class AdminScheduleController : ControllerBase
     }
 
     [HttpDelete("guests/{guestId}/schedules/{templateId}")]
-    public async Task<IActionResult> RemoveGuestSchedule(int userId, int templateId)
+    public async Task<IActionResult> RemoveGuestSchedule(int guestId, int templateId)
     {
-        var removed = await _scheduleService.RemoveGuestFromScheduleAsync(userId, templateId);
+        var removed = await _scheduleService.RemoveGuestFromScheduleAsync(guestId, templateId);
         if (!removed) return NotFound();
         return Ok();
     }
