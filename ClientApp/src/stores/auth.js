@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { authAPI } from '@/services/api'
+import apiClient, { authAPI } from '@/services/api'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -94,17 +94,24 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    try {
-      await authAPI.logout()
-    } catch (err) {
-      console.error('Logout API call failed:', err)
-    } finally {
-      accessToken.value = null
-      refreshToken.value = null
-      user.value = null
-      checklistStatus.value = null
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
+    // 서버 통지용 토큰 보존 후 로컬 상태 즉시 정리
+    const savedToken = accessToken.value
+    accessToken.value = null
+    refreshToken.value = null
+    user.value = null
+    checklistStatus.value = null
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+
+    // 서버에 로그아웃 알림 (best-effort, 실패해도 무시)
+    if (savedToken) {
+      try {
+        await apiClient.post('/auth/logout', null, {
+          headers: { Authorization: `Bearer ${savedToken}` },
+        })
+      } catch {
+        // 서버 통지 실패는 무시 — JWT 만료로 자연 정리됨
+      }
     }
   }
 

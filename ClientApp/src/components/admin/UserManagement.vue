@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <h2 class="text-2xl font-bold">회원 관리</h2>
+    <AdminPageHeader title="회원 관리" :description="`전체 ${totalCount}명`" />
 
     <!-- Search and Filter -->
     <div class="flex items-center space-x-4">
@@ -8,93 +8,71 @@
         v-model.lazy="searchTerm"
         type="text"
         placeholder="이름, 아이디, 전화번호 검색..."
-        class="input flex-grow"
+        class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm flex-grow"
       />
     </div>
 
     <!-- User Table -->
-    <div class="bg-white shadow rounded-lg overflow-x-auto">
-      <table class="w-full text-sm text-left text-gray-500">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-          <tr>
-            <th scope="col" class="px-6 py-3">ID</th>
-            <th scope="col" class="px-6 py-3">이름</th>
-            <th scope="col" class="px-6 py-3">로그인 ID</th>
-            <th scope="col" class="px-6 py-3">전화번호</th>
-            <th scope="col" class="px-6 py-3">역할</th>
-            <th scope="col" class="px-6 py-3">상태</th>
-            <th scope="col" class="px-6 py-3">생성일</th>
-            <th scope="col" class="px-6 py-3">수정일</th>
-            <th scope="col" class="px-6 py-3">작업</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading" class="border-b">
-            <td colspan="9" class="text-center p-6">
-              <div
-                class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"
-              ></div>
-            </td>
-          </tr>
-          <tr v-else-if="users.length === 0" class="border-b">
-            <td colspan="9" class="text-center p-6 text-gray-500">
-              사용자가 없습니다.
-            </td>
-          </tr>
-          <tr
-            v-for="user in users"
-            :key="user.id"
-            class="bg-white border-b hover:bg-gray-50"
+    <AdminTable
+      :columns="tableColumns"
+      :loading="loading"
+      :empty="!loading && users.length === 0"
+      :empty-icon="Users"
+      empty-text="사용자가 없습니다."
+    >
+      <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50">
+        <td class="px-6 py-4 text-sm text-gray-500">{{ user.id }}</td>
+        <td
+          class="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap"
+        >
+          {{ user.name }}
+        </td>
+        <td class="px-6 py-4 text-sm text-gray-500">
+          {{ user.loginId || '-' }}
+        </td>
+        <td class="px-6 py-4 text-sm text-gray-500">{{ user.phone }}</td>
+        <td class="px-6 py-4">
+          <AdminBadge
+            :variant="
+              user.role === 'Admin'
+                ? 'info'
+                : user.role === 'Guest'
+                  ? 'neutral'
+                  : 'success'
+            "
           >
-            <td class="px-6 py-4">{{ user.id }}</td>
-            <th
-              scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
+            {{ user.role }}
+          </AdminBadge>
+        </td>
+        <td class="px-6 py-4">
+          <AdminBadge :variant="user.isActive ? 'success' : 'danger'">
+            {{ user.isActive ? '활성' : '비활성' }}
+          </AdminBadge>
+        </td>
+        <td class="px-6 py-4 text-sm text-gray-500">
+          {{ formatDate(user.createdAt) }}
+        </td>
+        <td class="px-6 py-4 text-sm text-gray-500">
+          {{ formatDate(user.updatedAt) }}
+        </td>
+        <td class="px-6 py-4 text-right">
+          <div class="flex justify-end space-x-2">
+            <button
+              class="text-sm text-primary-600 hover:underline"
+              @click="() => openRoleModal(user)"
             >
-              {{ user.name }}
-            </th>
-            <td class="px-6 py-4">{{ user.loginId || '-' }}</td>
-            <td class="px-6 py-4">{{ user.phone }}</td>
-            <td class="px-6 py-4">
-              <span
-                :class="getRoleClass(user.role)"
-                class="px-2 py-1 text-xs font-medium rounded-full"
-                >{{ user.role }}</span
-              >
-            </td>
-            <td class="px-6 py-4">
-              <span
-                :class="
-                  user.isActive
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                "
-                class="px-2 py-1 text-xs font-medium rounded-full"
-                >{{ user.isActive ? '활성' : '비활성' }}</span
-              >
-            </td>
-            <td class="px-6 py-4">{{ formatDate(user.createdAt) }}</td>
-            <td class="px-6 py-4">{{ formatDate(user.updatedAt) }}</td>
-            <td class="px-6 py-4">
-              <div class="flex space-x-2">
-                <button
-                  class="text-blue-600 hover:underline"
-                  @click="() => openRoleModal(user)"
-                >
-                  권한
-                </button>
-                <button
-                  class="text-red-600 hover:underline"
-                  @click="() => openStatusModal(user)"
-                >
-                  상태
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+              권한
+            </button>
+            <button
+              class="text-sm text-red-600 hover:underline"
+              @click="() => openStatusModal(user)"
+            >
+              상태
+            </button>
+          </div>
+        </td>
+      </tr>
+    </AdminTable>
 
     <!-- Pagination -->
     <nav
@@ -114,7 +92,7 @@
         <li>
           <button
             :disabled="page === 1"
-            class="pagination-btn rounded-l-lg"
+            class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 rounded-l-lg"
             @click="changePage(page - 1)"
           >
             이전
@@ -122,10 +100,11 @@
         </li>
         <li v-for="p in paginationRange" :key="p">
           <button
-            :class="{
-              'pagination-btn-active': p === page,
-              'pagination-btn': p !== page,
-            }"
+            :class="
+              p === page
+                ? 'z-10 flex items-center justify-center px-3 h-8 leading-tight text-primary-600 border border-primary-300 bg-primary-50 hover:bg-primary-100 hover:text-primary-700'
+                : 'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'
+            "
             @click="changePage(p)"
           >
             {{ p }}
@@ -134,7 +113,7 @@
         <li>
           <button
             :disabled="page === totalPages"
-            class="pagination-btn rounded-r-lg"
+            class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 rounded-r-lg"
             @click="changePage(page + 1)"
           >
             다음
@@ -143,57 +122,93 @@
       </ul>
     </nav>
 
-    <!-- Modals -->
-    <div
-      v-if="showRoleModal"
-      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center"
-    >
-      <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <h3 class="text-lg font-bold mb-4">
-          역할 변경: {{ selectedUser.name }}
+    <!-- Role Modal -->
+    <BaseModal :is-open="showRoleModal" max-width="md" @close="closeModal">
+      <template #header>
+        <h3 class="text-lg font-semibold">
+          역할 변경: {{ selectedUser?.name }}
         </h3>
-        <p class="mb-4">현재 역할: {{ selectedUser.role }}</p>
-        <select v-model="newRole" class="input w-full mb-4">
+      </template>
+      <template #body>
+        <p class="mb-4">현재 역할: {{ selectedUser?.role }}</p>
+        <select v-model="newRole" class="w-full px-3 py-2 border rounded-lg">
           <option value="Admin">Admin</option>
           <option value="User">User</option>
         </select>
-        <div class="flex justify-end space-x-4">
-          <button class="btn-secondary" @click="closeModal">취소</button>
-          <button class="btn-primary" @click="updateRole">변경</button>
-        </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <button
+          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+          @click="closeModal"
+        >
+          취소
+        </button>
+        <button
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+          @click="updateRole"
+        >
+          변경
+        </button>
+      </template>
+    </BaseModal>
 
-    <div
-      v-if="showStatusModal"
-      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center"
-    >
-      <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <h3 class="text-lg font-bold mb-4">
-          상태 변경: {{ selectedUser.name }}
+    <!-- Status Modal -->
+    <BaseModal :is-open="showStatusModal" max-width="md" @close="closeModal">
+      <template #header>
+        <h3 class="text-lg font-semibold">
+          상태 변경: {{ selectedUser?.name }}
         </h3>
+      </template>
+      <template #body>
         <p class="mb-4">
           정말로 이 사용자를
           <span class="font-bold">{{
-            selectedUser.isActive ? '비활성' : '활성'
+            selectedUser?.isActive ? '비활성' : '활성'
           }}</span>
           상태로 변경하시겠습니까?
         </p>
-        <div class="flex justify-end space-x-4">
-          <button class="btn-secondary" @click="closeModal">취소</button>
-          <button class="btn-danger" @click="updateStatus">
-            {{ selectedUser.isActive ? '비활성화' : '활성화' }}
-          </button>
-        </div>
-      </div>
-    </div>
+      </template>
+      <template #footer>
+        <button
+          class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+          @click="closeModal"
+        >
+          취소
+        </button>
+        <button
+          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          @click="updateStatus"
+        >
+          {{ selectedUser?.isActive ? '비활성화' : '활성화' }}
+        </button>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue'
+
 import apiClient from '@/services/api'
 import dayjs from 'dayjs'
+
+import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
+import AdminTable from '@/components/admin/ui/AdminTable.vue'
+import AdminBadge from '@/components/admin/ui/AdminBadge.vue'
+import BaseModal from '@/components/common/BaseModal.vue'
+import { Users } from 'lucide-vue-next'
+
+const tableColumns = [
+  { key: 'id', label: 'ID', width: '60px' },
+  { key: 'name', label: '이름' },
+  { key: 'loginId', label: '로그인 ID' },
+  { key: 'phone', label: '전화번호' },
+  { key: 'role', label: '역할' },
+  { key: 'status', label: '상태' },
+  { key: 'createdAt', label: '생성일' },
+  { key: 'updatedAt', label: '수정일' },
+  { key: 'actions', label: '작업', align: 'right' },
+]
 
 const users = ref([])
 const loading = ref(false)
@@ -244,19 +259,6 @@ const changePage = (newPage) => {
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   return dayjs(dateString).format('YYYY-MM-DD HH:mm')
-}
-
-const getRoleClass = (role) => {
-  switch (role) {
-    case 'Admin':
-      return 'bg-purple-100 text-purple-800'
-    case 'User':
-      return 'bg-blue-100 text-blue-800'
-    case 'Guest':
-      return 'bg-gray-100 text-gray-800'
-    default:
-      return 'bg-gray-100 text-gray-800'
-  }
 }
 
 const paginationRange = computed(() => {
@@ -339,24 +341,3 @@ const updateStatus = async () => {
 
 onMounted(fetchUsers)
 </script>
-
-<style scoped>
-.input {
-  @apply block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm;
-}
-.btn-primary {
-  @apply px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500;
-}
-.btn-secondary {
-  @apply px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500;
-}
-.btn-danger {
-  @apply px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500;
-}
-.pagination-btn {
-  @apply flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700;
-}
-.pagination-btn-active {
-  @apply z-10 flex items-center justify-center px-3 h-8 leading-tight text-primary-600 border border-primary-300 bg-primary-50 hover:bg-primary-100 hover:text-primary-700;
-}
-</style>

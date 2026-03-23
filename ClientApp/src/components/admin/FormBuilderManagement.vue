@@ -2,22 +2,14 @@
   <div>
     <!-- 목록 뷰 -->
     <div v-if="currentView === 'list'">
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <h2 class="text-xl sm:text-2xl font-bold text-gray-900">
-            폼 빌더 관리
-          </h2>
-          <p class="text-sm text-gray-600 mt-1">
-            드래그 앤 드롭으로 폼을 만들고 액션에 연결하세요
-          </p>
-        </div>
-        <button
-          class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
-          @click="openCreateModal"
+      <AdminPageHeader
+        title="폼 빌더 관리"
+        description="드래그 앤 드롭으로 폼을 만들고 액션에 연결하세요"
+      >
+        <AdminButton :icon="Plus" @click="openCreateModal"
+          >새 폼 만들기</AdminButton
         >
-          새 폼 만들기
-        </button>
-      </div>
+      </AdminPageHeader>
 
       <!-- 로딩 -->
       <div v-if="loading" class="text-center py-12">
@@ -40,7 +32,7 @@
               <div class="flex items-center gap-2 mb-2">
                 <h3 class="text-lg font-bold text-gray-900">{{ form.name }}</h3>
                 <span
-                  class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded"
+                  class="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-medium rounded"
                 >
                   ID: {{ form.id }}
                 </span>
@@ -61,57 +53,21 @@
                 title="Form ID 복사"
                 @click="copyFormId(form.id)"
               >
-                <svg
-                  class="w-5 h-5 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  />
-                </svg>
+                <Copy class="w-5 h-5 text-gray-600" />
               </button>
               <button
-                class="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
+                class="p-2 hover:bg-primary-50 text-primary-600 rounded-lg transition-colors"
                 title="수정"
                 @click="showEditView(form.id)"
               >
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
+                <Pencil class="w-5 h-5" />
               </button>
               <button
                 class="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
                 title="삭제"
                 @click="deleteForm(form)"
               >
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
+                <Trash2 class="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -119,34 +75,16 @@
       </div>
 
       <!-- 빈 상태 -->
-      <div
+      <AdminEmptyState
         v-else
-        class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300"
+        :icon="FormInput"
+        title="등록된 폼이 없습니다"
+        description="새로운 폼을 만들어보세요"
       >
-        <svg
-          class="w-16 h-16 mx-auto text-gray-400 mb-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+        <AdminButton :icon="Plus" @click="openCreateModal"
+          >첫 폼 만들기</AdminButton
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">
-          등록된 폼이 없습니다
-        </h3>
-        <p class="text-gray-600 mb-4">새로운 폼을 만들어보세요</p>
-        <button
-          class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
-          @click="openCreateModal"
-        >
-          첫 폼 만들기
-        </button>
-      </div>
+      </AdminEmptyState>
     </div>
 
     <!-- 수정/생성 뷰 -->
@@ -215,9 +153,13 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { Copy, Pencil, Trash2, Plus, FormInput } from 'lucide-vue-next'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
 import FormBuilderEditor from '@/components/admin/FormBuilderEditor.vue'
+import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
+import AdminButton from '@/components/admin/ui/AdminButton.vue'
+import AdminEmptyState from '@/components/admin/ui/AdminEmptyState.vue'
 
 const props = defineProps({
   conventionId: {

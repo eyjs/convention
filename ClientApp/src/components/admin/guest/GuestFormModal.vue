@@ -129,7 +129,7 @@
                       user.role === 'Admin'
                         ? 'bg-red-100 text-red-800'
                         : user.role === 'User'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-primary-100 text-primary-800'
                           : 'bg-gray-100 text-gray-800'
                     "
                   >
@@ -212,19 +212,7 @@
                     class="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                     @click="removeSelectedUser(user.id)"
                   >
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    <X class="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -434,22 +422,10 @@
                 >선택: {{ guestForm.scheduleTemplateIds.length }}개</span
               >
               <button
-                class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis"
+                class="text-sm text-primary-600 hover:text-primary-800 flex items-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis"
                 @click="showCopyScheduleModal = true"
               >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  />
-                </svg>
+                <Copy class="w-4 h-4" />
                 다른 참석자 일정 복사
               </button>
             </div>
@@ -583,7 +559,7 @@
                 <span
                   v-for="st in guest.scheduleTemplates"
                   :key="st.scheduleTemplateId"
-                  class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs"
+                  class="px-2 py-0.5 bg-primary-100 text-primary-800 rounded text-xs"
                 >
                   {{ st.courseName }}
                 </span>
@@ -592,7 +568,7 @@
             </div>
             <button
               v-if="guest.scheduleTemplates.length > 0"
-              class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap overflow-hidden text-ellipsis"
+              class="px-3 py-1 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 whitespace-nowrap overflow-hidden text-ellipsis"
             >
               복사
             </button>
@@ -613,6 +589,7 @@
 
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue'
+import { X, Copy } from 'lucide-vue-next'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
 

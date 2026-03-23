@@ -1,7 +1,9 @@
 <template>
   <div class="space-y-6">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-blue-500">
+      <div
+        class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-primary-500"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-600">현재 LLM</p>
@@ -12,20 +14,8 @@
               {{ currentProvider?.modelName }}
             </p>
           </div>
-          <div class="p-3 bg-blue-100 rounded-full">
-            <svg
-              class="w-6 h-6 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-              />
-            </svg>
+          <div class="p-3 bg-primary-100 rounded-full">
+            <Lightbulb class="w-6 h-6 text-primary-600" />
           </div>
         </div>
       </div>
@@ -40,26 +30,14 @@
               {{ vectorStatus?.isConnected ? '연결됨' : '연결 안됨' }}
             </p>
             <button
-              class="text-xs text-blue-600 hover:underline mt-1"
+              class="text-xs text-primary-600 hover:underline mt-1"
               @click="showVectorDetailModal = true"
             >
               상세보기
             </button>
           </div>
           <div class="p-3 bg-green-100 rounded-full">
-            <svg
-              class="w-6 h-6 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
-              />
-            </svg>
+            <Database class="w-6 h-6 text-green-600" />
           </div>
         </div>
       </div>
@@ -78,19 +56,7 @@
             </p>
           </div>
           <div class="p-3 bg-purple-100 rounded-full">
-            <svg
-              class="w-6 h-6 text-purple-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              />
-            </svg>
+            <Server class="w-6 h-6 text-purple-600" />
           </div>
         </div>
       </div>
@@ -100,29 +66,17 @@
       <div class="p-4 border-b flex items-center justify-between">
         <h4 class="font-semibold text-gray-900">LLM Provider 목록</h4>
         <button
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center gap-2"
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm flex items-center gap-2"
           @click="showAddModal = true"
         >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
+          <Plus class="w-4 h-4" />
           Provider 추가
         </button>
       </div>
 
       <div v-if="loading" class="text-center py-12 text-gray-500">
         <div
-          class="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"
+          class="inline-block w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"
         ></div>
         <p class="mt-4">로딩 중...</p>
       </div>
@@ -140,7 +94,7 @@
           :key="provider.id"
           :class="[
             'p-4 hover:bg-gray-50 transition-colors',
-            provider.isCurrent && 'bg-blue-50',
+            provider.isCurrent && 'bg-primary-50',
           ]"
         >
           <div class="flex items-center justify-between">
@@ -151,15 +105,9 @@
                 </h5>
                 <span
                   v-if="provider.isCurrent"
-                  class="px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full flex items-center gap-1"
+                  class="px-2 py-0.5 bg-primary-600 text-white text-xs rounded-full flex items-center gap-1"
                 >
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fill-rule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
+                  <CheckCircle class="w-3 h-3" />
                   사용중
                 </span>
                 <span
@@ -193,7 +141,7 @@
             <div class="flex gap-2">
               <button
                 v-if="!provider.isCurrent"
-                class="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm text-sm font-medium"
+                class="px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 transition-all shadow-sm text-sm font-medium"
                 :disabled="swapping"
                 @click="swapProvider(provider)"
               >
@@ -249,7 +197,7 @@
             <p class="text-sm text-gray-600 mb-2">용량 사용률</p>
             <div class="w-full bg-gray-200 rounded-full h-4">
               <div
-                class="bg-blue-600 h-4 rounded-full transition-all"
+                class="bg-primary-600 h-4 rounded-full transition-all"
                 :style="{
                   width: `${vectorStatus?.capacity?.usagePercent || 0}%`,
                 }"
@@ -319,7 +267,7 @@
             >
             <select
               v-model="form.providerType"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
             >
               <option value="">선택하세요</option>
               <option value="OpenAI">OpenAI</option>
@@ -338,7 +286,7 @@
             <input
               v-model="form.modelName"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="gpt-4, claude-3-opus, gemini-pro 등"
             />
           </div>
@@ -350,7 +298,7 @@
             <input
               v-model="form.apiKey"
               type="password"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="sk-... (Ollama는 불필요)"
             />
             <p class="text-xs text-gray-500 mt-1">
@@ -365,7 +313,7 @@
             <input
               v-model="form.baseUrl"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               placeholder="http://localhost:11434 (선택)"
             />
           </div>
@@ -375,7 +323,7 @@
               <input
                 v-model="form.isActive"
                 type="checkbox"
-                class="w-4 h-4 text-blue-600 rounded"
+                class="w-4 h-4 text-primary-600 rounded"
               />
               <span class="text-sm text-gray-700">활성화 상태로 등록</span>
             </label>
@@ -384,7 +332,7 @@
 
         <div class="flex gap-3 mt-6">
           <button
-            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
             @click="saveProvider"
           >
             저장
@@ -403,6 +351,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { Lightbulb, Database, Server, Plus, CheckCircle } from 'lucide-vue-next'
 // [REFACTORED] apiClient 대신 chatbotAdminAPI를 import
 import { chatbotAdminAPI } from '@/services/chatbotAdminService'
 

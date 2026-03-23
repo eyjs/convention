@@ -37,7 +37,7 @@
             <p>이 화면이 보인다면 Step 1은 정상입니다.</p>
             <div class="mt-6">
               <button
-                class="px-4 py-2 bg-blue-500 text-white rounded mr-2"
+                class="px-4 py-2 bg-primary-500 text-white rounded mr-2"
                 @click="step = 2"
               >
                 Step 2 (에디터)로 이동

@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="text-xl font-semibold mb-4">엑셀 일괄 업로드</h2>
+  <div>
+    <AdminPageHeader title="엑셀 일괄 업로드" class="mb-4" />
 
     <!-- 탭 메뉴 -->
     <div class="border-b border-gray-200 mb-6">
@@ -35,18 +35,18 @@
         />
       </div>
 
-      <div class="mb-4 p-4 bg-blue-50 rounded-md">
-        <h3 class="font-medium text-blue-900 mb-2">
+      <div class="mb-4 p-4 bg-primary-50 rounded-md">
+        <h3 class="font-medium text-primary-900 mb-2">
           📋 엑셀 형식 (참석자 업로드)
         </h3>
-        <div class="text-sm text-blue-700 space-y-1">
+        <div class="text-sm text-primary-700 space-y-1">
           <p>
             <strong>컬럼 순서:</strong> 소속 | 부서 | 이름 | 사번(주민번호) |
             전화번호 | 그룹
           </p>
           <p><strong>필수:</strong> 이름, 전화번호, 그룹</p>
           <p><strong>선택:</strong> 소속, 부서, 사번(주민번호)</p>
-          <p class="mt-2 text-blue-600">
+          <p class="mt-2 text-primary-600">
             ※ 이름 + (전화번호 OR 주민번호) 매칭으로 중복 시 업데이트
           </p>
         </div>
@@ -282,6 +282,7 @@
 <script setup>
 import { ref } from 'vue'
 import apiClient from '@/services/api'
+import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import UploadResult from './UploadResult.vue'
 import * as XLSX from 'xlsx'
 

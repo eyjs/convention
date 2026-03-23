@@ -1,85 +1,24 @@
 <template>
   <div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-      <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">총 참석자</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.totalGuests }}</p>
-          </div>
-          <div
-            class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"
-          >
-            <svg
-              class="w-6 h-6 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">총 일정 코스</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.totalSchedules }}</p>
-          </div>
-          <div
-            class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"
-          >
-            <svg
-              class="w-6 h-6 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">일정 배정</p>
-            <p class="text-2xl font-bold mt-1">
-              {{ stats.scheduleAssignments }}
-            </p>
-          </div>
-          <div
-            class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center"
-          >
-            <svg
-              class="w-6 h-6 text-orange-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
+      <AdminStatsCard
+        label="총 참석자"
+        :value="stats.totalGuests"
+        :icon="Users"
+        color="primary"
+      />
+      <AdminStatsCard
+        label="총 일정 코스"
+        :value="stats.totalSchedules"
+        :icon="Calendar"
+        color="green"
+      />
+      <AdminStatsCard
+        label="일정 배정"
+        :value="stats.scheduleAssignments"
+        :icon="ClipboardCheck"
+        color="orange"
+      />
     </div>
 
     <!-- 속성별 통계 -->
@@ -190,16 +129,18 @@
                 </p>
               </div>
               <div class="flex-shrink-0">
-                <span
-                  class="px-2 py-1 text-xs font-semibold rounded-full"
-                  :class="{
-                    'bg-green-100 text-green-800': sms.status === 'success',
-                    'bg-red-100 text-red-800': sms.status === 'failed',
-                    'bg-yellow-100 text-yellow-800': sms.status === 'pending',
-                  }"
+                <AdminBadge
+                  :variant="
+                    sms.status === 'success'
+                      ? 'success'
+                      : sms.status === 'failed'
+                        ? 'danger'
+                        : 'warning'
+                  "
+                  size="md"
                 >
                   {{ sms.statusText }}
-                </span>
+                </AdminBadge>
               </div>
             </div>
           </div>
@@ -249,7 +190,10 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { Users, Calendar, ClipboardCheck } from 'lucide-vue-next'
 import apiClient from '@/services/api'
+import AdminStatsCard from '@/components/admin/ui/AdminStatsCard.vue'
+import AdminBadge from '@/components/admin/ui/AdminBadge.vue'
 import SmsManagementModal from './sms/SmsManagementModal.vue'
 
 const props = defineProps({

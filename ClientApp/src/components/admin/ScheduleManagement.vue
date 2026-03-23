@@ -34,15 +34,11 @@
 
     <!-- 일정 코스 탭 -->
     <div v-if="activeTab === 'schedule'">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold">일정 관리</h2>
-        <button
-          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-          @click="showCreateModal = true"
+      <AdminPageHeader title="일정 관리">
+        <AdminButton :icon="Plus" @click="showCreateModal = true"
+          >일정 코스 추가</AdminButton
         >
-          + 일정 코스 추가
-        </button>
-      </div>
+      </AdminPageHeader>
 
       <!-- 템플릿 필터 버튼 -->
       <div class="mb-4 overflow-x-auto scrollbar-hide">
@@ -94,7 +90,7 @@
             </div>
             <div class="flex gap-2">
               <button
-                class="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                class="px-3 py-1.5 text-sm bg-primary-50 text-primary-600 rounded hover:bg-primary-100"
                 @click="viewAssignedGuests(template)"
               >
                 참석자 보기
@@ -150,38 +146,14 @@
                     title="수정"
                     @click="editScheduleItem(template, item)"
                   >
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15.232 5.232l3.536 3.536m-2-5a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                      />
-                    </svg>
+                    <Pencil class="w-4 h-4" />
                   </button>
                   <button
                     class="p-1.5 hover:bg-red-100 text-red-600 rounded"
                     title="삭제"
                     @click="deleteScheduleItem(item.id)"
                   >
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
+                    <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -197,19 +169,7 @@
                   class="flex-1 py-2 text-sm text-green-600 border-2 border-dashed border-green-300 rounded-lg hover:bg-green-50 flex items-center justify-center gap-1"
                   @click="showCopyItemsModal(template)"
                 >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
+                  <Copy class="w-4 h-4" />
                   기존 일정 복사
                 </button>
               </div>
@@ -422,11 +382,11 @@
           </h2>
         </template>
         <template #body>
-          <div class="mb-4 p-4 bg-blue-50 rounded-lg">
-            <p class="text-sm text-blue-900">
+          <div class="mb-4 p-4 bg-primary-50 rounded-lg">
+            <p class="text-sm text-primary-900">
               다른 템플릿의 일정을 선택하면 현재 템플릿에 복사됩니다.
             </p>
-            <p class="text-xs text-blue-700 mt-1">
+            <p class="text-xs text-primary-700 mt-1">
               복사 후 개별적으로 수정할 수 있습니다.
             </p>
           </div>
@@ -526,8 +486,11 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { Pencil, Trash2, Copy, Plus } from 'lucide-vue-next'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
+import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
+import AdminButton from '@/components/admin/ui/AdminButton.vue'
 import OptionTourManagement from '@/components/admin/OptionTourManagement.vue'
 
 const props = defineProps({

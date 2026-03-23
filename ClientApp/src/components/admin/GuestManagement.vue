@@ -1,133 +1,58 @@
 <template>
   <div>
-    <div
-      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6"
+    <AdminPageHeader
+      title="참석자 관리"
+      :description="`전체 ${guests.length}명`"
     >
-      <div class="flex items-center gap-4">
-        <h2 class="text-xl font-semibold">참석자 관리</h2>
-        <!-- 선택된 참석자 수 표시 -->
+      <template v-if="selectedGuests.length > 0">
         <span
-          v-if="selectedGuests.length > 0"
-          class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+          class="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm font-medium"
         >
           {{ selectedGuests.length }}명 선택됨
         </span>
-      </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <!-- 대량 작업 버튼 -->
-        <button
-          v-if="selectedGuests.length > 0"
-          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
+        <AdminButton
+          variant="secondary"
+          :icon="ClipboardCheck"
           @click="showBulkAssignModal = true"
         >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
           일정 일괄 배정
-        </button>
-
-        <!-- 속성 일괄 매핑 버튼 -->
-        <button
-          v-if="selectedGuests.length > 0"
-          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
+        </AdminButton>
+        <AdminButton
+          variant="secondary"
+          :icon="Tag"
           @click="showBulkAttributeModal = true"
         >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-            />
-          </svg>
           속성 일괄 매핑
-        </button>
-        <!-- 그룹 단위 일정 배정 버튼 -->
-        <button
-          class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
-          @click="showGroupAssignModal = true"
-        >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-            />
-          </svg>
-          그룹별 일정 배정
-        </button>
-        <!-- 그룹 단위 일정 해제 버튼 -->
-        <button
-          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
-          @click="showGroupRemoveModal = true"
-        >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-          그룹별 일정 해제
-        </button>
-        <!-- 그룹별 속성 초기화 버튼 -->
-        <button
-          class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
-          @click="showGroupAttributeResetModal = true"
-        >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-          그룹별 속성 초기화
-        </button>
-        <button
-          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center justify-center whitespace-nowrap overflow-hidden text-ellipsis"
-          @click="showCreateModal = true"
-        >
-          + 참석자 추가
-        </button>
-      </div>
-    </div>
+        </AdminButton>
+      </template>
+      <AdminButton
+        variant="secondary"
+        :icon="Users"
+        @click="showGroupAssignModal = true"
+      >
+        그룹별 일정 배정
+      </AdminButton>
+      <AdminButton
+        variant="danger"
+        :icon="Trash2"
+        @click="showGroupRemoveModal = true"
+      >
+        그룹별 일정 해제
+      </AdminButton>
+      <AdminButton
+        variant="secondary"
+        :icon="RefreshCw"
+        @click="showGroupAttributeResetModal = true"
+      >
+        그룹별 속성 초기화
+      </AdminButton>
+      <AdminButton :icon="Plus" @click="showCreateModal = true">
+        참석자 추가
+      </AdminButton>
+    </AdminPageHeader>
 
     <!-- 검색 -->
-    <div class="mb-4">
+    <div class="mt-6 mb-4">
       <input
         v-model="searchTerm"
         type="text"
@@ -137,26 +62,21 @@
     </div>
 
     <div v-if="loading" class="text-center py-8">로딩 중...</div>
-    <div
+    <AdminEmptyState
       v-else-if="guests.length === 0"
-      class="text-center py-8 bg-white rounded-lg shadow"
+      :icon="UserX"
+      title="등록된 참석자가 없습니다"
     >
-      <p class="text-gray-500">등록된 참석자가 없습니다</p>
-      <button
-        class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-        @click="showCreateModal = true"
+      <AdminButton :icon="Plus" @click="showCreateModal = true"
+        >첫 참석자 추가하기</AdminButton
       >
-        첫 참석자 추가하기
-      </button>
-    </div>
-    <div
+    </AdminEmptyState>
+    <AdminEmptyState
       v-else-if="filteredGuests.length === 0 && searchTerm"
-      class="text-center py-8 bg-white rounded-lg shadow"
-    >
-      <p class="text-gray-500">
-        "{{ searchTerm }}" 검색 결과가 없습니다 (전체 {{ guests.length }}명)
-      </p>
-    </div>
+      :icon="Search"
+      :title="`&quot;${searchTerm}&quot; 검색 결과가 없습니다`"
+      :description="`전체 ${guests.length}명`"
+    />
     <div v-else class="bg-white rounded-lg shadow overflow-hidden">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -248,7 +168,7 @@
                   <span
                     v-for="st in guest.scheduleTemplates"
                     :key="st.scheduleTemplateId"
-                    class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs"
+                    class="px-2 py-0.5 bg-primary-100 text-primary-800 rounded text-xs"
                   >
                     {{ st.courseName }}
                   </span>
@@ -314,7 +234,7 @@
                   <!-- prettier-ignore -->
                   <button
                     class="mt-1 px-2 py-0.5 rounded text-xs font-medium transition-colors"
-                    :class="guest.passport?.passportVerified ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
+                    :class="guest.passport?.passportVerified ? 'bg-primary-100 text-primary-700 hover:bg-primary-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
                     :title="guest.passport?.passportVerified ? `검증완료 (${formatDate(guest.passport.passportVerifiedAt)})` : '클릭하여 검증 완료 처리'"
                     @click="togglePassportVerification(guest)"
                   >{{ guest.passport?.passportVerified ? '검증완료' : '미검증' }}</button>
@@ -396,7 +316,20 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import {
+  Plus,
+  ClipboardCheck,
+  Tag,
+  Users,
+  Trash2,
+  RefreshCw,
+  UserX,
+  Search,
+} from 'lucide-vue-next'
 import apiClient from '@/services/api'
+import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
+import AdminButton from '@/components/admin/ui/AdminButton.vue'
+import AdminEmptyState from '@/components/admin/ui/AdminEmptyState.vue'
 import GuestFormModal from '@/components/admin/guest/GuestFormModal.vue'
 import GuestDetailModal from '@/components/admin/guest/GuestDetailModal.vue'
 import BulkGuestOperations from '@/components/admin/guest/BulkGuestOperations.vue'

@@ -22,7 +22,7 @@
               1. 참석자 업로드
             </h2>
             <button
-              class="text-xs text-blue-600 hover:underline font-medium flex items-center gap-1"
+              class="text-xs text-primary-600 hover:underline font-medium flex items-center gap-1"
               @click="downloadTemplate"
             >
               <span class="material-symbols-outlined text-[14px]"
@@ -31,14 +31,14 @@
               양식 다운로드
             </button>
           </div>
-          <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
+          <div class="bg-primary-50 border border-primary-100 rounded-lg p-4">
             <input
               type="file"
               accept=".xlsx, .xls"
-              class="block w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+              class="block w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary-600 file:text-white hover:file:bg-primary-700 cursor-pointer"
               @change="handleExcelUpload"
             />
-            <p class="mt-2 text-[11px] text-blue-800">
+            <p class="mt-2 text-[11px] text-primary-800">
               * 양식 파일(.xlsx)을 업로드하면 자동으로 데이터가 로드됩니다.
             </p>
           </div>
@@ -53,13 +53,13 @@
           </h2>
           <div class="flex flex-col gap-2">
             <label
-              class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+              class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50"
             >
               <input
                 v-model="config.mode"
                 type="radio"
                 value="table"
-                class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                class="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
               />
               <div class="ml-3">
                 <span class="block text-sm font-medium text-gray-900"
@@ -71,13 +71,13 @@
               </div>
             </label>
             <label
-              class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+              class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50"
             >
               <input
                 v-model="config.mode"
                 type="radio"
                 value="individual"
-                class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                class="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
               />
               <div class="ml-3">
                 <span class="block text-sm font-medium text-gray-900"
@@ -107,37 +107,37 @@
           </h2>
           <div class="grid grid-cols-1 gap-2">
             <label
-              class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500"
+              class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-primary-50 has-[:checked]:border-primary-500"
             >
               <input
                 v-model="config.seatLayout"
                 type="radio"
                 value="auto"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-primary-600 focus:ring-primary-500"
               />
               <span class="ml-2 text-xs font-medium"
                 >자동 (인원수에 맞춰 조절)</span
               >
             </label>
             <label
-              class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500"
+              class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-primary-50 has-[:checked]:border-primary-500"
             >
               <input
                 v-model="config.seatLayout"
                 type="radio"
                 value="4"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-primary-600 focus:ring-primary-500"
               />
               <span class="ml-2 text-xs font-medium">4인용 배치 (2x2)</span>
             </label>
             <label
-              class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500"
+              class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50 has-[:checked]:bg-primary-50 has-[:checked]:border-primary-500"
             >
               <input
                 v-model="config.seatLayout"
                 type="radio"
                 value="6"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-primary-600 focus:ring-primary-500"
               />
               <span class="ml-2 text-xs font-medium">6인용 배치 (3x2)</span>
             </label>
@@ -199,7 +199,7 @@
             <div class="grid grid-cols-2 gap-2">
               <button
                 :class="{
-                  'ring-2 ring-blue-500 bg-blue-50':
+                  'ring-2 ring-primary-500 bg-primary-50':
                     config.font === 'font-sans-kr',
                 }"
                 class="border rounded px-3 py-2 text-xs hover:bg-gray-50 font-sans-kr"
@@ -209,7 +209,7 @@
               </button>
               <button
                 :class="{
-                  'ring-2 ring-blue-500 bg-blue-50':
+                  'ring-2 ring-primary-500 bg-primary-50':
                     config.font === 'font-serif-kr',
                 }"
                 class="border rounded px-3 py-2 text-xs hover:bg-gray-50 font-serif-kr"
@@ -247,7 +247,7 @@
               <span class="text-[10px] text-gray-500"
                 >용지 전체에 깔리는 배경 이미지입니다.</span
               >
-              <span class="text-[10px] text-blue-600 font-medium"
+              <span class="text-[10px] text-primary-600 font-medium"
                 >권장 규격: 3508 x 2480 px (300dpi)</span
               >
               <button
@@ -275,7 +275,7 @@
               <span class="text-[10px] text-gray-500"
                 >이름표/좌석표 박스 배경 이미지입니다.</span
               >
-              <span class="text-[10px] text-blue-600 font-medium"
+              <span class="text-[10px] text-primary-600 font-medium"
                 >권장 규격: 1754 x 1240 px (300dpi)</span
               >
               <button

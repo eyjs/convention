@@ -30,114 +30,32 @@
 
     <!-- 게시글 관리 탭 -->
     <div v-if="activeSubTab === 'posts'">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold">게시글 관리</h2>
-        <button
-          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
-          @click="showCreateModal = true"
+      <AdminPageHeader title="게시글 관리">
+        <AdminButton :icon="Plus" @click="showCreateModal = true"
+          >게시글 작성</AdminButton
         >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          게시글 작성
-        </button>
-      </div>
+      </AdminPageHeader>
 
       <!-- 통계 카드 -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white rounded-lg shadow-sm p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-600">전체 게시글</p>
-              <p class="text-2xl font-bold text-gray-900">{{ totalCount }}</p>
-            </div>
-            <div
-              class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"
-            >
-              <svg
-                class="w-6 h-6 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-lg shadow-sm p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-600">고정 공지</p>
-              <p class="text-2xl font-bold text-red-600">{{ pinnedCount }}</p>
-            </div>
-            <div
-              class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center"
-            >
-              <svg
-                class="w-6 h-6 text-red-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-lg shadow-sm p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-600">총 조회수</p>
-              <p class="text-2xl font-bold text-green-600">{{ totalViews }}</p>
-            </div>
-            <div
-              class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"
-            >
-              <svg
-                class="w-6 h-6 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 mb-6">
+        <AdminStatsCard
+          label="전체 게시글"
+          :value="totalCount"
+          :icon="FileText"
+          color="primary"
+        />
+        <AdminStatsCard
+          label="고정 공지"
+          :value="pinnedCount"
+          :icon="Bookmark"
+          color="red"
+        />
+        <AdminStatsCard
+          label="총 조회수"
+          :value="totalViews"
+          :icon="Eye"
+          color="green"
+        />
       </div>
 
       <!-- 게시글 목록 테이블 -->
@@ -156,19 +74,7 @@
                 <th
                   class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 8h16M4 16h16"
-                    />
-                  </svg>
+                  <GripHorizontal class="w-4 h-4" />
                 </th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
@@ -219,32 +125,16 @@
                 <tr class="hover:bg-gray-50">
                   <td class="px-3 py-4 whitespace-nowrap">
                     <div class="drag-handle cursor-move">
-                      <svg
+                      <GripHorizontal
                         class="w-5 h-5 text-gray-400 hover:text-gray-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M4 8h16M4 16h16"
-                        />
-                      </svg>
+                      />
                     </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span
-                      v-if="notice.isPinned"
-                      class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-bold"
-                      >필독</span
+                    <AdminBadge v-if="notice.isPinned" variant="danger"
+                      >필독</AdminBadge
                     >
-                    <span
-                      v-else
-                      class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs"
-                      >일반</span
-                    >
+                    <AdminBadge v-else variant="neutral">일반</AdminBadge>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span
@@ -288,7 +178,7 @@
                       {{ notice.isPinned ? '고정해제' : '고정' }}
                     </button>
                     <button
-                      class="text-blue-600 hover:text-blue-900 mr-3"
+                      class="text-primary-600 hover:text-primary-900 mr-3"
                       @click="editNotice(notice)"
                     >
                       수정
@@ -310,28 +200,11 @@
 
     <!-- 카테고리 관리 탭 -->
     <div v-if="activeSubTab === 'categories'">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold">카테고리 관리</h2>
-        <button
-          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
-          @click="showCategoryModal = true"
+      <AdminPageHeader title="카테고리 관리">
+        <AdminButton :icon="Plus" @click="showCategoryModal = true"
+          >카테고리 추가</AdminButton
         >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          카테고리 추가
-        </button>
-      </div>
+      </AdminPageHeader>
 
       <!-- 카테고리 목록 -->
       <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -401,7 +274,7 @@
                   class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                 >
                   <button
-                    class="text-blue-600 hover:text-blue-900 mr-3"
+                    class="text-primary-600 hover:text-primary-900 mr-3"
                     @click="editCategory(category)"
                   >
                     수정
@@ -639,7 +512,12 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { Plus, FileText, Bookmark, Eye, GripHorizontal } from 'lucide-vue-next'
 import apiClient from '@/services/api'
+import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
+import AdminButton from '@/components/admin/ui/AdminButton.vue'
+import AdminStatsCard from '@/components/admin/ui/AdminStatsCard.vue'
+import AdminBadge from '@/components/admin/ui/AdminBadge.vue'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import VueDraggable from 'vuedraggable'

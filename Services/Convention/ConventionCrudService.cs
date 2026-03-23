@@ -100,8 +100,8 @@ public class ConventionCrudService : IConventionCrudService
 
     public async Task<object?> GetConventionAsync(int id)
     {
-        // GetConventionWithDetailsAsync includes ScheduleTemplates, Features, Owners 등
-        var convention = await _unitOfWork.Conventions.GetConventionWithDetailsAsync(id);
+        // 가벼운 쿼리 사용 — UserConventions→User→GuestAttributes 로딩 제외
+        var convention = await _unitOfWork.Conventions.GetConventionSummaryAsync(id);
 
         if (convention == null)
         {

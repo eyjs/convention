@@ -1,22 +1,11 @@
 <template>
   <div>
-    <!-- 헤더 -->
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h2 class="text-xl sm:text-2xl font-bold text-gray-900">
-          참여자 액션 관리
-        </h2>
-        <p class="text-sm text-gray-600 mt-1">
-          참석자가 완료해야 하는 필수 액션을 관리합니다
-        </p>
-      </div>
-      <button
-        class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
-        @click="openCreateModal"
-      >
-        액션 추가
-      </button>
-    </div>
+    <AdminPageHeader
+      title="참여자 액션 관리"
+      description="참석자가 완료해야 하는 필수 액션을 관리합니다"
+    >
+      <AdminButton :icon="Plus" @click="openCreateModal">액션 추가</AdminButton>
+    </AdminPageHeader>
 
     <!-- BehaviorType 필터 버튼 -->
     <div class="mb-6 flex flex-wrap gap-2">
@@ -111,26 +100,14 @@
                 >{{ action.isActive ? '활성' : '비활성' }}</span
               >
               <span
-                class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full flex-shrink-0"
+                class="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-medium rounded-full flex-shrink-0"
                 >순서: {{ action.orderNum }}</span
               >
             </div>
 
             <div class="space-y-2 text-sm">
               <div class="flex items-center text-gray-600 flex-wrap gap-2">
-                <svg
-                  class="w-4 h-4 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                  />
-                </svg>
+                <Tag class="w-4 h-4 flex-shrink-0" />
                 <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{{
                   getBehaviorTypeName(action.behaviorType)
                 }}</span>
@@ -152,19 +129,7 @@
                 v-if="action.deadline"
                 class="flex items-center text-gray-600 flex-wrap gap-2"
               >
-                <svg
-                  class="w-4 h-4 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <Clock class="w-4 h-4 flex-shrink-0" />
                 <span>마감: {{ formatDateTime(action.deadline) }}</span>
               </div>
             </div>
@@ -176,71 +141,24 @@
               class="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               @click="toggleAction(action)"
             >
-              <svg
+              <CheckCircle
                 v-if="action.isActive"
                 class="w-5 h-5 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                /></svg
-              ><svg
-                v-else
-                class="w-5 h-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              /><XCircle v-else class="w-5 h-5 text-gray-400" />
             </button>
             <button
-              class="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors flex-shrink-0"
+              class="p-2 hover:bg-primary-50 text-primary-600 rounded-lg transition-colors flex-shrink-0"
               title="수정"
               @click="openEditModal(action)"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
+              <Pencil class="w-5 h-5" />
             </button>
             <button
               class="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors flex-shrink-0"
               title="삭제"
               @click="deleteAction(action)"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
+              <Trash2 class="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -322,7 +240,7 @@
                   'p-4 border-2 rounded-lg cursor-pointer transition-all',
                   form.actionCategory === category.key
                     ? 'border-primary-600 bg-primary-50'
-                    : 'border-gray-200 hover:border-blue-300',
+                    : 'border-gray-200 hover:border-primary-300',
                 ]"
                 @click="selectCategory(category)"
               >
@@ -534,8 +452,19 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import {
+  Plus,
+  Tag,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Pencil,
+  Trash2,
+} from 'lucide-vue-next'
 import apiClient from '@/services/api'
 import formBuilderService from '@/services/formBuilderService'
+import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
+import AdminButton from '@/components/admin/ui/AdminButton.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import {
   ACTION_CATEGORIES,

@@ -1,14 +1,10 @@
 <template>
   <div>
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-semibold">옵션투어 관리</h2>
-      <button
-        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-        @click="openCreateModal"
+    <AdminPageHeader title="옵션투어 관리">
+      <AdminButton :icon="Plus" @click="openCreateModal"
+        >옵션투어 추가</AdminButton
       >
-        + 옵션투어 추가
-      </button>
-    </div>
+    </AdminPageHeader>
 
     <!-- 옵션투어 목록 -->
     <div class="space-y-4">
@@ -48,23 +44,25 @@
           </div>
           <div class="flex gap-2 ml-4 flex-shrink-0">
             <button
-              class="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+              class="px-3 py-1.5 text-sm bg-primary-50 text-primary-600 rounded hover:bg-primary-100"
               @click="viewParticipants(tour)"
             >
               참석자 보기
             </button>
-            <button
-              class="px-3 py-1.5 text-sm bg-white border rounded hover:bg-gray-50"
+            <AdminButton
+              variant="secondary"
+              size="sm"
               @click="openEditModal(tour)"
             >
               수정
-            </button>
-            <button
-              class="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100"
+            </AdminButton>
+            <AdminButton
+              variant="danger"
+              size="sm"
               @click="deleteTour(tour.id)"
             >
               삭제
-            </button>
+            </AdminButton>
           </div>
         </div>
       </div>
@@ -297,8 +295,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { Plus } from 'lucide-vue-next'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
+import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
+import AdminButton from '@/components/admin/ui/AdminButton.vue'
 
 const props = defineProps({
   conventionId: { type: Number, required: true },

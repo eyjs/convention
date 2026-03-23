@@ -84,6 +84,24 @@ public class ConventionRepository : Repository<Convention>, IConventionRepositor
     }
 
     /// <summary>
+    /// 행사 요약 정보를 조회합니다 (UserConventions 제외 — 가벼운 쿼리).
+    /// AdminDashboard 등에서 행사 기본 정보 + Features/Owners/ScheduleTemplates만 필요할 때 사용.
+    /// </summary>
+    public async Task<Convention?> GetConventionSummaryAsync(
+        int conventionId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .Include(c => c.ScheduleTemplates)
+            .Include(c => c.Features)
+            .Include(c => c.Owners)
+            .Include(c => c.Menus)
+                .ThenInclude(m => m.Sections)
+            .FirstOrDefaultAsync(c => c.Id == conventionId, cancellationToken);
+    }
+
+    /// <summary>
     /// 삭제되지 않은 활성 행사만 조회합니다.
     /// 
     /// 비즈니스 로직:

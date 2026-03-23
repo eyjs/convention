@@ -5,30 +5,8 @@
     <!-- 연결 상태 -->
     <div v-if="status" class="mb-6 p-4 rounded-lg border" :class="statusClass">
       <div class="flex items-center space-x-2 mb-2">
-        <svg
-          v-if="status.canConnect"
-          class="w-5 h-5 text-green-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-            clip-rule="evenodd"
-          />
-        </svg>
-        <svg
-          v-else
-          class="w-5 h-5 text-red-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-            clip-rule="evenodd"
-          />
-        </svg>
+        <CheckCircle v-if="status.canConnect" class="w-5 h-5 text-green-600" />
+        <XCircle v-else class="w-5 h-5 text-red-600" />
         <span class="font-semibold">{{
           status.canConnect ? 'DB 연결 성공' : 'DB 연결 실패'
         }}</span>
@@ -61,24 +39,14 @@
       <div class="flex items-center justify-between">
         <h4 class="font-bold text-gray-900">Migration 상세 분석</h4>
         <button
-          class="text-sm text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+          class="text-sm text-primary-600 hover:text-primary-700 flex items-center space-x-1"
           @click="showAnalysisDetails = !showAnalysisDetails"
         >
           <span>{{ showAnalysisDetails ? '접기' : '펼치기' }}</span>
-          <svg
+          <ChevronDown
             class="w-4 h-4"
             :class="{ 'rotate-180': showAnalysisDetails }"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          />
         </button>
       </div>
 
@@ -159,7 +127,10 @@
                       <p class="text-xs text-gray-600 mb-1">
                         <strong>영향:</strong> {{ risk.impact }}
                       </p>
-                      <p v-if="risk.mitigation" class="text-xs text-blue-600">
+                      <p
+                        v-if="risk.mitigation"
+                        class="text-xs text-primary-600"
+                      >
                         <strong>조치:</strong> {{ risk.mitigation }}
                       </p>
                     </div>
@@ -178,10 +149,10 @@
               <h6 class="text-sm font-semibold text-gray-700 mb-2">
                 📊 영향받는 테이블:
               </h6>
-              <div class="bg-blue-50 border border-blue-200 rounded p-3">
+              <div class="bg-primary-50 border border-primary-200 rounded p-3">
                 <table class="w-full text-sm">
                   <thead>
-                    <tr class="border-b border-blue-300">
+                    <tr class="border-b border-primary-300">
                       <th class="text-left py-1 text-gray-700">테이블</th>
                       <th class="text-left py-1 text-gray-700">현재 행 수</th>
                       <th class="text-left py-1 text-gray-700">작업</th>
@@ -191,7 +162,7 @@
                     <tr
                       v-for="table in analysis.affectedTables"
                       :key="table.tableName"
-                      class="border-b border-blue-100 last:border-0"
+                      class="border-b border-primary-100 last:border-0"
                     >
                       <td class="py-1 font-semibold">{{ table.tableName }}</td>
                       <td class="py-1">
@@ -228,22 +199,10 @@
     <div class="flex flex-wrap gap-3 mb-6">
       <button
         :disabled="loading"
-        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center space-x-2"
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-400 transition-colors flex items-center space-x-2"
         @click="checkStatus"
       >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-          />
-        </svg>
+        <RefreshCw class="w-4 h-4" />
         <span v-if="loading">확인 중...</span>
         <span v-else>상태 확인</span>
       </button>
@@ -254,19 +213,7 @@
         class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 transition-colors flex items-center space-x-2"
         @click="analyzeMigrations"
       >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-          />
-        </svg>
+        <ClipboardCheck class="w-4 h-4" />
         <span v-if="loading">분석 중...</span>
         <span v-else>위험도 분석</span>
       </button>
@@ -292,18 +239,7 @@
         ]"
         @click="confirmMigration"
       >
-        <svg
-          v-if="hasCriticalRisk"
-          class="w-4 h-4"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-            clip-rule="evenodd"
-          />
-        </svg>
+        <AlertTriangle v-if="hasCriticalRisk" class="w-4 h-4" />
         <span v-if="loading">실행 중...</span>
         <span v-else-if="hasCriticalRisk">⚠️⚠️ 위험 - Migration 실행</span>
         <span v-else>Migration 실행</span>
@@ -324,17 +260,7 @@
       class="mb-6 bg-red-50 border-2 border-red-500 rounded-lg p-4"
     >
       <div class="flex items-start space-x-3">
-        <svg
-          class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-            clip-rule="evenodd"
-          />
-        </svg>
+        <AlertTriangle class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
         <div class="flex-1">
           <h5 class="font-bold text-red-900 mb-2">
             ⚠️⚠️ 매우 위험한 Migration 감지!
@@ -386,6 +312,14 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import {
+  CheckCircle,
+  XCircle,
+  ChevronDown,
+  RefreshCw,
+  ClipboardCheck,
+  AlertTriangle,
+} from 'lucide-vue-next'
 import apiClient from '@/services/api'
 
 const status = ref(null)
@@ -415,7 +349,7 @@ function getRiskBorderClass(riskLevel) {
     case 2:
       return 'border-yellow-500 bg-yellow-50'
     case 1:
-      return 'border-blue-500 bg-blue-50'
+      return 'border-primary-500 bg-primary-50'
     default:
       return 'border-green-500 bg-green-50'
   }
@@ -430,7 +364,7 @@ function getRiskBadgeClass(riskLevel) {
     case 2:
       return 'bg-yellow-600 text-white'
     case 1:
-      return 'bg-blue-600 text-white'
+      return 'bg-primary-600 text-white'
     default:
       return 'bg-green-600 text-white'
   }
@@ -445,7 +379,7 @@ function getRiskBorderColorClass(levelValue) {
     case 2:
       return 'border-yellow-500'
     case 1:
-      return 'border-blue-500'
+      return 'border-primary-500'
     default:
       return 'border-green-500'
   }
@@ -460,7 +394,7 @@ function getRiskLevelBadge(levelValue) {
     case 2:
       return 'bg-yellow-100 text-yellow-800'
     case 1:
-      return 'bg-blue-100 text-blue-800'
+      return 'bg-primary-100 text-primary-800'
     default:
       return 'bg-green-100 text-green-800'
   }

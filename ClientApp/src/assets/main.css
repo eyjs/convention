@@ -205,15 +205,12 @@ select {
 /* 입력 필드 포커스 시 부드러운 전환 */
 input,
 textarea {
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease;
 }
 
 /* 포커스된 입력 필드 강조 */
 input:focus,
 textarea:focus {
-  transform: translateY(0);
   outline: none;
   box-shadow: 0 0 0 3px rgba(var(--color-primary-500), 0.3);
 }

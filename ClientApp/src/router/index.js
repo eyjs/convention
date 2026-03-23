@@ -281,18 +281,106 @@ const routes = [
       {
         path: '',
         name: 'Admin',
+        redirect: { name: 'AdminConventionList' },
+      },
+      {
+        path: 'conventions',
+        name: 'AdminConventionList',
         component: () => import('@/views/ConventionListView.vue'),
-        meta: { title: '행사 관리', adminTitle: '관리자 대시보드' },
+        meta: { title: '행사 관리', adminTitle: '관리자' },
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/components/admin/UserManagement.vue'),
+        meta: { title: '회원 관리', adminTitle: '관리자' },
+      },
+      {
+        path: 'statistics',
+        name: 'AdminStatistics',
+        component: () => import('@/views/admin/AdminStatisticsView.vue'),
+        meta: { title: '통계', adminTitle: '관리자' },
       },
       {
         path: 'conventions/:id',
-        name: 'AdminDashboard',
         component: () => import('@/views/AdminDashboard.vue'),
         meta: {
           title: '행사 대시보드',
           adminTitle: '행사 관리',
-          adminBackPath: '/admin',
         },
+        children: [
+          {
+            path: '',
+            name: 'AdminDashboard',
+            redirect: (to) => ({
+              name: 'AdminDashboardOverview',
+              params: to.params,
+            }),
+          },
+          {
+            path: 'dashboard',
+            name: 'AdminDashboardOverview',
+            component: () => import('@/components/admin/DashboardOverview.vue'),
+            meta: { title: '대시보드' },
+          },
+          {
+            path: 'guests',
+            name: 'AdminGuests',
+            component: () => import('@/components/admin/GuestManagement.vue'),
+            meta: { title: '참석자 관리' },
+          },
+          {
+            path: 'board',
+            name: 'AdminBoard',
+            component: () => import('@/components/admin/BoardManagement.vue'),
+            meta: { title: '게시판 관리' },
+          },
+          {
+            path: 'schedules',
+            name: 'AdminSchedules',
+            component: () =>
+              import('@/components/admin/ScheduleManagement.vue'),
+            meta: { title: '일정 관리' },
+          },
+          {
+            path: 'attributes',
+            name: 'AdminAttributes',
+            component: () =>
+              import('@/components/admin/AttributeTemplateManagement.vue'),
+            meta: { title: '속성 템플릿' },
+          },
+          {
+            path: 'actions',
+            name: 'AdminActions',
+            component: () => import('@/components/admin/ActionManagement.vue'),
+            meta: { title: '액션 관리' },
+          },
+          {
+            path: 'surveys',
+            name: 'AdminSurveys',
+            component: () => import('@/components/admin/SurveyManagement.vue'),
+            meta: { title: '설문 관리' },
+          },
+          {
+            path: 'formbuilder',
+            name: 'AdminFormBuilder',
+            component: () =>
+              import('@/components/admin/FormBuilderManagement.vue'),
+            meta: { title: '폼 빌더' },
+          },
+          {
+            path: 'upload',
+            name: 'AdminUpload',
+            component: () => import('@/components/admin/BulkUpload.vue'),
+            meta: { title: '엑셀 업로드' },
+          },
+          {
+            path: 'notices',
+            name: 'AdminNotices',
+            component: () => import('@/components/admin/NoticeManagement.vue'),
+            meta: { title: '공지사항' },
+          },
+        ],
       },
       {
         path: 'form-builder',
@@ -301,7 +389,6 @@ const routes = [
         meta: {
           title: '폼 빌더',
           adminTitle: '폼 빌더',
-          adminBackPath: '/admin',
         },
       },
       {
@@ -321,7 +408,6 @@ const routes = [
         meta: {
           title: '명찰 인쇄',
           adminTitle: '명찰 일괄 인쇄',
-          adminBackPath: '/admin',
         },
       },
     ],

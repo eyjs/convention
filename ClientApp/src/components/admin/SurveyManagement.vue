@@ -1,120 +1,81 @@
 <template>
   <div>
     <!-- 목록 뷰 -->
-    <div
-      v-if="currentView === 'list'"
-      class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md"
-    >
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
-          설문 관리
-        </h2>
-        <button
-          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
-          @click="openCreateModal"
+    <div v-if="currentView === 'list'">
+      <AdminPageHeader
+        title="설문 관리"
+        :description="`전체 ${surveys.length}개`"
+      >
+        <AdminButton :icon="Plus" @click="openCreateModal"
+          >새 설문 생성</AdminButton
         >
-          새 설문 생성
-        </button>
-      </div>
+      </AdminPageHeader>
 
-      <div v-if="loading" class="text-center py-10">
-        <p class="text-gray-500 dark:text-gray-400">
-          설문 목록을 불러오는 중...
-        </p>
-      </div>
-      <div v-else-if="error" class="text-center py-10 text-red-500">
-        <p>{{ error }}</p>
-      </div>
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                제목
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                상태
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                생성일
-              </th>
-              <th scope="col" class="relative px-6 py-3">
-                <span class="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+      <div class="mt-6">
+        <div v-if="loading" class="text-center py-10">
+          <p class="text-gray-500">설문 목록을 불러오는 중...</p>
+        </div>
+        <div v-else-if="error" class="text-center py-10 text-red-500">
+          <p>{{ error }}</p>
+        </div>
+        <AdminEmptyState
+          v-else-if="surveys.length === 0"
+          :icon="ClipboardList"
+          title="등록된 설문이 없습니다"
+          description="새 설문을 생성하여 참석자 의견을 수집하세요"
+        >
+          <AdminButton :icon="Plus" @click="openCreateModal"
+            >새 설문 생성</AdminButton
           >
-            <tr
-              v-for="survey in surveys"
-              :key="survey.id"
-              class="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+        </AdminEmptyState>
+        <AdminTable
+          v-else
+          :columns="tableColumns"
+          :loading="loading"
+          :empty="surveys.length === 0"
+        >
+          <tr
+            v-for="survey in surveys"
+            :key="survey.id"
+            class="hover:bg-gray-50"
+          >
+            <td
+              class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
             >
-              <td
-                class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200"
+              {{ survey.title }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <AdminBadge :variant="survey.isActive ? 'success' : 'danger'">
+                {{ survey.isActive ? '활성' : '비활성' }}
+              </AdminBadge>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ new Date(survey.createdAt).toLocaleDateString() }}
+            </td>
+            <td
+              class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3"
+            >
+              <button
+                class="text-primary-600 hover:text-primary-900"
+                @click="copySurveyUrl(survey.id)"
               >
-                {{ survey.title }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span
-                  :class="[
-                    'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                    survey.isActive
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
-                  ]"
-                >
-                  {{ survey.isActive ? '활성' : '비활성' }}
-                </span>
-              </td>
-              <td
-                class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300"
+                URL 복사
+              </button>
+              <button
+                class="text-primary-600 hover:text-primary-900"
+                @click="showEditView(survey.id)"
               >
-                {{ new Date(survey.createdAt).toLocaleDateString() }}
-              </td>
-              <td
-                class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                수정
+              </button>
+              <button
+                class="text-green-600 hover:text-green-900"
+                @click="showStatsView(survey.id)"
               >
-                <button
-                  class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4"
-                  @click="copySurveyUrl(survey.id)"
-                >
-                  URL 복사
-                </button>
-                <button
-                  class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-4"
-                  @click="showEditView(survey.id)"
-                >
-                  수정
-                </button>
-                <button
-                  class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
-                  @click="showStatsView(survey.id)"
-                >
-                  통계
-                </button>
-              </td>
-            </tr>
-            <tr v-if="surveys.length === 0">
-              <td
-                colspan="4"
-                class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
-              >
-                이 행사에 해당하는 설문이 없습니다.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                통계
+              </button>
+            </td>
+          </tr>
+        </AdminTable>
       </div>
     </div>
 
@@ -152,7 +113,13 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { Plus, ClipboardList } from 'lucide-vue-next'
 import api from '@/services/api'
+import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
+import AdminButton from '@/components/admin/ui/AdminButton.vue'
+import AdminTable from '@/components/admin/ui/AdminTable.vue'
+import AdminBadge from '@/components/admin/ui/AdminBadge.vue'
+import AdminEmptyState from '@/components/admin/ui/AdminEmptyState.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import SurveyForm from '@/views/admin/survey/SurveyForm.vue' // Re-using the form view
 import SurveyStats from '@/views/admin/survey/SurveyStats.vue' // Re-using the stats view
@@ -172,6 +139,13 @@ const error = ref(null)
 const currentView = ref('list') // 'list', 'edit', 'stats'
 const selectedSurveyId = ref(null)
 const isCreateModalVisible = ref(false)
+
+const tableColumns = [
+  { key: 'title', label: '제목' },
+  { key: 'status', label: '상태' },
+  { key: 'createdAt', label: '생성일' },
+  { key: 'actions', label: '', align: 'right' },
+]
 
 async function fetchSurveys() {
   loading.value = true

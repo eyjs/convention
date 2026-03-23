@@ -9,8 +9,8 @@
       <h2 class="text-xl font-semibold">일정 일괄 배정</h2>
     </template>
     <template #body>
-      <div class="mb-4 p-4 bg-blue-50 rounded-lg">
-        <p class="text-sm font-medium text-blue-900">
+      <div class="mb-4 p-4 bg-primary-50 rounded-lg">
+        <p class="text-sm font-medium text-primary-900">
           선택된 참석자: {{ selectedGuests.length }}명
         </p>
         <div class="flex flex-wrap gap-2 mt-2">
@@ -96,8 +96,8 @@
       </h2>
     </template>
     <template #body>
-      <div class="mb-4 p-3 bg-blue-50 rounded-lg">
-        <p class="text-sm text-blue-800">
+      <div class="mb-4 p-3 bg-primary-50 rounded-lg">
+        <p class="text-sm text-primary-800">
           선택한 {{ selectedGuests.length }}명의 참석자에게 동일한 속성을
           설정합니다.
         </p>
