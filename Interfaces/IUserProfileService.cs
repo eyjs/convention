@@ -23,4 +23,5 @@ public interface IUserProfileService
     Task<(bool Success, string? ErrorMessage, string? Url)> UploadProfilePhotoAsync(int userId, IFormFile file);
     Task<(bool Success, string? ErrorMessage, string? Url)> UploadPassportImageAsync(int userId, IFormFile file);
     Task<object> GetUserConventionsAsync(int userId);
+    Task<object?> GetMyConventionInfoAsync(int userId, int conventionId);
 }

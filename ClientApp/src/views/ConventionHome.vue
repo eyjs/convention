@@ -123,6 +123,407 @@
         :brand-color="brandColor"
       />
 
+      <!-- 내 정보 -->
+      <div v-if="myInfo" class="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <!-- 탭 헤더 (내정보 / 동반자1 / 동반자2 ...) -->
+        <div class="flex border-b overflow-x-auto">
+          <button
+            class="px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative"
+            :class="
+              infoTab === 'me'
+                ? 'text-gray-900'
+                : 'text-gray-400 hover:text-gray-600'
+            "
+            @click="infoTab = 'me'"
+          >
+            내 정보
+            <div
+              v-if="infoTab === 'me'"
+              class="absolute bottom-0 left-0 right-0 h-0.5"
+              :style="{ backgroundColor: brandColor }"
+            ></div>
+          </button>
+          <button
+            v-for="(comp, idx) in myInfo.companions"
+            :key="comp.id"
+            class="px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative"
+            :class="
+              infoTab === 'comp-' + comp.id
+                ? 'text-gray-900'
+                : 'text-gray-400 hover:text-gray-600'
+            "
+            @click="infoTab = 'comp-' + comp.id"
+          >
+            {{ comp.name || '동반자' + (idx + 1) }}
+            <div
+              v-if="infoTab === 'comp-' + comp.id"
+              class="absolute bottom-0 left-0 right-0 h-0.5"
+              :style="{ backgroundColor: brandColor }"
+            ></div>
+          </button>
+        </div>
+
+        <!-- 내 정보 탭 -->
+        <div v-if="infoTab === 'me'" class="p-5">
+          <!-- 프로필 요약 -->
+          <div class="flex items-center gap-3 mb-4 pb-4 border-b">
+            <div
+              class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
+              :style="{ backgroundColor: brandColor }"
+            >
+              {{ myInfo.profile.name?.charAt(0) }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-bold text-gray-900">{{ myInfo.profile.name }}</p>
+              <p class="text-sm text-gray-500 truncate">
+                {{
+                  myInfo.profile.corpName || myInfo.profile.affiliation || ''
+                }}
+                <span v-if="myInfo.profile.corpPart">
+                  · {{ myInfo.profile.corpPart }}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <!-- 배정 정보 태그 -->
+          <div
+            v-if="
+              myInfo.scheduleCourses.length > 0 || myInfo.attributes.length > 0
+            "
+            class="flex flex-wrap gap-2 mb-4"
+          >
+            <span
+              v-for="course in myInfo.scheduleCourses"
+              :key="'course-' + course.id"
+              class="px-2.5 py-1 text-xs font-medium rounded-md"
+              :style="{
+                backgroundColor: brandColor + '15',
+                color: brandColor,
+              }"
+            >
+              {{ course.courseName }}
+            </span>
+            <span
+              v-for="attr in myInfo.attributes"
+              :key="attr.key"
+              class="px-2.5 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-700"
+            >
+              {{ attr.key }}: {{ attr.value }}
+            </span>
+          </div>
+
+          <!-- 준비 상태 체크리스트 -->
+          <div class="space-y-0 divide-y divide-gray-100">
+            <!-- 여권 -->
+            <!-- prettier-ignore -->
+            <button
+              class="w-full flex items-center justify-between py-3 text-left hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors"
+              @click="showPassportModal = true"
+            >
+              <div class="flex items-center gap-2.5">
+                <span
+                  class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs"
+                  :class="
+                    myInfo.passport.verified
+                      ? 'bg-green-500 text-white'
+                      : myInfo.passport.hasNumber && myInfo.passport.hasImage
+                        ? 'bg-yellow-400 text-white'
+                        : 'bg-gray-200 text-gray-400'
+                  "
+                >
+                  {{ myInfo.passport.verified ? '✓' : myInfo.passport.hasNumber && myInfo.passport.hasImage ? '!' : '—' }}
+                </span>
+                <span class="text-sm text-gray-800">여권 정보</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span
+                  class="text-xs font-medium px-2 py-0.5 rounded-md"
+                  :class="
+                    myInfo.passport.verified
+                      ? 'bg-green-50 text-green-700'
+                      : myInfo.passport.hasNumber && myInfo.passport.hasImage
+                        ? 'bg-yellow-50 text-yellow-700'
+                        : 'bg-red-50 text-red-600'
+                  "
+                >
+                  {{
+                    myInfo.passport.verified
+                      ? '승인완료'
+                      : myInfo.passport.hasNumber && myInfo.passport.hasImage
+                        ? '승인대기'
+                        : '미입력'
+                  }}
+                </span>
+                <svg
+                  class="w-4 h-4 text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+            </button>
+
+            <!-- 동반자 정보 -->
+            <div
+              v-if="myInfo.companions.length > 0"
+              class="flex items-center justify-between py-3"
+            >
+              <div class="flex items-center gap-2.5">
+                <span
+                  class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs"
+                  :class="
+                    myInfo.companions.every((c) => c.passport.verified)
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-400'
+                  "
+                >
+                  {{
+                    myInfo.companions.every((c) => c.passport.verified)
+                      ? '✓'
+                      : '—'
+                  }}
+                </span>
+                <span class="text-sm text-gray-800"
+                  >동반자 정보 ({{ myInfo.companions.length }}명)</span
+                >
+              </div>
+              <span
+                class="text-xs font-medium px-2 py-0.5 rounded-md"
+                :class="
+                  myInfo.companions.every((c) => c.passport.verified)
+                    ? 'bg-green-50 text-green-700'
+                    : 'bg-red-50 text-red-600'
+                "
+              >
+                {{
+                  myInfo.companions.every((c) => c.passport.verified)
+                    ? '완료'
+                    : '미완료'
+                }}
+              </span>
+            </div>
+
+            <!-- 옵션투어 -->
+            <button
+              v-if="myInfo.optionTours.length > 0"
+              class="w-full flex items-center justify-between py-3 text-left hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors"
+              @click="navigateTo('/schedule')"
+            >
+              <div class="flex items-center gap-2.5">
+                <span
+                  class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs bg-green-500 text-white"
+                >
+                  ✓
+                </span>
+                <span class="text-sm text-gray-800">옵션투어</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span
+                  class="text-xs font-medium px-2 py-0.5 rounded-md bg-green-50 text-green-700"
+                >
+                  {{ myInfo.optionTours.length }}개
+                </span>
+                <svg
+                  class="w-4 h-4 text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+            </button>
+
+            <!-- 설문조사 -->
+            <div
+              v-for="survey in myInfo.surveys"
+              :key="'survey-' + survey.id"
+              class="flex items-center justify-between py-3"
+            >
+              <div class="flex items-center gap-2.5">
+                <span
+                  class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs"
+                  :class="
+                    survey.completed
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-400'
+                  "
+                >
+                  {{ survey.completed ? '✓' : '—' }}
+                </span>
+                <span class="text-sm text-gray-800">{{ survey.title }}</span>
+              </div>
+              <span
+                class="text-xs font-medium px-2 py-0.5 rounded-md"
+                :class="
+                  survey.completed
+                    ? 'bg-green-50 text-green-700'
+                    : 'bg-red-50 text-red-600'
+                "
+              >
+                {{ survey.completed ? '완료' : '미완료' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 동반자 탭 -->
+        <div
+          v-for="comp in myInfo.companions"
+          v-show="infoTab === 'comp-' + comp.id"
+          :key="'tab-' + comp.id"
+          class="p-5"
+        >
+          <div class="flex items-center gap-3 mb-4 pb-4 border-b">
+            <div
+              class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 bg-gray-400"
+            >
+              {{ comp.name?.charAt(0) }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-bold text-gray-900">{{ comp.name }}</p>
+              <p class="text-sm text-gray-500">{{ comp.relationType }}</p>
+            </div>
+          </div>
+
+          <div class="space-y-0 divide-y divide-gray-100">
+            <!-- 동반자 여권 -->
+            <div class="flex items-center justify-between py-3">
+              <div class="flex items-center gap-2.5">
+                <span
+                  class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs"
+                  :class="
+                    comp.passport.verified
+                      ? 'bg-green-500 text-white'
+                      : comp.passport.hasNumber
+                        ? 'bg-yellow-400 text-white'
+                        : 'bg-gray-200 text-gray-400'
+                  "
+                >
+                  {{
+                    comp.passport.verified
+                      ? '✓'
+                      : comp.passport.hasNumber
+                        ? '!'
+                        : '—'
+                  }}
+                </span>
+                <span class="text-sm text-gray-800">여권 정보</span>
+              </div>
+              <span
+                class="text-xs font-medium px-2 py-0.5 rounded-md"
+                :class="
+                  comp.passport.verified
+                    ? 'bg-green-50 text-green-700'
+                    : comp.passport.hasNumber
+                      ? 'bg-yellow-50 text-yellow-700'
+                      : 'bg-red-50 text-red-600'
+                "
+              >
+                {{
+                  comp.passport.verified
+                    ? '승인완료'
+                    : comp.passport.hasNumber
+                      ? '승인대기'
+                      : '미입력'
+                }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 여권 상세 모달 -->
+      <BaseModal
+        :is-open="showPassportModal"
+        max-width="sm"
+        @close="showPassportModal = false"
+      >
+        <template #header>
+          <h3 class="text-lg font-bold text-gray-900">여권 정보</h3>
+        </template>
+        <template #body>
+          <div v-if="myInfo" class="space-y-4">
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-500">영문 성</span>
+                <span class="text-sm font-medium text-gray-900">{{
+                  myInfo.profile.passportLastName || '-'
+                }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-500">영문 이름</span>
+                <span class="text-sm font-medium text-gray-900">{{
+                  myInfo.profile.passportFirstName || '-'
+                }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-500">여권 번호</span>
+                <span class="text-sm font-medium text-gray-900">{{
+                  myInfo.profile.passportNumber || '-'
+                }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-500">만료일</span>
+                <span class="text-sm font-medium text-gray-900">{{
+                  myInfo.profile.passportExpiryDate || '-'
+                }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-500">승인 상태</span>
+                <span
+                  class="text-xs font-medium px-2 py-0.5 rounded-md"
+                  :class="
+                    myInfo.passport.verified
+                      ? 'bg-green-50 text-green-700'
+                      : myInfo.passport.hasNumber
+                        ? 'bg-yellow-50 text-yellow-700'
+                        : 'bg-red-50 text-red-600'
+                  "
+                >
+                  {{
+                    myInfo.passport.verified
+                      ? '승인완료'
+                      : myInfo.passport.hasNumber
+                        ? '승인대기'
+                        : '미입력'
+                  }}
+                </span>
+              </div>
+            </div>
+            <div v-if="myInfo.profile.passportImageUrl" class="pt-2 border-t">
+              <p class="text-sm text-gray-500 mb-2">여권 이미지</p>
+              <img
+                :src="myInfo.profile.passportImageUrl"
+                alt="여권 이미지"
+                class="w-full rounded-lg border"
+              />
+            </div>
+            <!-- prettier-ignore -->
+            <button
+              class="w-full py-2.5 text-sm font-medium rounded-lg transition-colors"
+              :style="{ backgroundColor: brandColor + '15', color: brandColor }"
+              @click="showPassportModal = false; navigateTo('/profile')"
+            >
+              여권 정보 수정
+            </button>
+          </div>
+        </template>
+      </BaseModal>
+
       <!-- 공지사항 -->
       <div class="bg-white rounded-2xl shadow-lg p-5">
         <div class="flex items-center justify-between mb-4">
@@ -251,7 +652,7 @@
           <h2 class="text-lg font-bold text-gray-900">나의 일정</h2>
           <button
             class="text-sm text-primary-600 font-medium flex items-center"
-            @click="navigateTo('/my-schedule')"
+            @click="navigateTo('/schedule')"
           >
             전체보기
             <svg
@@ -357,6 +758,7 @@ import DeadlineCountdown from '@/components/common/DeadlineCountdown.vue'
 import ChecklistProgress from '@/components/common/ChecklistProgress.vue'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 import MainHeader from '@/components/common/MainHeader.vue'
+import BaseModal from '@/components/common/BaseModal.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -368,6 +770,9 @@ const loading = ref(true)
 const convention = computed(() => conventionStore.currentConvention)
 const allActions = ref([]) // 전체 동적 액션 저장
 const checklistStatus = ref(null)
+const myInfo = ref(null)
+const infoTab = ref('me')
+const showPassportModal = ref(false)
 
 // 브랜드 컬러 가져오기
 const brandColor = computed(() => {
@@ -426,13 +831,13 @@ const remainingNoticesCount = computed(() => {
   return remaining > 0 ? remaining : 0
 })
 
-function navigateTo(route) {
-  // [방어] route가 유효한지 확인
-  if (!route || route === 'undefined') {
-    console.warn('Invalid route:', route)
+function navigateTo(path) {
+  const conventionId = route.params.conventionId
+  if (!conventionId) {
+    console.warn('Convention ID not available')
     return
   }
-  router.push(route)
+  router.push(`/conventions/${conventionId}${path}`)
 }
 
 const handleLogout = async () => {
@@ -443,14 +848,13 @@ const handleLogout = async () => {
 }
 
 function openNotice(notice) {
-  // [방어] notice.id가 유효한지 확인
   if (!notice || !notice.id || notice.id === 'undefined') {
     console.warn('Invalid notice:', notice)
     return
   }
-  // TripDetail처럼 composable로 noticeId 전달
+  const conventionId = route.params.conventionId
   setPendingNotice(notice.id)
-  router.push('/notices')
+  router.push(`/conventions/${conventionId}/notices`)
 }
 
 function formatDate(dateStr) {
@@ -577,6 +981,21 @@ async function loadChecklist() {
   }
 }
 
+async function loadMyInfo() {
+  try {
+    const conventionId = conventionStore.currentConvention?.id
+    if (!conventionId) return
+
+    const response = await apiClient.get(
+      `/users/my-convention-info/${conventionId}`,
+    )
+    myInfo.value = response.data
+  } catch (error) {
+    console.error('Failed to load my info:', error)
+    myInfo.value = null
+  }
+}
+
 async function loadDynamicActions() {
   try {
     const conventionId = conventionStore.currentConvention?.id
@@ -625,6 +1044,7 @@ onMounted(async () => {
     loadRecentNotices(),
     loadChecklist(),
     loadDynamicActions(),
+    loadMyInfo(),
   ])
 
   loading.value = false

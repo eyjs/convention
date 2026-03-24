@@ -349,13 +349,17 @@ public class UserProfileService : IUserProfileService
         user.Phone = dto.Phone;
         user.FirstName = dto.FirstName;
         user.LastName = dto.LastName;
-        user.PassportNumber = dto.PassportNumber;
         user.Affiliation = dto.Affiliation;
+
+        // 여권 관련 필드 변경 시 승인 초기화
+        var passportChanged = user.PassportNumber != dto.PassportNumber;
+        user.PassportNumber = dto.PassportNumber;
 
         if (!string.IsNullOrEmpty(dto.PassportExpiryDate))
         {
             if (DateOnly.TryParseExact(dto.PassportExpiryDate, "yyyy-MM-dd", out var parsedDate))
             {
+                if (user.PassportExpiryDate != parsedDate) passportChanged = true;
                 user.PassportExpiryDate = parsedDate;
             }
             else
@@ -365,7 +369,14 @@ public class UserProfileService : IUserProfileService
         }
         else
         {
+            if (user.PassportExpiryDate != null) passportChanged = true;
             user.PassportExpiryDate = null;
+        }
+
+        if (passportChanged && user.PassportVerified)
+        {
+            user.PassportVerified = false;
+            user.PassportVerifiedAt = null;
         }
 
         user.UpdatedAt = DateTime.UtcNow;
@@ -402,6 +413,8 @@ public class UserProfileService : IUserProfileService
                 break;
             case "passportNumber":
                 user.PassportNumber = request.FieldValue;
+                user.PassportVerified = false;
+                user.PassportVerifiedAt = null;
                 break;
             case "passportExpiryDate":
                 if (!string.IsNullOrEmpty(request.FieldValue))
@@ -419,6 +432,8 @@ public class UserProfileService : IUserProfileService
                 {
                     user.PassportExpiryDate = null;
                 }
+                user.PassportVerified = false;
+                user.PassportVerifiedAt = null;
                 break;
             default:
                 return (false, $"알 수 없는 필드명입니다: {request.FieldName}");
@@ -481,6 +496,8 @@ public class UserProfileService : IUserProfileService
             return (false, "여권 사진 업로드에 실패했습니다.", null);
 
         user.PassportImageUrl = uploadResult.Url;
+        user.PassportVerified = false;
+        user.PassportVerifiedAt = null;
         user.UpdatedAt = DateTime.UtcNow;
 
         await _unitOfWork.SaveChangesAsync();
@@ -505,5 +522,112 @@ public class UserProfileService : IUserProfileService
             .ToListAsync();
 
         return conventions;
+    }
+
+    public async Task<object?> GetMyConventionInfoAsync(int userId, int conventionId)
+    {
+        var user = await _unitOfWork.Users.Query
+            .Include(u => u.GuestAttributes)
+            .Include(u => u.GuestScheduleTemplates)
+                .ThenInclude(gst => gst.ScheduleTemplate)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null) return null;
+
+        // UserConvention 정보
+        var uc = await _unitOfWork.UserConventions.GetByUserAndConventionAsync(userId, conventionId);
+
+        // 동반자 목록
+        var companions = await _unitOfWork.CompanionRelations.Query
+            .Where(cr => cr.UserId == userId && cr.ConventionId == conventionId)
+            .Include(cr => cr.CompanionUser)
+            .Select(cr => new
+            {
+                id = cr.Id,
+                name = cr.CompanionUser.Name,
+                relationType = cr.RelationType,
+                passport = new
+                {
+                    hasNumber = !string.IsNullOrEmpty(cr.CompanionUser.PassportNumber),
+                    hasImage = !string.IsNullOrEmpty(cr.CompanionUser.PassportImageUrl),
+                    verified = cr.CompanionUser.PassportVerified
+                }
+            })
+            .ToListAsync();
+
+        // 옵션투어
+        var optionTours = await _unitOfWork.UserOptionTours.Query
+            .Where(uot => uot.UserId == userId && uot.ConventionId == conventionId)
+            .Include(uot => uot.OptionTour)
+            .Select(uot => new
+            {
+                id = uot.OptionTour!.Id,
+                name = uot.OptionTour.Name,
+                date = uot.OptionTour.Date.ToString("yyyy-MM-dd"),
+                startTime = uot.OptionTour.StartTime
+            })
+            .ToListAsync();
+
+        // 배정된 일정 코스
+        var scheduleCourses = user.GuestScheduleTemplates
+            .Where(gst => gst.ScheduleTemplate != null && gst.ScheduleTemplate.ConventionId == conventionId)
+            .Select(gst => new
+            {
+                id = gst.ScheduleTemplate!.Id,
+                courseName = gst.ScheduleTemplate.CourseName
+            })
+            .ToList();
+
+        // 게스트 속성 (조, 호차 등)
+        var attributes = user.GuestAttributes
+            .Select(ga => new
+            {
+                key = ga.AttributeKey,
+                value = ga.AttributeValue
+            })
+            .ToList();
+
+        // 설문조사 상태
+        var surveys = await _unitOfWork.Surveys.Query
+            .Where(s => s.ConventionId == conventionId && s.IsActive)
+            .Select(s => new
+            {
+                id = s.Id,
+                title = s.Title,
+                completed = s.Responses.Any(r => r.UserId == userId)
+            })
+            .ToListAsync();
+
+        return new
+        {
+            profile = new
+            {
+                name = user.Name,
+                phone = user.Phone,
+                affiliation = user.Affiliation,
+                corpName = user.CorpName,
+                corpPart = user.CorpPart,
+                profileImageUrl = user.ProfileImageUrl,
+                passportNumber = user.PassportNumber,
+                passportFirstName = user.FirstName,
+                passportLastName = user.LastName,
+                passportExpiryDate = user.PassportExpiryDate?.ToString("yyyy-MM-dd"),
+                passportImageUrl = user.PassportImageUrl
+            },
+            passport = new
+            {
+                hasNumber = !string.IsNullOrEmpty(user.PassportNumber),
+                hasExpiry = user.PassportExpiryDate.HasValue,
+                hasImage = !string.IsNullOrEmpty(user.PassportImageUrl),
+                verified = user.PassportVerified,
+                verifiedAt = user.PassportVerifiedAt
+            },
+            groupName = uc?.GroupName,
+            attributes,
+            scheduleCourses,
+            optionTours,
+            companions,
+            surveys
+        };
     }
 }

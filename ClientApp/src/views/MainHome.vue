@@ -23,7 +23,38 @@
     </div>
 
     <div class="relative z-10">
-      <MainHeader title="홈" :show-back="false" />
+      <!-- 상단 로고 + 메뉴 -->
+      <div class="sticky top-0 z-40 bg-white shadow-sm">
+        <div class="px-4 py-3">
+          <div class="flex items-center justify-between">
+            <img
+              src="https://www.ifa.co.kr/Images/logo.png"
+              alt="iFA"
+              class="h-8 object-contain"
+            />
+            <button
+              class="p-2 -mr-2 rounded-lg text-gray-500 hover:bg-gray-100"
+              @click="isSidebarOpen = true"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
 
       <div class="max-w-2xl mx-auto px-4 py-4">
         <!-- 환영 메시지 (Hero Section) -->
@@ -50,9 +81,9 @@
 
           <div class="relative z-10">
             <h2 class="text-3xl font-bold mb-2">
-              안녕하세요,<br />{{ userName }}님! ✈️
+              안녕하세요,<br />{{ userName }}님!
             </h2>
-            <p class="text-lg text-white/90">다음 여행을 계획해보세요</p>
+            <p class="text-lg text-white/90">스타투어에 오신 것을 환영합니다</p>
           </div>
 
           <!-- Decorative circles -->
@@ -64,12 +95,12 @@
           ></div>
         </div>
 
-        <!-- 내 행사 섹션 -->
+        <!-- 진행중인 스타투어 -->
         <div class="mb-8">
           <div class="flex justify-between items-center mb-4 px-1">
             <h3 class="text-xl font-bold text-gray-900">진행중인 스타투어</h3>
             <button
-              v-if="conventions.length > 0"
+              v-if="activeConventions.length > 0"
               class="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
               @click="router.push('/conventions')"
             >
@@ -87,7 +118,7 @@
           </div>
 
           <div
-            v-else-if="conventions.length === 0"
+            v-else-if="activeConventions.length === 0"
             class="bg-white rounded-2xl shadow-md p-8 text-center mx-1"
           >
             <div
@@ -107,14 +138,16 @@
                 />
               </svg>
             </div>
-            <p class="text-gray-600 font-medium">참여 중인 행사가 없습니다</p>
+            <p class="text-gray-600 font-medium">
+              진행중인 스타투어가 없습니다
+            </p>
           </div>
 
           <!-- 수평 스크롤 카드 -->
           <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
             <div class="flex gap-4 pb-2">
               <div
-                v-for="convention in conventions.slice(0, 10)"
+                v-for="convention in activeConventions.slice(0, 10)"
                 :key="convention.id"
                 onclick=""
                 role="button"
@@ -190,95 +223,38 @@
             </div>
           </div>
         </div>
-        <!-- 내 여행 섹션 -->
-        <div class="mb-8">
+
+        <!-- 종료된 스타투어 -->
+        <div v-if="completedConventions.length > 0" class="mb-8">
           <div class="flex justify-between items-center mb-4 px-1">
-            <h3 class="text-xl font-bold text-gray-900">내 여행</h3>
-            <button
-              v-if="trips.length > 0"
-              class="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-              @click="router.push('/trips')"
-            >
-              더보기
-            </button>
+            <h3 class="text-xl font-bold text-gray-900">종료된 스타투어</h3>
           </div>
 
-          <div v-if="tripsLoading" class="text-center py-12 text-gray-500">
-            <div
-              class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"
-            ></div>
-          </div>
-
-          <div
-            v-else-if="trips.length === 0"
-            class="bg-white rounded-2xl shadow-md p-8 text-center mx-1"
-          >
-            <div
-              class="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center"
-            >
-              <svg
-                class="w-10 h-10 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <p class="text-gray-600 mb-2 font-medium">
-              아직 여행 계획이 없습니다
-            </p>
-            <p class="text-sm text-gray-400 mb-4">첫 여행을 계획해보세요!</p>
-            <button
-              class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full font-semibold hover:shadow-lg transition-shadow"
-              @click="goToCreateTrip"
-            >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              첫 여행 만들기
-            </button>
-          </div>
-
-          <!-- 수평 스크롤 카드 -->
-          <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
+          <div class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
             <div class="flex gap-4 pb-2">
               <div
-                v-for="trip in trips.slice(0, 10)"
-                :key="trip.id"
+                v-for="convention in completedConventions.slice(0, 10)"
+                :key="convention.id"
                 onclick=""
                 role="button"
                 tabindex="0"
                 class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow cursor-pointer overflow-hidden group"
-                @click="goToTripDetail(trip.id)"
+                @click="goToConvention(convention)"
               >
                 <!-- 상단 이미지 영역 -->
                 <div
                   class="relative h-[200px] overflow-hidden pointer-events-none"
                 >
                   <div
-                    v-if="trip.coverImageUrl"
+                    v-if="convention.conventionImg"
                     class="absolute inset-0 bg-cover bg-center"
-                    :style="{ backgroundImage: `url(${trip.coverImageUrl})` }"
+                    :style="{
+                      backgroundImage: `url(${convention.conventionImg})`,
+                    }"
                   ></div>
                   <div
                     v-else
-                    class="absolute inset-0 bg-gradient-to-br from-cyan-500 via-teal-500 to-blue-600"
+                    class="absolute inset-0 bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600"
                   >
                     <div
                       class="absolute inset-0 flex items-center justify-center"
@@ -293,25 +269,29 @@
                           stroke-linecap="round"
                           stroke-linejoin="round"
                           stroke-width="2"
-                          d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                         />
                       </svg>
                     </div>
                   </div>
+                  <!-- 종료 뱃지 -->
+                  <div
+                    class="absolute top-3 left-3 px-2 py-1 bg-black/50 text-white text-xs font-medium rounded-md backdrop-blur-sm"
+                  >
+                    종료됨
+                  </div>
                 </div>
 
-                <!-- 카드 정보 (인스타그램 스타일) -->
+                <!-- 카드 정보 -->
                 <div class="p-4">
                   <h4
-                    class="font-bold text-gray-900 text-lg mb-2 line-clamp-1 group-hover:text-cyan-600 transition-colors"
+                    class="font-bold text-gray-700 text-lg mb-2 line-clamp-1 group-hover:text-gray-900 transition-colors"
                   >
-                    {{ trip.title }}
+                    {{ convention.title }}
                   </h4>
 
                   <!-- 날짜 -->
-                  <div
-                    class="flex items-center gap-2 text-sm text-gray-500 mb-2"
-                  >
+                  <div class="flex items-center gap-2 text-sm text-gray-400">
                     <svg
                       class="w-4 h-4 flex-shrink-0"
                       fill="none"
@@ -326,37 +306,9 @@
                       />
                     </svg>
                     <span class="truncate"
-                      >{{ trip.startDate }} ~ {{ trip.endDate }}</span
+                      >{{ formatDate(convention.startDate) }} ~
+                      {{ formatDate(convention.endDate) }}</span
                     >
-                  </div>
-
-                  <!-- 위치 -->
-                  <div
-                    v-if="trip.destination || trip.city"
-                    class="flex items-center gap-2 text-sm text-gray-600"
-                  >
-                    <svg
-                      class="w-4 h-4 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    <span class="font-semibold truncate">{{
-                      [trip.destination, trip.city].filter(Boolean).join(', ')
-                    }}</span>
                   </div>
                 </div>
               </div>
@@ -372,34 +324,25 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useConventionStore } from '@/stores/convention'
-import MainHeader from '@/components/common/MainHeader.vue'
+import SidebarMenu from '@/components/common/SidebarMenu.vue'
 import apiClient from '@/services/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const conventionStore = useConventionStore()
 
 const userName = computed(() => authStore.user?.name || '사용자')
 
-const tripsLoading = ref(true)
 const conventionsLoading = ref(true)
-const trips = ref([])
 const conventions = ref([])
+const isSidebarOpen = ref(false)
 
-// 여행 목록 로드
-async function loadTrips() {
-  tripsLoading.value = true
-  try {
-    const response = await apiClient.get('/personal-trips')
-    trips.value = response.data
-  } catch (error) {
-    console.error('여행 목록 로드 실패:', error)
-    trips.value = []
-  } finally {
-    tripsLoading.value = false
-  }
-}
+const activeConventions = computed(() =>
+  conventions.value.filter((c) => c.completeYn !== 'Y'),
+)
+
+const completedConventions = computed(() =>
+  conventions.value.filter((c) => c.completeYn === 'Y'),
+)
 
 // 행사 목록 로드
 async function loadConventions() {
@@ -416,22 +359,6 @@ async function loadConventions() {
 }
 
 // 네비게이션
-function goToCreateTrip() {
-  router.push('/trips/new')
-}
-
-function goToTripDetail(tripId) {
-  console.log('goToTripDetail called with:', tripId)
-  // [방어] tripId가 유효한지 확인
-  if (!tripId || tripId === 'undefined') {
-    console.warn('Invalid tripId:', tripId)
-    alert(`Invalid tripId: ${tripId}`)
-    return
-  }
-  console.log('Navigating to:', `/trips/${tripId}`)
-  router.push(`/trips/${tripId}`)
-}
-
 function goToConvention(convention) {
   if (!convention?.id) {
     console.warn('goToConvention: invalid convention', convention)
@@ -452,7 +379,6 @@ function formatDate(dateString) {
 }
 
 onMounted(() => {
-  loadTrips()
   loadConventions()
 })
 </script>

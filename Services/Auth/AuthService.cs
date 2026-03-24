@@ -355,6 +355,7 @@ public class AuthService : IAuthService
         {
             var unreadCount = await _unitOfWork.ConventionChatMessages.CountAsync(m =>
                 m.ConventionId == uc.ConventionId &&
+                m.UserId != userId &&
                 m.CreatedAt > (uc.LastChatReadTimestamp ?? DateTime.MinValue));
 
             conventionList.Add(new UserConventionInfo

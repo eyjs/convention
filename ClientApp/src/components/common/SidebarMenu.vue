@@ -13,144 +13,120 @@
     <Transition name="slide-right">
       <div
         v-show="isOpen"
-        class="absolute right-0 w-72 h-full bg-white shadow-xl"
+        class="absolute right-0 w-72 h-full bg-white shadow-xl flex flex-col"
       >
-        <div class="p-4">
-          <h2 class="text-xl font-bold">메뉴</h2>
-          <button
-            class="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-            @click="close"
-          >
-            ✕
-          </button>
+        <!-- 헤더: 사용자 정보 -->
+        <div class="p-5 pb-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+              <div
+                class="w-10 h-10 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+              >
+                {{ userInitial }}
+              </div>
+              <div class="min-w-0">
+                <p class="font-semibold text-gray-900 truncate">
+                  {{ userName }}
+                </p>
+                <p class="text-xs text-gray-500 truncate">{{ userLoginId }}</p>
+              </div>
+            </div>
+            <button
+              class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+              @click="close"
+            >
+              <X :size="20" />
+            </button>
+          </div>
         </div>
-        <ul>
-          <li>
+
+        <!-- 메뉴 목록 -->
+        <div class="flex-1 overflow-y-auto px-3">
+          <nav class="space-y-0.5">
             <router-link
               to="/home"
-              class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-md mb-2"
+              class="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
               @click="close"
             >
-              <div class="flex items-center gap-2">
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                  />
-                </svg>
-                <span>홈</span>
-              </div>
+              <Home :size="18" class="text-gray-400" />
+              <span>홈</span>
             </router-link>
-          </li>
-          <li>
+
             <router-link
               to="/my-profile"
-              class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-md mb-2"
+              class="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
               @click="close"
             >
-              <div class="flex items-center gap-2">
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                <span>내 정보</span>
-              </div>
+              <UserIcon :size="18" class="text-gray-400" />
+              <span>내 정보</span>
             </router-link>
-          </li>
-          <li>
+
+            <!-- 내 여행 메뉴 숨김 (스타투어만 오픈)
             <router-link
               to="/trips"
-              class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-md mb-2"
+              class="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
               @click="close"
             >
-              <div class="flex items-center gap-2">
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span>내 여행</span>
-              </div>
+              <Globe :size="18" class="text-gray-400" />
+              <span>내 여행</span>
             </router-link>
-          </li>
-          <!-- 동적 추가 메뉴 -->
-          <li
-            v-for="action in menuActions"
-            :key="action.id"
-            style="display: none"
-          >
-            <router-link
-              :to="action.mapsTo"
-              class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-md mb-2"
-              @click="close"
-            >
-              <div class="flex items-center justify-between">
-                <span>{{ action.title }}</span>
-                <span
-                  :class="[
-                    'px-2 py-0.5 text-xs font-medium rounded ml-2',
-                    action.isComplete
-                      ? 'bg-[#17B185]/10 text-[#17B185]'
-                      : 'bg-gray-100 text-gray-600',
-                  ]"
-                >
-                  {{ action.isComplete ? '완료' : '미완료' }}
-                </span>
-              </div>
-            </router-link>
-          </li>
+            -->
 
-          <li v-if="authStore.isAdmin">
+            <!-- 동적 추가 메뉴 -->
             <router-link
-              to="/admin"
-              class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-md mb-2"
+              v-for="action in menuActions"
+              :key="action.id"
+              :to="action.mapsTo"
+              style="display: none"
+              class="flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              @click="close"
             >
-              관리자 페이지
+              <span>{{ action.title }}</span>
+              <span
+                :class="[
+                  'px-2 py-0.5 text-xs font-medium rounded',
+                  action.isComplete
+                    ? 'bg-[#17B185]/10 text-[#17B185]'
+                    : 'bg-gray-100 text-gray-600',
+                ]"
+              >
+                {{ action.isComplete ? '완료' : '미완료' }}
+              </span>
             </router-link>
-          </li>
-          <li>
-            <button
-              class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-100 rounded-md mb-2"
-              @click="handleLogout"
+
+            <router-link
+              v-if="authStore.isAdmin"
+              to="/admin"
+              class="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              @click="close"
             >
-              로그아웃
-            </button>
-          </li>
-        </ul>
+              <Settings :size="18" class="text-gray-400" />
+              <span>관리자 페이지</span>
+            </router-link>
+          </nav>
+        </div>
+
+        <!-- 로그아웃 (하단 border 분리) -->
+        <div class="border-t border-gray-200 p-3">
+          <button
+            class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            @click="handleLogout"
+          >
+            <LogOut :size="18" />
+            <span>로그아웃</span>
+          </button>
+        </div>
       </div>
     </Transition>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import { useRouter } from 'vue-router'
+import { Home, User as UserIcon, Settings, LogOut, X } from 'lucide-vue-next'
 import apiClient from '@/services/api'
 
 const props = defineProps({
@@ -166,6 +142,13 @@ const authStore = useAuthStore()
 const conventionStore = useConventionStore()
 const router = useRouter()
 const menuActions = ref([])
+
+const userName = computed(() => authStore.user?.name || '사용자')
+const userLoginId = computed(() => authStore.user?.loginId || '')
+const userInitial = computed(() => {
+  const name = authStore.user?.name || authStore.user?.loginId || '?'
+  return name.charAt(0).toUpperCase()
+})
 
 const close = () => {
   emit('close')
@@ -184,7 +167,6 @@ const loadMenuActions = async () => {
     const conventionId = conventionStore.currentConvention?.id
     if (!conventionId) return
 
-    // 메뉴 액션과 상태 정보를 병렬로 가져오기
     const [actionsResponse, statusesResponse] = await Promise.all([
       apiClient.get(`/conventions/${conventionId}/actions/menu`),
       apiClient.get(`/conventions/${conventionId}/actions/statuses`),
@@ -193,10 +175,8 @@ const loadMenuActions = async () => {
     const actions = actionsResponse.data || []
     const statuses = statusesResponse.data || []
 
-    // 상태 정보를 맵으로 변환
     const statusMap = new Map(statuses.map((s) => [s.conventionActionId, s]))
 
-    // 액션에 isComplete 정보 추가
     menuActions.value = actions.map((action) => ({
       ...action,
       isComplete: statusMap.get(action.id)?.isComplete || false,
@@ -207,7 +187,6 @@ const loadMenuActions = async () => {
   }
 }
 
-// 메뉴가 열릴 때 액션 목록 로드
 watch(
   () => props.isOpen,
   (isOpen) => {
@@ -217,7 +196,6 @@ watch(
   },
 )
 
-// 초기 로드
 onMounted(() => {
   if (props.isOpen) {
     loadMenuActions()

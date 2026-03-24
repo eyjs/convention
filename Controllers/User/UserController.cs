@@ -65,6 +65,27 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// 내 행사 종합 정보 조회
+    /// </summary>
+    [HttpGet("my-convention-info/{conventionId}")]
+    public async Task<IActionResult> GetMyConventionInfo(int conventionId)
+    {
+        try
+        {
+            var userId = User.GetUserId();
+            var result = await _userProfileService.GetMyConventionInfoAsync(userId, conventionId);
+            if (result == null)
+                return NotFound(new { message = "사용자 정보를 찾을 수 없습니다." });
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "행사 종합 정보 조회 실패");
+            return StatusCode(500, new { message = "정보를 불러오는데 실패했습니다." });
+        }
+    }
+
+    /// <summary>
     /// 참가자 상세 조회
     /// </summary>
     [HttpGet("participants/{id}")]
