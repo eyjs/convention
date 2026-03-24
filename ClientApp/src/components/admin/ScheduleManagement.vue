@@ -135,10 +135,24 @@
                   </p>
                   <p
                     v-if="item.content"
-                    class="text-sm text-gray-600 mt-1 whitespace-pre-wrap"
+                    class="text-sm text-gray-600 mt-1 line-clamp-2"
                   >
-                    {{ item.content }}
+                    {{ stripHtml(item.content) }}
                   </p>
+                  <div v-if="item.images?.length" class="flex gap-1 mt-1">
+                    <img
+                      v-for="img in item.images.slice(0, 3)"
+                      :key="img.id"
+                      :src="img.imageUrl"
+                      class="w-10 h-10 object-cover rounded"
+                    />
+                    <span
+                      v-if="item.images.length > 3"
+                      class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-600"
+                    >
+                      +{{ item.images.length - 3 }}
+                    </span>
+                  </div>
                 </div>
                 <div class="flex gap-1">
                   <button
@@ -300,12 +314,49 @@
 
             <div>
               <label class="block text-sm font-medium mb-1">상세 내용</label>
-              <textarea
+              <RichTextEditor
                 v-model="itemForm.content"
-                class="w-full px-3 py-2 border rounded-lg"
-                rows="5"
+                height="200px"
                 placeholder="일정에 대한 상세 설명을 입력하세요"
-              ></textarea>
+              />
+            </div>
+
+            <!-- 이미지 갤러리 (저장된 항목만) -->
+            <div v-if="editingItem">
+              <label class="block text-sm font-medium mb-2"
+                >이미지 갤러리</label
+              >
+              <div class="grid grid-cols-3 gap-2 mb-2">
+                <div
+                  v-for="img in itemImages"
+                  :key="img.id"
+                  class="relative group"
+                >
+                  <img
+                    :src="img.imageUrl"
+                    class="w-full h-24 object-cover rounded-lg"
+                  />
+                  <button
+                    class="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    @click="removeItemImage(img.id)"
+                  >
+                    &times;
+                  </button>
+                </div>
+              </div>
+              <label
+                class="inline-flex items-center gap-1 px-3 py-1.5 text-sm border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+              >
+                <Plus class="w-4 h-4" />
+                이미지 추가
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  class="hidden"
+                  @change="uploadItemImages($event)"
+                />
+              </label>
             </div>
           </div>
         </template>
@@ -489,6 +540,7 @@ import { ref, onMounted, computed } from 'vue'
 import { Pencil, Trash2, Copy, Plus } from 'lucide-vue-next'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
+import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import AdminButton from '@/components/admin/ui/AdminButton.vue'
 import OptionTourManagement from '@/components/admin/OptionTourManagement.vue'
@@ -514,6 +566,7 @@ const showGuestsModal = ref(false)
 const showCopyModal = ref(false)
 const editingTemplate = ref(null)
 const editingItem = ref(null)
+const itemImages = ref([])
 const currentTemplate = ref(null)
 const selectedTemplate = ref(null)
 const targetTemplate = ref(null)
@@ -543,6 +596,14 @@ const formatDate = (dateStr) => {
       day: 'numeric',
     }) + '일'
   )
+}
+
+const stripHtml = (html) => {
+  if (!html) return ''
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim()
 }
 
 const loadTemplates = async () => {
@@ -636,6 +697,7 @@ const addScheduleItem = (template) => {
 const editScheduleItem = (template, item) => {
   currentTemplate.value = template
   editingItem.value = item
+  itemImages.value = item.images || []
   itemForm.value = {
     scheduleDate: item.scheduleDate?.split('T')[0] || '',
     startTime: item.startTime,
@@ -650,6 +712,7 @@ const editScheduleItem = (template, item) => {
 const closeItemModal = () => {
   showItemModal.value = false
   editingItem.value = null
+  itemImages.value = []
   currentTemplate.value = null
 }
 
@@ -814,6 +877,44 @@ const copySelectedItems = async () => {
   } catch (error) {
     console.error('Failed to copy items:', error)
     alert('일정 복사 실패: ' + (error.response?.data?.message || error.message))
+  }
+}
+
+const uploadItemImages = async (event) => {
+  const files = Array.from(event.target.files)
+  if (!files.length || !editingItem.value) return
+
+  for (const file of files) {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const uploadRes = await apiClient.post('/file/upload/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      const imageUrl = uploadRes.data.url
+
+      const res = await apiClient.post(
+        `/admin/schedule-items/${editingItem.value.id}/images`,
+        { imageUrl },
+      )
+      itemImages.value.push(res.data)
+    } catch (error) {
+      console.error('Image upload failed:', error)
+      alert('이미지 업로드 실패')
+    }
+  }
+  event.target.value = ''
+  await loadTemplates()
+}
+
+const removeItemImage = async (imageId) => {
+  try {
+    await apiClient.delete(`/admin/schedule-images/${imageId}`)
+    itemImages.value = itemImages.value.filter((img) => img.id !== imageId)
+    await loadTemplates()
+  } catch (error) {
+    console.error('Image remove failed:', error)
+    alert('이미지 삭제 실패')
   }
 }
 

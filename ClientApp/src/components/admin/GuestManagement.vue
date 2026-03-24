@@ -51,14 +51,36 @@
       </AdminButton>
     </AdminPageHeader>
 
-    <!-- 검색 -->
-    <div class="mt-6 mb-4">
+    <!-- 검색 + 필터 -->
+    <div class="mt-6 mb-4 flex flex-wrap items-center gap-2">
       <input
         v-model="searchTerm"
         type="text"
         placeholder="이름, 전화번호, 부서, 소속으로 검색..."
-        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        class="flex-1 min-w-[200px] px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       />
+      <select
+        v-model="passportFilter"
+        class="px-3 py-1.5 border rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-primary-500"
+      >
+        <option value="">여권 전체</option>
+        <option value="noNumber">번호 미입력</option>
+        <option value="noExpiry">만료일 미입력</option>
+        <option value="expired">만료됨</option>
+        <option value="expiring">6개월 내 만료</option>
+        <option value="noImage">사본 미등록</option>
+        <option value="unverified">미검증</option>
+        <option value="complete">여권 완비</option>
+      </select>
+      <select
+        v-model="companionFilter"
+        class="px-3 py-1.5 border rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-primary-500"
+      >
+        <option value="">동반자 전체</option>
+        <option value="hasCompanion">동반자 있음</option>
+        <option value="isCompanion">동반자로 등록됨</option>
+        <option value="noCompanion">동반자 없음</option>
+      </select>
     </div>
 
     <div v-if="loading" class="text-center py-8">로딩 중...</div>
@@ -72,17 +94,20 @@
       >
     </AdminEmptyState>
     <AdminEmptyState
-      v-else-if="filteredGuests.length === 0 && searchTerm"
+      v-else-if="
+        filteredGuests.length === 0 &&
+        (searchTerm || passportFilter || companionFilter)
+      "
       :icon="Search"
-      :title="`&quot;${searchTerm}&quot; 검색 결과가 없습니다`"
-      :description="`전체 ${guests.length}명`"
+      title="검색 결과가 없습니다"
+      :description="`전체 ${guests.length}명 중 조건에 맞는 참석자가 없습니다`"
     />
     <div v-else class="bg-white rounded-lg shadow overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left">
+              <th class="px-3 py-2 text-left w-8">
                 <input
                   type="checkbox"
                   :checked="
@@ -93,38 +118,36 @@
                   @change="toggleSelectAll"
                 />
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
                 이름
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >
-                전화번호
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                연락처
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
                 부서
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-              >
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                그룹
+              </th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                동반자
+              </th>
+              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
                 일정
               </th>
               <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                class="px-3 py-2 text-center text-xs font-medium text-gray-500"
               >
                 속성
               </th>
               <th
-                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                class="px-3 py-2 text-center text-xs font-medium text-gray-500"
               >
                 여권
               </th>
               <th
-                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
+                class="px-3 py-2 text-right text-xs font-medium text-gray-500"
               >
                 작업
               </th>
@@ -134,9 +157,10 @@
             <tr
               v-for="guest in filteredGuests"
               :key="guest.id"
-              class="hover:bg-gray-50"
+              class="hover:bg-gray-50 cursor-pointer"
+              @click="openDetailModal(guest.id)"
             >
-              <td class="px-6 py-4 whitespace-nowrap" @click.stop>
+              <td class="px-3 py-1.5 whitespace-nowrap" @click.stop>
                 <input
                   v-model="selectedGuests"
                   type="checkbox"
@@ -145,116 +169,110 @@
                 />
               </td>
               <td
-                class="px-6 py-4 whitespace-nowrap cursor-pointer"
-                @click="openDetailModal(guest.id)"
+                class="px-3 py-1.5 whitespace-nowrap font-medium text-gray-900"
               >
-                <div class="font-medium text-gray-900">
-                  {{ guest.guestName }}
-                </div>
+                {{ guest.guestName }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td class="px-3 py-1.5 whitespace-nowrap text-gray-500">
                 {{ guest.telephone }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td class="px-3 py-1.5 whitespace-nowrap text-gray-500">
                 {{ guest.corpPart || '-' }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <td class="px-3 py-1.5 whitespace-nowrap text-gray-500">
+                {{ guest.groupName || '-' }}
+              </td>
+              <td class="px-3 py-1.5 whitespace-nowrap">
+                <span
+                  v-if="!guest.companions?.length && !getCompanionOf(guest.id)"
+                  class="text-gray-400"
+                  >-</span
+                >
+                <div v-else class="flex flex-wrap gap-0.5">
+                  <span
+                    v-for="c in guest.companions"
+                    :key="c.id"
+                    class="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-xs leading-tight"
+                    :title="c.relationType"
+                  >
+                    {{ c.name }} ({{ c.relationType }})
+                  </span>
+                  <span
+                    v-if="getCompanionOf(guest.id)"
+                    class="px-1.5 py-0.5 bg-orange-50 text-orange-700 rounded text-xs leading-tight"
+                    :title="`${getCompanionOf(guest.id).userName}의 동반자`"
+                  >
+                    ← {{ getCompanionOf(guest.id).userName }}
+                  </span>
+                </div>
+              </td>
+              <td class="px-3 py-1.5 whitespace-nowrap">
                 <span
                   v-if="guest.scheduleTemplates.length === 0"
                   class="text-gray-400"
                   >미배정</span
                 >
-                <div v-else class="flex flex-wrap gap-1">
+                <div v-else class="flex flex-wrap gap-0.5">
                   <span
                     v-for="st in guest.scheduleTemplates"
                     :key="st.scheduleTemplateId"
-                    class="px-2 py-0.5 bg-primary-100 text-primary-800 rounded text-xs"
+                    class="px-1.5 py-0.5 bg-primary-50 text-primary-700 rounded text-xs leading-tight"
                   >
                     {{ st.courseName }}
                   </span>
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <span v-if="guest.attributes.length === 0" class="text-gray-400"
-                  >-</span
-                >
-                <span v-else class="text-gray-600"
-                  >{{ guest.attributes.length }}개</span
-                >
+              <td
+                class="px-3 py-1.5 whitespace-nowrap text-center text-gray-500"
+              >
+                {{ guest.attributes.length || '-' }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm" @click.stop>
-                <div class="flex flex-col gap-1">
-                  <!-- 여권 항목별 상태 -->
-                  <div class="flex items-center gap-2 text-xs">
-                    <span
-                      class="inline-block w-2 h-2 rounded-full flex-shrink-0"
-                      :class="
-                        guest.passport?.hasNumber
-                          ? 'bg-green-500'
-                          : 'bg-red-400'
-                      "
-                    ></span>
-                    <span
-                      :class="
-                        guest.passport?.hasNumber
-                          ? 'text-gray-700'
-                          : 'text-red-500'
-                      "
-                    >
-                      {{ guest.passport?.hasNumber ? '번호' : '번호 미입력' }}
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs">
-                    <span
-                      class="inline-block w-2 h-2 rounded-full flex-shrink-0"
-                      :class="getExpiryDotClass(guest.passport)"
-                    ></span>
-                    <span :class="getExpiryTextClass(guest.passport)">
-                      {{ getExpiryLabel(guest.passport) }}
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs">
-                    <span
-                      class="inline-block w-2 h-2 rounded-full flex-shrink-0"
-                      :class="
-                        guest.passport?.hasImage ? 'bg-green-500' : 'bg-red-400'
-                      "
-                    ></span>
-                    <span
-                      :class="
-                        guest.passport?.hasImage
-                          ? 'text-gray-700'
-                          : 'text-red-500'
-                      "
-                    >
-                      {{ guest.passport?.hasImage ? '사본' : '사본 미등록' }}
-                    </span>
-                  </div>
-                  <!-- 검증 토글 -->
+              <td class="px-3 py-1.5 whitespace-nowrap text-center" @click.stop>
+                <div
+                  class="inline-flex items-center gap-1"
+                  :title="getPassportTooltip(guest.passport)"
+                >
+                  <span
+                    class="w-2 h-2 rounded-full"
+                    :class="
+                      guest.passport?.hasNumber ? 'bg-green-500' : 'bg-red-400'
+                    "
+                    title="여권번호"
+                  />
+                  <span
+                    class="w-2 h-2 rounded-full"
+                    :class="getExpiryDotClass(guest.passport)"
+                    title="만료일"
+                  />
+                  <span
+                    class="w-2 h-2 rounded-full"
+                    :class="
+                      guest.passport?.hasImage ? 'bg-green-500' : 'bg-red-400'
+                    "
+                    title="사본"
+                  />
                   <!-- prettier-ignore -->
                   <button
-                    class="mt-1 px-2 py-0.5 rounded text-xs font-medium transition-colors"
+                    class="ml-1 px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
                     :class="guest.passport?.passportVerified ? 'bg-primary-100 text-primary-700 hover:bg-primary-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
-                    :title="guest.passport?.passportVerified ? `검증완료 (${formatDate(guest.passport.passportVerifiedAt)})` : '클릭하여 검증 완료 처리'"
                     @click="togglePassportVerification(guest)"
-                  >{{ guest.passport?.passportVerified ? '검증완료' : '미검증' }}</button>
+                  >{{ guest.passport?.passportVerified ? '검증' : '미검증' }}</button>
                 </div>
               </td>
-              <td
-                class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-                @click.stop
-              >
+              <td class="px-3 py-1.5 whitespace-nowrap text-right" @click.stop>
                 <button
-                  class="text-primary-600 hover:text-primary-900 mr-3"
+                  class="text-gray-400 hover:text-primary-600 p-1"
+                  title="수정"
                   @click="editGuest(guest)"
                 >
-                  수정
+                  <Pencil :size="14" />
                 </button>
                 <button
-                  class="text-red-600 hover:text-red-900"
+                  class="text-gray-400 hover:text-red-600 p-1"
+                  title="삭제"
                   @click="deleteGuest(guest.id)"
                 >
-                  삭제
+                  <Trash2 :size="14" />
                 </button>
               </td>
             </tr>
@@ -322,6 +340,7 @@ import {
   Tag,
   Users,
   Trash2,
+  Pencil,
   RefreshCw,
   UserX,
   Search,
@@ -347,17 +366,86 @@ const attributeTemplates = ref([])
 const loading = ref(true)
 const selectedGuests = ref([])
 const searchTerm = ref('')
+const passportFilter = ref('')
+const companionFilter = ref('')
+
+// 동반자 역방향 조회: 이 사용자가 누구의 동반자인지
+const companionOfMap = computed(() => {
+  const map = {}
+  for (const g of guests.value) {
+    if (g.companions) {
+      for (const c of g.companions) {
+        map[c.companionUserId] = { userName: g.guestName, userId: g.id }
+      }
+    }
+  }
+  return map
+})
+
+const getCompanionOf = (guestId) => companionOfMap.value[guestId] || null
 
 const filteredGuests = computed(() => {
-  if (!searchTerm.value) return guests.value
-  const term = searchTerm.value.toLowerCase()
-  return guests.value.filter(
-    (g) =>
-      (g.guestName && g.guestName.toLowerCase().includes(term)) ||
-      (g.telephone && g.telephone.includes(term)) ||
-      (g.corpPart && g.corpPart.toLowerCase().includes(term)) ||
-      (g.affiliation && g.affiliation.toLowerCase().includes(term)),
-  )
+  let result = guests.value
+
+  // 텍스트 검색
+  if (searchTerm.value) {
+    const term = searchTerm.value.toLowerCase()
+    result = result.filter(
+      (g) =>
+        (g.guestName && g.guestName.toLowerCase().includes(term)) ||
+        (g.telephone && g.telephone.includes(term)) ||
+        (g.corpPart && g.corpPart.toLowerCase().includes(term)) ||
+        (g.affiliation && g.affiliation.toLowerCase().includes(term)),
+    )
+  }
+
+  // 여권 필터
+  if (passportFilter.value) {
+    result = result.filter((g) => {
+      const p = g.passport
+      switch (passportFilter.value) {
+        case 'noNumber':
+          return !p?.hasNumber
+        case 'noExpiry':
+          return !p?.hasExpiry
+        case 'expired':
+          return getExpiryStatus(p) === 'expired'
+        case 'expiring':
+          return getExpiryStatus(p) === 'expiring'
+        case 'noImage':
+          return !p?.hasImage
+        case 'unverified':
+          return !p?.passportVerified
+        case 'complete':
+          return (
+            p?.hasNumber && p?.hasExpiry && p?.hasImage && p?.passportVerified
+          )
+        default:
+          return true
+      }
+    })
+  }
+
+  // 동반자 필터
+  if (companionFilter.value) {
+    result = result.filter((g) => {
+      switch (companionFilter.value) {
+        case 'hasCompanion':
+          return g.companions?.length > 0
+        case 'isCompanion':
+          return !!getCompanionOf(g.id)
+        case 'noCompanion':
+          return (
+            (!g.companions || g.companions.length === 0) &&
+            !getCompanionOf(g.id)
+          )
+        default:
+          return true
+      }
+    })
+  }
+
+  return result
 })
 
 // 모달 가시성
@@ -451,6 +539,13 @@ const getExpiryLabel = (passport) => {
   if (status === 'expired') return `만료됨 (${date})`
   if (status === 'expiring') return `곧 만료 (${date})`
   return `유효 (${date})`
+}
+
+const getPassportTooltip = (passport) => {
+  const number = passport?.hasNumber ? '번호: 입력됨' : '번호: 미입력'
+  const expiry = getExpiryLabel(passport)
+  const image = passport?.hasImage ? '사본: 등록됨' : '사본: 미등록'
+  return `${number}\n만료일: ${expiry}\n${image}`
 }
 
 const formatDate = (dateStr) => {

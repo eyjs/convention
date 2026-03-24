@@ -36,8 +36,22 @@
               v-if="tour.content"
               class="text-sm text-gray-500 mt-1 line-clamp-2"
             >
-              {{ tour.content }}
+              {{ stripHtml(tour.content) }}
             </p>
+            <div v-if="tour.images?.length" class="flex gap-1 mt-1">
+              <img
+                v-for="img in tour.images.slice(0, 3)"
+                :key="img.id"
+                :src="img.imageUrl"
+                class="w-10 h-10 object-cover rounded"
+              />
+              <span
+                v-if="tour.images.length > 3"
+                class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-600"
+              >
+                +{{ tour.images.length - 3 }}
+              </span>
+            </div>
             <p class="text-xs text-gray-500 mt-1">
               참석자: {{ tour.participantCount || 0 }}명
             </p>
@@ -76,7 +90,7 @@
     </div>
 
     <!-- 생성/수정 모달 -->
-    <BaseModal :is-open="showFormModal" max-width="md" @close="closeFormModal">
+    <BaseModal :is-open="showFormModal" max-width="lg" @close="closeFormModal">
       <template #header>
         <h2 class="text-xl font-semibold">
           {{ editingTour ? '옵션투어 수정' : '옵션투어 추가' }}
@@ -134,12 +148,47 @@
 
           <div>
             <label class="block text-sm font-medium mb-1">상세 내용</label>
-            <textarea
+            <RichTextEditor
               v-model="form.content"
-              class="w-full px-3 py-2 border rounded-lg"
-              rows="4"
+              height="200px"
               placeholder="옵션투어에 대한 상세 설명"
-            ></textarea>
+            />
+          </div>
+
+          <!-- 이미지 갤러리 (저장된 항목만) -->
+          <div v-if="editingTour">
+            <label class="block text-sm font-medium mb-2">이미지 갤러리</label>
+            <div class="grid grid-cols-3 gap-2 mb-2">
+              <div
+                v-for="img in tourImages"
+                :key="img.id"
+                class="relative group"
+              >
+                <img
+                  :src="img.imageUrl"
+                  class="w-full h-24 object-cover rounded-lg"
+                />
+                <button
+                  class="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  @click="removeTourImage(img.id)"
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+            <label
+              class="inline-flex items-center gap-1 px-3 py-1.5 text-sm border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+            >
+              <Plus class="w-4 h-4" />
+              이미지 추가
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                class="hidden"
+                @change="uploadTourImages($event)"
+              />
+            </label>
           </div>
         </div>
       </template>
@@ -298,6 +347,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Plus } from 'lucide-vue-next'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
+import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import AdminButton from '@/components/admin/ui/AdminButton.vue'
 
@@ -308,6 +358,7 @@ const props = defineProps({
 const optionTours = ref([])
 const showFormModal = ref(false)
 const editingTour = ref(null)
+const tourImages = ref([])
 const showParticipantsModal = ref(false)
 const showAddParticipantModal = ref(false)
 const selectedTour = ref(null)
@@ -352,6 +403,14 @@ const filteredGuests = computed(() => {
 
 // === 옵션투어 CRUD ===
 
+const stripHtml = (html) => {
+  if (!html) return ''
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim()
+}
+
 const loadOptionTours = async () => {
   try {
     const response = await apiClient.get(
@@ -378,6 +437,7 @@ const openCreateModal = () => {
 
 const openEditModal = (tour) => {
   editingTour.value = tour
+  tourImages.value = tour.images || []
   form.value = {
     name: tour.name,
     date: tour.date,
@@ -392,6 +452,7 @@ const openEditModal = (tour) => {
 const closeFormModal = () => {
   showFormModal.value = false
   editingTour.value = null
+  tourImages.value = []
 }
 
 const saveTour = async () => {
@@ -523,6 +584,44 @@ const addSelectedParticipants = async () => {
     alert(
       '참석자 추가 실패: ' + (error.response?.data?.message || error.message),
     )
+  }
+}
+
+const uploadTourImages = async (event) => {
+  const files = Array.from(event.target.files)
+  if (!files.length || !editingTour.value) return
+
+  for (const file of files) {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const uploadRes = await apiClient.post('/file/upload/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      const imageUrl = uploadRes.data.url
+
+      const res = await apiClient.post(
+        `/admin/option-tours/${editingTour.value.id}/images`,
+        { imageUrl },
+      )
+      tourImages.value.push(res.data)
+    } catch (error) {
+      console.error('Image upload failed:', error)
+      alert('이미지 업로드 실패')
+    }
+  }
+  event.target.value = ''
+  await loadOptionTours()
+}
+
+const removeTourImage = async (imageId) => {
+  try {
+    await apiClient.delete(`/admin/schedule-images/${imageId}`)
+    tourImages.value = tourImages.value.filter((img) => img.id !== imageId)
+    await loadOptionTours()
+  } catch (error) {
+    console.error('Image remove failed:', error)
+    alert('이미지 삭제 실패')
   }
 }
 
