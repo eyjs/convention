@@ -23,4 +23,23 @@ namespace LocalRAG.DTOs.SurveyModels
         public string Answer { get; set; } = string.Empty;
         public int Count { get; set; }
     }
+
+    public class IndividualResponseDto
+    {
+        public int ResponseId { get; set; }
+        public int UserId { get; set; }
+        public string UserName { get; set; } = string.Empty;
+        public string? GroupName { get; set; }
+        public DateTime SubmittedAt { get; set; }
+        public List<IndividualAnswerDto> Answers { get; set; } = new();
+    }
+
+    public class IndividualAnswerDto
+    {
+        public int QuestionId { get; set; }
+        public string QuestionText { get; set; } = string.Empty;
+        public string QuestionType { get; set; } = string.Empty;
+        public string? AnswerText { get; set; }
+        public List<string> SelectedOptions { get; set; } = new();
+    }
 }

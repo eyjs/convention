@@ -13,5 +13,8 @@ namespace LocalRAG.Interfaces
         Task SubmitSurveyAsync(int surveyId, SurveySubmissionDto submissionDto, int userId);
         Task<SurveyStatsDto> GetSurveyStatsAsync(int id);
         Task<SurveyResponseDto> GetUserSurveyResponseAsync(int surveyId, int userId);
+        Task<(bool Success, string Message)> DeleteSurveyAsync(int id);
+        Task<List<IndividualResponseDto>> GetSurveyResponsesAsync(int surveyId);
+        Task<byte[]> ExportSurveyResponsesAsync(int surveyId);
     }
 }

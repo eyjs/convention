@@ -9,6 +9,8 @@ namespace LocalRAG.DTOs.SurveyModels
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public bool IsActive { get; set; } = true;
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
         public int? ConventionId { get; set; }
         public List<QuestionCreateDto> Questions { get; set; } = new List<QuestionCreateDto>();
     }

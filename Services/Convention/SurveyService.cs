@@ -8,6 +8,7 @@ using LocalRAG.Interfaces;
 using LocalRAG.Entities.Action;
 using LocalRAG.Repositories;
 using System.Text.Json;
+using OfficeOpenXml;
 
 namespace LocalRAG.Services.Convention
 {
@@ -31,6 +32,9 @@ namespace LocalRAG.Services.Convention
                     Title = s.Title,
                     Description = s.Description,
                     IsActive = s.IsActive,
+                    StartDate = s.StartDate,
+                    EndDate = s.EndDate,
+                    ResponseCount = s.Responses.Count,
                     CreatedAt = s.CreatedAt,
                     ConventionId = s.ConventionId
                 })
@@ -44,6 +48,7 @@ namespace LocalRAG.Services.Convention
             var survey = await _unitOfWork.Surveys.Query
                 .Include(s => s.Questions)
                 .ThenInclude(q => q.Options)
+                .Include(s => s.Responses)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -58,6 +63,9 @@ namespace LocalRAG.Services.Convention
                 Title = survey.Title,
                 Description = survey.Description,
                 IsActive = survey.IsActive,
+                StartDate = survey.StartDate,
+                EndDate = survey.EndDate,
+                ResponseCount = survey.Responses?.Count ?? 0,
                 CreatedAt = survey.CreatedAt,
                 ConventionId = survey.ConventionId,
                 Questions = survey.Questions.OrderBy(q => q.OrderIndex).Select(q => new QuestionDto
@@ -84,6 +92,8 @@ namespace LocalRAG.Services.Convention
                 Title = createDto.Title,
                 Description = createDto.Description,
                 IsActive = createDto.IsActive,
+                StartDate = createDto.StartDate,
+                EndDate = createDto.EndDate,
                 ConventionId = createDto.ConventionId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -149,6 +159,8 @@ namespace LocalRAG.Services.Convention
             survey.Title = updateDto.Title;
             survey.Description = updateDto.Description;
             survey.IsActive = updateDto.IsActive;
+            survey.StartDate = updateDto.StartDate;
+            survey.EndDate = updateDto.EndDate;
             survey.ConventionId = updateDto.ConventionId;
 
             // --- 질문 업데이트 ---
@@ -226,6 +238,17 @@ namespace LocalRAG.Services.Convention
             if (survey == null)
             {
                 throw new KeyNotFoundException("Survey not found.");
+            }
+
+            // 날짜 범위 검증
+            var now = DateTime.UtcNow;
+            if (survey.StartDate.HasValue && now < survey.StartDate.Value)
+            {
+                throw new InvalidOperationException("설문 응답 기간이 아직 시작되지 않았습니다.");
+            }
+            if (survey.EndDate.HasValue && now > survey.EndDate.Value)
+            {
+                throw new InvalidOperationException("설문 응답 기간이 종료되었습니다.");
             }
 
             var user = await _unitOfWork.Users.Query.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
@@ -335,6 +358,200 @@ namespace LocalRAG.Services.Convention
                     AnswerText = d.AnswerText
                 }).ToList()
             };
+        }
+
+        public async Task<(bool Success, string Message)> DeleteSurveyAsync(int id)
+        {
+            var survey = await _unitOfWork.Surveys.GetByIdAsync(id);
+            if (survey == null)
+            {
+                return (false, "설문을 찾을 수 없습니다.");
+            }
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // 연관 ConventionAction + UserActionStatus + ActionSubmission 삭제
+                var relatedActions = await _unitOfWork.ConventionActions.Query
+                    .Where(a => a.BehaviorType == BehaviorType.ModuleLink && a.TargetModuleId == id)
+                    .ToListAsync();
+
+                foreach (var action in relatedActions)
+                {
+                    var statuses = await _unitOfWork.UserActionStatuses.Query
+                        .Where(s => s.ConventionActionId == action.Id)
+                        .ToListAsync();
+                    _unitOfWork.UserActionStatuses.RemoveRange(statuses);
+
+                    var submissions = await _unitOfWork.ActionSubmissions.Query
+                        .Where(s => s.ConventionActionId == action.Id)
+                        .ToListAsync();
+                    _unitOfWork.ActionSubmissions.RemoveRange(submissions);
+
+                    _unitOfWork.ConventionActions.Remove(action);
+                }
+
+                // 설문 응답 상세 + 응답 삭제
+                var responses = await _unitOfWork.SurveyResponses.Query
+                    .Include(r => r.Details)
+                    .Where(r => r.SurveyId == id)
+                    .ToListAsync();
+
+                foreach (var response in responses)
+                {
+                    _unitOfWork.SurveyResponseDetails.RemoveRange(response.Details);
+                    _unitOfWork.SurveyResponses.Remove(response);
+                }
+
+                // 질문 옵션 + 질문 삭제
+                var questions = await _unitOfWork.SurveyQuestions.Query
+                    .Include(q => q.Options)
+                    .Where(q => q.SurveyId == id)
+                    .ToListAsync();
+
+                foreach (var question in questions)
+                {
+                    _unitOfWork.QuestionOptions.RemoveRange(question.Options);
+                    _unitOfWork.SurveyQuestions.Remove(question);
+                }
+
+                _unitOfWork.Surveys.Remove(survey);
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                return (true, "설문이 삭제되었습니다.");
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
+        }
+
+        public async Task<List<IndividualResponseDto>> GetSurveyResponsesAsync(int surveyId)
+        {
+            var survey = await _unitOfWork.Surveys.Query
+                .Include(s => s.Questions)
+                .ThenInclude(q => q.Options)
+                .Include(s => s.Responses)
+                .ThenInclude(r => r.Details)
+                .ThenInclude(d => d.SelectedOption)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == surveyId);
+
+            if (survey == null)
+            {
+                return new List<IndividualResponseDto>();
+            }
+
+            // 응답한 유저 ID 목록
+            var userIds = survey.Responses.Select(r => r.UserId).Distinct().ToList();
+            var users = await _unitOfWork.Users.Query
+                .AsNoTracking()
+                .Where(u => userIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.Name })
+                .ToListAsync();
+
+            // UserConvention에서 GroupName 가져오기
+            var groupMap = new Dictionary<int, string?>();
+            if (survey.ConventionId.HasValue)
+            {
+                var userConventions = await _unitOfWork.UserConventions.Query
+                    .AsNoTracking()
+                    .Where(uc => uc.ConventionId == survey.ConventionId.Value && userIds.Contains(uc.UserId))
+                    .Select(uc => new { uc.UserId, uc.GroupName })
+                    .ToListAsync();
+                groupMap = userConventions.ToDictionary(uc => uc.UserId, uc => (string?)uc.GroupName);
+            }
+
+            var userMap = users.ToDictionary(u => u.Id);
+
+            var questionsOrdered = survey.Questions.OrderBy(q => q.OrderIndex).ToList();
+
+            return survey.Responses.OrderByDescending(r => r.SubmittedAt).Select(r => new IndividualResponseDto
+            {
+                ResponseId = r.Id,
+                UserId = r.UserId,
+                UserName = userMap.ContainsKey(r.UserId) ? userMap[r.UserId].Name : "알 수 없음",
+                GroupName = groupMap.ContainsKey(r.UserId) ? groupMap[r.UserId] : null,
+                SubmittedAt = r.SubmittedAt,
+                Answers = questionsOrdered.Select(q =>
+                {
+                    var details = r.Details.Where(d => d.QuestionId == q.Id).ToList();
+                    return new IndividualAnswerDto
+                    {
+                        QuestionId = q.Id,
+                        QuestionText = q.QuestionText,
+                        QuestionType = q.Type.ToString(),
+                        AnswerText = details.FirstOrDefault(d => !string.IsNullOrEmpty(d.AnswerText))?.AnswerText,
+                        SelectedOptions = details
+                            .Where(d => d.SelectedOption != null)
+                            .Select(d => d.SelectedOption!.OptionText)
+                            .ToList()
+                    };
+                }).ToList()
+            }).ToList();
+        }
+
+        public async Task<byte[]> ExportSurveyResponsesAsync(int surveyId)
+        {
+            var survey = await _unitOfWork.Surveys.Query
+                .Include(s => s.Questions)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == surveyId);
+
+            if (survey == null)
+            {
+                return Array.Empty<byte>();
+            }
+
+            var responses = await GetSurveyResponsesAsync(surveyId);
+            var questionsOrdered = survey.Questions.OrderBy(q => q.OrderIndex).ToList();
+
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using var package = new ExcelPackage();
+            var worksheet = package.Workbook.Worksheets.Add("설문 응답");
+
+            // 헤더
+            worksheet.Cells[1, 1].Value = "이름";
+            worksheet.Cells[1, 2].Value = "그룹";
+            worksheet.Cells[1, 3].Value = "제출일";
+            for (int i = 0; i < questionsOrdered.Count; i++)
+            {
+                worksheet.Cells[1, 4 + i].Value = questionsOrdered[i].QuestionText;
+            }
+
+            // 데이터
+            for (int row = 0; row < responses.Count; row++)
+            {
+                var resp = responses[row];
+                worksheet.Cells[row + 2, 1].Value = resp.UserName;
+                worksheet.Cells[row + 2, 2].Value = resp.GroupName ?? "";
+                worksheet.Cells[row + 2, 3].Value = resp.SubmittedAt.ToString("yyyy-MM-dd HH:mm");
+
+                for (int col = 0; col < questionsOrdered.Count; col++)
+                {
+                    var answer = resp.Answers.FirstOrDefault(a => a.QuestionId == questionsOrdered[col].Id);
+                    if (answer == null) continue;
+
+                    if (answer.SelectedOptions.Any())
+                    {
+                        worksheet.Cells[row + 2, 4 + col].Value = string.Join(", ", answer.SelectedOptions);
+                    }
+                    else if (!string.IsNullOrEmpty(answer.AnswerText))
+                    {
+                        worksheet.Cells[row + 2, 4 + col].Value = answer.AnswerText;
+                    }
+                }
+            }
+
+            // 헤더 스타일
+            using var headerRange = worksheet.Cells[1, 1, 1, 3 + questionsOrdered.Count];
+            headerRange.Style.Font.Bold = true;
+            worksheet.Cells.AutoFitColumns();
+
+            return package.GetAsByteArray();
         }
 
         private static void AddAnswerDetails(SurveyResponse response, SurveySubmissionDto submissionDto)

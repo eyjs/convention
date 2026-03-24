@@ -40,9 +40,26 @@
     </MainHeader>
 
     <!-- 날짜 선택 스크롤 -->
-    <div v-if="!showCalendarView" class="bg-white border-b">
-      <div class="overflow-x-auto scrollbar-hide">
+    <div v-if="!showCalendarView" class="bg-white border-b relative">
+      <div
+        ref="dateScrollContainer"
+        class="overflow-x-auto scrollbar-hide"
+        @scroll="handleDateScroll"
+      >
         <div class="flex px-4 py-3 space-x-2 min-w-max">
+          <!-- 전체 탭 -->
+          <button
+            :class="[
+              'flex-shrink-0 px-3 py-2 rounded-xl text-center transition-all',
+              selectedDate === ''
+                ? 'text-white shadow-lg scale-105'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+            ]"
+            :style="selectedDate === '' ? { backgroundColor: brandColor } : {}"
+            @click="selectedDate = ''"
+          >
+            <div class="text-sm font-bold leading-[2.125rem]">전체</div>
+          </button>
           <button
             v-for="date in dates"
             :key="date.date"
@@ -67,6 +84,54 @@
             </div>
           </button>
         </div>
+      </div>
+      <!-- 왼쪽 스크롤 표시 -->
+      <div
+        v-if="showLeftScroll"
+        class="absolute left-0 top-0 bottom-0 flex items-center bg-gradient-to-r from-white to-transparent pr-4 pointer-events-none"
+      >
+        <button
+          class="p-1 bg-white rounded-full shadow-md pointer-events-auto hover:bg-gray-50 transition-colors"
+          @click="scrollDateLeft"
+        >
+          <svg
+            class="w-4 h-4 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+      </div>
+      <!-- 오른쪽 스크롤 표시 -->
+      <div
+        v-if="showRightScroll"
+        class="absolute right-0 top-0 bottom-0 flex items-center bg-gradient-to-l from-white to-transparent pl-4 pointer-events-none"
+      >
+        <button
+          class="p-1 bg-white rounded-full shadow-md pointer-events-auto hover:bg-gray-50 transition-colors"
+          @click="scrollDateRight"
+        >
+          <svg
+            class="w-4 h-4 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -117,103 +182,121 @@
           >
         </div>
 
-        <!-- 일정 카드 -->
-        <div
-          v-for="schedule in dateGroup.schedules"
-          :key="schedule.id"
-          :ref="
-            (el) => {
-              if (currentSchedule?.id === schedule.id) currentScheduleRef = el
-            }
-          "
-          :class="[
-            'rounded-xl shadow-sm hover:shadow-md transition-all p-4 cursor-pointer border-l-4',
-            currentSchedule?.id === schedule.id ? 'ring-2' : 'bg-white',
-          ]"
-          :style="
-            currentSchedule?.id === schedule.id
-              ? {
-                  backgroundColor: brandColor + '10',
-                  borderLeftColor: brandColor,
-                  '--tw-ring-color': brandColor + '50',
-                }
-              : {
-                  borderLeftColor: schedule.isOptionTour
-                    ? brandColor
-                    : '#e5e7eb',
-                }
-          "
-          @click="openScheduleDetail(schedule)"
-        >
-          <!-- 1행: 시간, 제목, 태그 -->
-          <div class="flex items-center justify-between gap-2 mb-2">
-            <div class="flex items-center gap-2 min-w-0 flex-1">
-              <div
-                class="px-2 py-1 rounded-lg text-center flex-shrink-0"
-                :style="
-                  currentSchedule?.id === schedule.id
-                    ? {
-                        backgroundColor: brandColor,
-                        color: '#ffffff',
-                      }
-                    : {
-                        backgroundColor: brandColor + '20',
-                        color: brandColor,
-                      }
-                "
-              >
-                <div class="text-xs font-bold">{{ schedule.startTime }}</div>
-                <div v-if="schedule.endTime" class="text-xs opacity-70">
-                  {{ schedule.endTime }}
-                </div>
-              </div>
-              <h3 class="font-bold text-gray-900 text-base truncate">
-                {{ schedule.title }}
-              </h3>
-            </div>
-            <span
-              v-if="schedule.category"
+        <!-- 타임라인 일정 -->
+        <div class="relative">
+          <!-- 세로 연결선: bullet 중심 (5px) -->
+          <div
+            class="absolute top-0 bottom-0 w-px bg-gray-200"
+            style="left: 5px"
+          ></div>
+
+          <div
+            v-for="(schedule, idx) in dateGroup.schedules"
+            :key="schedule.id"
+            :ref="
+              (el) => {
+                if (currentSchedule?.id === schedule.id) currentScheduleRef = el
+              }
+            "
+            class="flex items-center gap-3 cursor-pointer"
+            :class="idx < dateGroup.schedules.length - 1 ? 'mb-3' : ''"
+            @click="openScheduleDetail(schedule)"
+          >
+            <!-- bullet -->
+            <div
+              class="w-2.5 h-2.5 rounded-full border-2 flex-shrink-0 z-10"
+              :style="{
+                borderColor: brandColor,
+                backgroundColor:
+                  currentSchedule?.id === schedule.id ? brandColor : '#fff',
+              }"
+            ></div>
+
+            <!-- 카드 -->
+            <div
+              class="flex-1 min-w-0"
               :class="[
-                'px-2 py-1 rounded text-xs font-medium flex-shrink-0',
-                schedule.isOptionTour
-                  ? 'text-white'
-                  : 'bg-blue-100 text-blue-700',
+                'rounded-xl transition-all overflow-hidden',
+                currentSchedule?.id === schedule.id
+                  ? 'shadow-md ring-1'
+                  : 'bg-white shadow-sm hover:shadow-md',
               ]"
               :style="
-                schedule.isOptionTour ? { backgroundColor: brandColor } : {}
+                currentSchedule?.id === schedule.id
+                  ? {
+                      backgroundColor: brandColor + '08',
+                      '--tw-ring-color': brandColor + '30',
+                    }
+                  : {}
               "
             >
-              {{ schedule.category }}
-            </span>
-          </div>
-
-          <!-- 2행: 내용 -->
-          <p
-            v-if="schedule.description"
-            class="text-sm text-gray-600 line-clamp-2 leading-relaxed"
-          >
-            {{ schedule.description }}
-          </p>
-
-          <!-- 장소 (선택적) -->
-          <div
-            v-if="schedule.location"
-            class="flex items-center space-x-1 text-xs text-gray-500 mt-1"
-          >
-            <svg
-              class="w-3 h-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            <span>{{ schedule.location }}</span>
+              <div class="p-3.5">
+                <!-- 시간 (카드 최상단) -->
+                <div class="flex items-center gap-1 mb-1.5">
+                  <span
+                    class="text-xs font-bold"
+                    :style="{ color: brandColor }"
+                  >
+                    {{ schedule.startTime }}
+                  </span>
+                  <span v-if="schedule.endTime" class="text-xs text-gray-400">
+                    — {{ schedule.endTime }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <h3 class="font-bold text-gray-900 text-sm truncate flex-1">
+                    {{ schedule.title }}
+                  </h3>
+                  <span
+                    v-if="schedule.isOptionTour"
+                    class="px-2 py-0.5 rounded-md text-xs font-medium text-white flex-shrink-0"
+                    :style="{ backgroundColor: brandColor }"
+                  >
+                    옵션투어
+                  </span>
+                </div>
+                <p
+                  v-if="schedule.description"
+                  class="text-xs text-gray-500 line-clamp-2 leading-relaxed whitespace-pre-line"
+                >
+                  {{ stripHtml(schedule.description) }}
+                </p>
+                <div
+                  v-if="schedule.location"
+                  class="flex items-center gap-1 text-xs text-gray-400 mt-1.5"
+                >
+                  <svg
+                    class="w-3 h-3 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  <span>{{ schedule.location }}</span>
+                </div>
+              </div>
+              <!-- 이미지 갤러리 (카드 하단, 최대 3장) -->
+              <!-- 이미지 갤러리 (카드 하단, 최대 3장) -->
+              <div
+                v-if="schedule.images?.length"
+                class="px-3.5 pb-3 pt-2.5 mt-1 border-t border-gray-100 grid grid-cols-3 gap-1.5"
+              >
+                <!-- prettier-ignore -->
+                <img
+                  v-for="img in schedule.images.slice(0, 3)"
+                  :key="img.id"
+                  :src="img.imageUrl"
+                  class="w-full h-16 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                  @click.stop="openFullImage(img.imageUrl)"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -362,6 +445,25 @@
       </template>
     </SlideUpModal>
 
+    <!-- 전체 이미지 보기 -->
+    <div
+      v-if="fullImageUrl"
+      class="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center"
+      @click="fullImageUrl = null"
+    >
+      <img
+        :src="fullImageUrl"
+        class="max-w-full max-h-full object-contain"
+        @click.stop
+      />
+      <button
+        class="absolute top-4 right-4 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center text-xl hover:bg-white/30"
+        @click="fullImageUrl = null"
+      >
+        &times;
+      </button>
+    </div>
+
     <!-- 일정 상세 모달 -->
     <SlideUpModal :is-open="!!selectedSchedule" @close="closeScheduleDetail">
       <template #header-title>
@@ -380,88 +482,94 @@
       </template>
       <template #body>
         <div class="space-y-4">
-          <!-- 카테고리 & 시간 -->
-          <div class="flex items-center justify-between">
-            <span
-              v-if="selectedSchedule.category"
-              :class="[
-                'px-3 py-1 rounded-full text-sm font-medium',
-                selectedSchedule.isOptionTour
-                  ? 'text-white'
-                  : 'bg-blue-100 text-blue-700',
-              ]"
-              :style="
-                selectedSchedule.isOptionTour
-                  ? { backgroundColor: brandColor }
-                  : {}
-              "
-            >
-              {{ selectedSchedule.category }}
+          <!-- 상단 메타: 날짜 · 시간 · 장소 (작게) -->
+          <div
+            class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500"
+          >
+            <span>{{ formatDate(selectedSchedule.date) }}</span>
+            <span class="text-gray-300">·</span>
+            <span class="font-medium" :style="{ color: brandColor }">
+              {{ selectedSchedule.startTime }}
+              <template v-if="selectedSchedule.endTime">
+                — {{ selectedSchedule.endTime }}
+              </template>
             </span>
+            <template v-if="selectedSchedule.location">
+              <span class="text-gray-300">·</span>
+              <span class="flex items-center gap-0.5">
+                <svg
+                  class="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                {{ selectedSchedule.location }}
+              </span>
+            </template>
             <span
-              class="px-3 py-1 rounded-full text-sm font-medium text-white"
+              v-if="selectedSchedule.isOptionTour"
+              class="px-1.5 py-0.5 rounded-md text-xs font-medium text-white"
               :style="{ backgroundColor: brandColor }"
             >
-              {{ selectedSchedule.startTime }} ~
-              {{ selectedSchedule.endTime || '' }}
+              옵션투어
             </span>
           </div>
 
           <!-- 타이틀 -->
-          <h3 class="text-2xl font-bold text-gray-900">
+          <h3 class="text-xl font-bold text-gray-900">
             {{ selectedSchedule.title }}
           </h3>
 
-          <!-- 날짜 정보 -->
-          <div class="flex items-center space-x-2 text-sm text-gray-600">
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            <span>{{ formatDate(selectedSchedule.date) }}</span>
-          </div>
-
-          <!-- 장소 정보 -->
+          <!-- 메인 컨텐츠 영역 -->
           <div
-            v-if="selectedSchedule.location"
-            class="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl"
+            v-if="
+              selectedSchedule.description || selectedSchedule.images?.length
+            "
+            class="bg-gray-50 rounded-xl p-4 -mx-1"
           >
-            <svg
-              class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            <div v-if="selectedSchedule.description">
+              <QuillViewer
+                :content="selectedSchedule.description"
+                @image-clicked="openFullImage"
               />
-            </svg>
-            <div>
-              <div class="font-semibold text-gray-900">장소</div>
-              <div class="text-gray-600">{{ selectedSchedule.location }}</div>
             </div>
-          </div>
 
-          <!-- 상세 설명 (메인 컨텐츠) -->
-          <div v-if="selectedSchedule.description" class="py-4">
-            <h4 class="text-lg font-bold text-gray-900 mb-3">상세 설명</h4>
-            <p
-              class="text-gray-700 whitespace-pre-wrap leading-relaxed text-base"
+            <!-- 이미지 갤러리 -->
+            <div
+              v-if="selectedSchedule.images?.length"
+              :class="
+                selectedSchedule.description
+                  ? 'mt-4 pt-4 border-t border-gray-200'
+                  : ''
+              "
             >
-              {{ selectedSchedule.description }}
-            </p>
+              <div
+                :class="[
+                  'grid gap-2',
+                  selectedSchedule.images.length === 1
+                    ? 'grid-cols-1'
+                    : 'grid-cols-2',
+                ]"
+              >
+                <img
+                  v-for="img in selectedSchedule.images"
+                  :key="img.id"
+                  :src="img.imageUrl"
+                  class="w-full rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                  :class="
+                    selectedSchedule.images.length === 1 ? 'max-h-64' : 'h-40'
+                  "
+                  @click="openFullImage(img.imageUrl)"
+                />
+              </div>
+            </div>
           </div>
 
           <!-- 참여 그룹 & 참석자 보기 (편의 옵션) - 옵션투어는 제외 -->
@@ -534,6 +642,7 @@ import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 import MainHeader from '@/components/common/MainHeader.vue'
 import ParticipantList from '@/components/ParticipantList.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
+import QuillViewer from '@/components/common/QuillViewer.vue'
 import dayjs from 'dayjs'
 
 const route = useRoute()
@@ -542,6 +651,9 @@ const conventionStore = useConventionStore()
 
 const showCalendarView = ref(false)
 const selectedDate = ref('')
+const dateScrollContainer = ref(null)
+const showLeftScroll = ref(false)
+const showRightScroll = ref(false)
 const selectedSchedule = ref(null)
 const allSchedules = ref([]) // 전체 일정 저장
 const allOptionTours = ref([]) // 전체 옵션투어 저장
@@ -551,6 +663,7 @@ const currentScheduleId = ref(null) // 현재 진행 중인 일정 ID
 const showParticipantsModal = ref(false) // 참석자 목록 모달
 const participants = ref([]) // 참석자 목록
 const selectedGroupName = ref('') // 선택된 그룹명
+const fullImageUrl = ref(null) // 전체 이미지 보기
 
 // 일정과 옵션투어를 합친 통합 스케줄
 const mergedSchedules = computed(() => {
@@ -575,6 +688,7 @@ const mergedSchedules = computed(() => {
     participants: 0,
     isOptionTour: true,
     customOptionId: ot.customOptionId,
+    images: ot.images || [],
   }))
 
   // 두 배열을 합치고 날짜/시간순으로 정렬
@@ -753,6 +867,38 @@ function formatDate(dateStr) {
   return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${days[date.getDay()]}`
 }
 
+function handleDateScroll() {
+  if (!dateScrollContainer.value) return
+  const el = dateScrollContainer.value
+  showLeftScroll.value = el.scrollLeft > 0
+  showRightScroll.value = el.scrollLeft < el.scrollWidth - el.clientWidth - 1
+}
+
+function scrollDateLeft() {
+  dateScrollContainer.value?.scrollBy({ left: -200, behavior: 'smooth' })
+}
+
+function scrollDateRight() {
+  dateScrollContainer.value?.scrollBy({ left: 200, behavior: 'smooth' })
+}
+
+function stripHtml(html) {
+  if (!html) return ''
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+function openFullImage(url) {
+  fullImageUrl.value = url
+}
+
 function openScheduleDetail(schedule) {
   selectedSchedule.value = schedule
 }
@@ -882,6 +1028,7 @@ onMounted(async () => {
       category: '일정',
       group: item.courseName || '전체',
       participants: item.participantCount || 0,
+      images: item.images || [],
     }))
 
     // 5. Fetch option tours
@@ -891,20 +1038,16 @@ onMounted(async () => {
 
     allOptionTours.value = optionToursResponse.data || []
 
-    // 6. Set default date (using existing logic)
+    // 6. Set default date — 전체 보기
     if (mergedSchedules.value.length > 0) {
-      const today = new Date().toISOString().split('T')[0]
-      const futureDates = [...new Set(mergedSchedules.value.map((s) => s.date))]
-        .filter((d) => d >= today)
-        .sort()
-
-      selectedDate.value =
-        futureDates.length > 0 ? futureDates[0] : mergedSchedules.value[0].date
+      selectedDate.value = ''
 
       const firstScheduleDate = parseLocalDate(mergedSchedules.value[0].date)
       currentCalendarYear.value = firstScheduleDate.getFullYear()
       currentCalendarMonth.value = firstScheduleDate.getMonth()
     }
+
+    nextTick(() => handleDateScroll())
   } catch (error) {
     console.error('Failed to load schedules:', error)
   }

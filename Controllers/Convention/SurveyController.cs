@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using LocalRAG.DTOs.SurveyModels;
 using LocalRAG.Interfaces;
 using LocalRAG.Constants;
+using LocalRAG.Extensions;
 
 namespace LocalRAG.Controllers.Convention
 {
@@ -36,6 +37,21 @@ namespace LocalRAG.Controllers.Convention
             {
                 return NotFound();
             }
+
+            // 비관리자: 날짜 범위 검증
+            if (!User.IsInRole(Roles.Admin))
+            {
+                var now = DateTime.UtcNow;
+                if (survey.StartDate.HasValue && now < survey.StartDate.Value)
+                {
+                    return StatusCode(403, new { message = "설문 응답 기간이 아직 시작되지 않았습니다.", startDate = survey.StartDate });
+                }
+                if (survey.EndDate.HasValue && now > survey.EndDate.Value)
+                {
+                    return StatusCode(403, new { message = "설문 응답 기간이 종료되었습니다.", endDate = survey.EndDate });
+                }
+            }
+
             return Ok(survey);
         }
 
@@ -93,15 +109,18 @@ namespace LocalRAG.Controllers.Convention
             try
             {
                 await _surveyService.SubmitSurveyAsync(id, submissionDto, userId);
-                return Ok(new { message = "Survey submitted successfully." });
+                return Ok(new { message = "설문이 제출되었습니다." });
             }
-            catch (global::System.Collections.Generic.KeyNotFoundException ex)
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
             {
                 return NotFound(new { message = ex.Message });
             }
-            catch (global::System.Exception ex)
+            catch (Exception ex)
             {
-                // Log the exception (e.g., using ILogger)
                 return StatusCode(500, new { message = "An internal error occurred.", details = ex.Message });
             }
         }
@@ -124,6 +143,45 @@ namespace LocalRAG.Controllers.Convention
             }
 
             return Ok(response);
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = Roles.Admin)]
+        public async Task<IActionResult> DeleteSurvey(int id)
+        {
+            try
+            {
+                var (success, message) = await _surveyService.DeleteSurveyAsync(id);
+                if (!success)
+                {
+                    return NotFound(new { message });
+                }
+                return Ok(new { message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "삭제 중 오류가 발생했습니다.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}/responses")]
+        [Authorize(Roles = Roles.Admin)]
+        public async Task<IActionResult> GetSurveyResponses(int id)
+        {
+            var responses = await _surveyService.GetSurveyResponsesAsync(id);
+            return Ok(responses);
+        }
+
+        [HttpGet("{id}/responses/export")]
+        [Authorize(Roles = Roles.Admin)]
+        public async Task<IActionResult> ExportSurveyResponses(int id)
+        {
+            var bytes = await _surveyService.ExportSurveyResponsesAsync(id);
+            if (bytes.Length == 0)
+            {
+                return NotFound(new { message = "설문을 찾을 수 없습니다." });
+            }
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"survey_{id}_responses.xlsx");
         }
 
         [HttpGet("{id}/stats")]
