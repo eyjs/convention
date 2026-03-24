@@ -19,3 +19,9 @@ public class AssignOptionToursDto
 {
     public List<int> OptionTourIds { get; set; } = new();
 }
+
+public class AddImageDto
+{
+    [System.ComponentModel.DataAnnotations.Required]
+    public string ImageUrl { get; set; } = string.Empty;
+}

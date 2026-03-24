@@ -171,4 +171,34 @@ public class AdminScheduleController : ControllerBase
         if (!removed) return NotFound();
         return Ok();
     }
+
+    // === 이미지 갤러리 ===
+
+    [HttpPost("schedule-items/{id}/images")]
+    public async Task<IActionResult> AddScheduleItemImage(int id, [FromBody] AddImageDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.ImageUrl))
+            return BadRequest(new { message = "이미지 URL이 비어있습니다." });
+
+        var image = await _scheduleService.AddScheduleItemImageAsync(id, dto.ImageUrl);
+        return Ok(image);
+    }
+
+    [HttpDelete("schedule-images/{imageId}")]
+    public async Task<IActionResult> RemoveScheduleImage(int imageId)
+    {
+        var removed = await _scheduleService.RemoveScheduleImageAsync(imageId);
+        if (!removed) return NotFound();
+        return Ok();
+    }
+
+    [HttpPost("option-tours/{id}/images")]
+    public async Task<IActionResult> AddOptionTourImage(int id, [FromBody] AddImageDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.ImageUrl))
+            return BadRequest(new { message = "이미지 URL이 비어있습니다." });
+
+        var image = await _scheduleService.AddOptionTourImageAsync(id, dto.ImageUrl);
+        return Ok(image);
+    }
 }

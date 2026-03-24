@@ -76,6 +76,12 @@ public interface IUnitOfWork : IDisposable
     // Flight (Incheon Airport)
     IRepository<IncheonFlightData> IncheonFlightDatas { get; }
 
+    // Companion
+    IRepository<CompanionRelation> CompanionRelations { get; }
+
+    // Schedule Images
+    IRepository<ScheduleImage> ScheduleImages { get; }
+
     // Personal Trip
     IRepository<Entities.PersonalTrip.PersonalTrip> PersonalTrips { get; }
     IRepository<Flight> Flights { get; }

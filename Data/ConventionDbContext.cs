@@ -71,6 +71,12 @@ public class ConventionDbContext : DbContext
     public DbSet<OptionTour> OptionTours { get; set; }
     public DbSet<UserOptionTour> UserOptionTours { get; set; }
 
+    // Schedule Images
+    public DbSet<ScheduleImage> ScheduleImages { get; set; }
+
+    // Companion Relations
+    public DbSet<CompanionRelation> CompanionRelations { get; set; }
+
     // SMS Logs
     public DbSet<SmsLog> SmsLogs { get; set; }
     public DbSet<SmsTemplate> SmsTemplates { get; set; }

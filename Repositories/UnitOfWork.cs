@@ -65,6 +65,8 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<ItineraryItem>? _itineraryItems;
     private IRepository<ChecklistCategory>? _checklistCategories;
     private IRepository<ChecklistItem>? _checklistItems;
+    private IRepository<CompanionRelation>? _companionRelations;
+    private IRepository<ScheduleImage>? _scheduleImages;
     private IRepository<IncheonFlightData>? _incheonFlightDatas;
 
     public UnitOfWork(ConventionDbContext context)
@@ -200,6 +202,14 @@ public class UnitOfWork : IUnitOfWork
     // Flight (Incheon Airport)
     public IRepository<IncheonFlightData> IncheonFlightDatas =>
         _incheonFlightDatas ??= new Repository<IncheonFlightData>(_context);
+
+    // Companion
+    public IRepository<CompanionRelation> CompanionRelations =>
+        _companionRelations ??= new Repository<CompanionRelation>(_context);
+
+    // Schedule Images
+    public IRepository<ScheduleImage> ScheduleImages =>
+        _scheduleImages ??= new Repository<ScheduleImage>(_context);
 
     // Personal Trip
     public IRepository<Entities.PersonalTrip.PersonalTrip> PersonalTrips =>

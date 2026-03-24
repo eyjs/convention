@@ -164,6 +164,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IAdminUserService, AdminUserService>();
         services.AddScoped<IAdminStatsService, AdminStatsService>();
+        services.AddScoped<ICompanionService, CompanionService>();
 
         return services;
     }

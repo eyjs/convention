@@ -91,6 +91,7 @@ namespace LocalRAG.DTOs.ScheduleModels
         
         // Navigation
         public ScheduleTemplate? ScheduleTemplate { get; set; }
+        public ICollection<LocalRAG.Entities.ScheduleImage> Images { get; set; } = new List<LocalRAG.Entities.ScheduleImage>();
     }
     
     /// <summary>

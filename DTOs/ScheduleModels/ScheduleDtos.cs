@@ -19,6 +19,14 @@ public class ScheduleItemDto
     public int OrderNum { get; set; }
     public string? CourseName { get; set; }
     public int ParticipantCount { get; set; }
+    public List<ScheduleImageDto>? Images { get; set; }
+}
+
+public class ScheduleImageDto
+{
+    public int Id { get; set; }
+    public string ImageUrl { get; set; } = string.Empty;
+    public int OrderNum { get; set; }
 }
 
 public class ScheduleTemplateDto

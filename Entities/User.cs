@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using LocalRAG.DTOs.ScheduleModels;
 
 namespace LocalRAG.Entities;
@@ -129,4 +130,16 @@ public class User
     public virtual ICollection<UserActionStatus> UserActionStatuses { get; set; } = new List<UserActionStatus>();
     public virtual ICollection<GuestScheduleTemplate> GuestScheduleTemplates { get; set; } = new List<GuestScheduleTemplate>();
     public virtual ICollection<UserOptionTour> UserOptionTours { get; set; } = new List<UserOptionTour>();
+
+    /// <summary>
+    /// 이 사용자의 동반자들 (내가 주 참석자)
+    /// </summary>
+    [InverseProperty("User")]
+    public virtual ICollection<CompanionRelation> Companions { get; set; } = new List<CompanionRelation>();
+
+    /// <summary>
+    /// 이 사용자를 동반자로 등록한 관계들 (내가 동반자)
+    /// </summary>
+    [InverseProperty("CompanionUser")]
+    public virtual ICollection<CompanionRelation> CompanionOf { get; set; } = new List<CompanionRelation>();
 }

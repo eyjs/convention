@@ -48,4 +48,10 @@ public interface IScheduleService
     Task<object> GetOptionTourParticipantsAsync(int optionTourId);
     Task<(bool Success, object Result, int StatusCode)> AddParticipantsToOptionTourAsync(int optionTourId, List<int> userIds);
     Task<bool> RemoveParticipantFromOptionTourAsync(int optionTourId, int userId);
+
+    // === 이미지 갤러리 관리 ===
+
+    Task<object> AddScheduleItemImageAsync(int scheduleItemId, string imageUrl);
+    Task<bool> RemoveScheduleImageAsync(int imageId);
+    Task<object> AddOptionTourImageAsync(int optionTourId, string imageUrl);
 }

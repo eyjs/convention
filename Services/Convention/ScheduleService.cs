@@ -3,6 +3,7 @@ using LocalRAG.Entities;
 using LocalRAG.Interfaces;
 using LocalRAG.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace LocalRAG.Services.Convention;
 
@@ -29,7 +30,7 @@ public class ScheduleService : IScheduleService
     {
         var templates = await _unitOfWork.ScheduleTemplates.Query
             .Where(st => st.ConventionId == conventionId)
-            .Include(st => st.ScheduleItems)
+            .Include(st => st.ScheduleItems).ThenInclude(si => si.Images)
             .Include(st => st.GuestScheduleTemplates)
             .OrderBy(st => st.OrderNum)
             .Select(st => new
@@ -42,7 +43,11 @@ public class ScheduleService : IScheduleService
                     .Select(si => new
                     {
                         si.Id, si.ScheduleDate, si.StartTime, si.EndTime,
-                        si.Title, si.Location, si.Content, si.OrderNum
+                        si.Title, si.Location, si.Content, si.OrderNum,
+                        Images = si.Images.OrderBy(img => img.OrderNum).Select(img => new
+                        {
+                            img.Id, img.ImageUrl, img.OrderNum
+                        }).ToList()
                     }).ToList()
             })
             .ToListAsync();
@@ -82,7 +87,7 @@ public class ScheduleService : IScheduleService
     public async Task<bool> DeleteScheduleTemplateAsync(int id)
     {
         var template = await _unitOfWork.ScheduleTemplates.Query
-            .Include(st => st.ScheduleItems)
+            .Include(st => st.ScheduleItems).ThenInclude(si => si.Images)
             .Include(st => st.GuestScheduleTemplates)
             .FirstOrDefaultAsync(st => st.Id == id);
 
@@ -90,6 +95,11 @@ public class ScheduleService : IScheduleService
 
         if (template.GuestScheduleTemplates.Any())
             _unitOfWork.GuestScheduleTemplates.RemoveRange(template.GuestScheduleTemplates);
+
+        // 일정 항목의 이미지 삭제
+        var allImages = template.ScheduleItems.SelectMany(si => si.Images).ToList();
+        if (allImages.Any())
+            _unitOfWork.ScheduleImages.RemoveRange(allImages);
 
         if (template.ScheduleItems.Any())
             _unitOfWork.ScheduleItems.RemoveRange(template.ScheduleItems);
@@ -143,8 +153,13 @@ public class ScheduleService : IScheduleService
 
     public async Task<bool> DeleteScheduleItemAsync(int id)
     {
-        var item = await _unitOfWork.ScheduleItems.GetByIdAsync(id);
+        var item = await _unitOfWork.ScheduleItems.Query
+            .Include(si => si.Images)
+            .FirstOrDefaultAsync(si => si.Id == id);
         if (item == null) return false;
+
+        if (item.Images.Any())
+            _unitOfWork.ScheduleImages.RemoveRange(item.Images);
 
         _unitOfWork.ScheduleItems.Remove(item);
         await _unitOfWork.SaveChangesAsync();
@@ -306,6 +321,7 @@ public class ScheduleService : IScheduleService
                 .Include(u => u.GuestScheduleTemplates)
                     .ThenInclude(gst => gst.ScheduleTemplate)
                         .ThenInclude(st => st!.ScheduleItems)
+                            .ThenInclude(si => si.Images)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user is null)
@@ -342,7 +358,13 @@ public class ScheduleService : IScheduleService
                 Location = s.ScheduleItem.Location,
                 OrderNum = s.ScheduleItem.OrderNum,
                 CourseName = s.CourseName,
-                ParticipantCount = participantCounts.GetValueOrDefault(s.TemplateId, 0)
+                ParticipantCount = participantCounts.GetValueOrDefault(s.TemplateId, 0),
+                Images = s.ScheduleItem.Images.OrderBy(img => img.OrderNum).Select(img => new ScheduleImageDto
+                {
+                    Id = img.Id,
+                    ImageUrl = img.ImageUrl,
+                    OrderNum = img.OrderNum
+                }).ToList()
             }).ToList();
 
             return (result, null, 200);
@@ -427,6 +449,7 @@ public class ScheduleService : IScheduleService
             var optionToursData = await _unitOfWork.UserOptionTours.Query
                 .Where(uot => uot.UserId == userId && uot.ConventionId == conventionId)
                 .Include(uot => uot.OptionTour)
+                    .ThenInclude(ot => ot!.Images)
                 .OrderBy(uot => uot.OptionTour!.Date)
                 .ThenBy(uot => uot.OptionTour!.StartTime)
                 .ToListAsync();
@@ -439,7 +462,13 @@ public class ScheduleService : IScheduleService
                 endTime = uot.OptionTour.EndTime,
                 name = uot.OptionTour.Name,
                 content = uot.OptionTour.Content,
-                customOptionId = uot.OptionTour.CustomOptionId
+                customOptionId = uot.OptionTour.CustomOptionId,
+                images = uot.OptionTour.Images.OrderBy(img => img.OrderNum).Select(img => new
+                {
+                    id = img.Id,
+                    imageUrl = img.ImageUrl,
+                    orderNum = img.OrderNum
+                }).ToList()
             }).ToList();
 
             return (optionTours, null, 200);
@@ -511,7 +540,11 @@ public class ScheduleService : IScheduleService
                 Date = ot.Date.ToString("yyyy-MM-dd"),
                 ot.StartTime, ot.EndTime, ot.Name,
                 ot.CustomOptionId, ot.Content, ot.CreatedAt,
-                ParticipantCount = ot.UserOptionTours.Count
+                ParticipantCount = ot.UserOptionTours.Count,
+                Images = ot.Images.OrderBy(img => img.OrderNum).Select(img => new
+                {
+                    img.Id, img.ImageUrl, img.OrderNum
+                }).ToList()
             })
             .ToListAsync();
 
@@ -575,12 +608,16 @@ public class ScheduleService : IScheduleService
     {
         var optionTour = await _unitOfWork.OptionTours.Query
             .Include(ot => ot.UserOptionTours)
+            .Include(ot => ot.Images)
             .FirstOrDefaultAsync(ot => ot.Id == id);
 
         if (optionTour == null) return false;
 
         if (optionTour.UserOptionTours.Any())
             _unitOfWork.UserOptionTours.RemoveRange(optionTour.UserOptionTours);
+
+        if (optionTour.Images.Any())
+            _unitOfWork.ScheduleImages.RemoveRange(optionTour.Images);
 
         _unitOfWork.OptionTours.Remove(optionTour);
         await _unitOfWork.SaveChangesAsync();
@@ -658,5 +695,59 @@ public class ScheduleService : IScheduleService
         await _unitOfWork.SaveChangesAsync();
 
         return true;
+    }
+
+    // ============================================================
+    // 이미지 갤러리 관리
+    // ============================================================
+
+    public async Task<object> AddScheduleItemImageAsync(int scheduleItemId, string imageUrl)
+    {
+        var maxOrder = await _unitOfWork.ScheduleImages.Query
+            .Where(si => si.ScheduleItemId == scheduleItemId)
+            .Select(si => (int?)si.OrderNum)
+            .MaxAsync() ?? 0;
+
+        var image = new ScheduleImage
+        {
+            ScheduleItemId = scheduleItemId,
+            ImageUrl = imageUrl,
+            OrderNum = maxOrder + 1
+        };
+
+        await _unitOfWork.ScheduleImages.AddAsync(image);
+        await _unitOfWork.SaveChangesAsync();
+
+        return new { image.Id, image.ImageUrl, image.OrderNum };
+    }
+
+    public async Task<bool> RemoveScheduleImageAsync(int imageId)
+    {
+        var image = await _unitOfWork.ScheduleImages.GetByIdAsync(imageId);
+        if (image == null) return false;
+
+        _unitOfWork.ScheduleImages.Remove(image);
+        await _unitOfWork.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<object> AddOptionTourImageAsync(int optionTourId, string imageUrl)
+    {
+        var maxOrder = await _unitOfWork.ScheduleImages.Query
+            .Where(si => si.OptionTourId == optionTourId)
+            .Select(si => (int?)si.OrderNum)
+            .MaxAsync() ?? 0;
+
+        var image = new ScheduleImage
+        {
+            OptionTourId = optionTourId,
+            ImageUrl = imageUrl,
+            OrderNum = maxOrder + 1
+        };
+
+        await _unitOfWork.ScheduleImages.AddAsync(image);
+        await _unitOfWork.SaveChangesAsync();
+
+        return new { image.Id, image.ImageUrl, image.OrderNum };
     }
 }

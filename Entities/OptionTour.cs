@@ -56,4 +56,5 @@ public class OptionTour
     // Navigation property
     public Convention? Convention { get; set; }
     public ICollection<UserOptionTour> UserOptionTours { get; set; } = new List<UserOptionTour>();
+    public ICollection<ScheduleImage> Images { get; set; } = new List<ScheduleImage>();
 }

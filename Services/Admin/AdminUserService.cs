@@ -36,6 +36,9 @@ public class AdminUserService : IAdminUserService
             .Include(uc => uc.User)
                 .ThenInclude(u => u.UserOptionTours)
                     .ThenInclude(uot => uot.OptionTour)
+            .Include(uc => uc.User)
+                .ThenInclude(u => u.Companions)
+                    .ThenInclude(cr => cr.CompanionUser)
             .OrderBy(uc => uc.User.Name)
             .Select(uc => new
             {
@@ -67,6 +70,15 @@ public class AdminUserService : IAdminUserService
                     {
                         uot.OptionTourId,
                         uot.OptionTour!.Name
+                    }).ToList(),
+                companions = uc.User.Companions
+                    .Where(cr => cr.ConventionId == conventionId)
+                    .Select(cr => new
+                    {
+                        cr.Id,
+                        cr.CompanionUserId,
+                        Name = cr.CompanionUser.Name,
+                        cr.RelationType
                     }).ToList(),
                 passport = new
                 {
