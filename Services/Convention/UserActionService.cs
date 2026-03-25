@@ -378,20 +378,24 @@ public class UserActionService : IUserActionService
 
     public async Task<object> GetMenuActionsAsync(int conventionId)
     {
+        // 더보기 메뉴에 표시할 카테고리 (BANNER, POPUP, BUTTON 제외)
+        string[] menuCategories = ["MENU", "CARD", "CHECKLIST_CARD"];
+
         var actions = await _unitOfWork.ConventionActions.Query
-            .Where(a => a.ConventionId == conventionId &&
-                       a.IsActive &&
-                       a.ActionCategory == "MENU")
+            .Where(a => a.ConventionId == conventionId && a.IsActive
+                && (a.ActionCategory == null || menuCategories.Contains(a.ActionCategory)))
             .OrderBy(a => a.OrderNum)
             .ThenBy(a => a.CreatedAt)
             .Select(a => new
             {
                 a.Id,
                 a.Title,
+                a.Description,
                 a.MapsTo,
                 a.OrderNum,
                 a.BehaviorType,
                 a.TargetId,
+                a.ActionCategory,
                 a.ConfigJson
             })
             .ToListAsync();

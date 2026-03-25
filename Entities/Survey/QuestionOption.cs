@@ -10,5 +10,8 @@ public class QuestionOption
     public string OptionText { get; set; } = string.Empty;
     public int OrderIndex { get; set; }
 
+    public int? OptionTourId { get; set; }
+    public virtual OptionTour? OptionTour { get; set; }
+
     public virtual SurveyQuestion Question { get; set; } = default!;
 }

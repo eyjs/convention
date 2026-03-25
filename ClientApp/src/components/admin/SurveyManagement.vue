@@ -13,12 +13,91 @@
     <div v-if="currentView === 'list'">
       <AdminPageHeader
         title="설문 관리"
-        :description="`전체 ${surveys.length}개`"
+        :description="`전체 ${filteredSurveys.length}개`"
       >
         <AdminButton :icon="Plus" @click="showCreateView"
           >새 설문 생성</AdminButton
         >
       </AdminPageHeader>
+
+      <!-- 요약 통계 -->
+      <div class="mt-4 grid grid-cols-3 gap-4">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3"
+        >
+          <div
+            class="w-9 h-9 rounded-lg bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center"
+          >
+            <ClipboardList
+              :size="18"
+              class="text-primary-600 dark:text-primary-400"
+            />
+          </div>
+          <div>
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+              전체 설문
+            </p>
+            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">
+              {{ surveys.length }}
+            </p>
+          </div>
+        </div>
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3"
+        >
+          <div
+            class="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center"
+          >
+            <Eye :size="18" class="text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <div>
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+              활성 설문
+            </p>
+            <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+              {{ activeSurveyCount }}
+            </p>
+          </div>
+        </div>
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3"
+        >
+          <div
+            class="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center"
+          >
+            <BarChart3 :size="18" class="text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+              총 응답
+            </p>
+            <p class="text-lg font-bold text-blue-600 dark:text-blue-400">
+              {{ totalResponses }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 검색/필터 -->
+      <div class="mt-4 flex flex-col sm:flex-row gap-3">
+        <div class="flex-1">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="설문 제목 검색..."
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm focus:ring-primary-500 focus:border-primary-500"
+          />
+        </div>
+        <select
+          v-model="statusFilter"
+          class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm"
+        >
+          <option value="all">전체 상태</option>
+          <option value="active">활성</option>
+          <option value="inactive">비활성</option>
+          <option value="expired">기간만료</option>
+        </select>
+      </div>
 
       <div class="mt-6">
         <div v-if="loading" class="text-center py-10">
@@ -28,12 +107,19 @@
           <p>{{ error }}</p>
         </div>
         <AdminEmptyState
-          v-else-if="surveys.length === 0"
+          v-else-if="filteredSurveys.length === 0"
           :icon="ClipboardList"
           title="등록된 설문이 없습니다"
-          description="새 설문을 생성하여 참석자 의견을 수집하세요"
+          :description="
+            searchQuery || statusFilter !== 'all'
+              ? '검색 조건에 맞는 설문이 없습니다'
+              : '새 설문을 생성하여 참석자 의견을 수집하세요'
+          "
         >
-          <AdminButton :icon="Plus" @click="showCreateView"
+          <AdminButton
+            v-if="!searchQuery && statusFilter === 'all'"
+            :icon="Plus"
+            @click="showCreateView"
             >새 설문 생성</AdminButton
           >
         </AdminEmptyState>
@@ -41,59 +127,89 @@
           v-else
           :columns="tableColumns"
           :loading="loading"
-          :empty="surveys.length === 0"
+          :empty="filteredSurveys.length === 0"
         >
           <tr
-            v-for="survey in surveys"
+            v-for="survey in filteredSurveys"
             :key="survey.id"
-            class="hover:bg-gray-50"
+            class="hover:bg-gray-50 dark:hover:bg-gray-700/50"
           >
             <td
-              class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+              class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100"
             >
-              {{ survey.title }}
+              <span :title="survey.description || ''" class="cursor-default">
+                {{ survey.title }}
+                <span
+                  v-if="survey.description"
+                  class="block text-xs text-gray-400 dark:text-gray-500 font-normal truncate max-w-xs"
+                >
+                  {{ survey.description }}
+                </span>
+              </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-4 py-3 whitespace-nowrap">
               <AdminBadge :variant="getSurveyStatusVariant(survey)">
                 {{ getSurveyStatusLabel(survey) }}
               </AdminBadge>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            <td
+              class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
+            >
               {{ survey.responseCount ?? 0 }}명
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <td
+              class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+            >
               {{ formatDateRange(survey) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ new Date(survey.createdAt).toLocaleDateString() }}
-            </td>
             <td
-              class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3"
+              class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
             >
-              <button
-                class="text-primary-600 hover:text-primary-900"
-                @click="copySurveyUrl(survey.id)"
-              >
-                URL 복사
-              </button>
-              <button
-                class="text-primary-600 hover:text-primary-900"
-                @click="showEditView(survey.id)"
-              >
-                수정
-              </button>
-              <button
-                class="text-green-600 hover:text-green-900"
-                @click="showStatsView(survey.id)"
-              >
-                통계
-              </button>
-              <button
-                class="text-red-600 hover:text-red-900"
-                @click="confirmDeleteSurvey(survey)"
-              >
-                삭제
-              </button>
+              {{ formatDate(survey.createdAt) }}
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-right">
+              <div class="inline-flex items-center gap-1">
+                <!-- prettier-ignore -->
+                <button
+                  title="미리보기 (URL 복사 + 새 탭)"
+                  class="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
+                  @click="previewSurvey(survey.id)"
+                >
+                  <Eye :size="16" />
+                </button>
+                <!-- prettier-ignore -->
+                <button
+                  title="URL 복사"
+                  class="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
+                  @click="copySurveyUrl(survey.id)"
+                >
+                  <Copy :size="16" />
+                </button>
+                <!-- prettier-ignore -->
+                <button
+                  title="수정"
+                  class="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
+                  @click="showEditView(survey.id)"
+                >
+                  <Pencil :size="16" />
+                </button>
+                <!-- prettier-ignore -->
+                <button
+                  title="통계"
+                  class="p-1.5 rounded-md text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"
+                  @click="showStatsView(survey.id)"
+                >
+                  <BarChart3 :size="16" />
+                </button>
+                <!-- prettier-ignore -->
+                <button
+                  title="삭제"
+                  class="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                  @click="confirmDeleteSurvey(survey)"
+                >
+                  <Trash2 :size="16" />
+                </button>
+              </div>
             </td>
           </tr>
         </AdminTable>
@@ -132,27 +248,31 @@
       <template #header>설문 삭제 확인</template>
       <template #body>
         <p class="text-gray-700 dark:text-gray-300">
-          <span class="font-semibold">{{ deletingTitle }}</span> 설문을
-          삭제하시겠습니까?
+          <span class="font-semibold text-gray-900 dark:text-gray-100">{{
+            deletingTitle
+          }}</span>
+          설문을 삭제하시겠습니까?
         </p>
         <p class="text-sm text-red-500 mt-2">
           연관된 응답 데이터와 액션도 함께 삭제됩니다. 이 작업은 되돌릴 수
           없습니다.
         </p>
-        <div class="flex justify-end space-x-3 mt-6">
-          <button
-            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm font-medium"
+        <div class="flex justify-end gap-3 mt-6">
+          <AdminButton
+            variant="secondary"
             @click="isDeleteModalVisible = false"
           >
             취소
-          </button>
-          <button
-            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium"
+          </AdminButton>
+          <AdminButton
+            variant="danger"
+            :icon="Trash2"
+            :loading="isDeleting"
             :disabled="isDeleting"
             @click="deleteSurvey"
           >
             {{ isDeleting ? '삭제 중...' : '삭제' }}
-          </button>
+          </AdminButton>
         </div>
       </template>
     </BaseModal>
@@ -160,9 +280,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { Plus, ClipboardList } from 'lucide-vue-next'
-import api from '@/services/api'
+import {
+  Plus,
+  ClipboardList,
+  Pencil,
+  BarChart3,
+  Trash2,
+  Copy,
+  Eye,
+} from 'lucide-vue-next'
+import { formatDate } from '@/utils/date'
+import { useSurveyManagement } from '@/composables/useSurveyManagement'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import AdminButton from '@/components/admin/ui/AdminButton.vue'
 import AdminTable from '@/components/admin/ui/AdminTable.vue'
@@ -179,107 +307,50 @@ const props = defineProps({
   },
 })
 
-const surveys = ref([])
-const loading = ref(true)
-const error = ref(null)
-
-// View management
-const currentView = ref('list')
-const selectedSurveyId = ref(null)
-
-// Toast
-const toastMessage = ref('')
-const toastType = ref('success')
-let toastTimer = null
-
-// Delete
-const isDeleteModalVisible = ref(false)
-const deletingSurveyId = ref(null)
-const deletingTitle = ref('')
-const isDeleting = ref(false)
+const {
+  surveys,
+  loading,
+  error,
+  currentView,
+  selectedSurveyId,
+  searchQuery,
+  statusFilter,
+  toastMessage,
+  toastType,
+  showToast,
+  isDeleteModalVisible,
+  deletingTitle,
+  isDeleting,
+  filteredSurveys,
+  activeSurveyCount,
+  totalResponses,
+  getSurveyStatusVariant,
+  getSurveyStatusLabel,
+  formatDateRange,
+  showCreateView,
+  showEditView,
+  showStatsView,
+  goBackToList,
+  handleSurveySaved,
+  confirmDeleteSurvey,
+  deleteSurvey,
+} = useSurveyManagement(() => props.conventionId, 'GENERAL')
 
 const tableColumns = [
   { key: 'title', label: '제목' },
-  { key: 'status', label: '상태' },
-  { key: 'responseCount', label: '응답 수' },
+  { key: 'status', label: '상태', width: '80px' },
+  { key: 'responseCount', label: '응답', width: '80px' },
   { key: 'period', label: '기간' },
-  { key: 'createdAt', label: '생성일' },
-  { key: 'actions', label: '', align: 'right' },
+  { key: 'createdAt', label: '생성일', width: '100px' },
+  { key: 'actions', label: '', align: 'right', width: '180px' },
 ]
 
-function showToast(message, type = 'success') {
-  toastMessage.value = message
-  toastType.value = type
-  if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => {
-    toastMessage.value = ''
-  }, 3000)
-}
-
-function getSurveyStatusVariant(survey) {
-  if (!survey.isActive) return 'danger'
-  if (survey.endDate && new Date(survey.endDate) < new Date()) return 'warning'
-  return 'success'
-}
-
-function getSurveyStatusLabel(survey) {
-  if (!survey.isActive) return '비활성'
-  if (survey.endDate && new Date(survey.endDate) < new Date()) return '기간만료'
-  return '활성'
-}
-
-function formatDateRange(survey) {
-  if (!survey.startDate && !survey.endDate) return '-'
-  const fmt = (d) => new Date(d).toLocaleDateString()
-  if (survey.startDate && survey.endDate)
-    return `${fmt(survey.startDate)} ~ ${fmt(survey.endDate)}`
-  if (survey.startDate) return `${fmt(survey.startDate)} ~`
-  return `~ ${fmt(survey.endDate)}`
-}
-
-async function fetchSurveys() {
-  loading.value = true
-  error.value = null
-  try {
-    const response = await api.get('/surveys')
-    surveys.value = response.data.filter(
-      (s) => s.conventionId === props.conventionId,
-    )
-  } catch {
-    error.value = '설문 목록을 불러오는데 실패했습니다.'
-  } finally {
-    loading.value = false
-  }
-}
-
-function showCreateView() {
-  selectedSurveyId.value = null
-  currentView.value = 'create'
-}
-
-function showEditView(id) {
-  selectedSurveyId.value = id
-  currentView.value = 'edit'
-}
-
-function showStatsView(id) {
-  selectedSurveyId.value = id
-  currentView.value = 'stats'
-}
-
-function goBackToList() {
-  currentView.value = 'list'
-  selectedSurveyId.value = null
-  fetchSurveys()
-}
-
-function handleSurveySaved() {
-  showToast('설문이 저장되었습니다.')
-  goBackToList()
+function getSurveyUrl(surveyId) {
+  return `${location.origin}/conventions/${props.conventionId}/surveys/${surveyId}`
 }
 
 async function copySurveyUrl(surveyId) {
-  const surveyUrl = `${location.origin}/conventions/${props.conventionId}/surveys/${surveyId}`
+  const surveyUrl = getSurveyUrl(surveyId)
   try {
     await navigator.clipboard.writeText(surveyUrl)
     showToast('설문 URL이 클립보드에 복사되었습니다.')
@@ -288,34 +359,14 @@ async function copySurveyUrl(surveyId) {
   }
 }
 
-function confirmDeleteSurvey(survey) {
-  deletingSurveyId.value = survey.id
-  deletingTitle.value = survey.title
-  isDeleteModalVisible.value = true
-}
-
-async function deleteSurvey() {
-  isDeleting.value = true
+async function previewSurvey(surveyId) {
+  const surveyUrl = getSurveyUrl(surveyId)
   try {
-    await api.delete(`/surveys/${deletingSurveyId.value}`)
-    isDeleteModalVisible.value = false
-    showToast('설문이 삭제되었습니다.')
-    fetchSurveys()
+    await navigator.clipboard.writeText(surveyUrl)
+    showToast('URL이 복사되었습니다. 새 탭에서 미리보기를 엽니다.')
   } catch {
-    showToast('설문 삭제에 실패했습니다.', 'error')
-  } finally {
-    isDeleting.value = false
+    // URL 복사 실패해도 새 탭은 열기
   }
+  window.open(surveyUrl, '_blank')
 }
-
-onMounted(() => {
-  fetchSurveys()
-})
-
-watch(
-  () => props.conventionId,
-  () => {
-    fetchSurveys()
-  },
-)
 </script>

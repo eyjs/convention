@@ -4,6 +4,7 @@ using LocalRAG.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalRAG.Migrations
 {
     [DbContext(typeof(ConventionDbContext))]
-    partial class ConventionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260324034424_AddSurveyTypeAndOptionTourLink")]
+    partial class AddSurveyTypeAndOptionTourLink
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1898,9 +1901,6 @@ namespace LocalRAG.Migrations
                     b.Property<int>("OrderIndex")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ParentOptionId")
-                        .HasColumnType("int");
-
                     b.Property<string>("QuestionText")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1912,8 +1912,6 @@ namespace LocalRAG.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ParentOptionId");
 
                     b.HasIndex("SurveyId");
 
@@ -2770,18 +2768,11 @@ namespace LocalRAG.Migrations
 
             modelBuilder.Entity("LocalRAG.Entities.SurveyQuestion", b =>
                 {
-                    b.HasOne("LocalRAG.Entities.QuestionOption", "ParentOption")
-                        .WithMany()
-                        .HasForeignKey("ParentOptionId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("LocalRAG.Entities.Survey", "Survey")
                         .WithMany("Questions")
                         .HasForeignKey("SurveyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("ParentOption");
 
                     b.Navigation("Survey");
                 });

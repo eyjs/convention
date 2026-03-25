@@ -121,9 +121,7 @@ public class ConventionService
     /// </summary>
     public async Task RegisterGuestAsync(Entities.User user, int conventionId)
     {
-        await _unitOfWork.BeginTransactionAsync();
-
-        try
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             // 1. User 추가
             await _unitOfWork.Users.AddAsync(user);
@@ -145,17 +143,7 @@ public class ConventionService
                 user.Id,
                 "registration_date",
                 DateTime.Now.ToString("yyyy-MM-dd"));
-            await _unitOfWork.SaveChangesAsync();
-
-            // 모든 작업 성공 - 커밋
-            await _unitOfWork.CommitTransactionAsync();
-        }
-        catch (Exception)
-        {
-            // 하나라도 실패하면 전체 롤백
-            await _unitOfWork.RollbackTransactionAsync();
-            throw;
-        }
+        });
     }
 
     // ============================================================

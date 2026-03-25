@@ -18,6 +18,17 @@ public class SurveyRepository : Repository<Survey>, ISurveyRepository
             .FirstOrDefaultAsync(s => s.Id == surveyId, cancellationToken);
     }
 
+    public async Task<Survey?> GetSurveyWithAllDataAsync(int surveyId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Surveys
+            .Include(s => s.Questions.OrderBy(q => q.OrderIndex))
+            .ThenInclude(q => q.Options.OrderBy(o => o.OrderIndex))
+            .Include(s => s.Responses)
+            .ThenInclude(r => r.Details)
+            .ThenInclude(d => d.SelectedOption)
+            .FirstOrDefaultAsync(s => s.Id == surveyId, cancellationToken);
+    }
+
     public async Task<IEnumerable<Survey>> GetSurveysByConventionIdAsync(int conventionId, CancellationToken cancellationToken = default)
     {
         return await _context.Surveys

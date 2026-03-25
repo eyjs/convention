@@ -1,5 +1,9 @@
 <template>
-  <div class="bg-white rounded-lg shadow p-6">
+  <div
+    class="bg-white rounded-lg shadow p-6"
+    :class="clickable ? 'cursor-pointer hover:shadow-md transition-shadow' : ''"
+    @click="clickable && $emit('click')"
+  >
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm text-gray-600">{{ label }}</p>
@@ -38,7 +42,13 @@ const props = defineProps({
     default: 'primary',
     validator: (v) => ['primary', 'green', 'orange', 'red'].includes(v),
   },
+  clickable: {
+    type: Boolean,
+    default: false,
+  },
 })
+
+defineEmits(['click'])
 
 const colorClass = computed(() => {
   const map = {

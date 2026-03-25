@@ -90,6 +90,13 @@ const conventionNavItems = [
     routeName: 'AdminSurveys',
   },
   {
+    key: 'option-tour-surveys',
+    label: '옵션투어 설문',
+    icon: ClipboardList,
+    path: 'option-tour-surveys',
+    routeName: 'AdminOptionTourSurveys',
+  },
+  {
     key: 'formbuilder',
     label: '폼 빌더',
     icon: FormInput,

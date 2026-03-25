@@ -6,18 +6,24 @@
         :value="stats.totalGuests"
         :icon="Users"
         color="primary"
+        :clickable="true"
+        @click="navigateTo('guests')"
       />
       <AdminStatsCard
         label="총 일정 코스"
         :value="stats.totalSchedules"
         :icon="Calendar"
         color="green"
+        :clickable="true"
+        @click="navigateTo('schedules')"
       />
       <AdminStatsCard
         label="일정 배정"
         :value="stats.scheduleAssignments"
         :icon="ClipboardCheck"
         color="orange"
+        :clickable="true"
+        @click="openScheduleAssignedModal"
       />
     </div>
 
@@ -56,7 +62,8 @@
                     showAllValues[index] ? undefined : 3,
                   )"
                   :key="value.value"
-                  class="flex items-center justify-between p-2 bg-gray-50 rounded"
+                  class="flex items-center justify-between p-2 bg-gray-50 rounded cursor-pointer hover:bg-gray-100 transition-colors"
+                  @click="openAttributeModal(attr.attributeKey, value.value)"
                 >
                   <span class="text-sm text-gray-700 truncate">{{
                     value.value
@@ -105,7 +112,6 @@
           >
             발송 이력이 없습니다
           </div>
-          <!-- 6명 높이로 고정하고 스크롤 추가 -->
           <div
             v-else
             class="space-y-3 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar"
@@ -162,7 +168,8 @@
             <div
               v-for="schedule in scheduleStats"
               :key="schedule.id"
-              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:shadow transition-shadow"
+              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:shadow transition-shadow cursor-pointer"
+              @click="openCourseModal(schedule)"
             >
               <div class="flex-1 min-w-0">
                 <p class="font-medium truncate">{{ schedule.courseName }}</p>
@@ -185,22 +192,36 @@
       :convention-id="conventionId"
       @close="showSmsModal = false"
     />
+
+    <!-- 공통 명단 모달 -->
+    <UserListModal
+      :is-open="userListModal.open"
+      :title="userListModal.title"
+      :users="userListModal.users"
+      :loading="userListModal.loading"
+      :extra-label="userListModal.extraLabel"
+      :extra-field="userListModal.extraField"
+      @close="userListModal.open = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { Users, Calendar, ClipboardCheck } from 'lucide-vue-next'
 import apiClient from '@/services/api'
 import AdminStatsCard from '@/components/admin/ui/AdminStatsCard.vue'
 import AdminBadge from '@/components/admin/ui/AdminBadge.vue'
 import SmsManagementModal from './sms/SmsManagementModal.vue'
+import UserListModal from '@/components/admin/UserListModal.vue'
 
 const props = defineProps({
   conventionId: { type: Number, required: true },
 })
 
-defineEmits(['show-guest'])
+const router = useRouter()
+const route = useRoute()
 
 const showSmsModal = ref(false)
 const stats = ref({
@@ -209,12 +230,20 @@ const stats = ref({
   scheduleAssignments: 0,
 })
 
-const recentGuests = ref([])
 const smsHistory = ref([])
 const scheduleStats = ref([])
 const attributeStats = ref([])
 const showAllAttributes = ref(false)
 const showAllValues = ref([])
+
+const userListModal = reactive({
+  open: false,
+  title: '',
+  users: [],
+  loading: false,
+  extraLabel: '',
+  extraField: '',
+})
 
 const displayedAttributes = computed(() => {
   return showAllAttributes.value
@@ -224,6 +253,72 @@ const displayedAttributes = computed(() => {
 
 const toggleShowAllValues = (index) => {
   showAllValues.value[index] = !showAllValues.value[index]
+}
+
+function navigateTo(subPath) {
+  const convId = route.params.id
+  router.push(`/admin/conventions/${convId}/${subPath}`)
+}
+
+async function openScheduleAssignedModal() {
+  userListModal.title = '일정 배정 명단'
+  userListModal.users = []
+  userListModal.loading = true
+  userListModal.extraLabel = '코스'
+  userListModal.extraField = 'courseName'
+  userListModal.open = true
+
+  try {
+    const res = await apiClient.get(
+      `/admin/conventions/${props.conventionId}/stats/schedule-assigned-users`,
+    )
+    userListModal.users = res.data
+  } catch {
+    userListModal.users = []
+  } finally {
+    userListModal.loading = false
+  }
+}
+
+async function openCourseModal(schedule) {
+  userListModal.title = `${schedule.courseName} 명단`
+  userListModal.users = []
+  userListModal.loading = true
+  userListModal.extraLabel = ''
+  userListModal.extraField = ''
+  userListModal.open = true
+
+  try {
+    const res = await apiClient.get(
+      `/admin/conventions/${props.conventionId}/stats/schedule-course-users/${schedule.id}`,
+    )
+    userListModal.users = res.data
+  } catch {
+    userListModal.users = []
+  } finally {
+    userListModal.loading = false
+  }
+}
+
+async function openAttributeModal(attributeKey, attributeValue) {
+  userListModal.title = `${attributeKey}: ${attributeValue}`
+  userListModal.users = []
+  userListModal.loading = true
+  userListModal.extraLabel = ''
+  userListModal.extraField = ''
+  userListModal.open = true
+
+  try {
+    const res = await apiClient.get(
+      `/admin/conventions/${props.conventionId}/stats/attribute-users`,
+      { params: { key: attributeKey, value: attributeValue } },
+    )
+    userListModal.users = res.data
+  } catch {
+    userListModal.users = []
+  } finally {
+    userListModal.loading = false
+  }
 }
 
 const loadStats = async () => {
@@ -237,17 +332,12 @@ const loadStats = async () => {
       totalSchedules: response.data.totalSchedules,
       scheduleAssignments: response.data.scheduleAssignments,
     }
-    // recentGuests.value = response.data.recentGuests
     smsHistory.value = response.data.smsHistory || []
     scheduleStats.value = response.data.scheduleStats
     attributeStats.value = response.data.attributeStats || []
     showAllValues.value = new Array(attributeStats.value.length).fill(false)
   } catch (error) {
     console.error('Failed to load stats:', error)
-    alert(
-      '통계 데이터를 불러오는데 실패했습니다: ' +
-        (error.response?.data?.message || error.message),
-    )
   }
 }
 

@@ -5,6 +5,7 @@ using LocalRAG.Entities.Flight;
 using LocalRAG.Entities.FormBuilder;
 using LocalRAG.Entities.PersonalTrip;
 using LocalRAG.DTOs.ScheduleModels;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace LocalRAG.Repositories;
@@ -345,6 +346,51 @@ public class UnitOfWork : IUnitOfWork
             await _transaction.DisposeAsync();
             _transaction = null;
         }
+    }
+
+    /// <summary>
+    /// SqlServerRetryingExecutionStrategy 호환 트랜잭션 실행.
+    /// ExecutionStrategy.ExecuteAsync 안에서 트랜잭션을 생성하여 retry 전략과 호환됩니다.
+    /// </summary>
+    public async Task ExecuteInTransactionAsync(Func<Task> action, CancellationToken cancellationToken = default)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async (ct) =>
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(ct);
+            try
+            {
+                await action();
+                await _context.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
+        }, cancellationToken);
+    }
+
+    public async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action, CancellationToken cancellationToken = default)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async (ct) =>
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(ct);
+            try
+            {
+                var result = await action();
+                await _context.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+                return result;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
+        }, cancellationToken);
     }
 
     // ============================================================

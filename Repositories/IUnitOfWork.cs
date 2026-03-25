@@ -95,6 +95,13 @@ public interface IUnitOfWork : IDisposable
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);
     Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// SqlServerRetryingExecutionStrategy 호환 트랜잭션 실행.
+    /// 수동 BeginTransaction 대신 이 메서드를 사용합니다.
+    /// </summary>
+    Task ExecuteInTransactionAsync(Func<Task> action, CancellationToken cancellationToken = default);
+    Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action, CancellationToken cancellationToken = default);
 }
 
 // ============================================================
@@ -182,5 +189,6 @@ public interface ICommentRepository : IRepository<Comment>
 public interface ISurveyRepository : IRepository<Survey>
 {
     Task<Survey?> GetSurveyWithQuestionsAndOptionsAsync(int surveyId, CancellationToken cancellationToken = default);
+    Task<Survey?> GetSurveyWithAllDataAsync(int surveyId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Survey>> GetSurveysByConventionIdAsync(int conventionId, CancellationToken cancellationToken = default);
 }

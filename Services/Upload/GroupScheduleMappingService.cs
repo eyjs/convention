@@ -69,9 +69,7 @@ public class GroupScheduleMappingService : IGroupScheduleMappingService
                 actionList.Count, userConventionList.Count, request.UserGroup);
 
             // 트랜잭션으로 처리
-            await _unitOfWork.BeginTransactionAsync();
-
-            try
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 foreach (var userConvention in userConventionList)
                 {
@@ -106,21 +104,12 @@ public class GroupScheduleMappingService : IGroupScheduleMappingService
 
                     result.UsersAffected++;
                 }
+            });
 
-                await _unitOfWork.SaveChangesAsync();
-                await _unitOfWork.CommitTransactionAsync();
+            result.Success = true;
 
-                result.Success = true;
-
-                _logger.LogInformation("Group mapping completed: {Mappings} mappings created for {Users} users, {Duplicates} duplicates skipped",
-                    result.MappingsCreated, result.UsersAffected, result.DuplicatesSkipped);
-            }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-                _logger.LogError(ex, "Transaction failed during group mapping");
-                throw;
-            }
+            _logger.LogInformation("Group mapping completed: {Mappings} mappings created for {Users} users, {Duplicates} duplicates skipped",
+                result.MappingsCreated, result.UsersAffected, result.DuplicatesSkipped);
         }
         catch (Exception ex)
         {

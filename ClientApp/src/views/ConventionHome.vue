@@ -516,7 +516,7 @@
             <button
               class="w-full py-2.5 text-sm font-medium rounded-lg transition-colors"
               :style="{ backgroundColor: brandColor + '15', color: brandColor }"
-              @click="showPassportModal = false; navigateTo('/profile')"
+              @click="showPassportModal = false; router.push('/my-profile')"
             >
               여권 정보 수정
             </button>

@@ -28,6 +28,15 @@ public class SurveyQuestionConfiguration : IEntityTypeConfiguration<SurveyQuesti
             .WithOne(o => o.Question)
             .HasForeignKey(o => o.QuestionId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // 꼬리질문: 선택지 → 후속 질문 (SQL Server 다중 cascade path 방지)
+        entity.HasOne(q => q.ParentOption)
+            .WithMany()
+            .HasForeignKey(q => q.ParentOptionId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // 설문별 질문 조회 인덱스
+        entity.HasIndex(q => q.SurveyId);
     }
 }
 
@@ -44,6 +53,20 @@ public class SurveyResponseConfiguration : IEntityTypeConfiguration<SurveyRespon
             .WithMany()
             .HasForeignKey(sr => sr.UserId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        // 중복 제출 방지 + 조회 최적화
+        entity.HasIndex(r => new { r.SurveyId, r.UserId }).IsUnique();
+    }
+}
+
+public class QuestionOptionConfiguration : IEntityTypeConfiguration<QuestionOption>
+{
+    public void Configure(EntityTypeBuilder<QuestionOption> entity)
+    {
+        entity.HasOne(o => o.OptionTour)
+            .WithMany()
+            .HasForeignKey(o => o.OptionTourId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -60,5 +83,8 @@ public class SurveyResponseDetailConfiguration : IEntityTypeConfiguration<Survey
             .WithMany()
             .HasForeignKey(rd => rd.SelectedOptionId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        // 질문별 조회 인덱스
+        entity.HasIndex(d => d.QuestionId);
     }
 }

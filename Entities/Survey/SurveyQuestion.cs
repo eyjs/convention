@@ -20,6 +20,10 @@ public class SurveyQuestion
     public bool IsRequired { get; set; } = false;
     public int OrderIndex { get; set; }
 
+    // 꼬리질문: 이 옵션을 선택하면 이 질문이 표시됨 (null이면 최상위 질문)
+    public int? ParentOptionId { get; set; }
+    public virtual QuestionOption? ParentOption { get; set; }
+
     public virtual Survey Survey { get; set; } = default!;
     public virtual ICollection<QuestionOption> Options { get; set; } = new List<QuestionOption>();
 }

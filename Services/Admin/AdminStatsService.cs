@@ -93,4 +93,58 @@ public class AdminStatsService : IAdminStatsService
             smsHistory
         };
     }
+
+    public async Task<object> GetScheduleAssignedUsersAsync(int conventionId, CancellationToken cancellationToken = default)
+    {
+        var users = await _unitOfWork.GuestScheduleTemplates.Query
+            .Include(gst => gst.User)
+            .Include(gst => gst.ScheduleTemplate)
+            .Where(gst => gst.User!.UserConventions.Any(uc => uc.ConventionId == conventionId))
+            .Select(gst => new
+            {
+                gst.User!.Id,
+                gst.User.Name,
+                gst.User.Phone,
+                gst.User.CorpName,
+                CourseName = gst.ScheduleTemplate!.CourseName
+            })
+            .ToListAsync(cancellationToken);
+
+        return users;
+    }
+
+    public async Task<object> GetScheduleCourseUsersAsync(int conventionId, int scheduleTemplateId, CancellationToken cancellationToken = default)
+    {
+        var users = await _unitOfWork.GuestScheduleTemplates.Query
+            .Include(gst => gst.User)
+            .Where(gst => gst.ScheduleTemplateId == scheduleTemplateId
+                && gst.User!.UserConventions.Any(uc => uc.ConventionId == conventionId))
+            .Select(gst => new
+            {
+                gst.User!.Id,
+                gst.User.Name,
+                gst.User.Phone,
+                gst.User.CorpName
+            })
+            .ToListAsync(cancellationToken);
+
+        return users;
+    }
+
+    public async Task<object> GetAttributeUsersAsync(int conventionId, string attributeKey, string attributeValue, CancellationToken cancellationToken = default)
+    {
+        var users = await _unitOfWork.Users.Query
+            .Where(u => u.UserConventions.Any(uc => uc.ConventionId == conventionId))
+            .Where(u => u.GuestAttributes.Any(ga => ga.AttributeKey == attributeKey && ga.AttributeValue == attributeValue))
+            .Select(u => new
+            {
+                u.Id,
+                u.Name,
+                u.Phone,
+                u.CorpName
+            })
+            .ToListAsync(cancellationToken);
+
+        return users;
+    }
 }

@@ -138,6 +138,12 @@ const routes = [
         meta: { title: '여행 서류 제출', showNav: false },
       },
       {
+        path: 'surveys',
+        name: 'SurveyList',
+        component: () => import('@/views/feature/SurveyList.vue'),
+        meta: { title: '설문조사', showNav: false },
+      },
+      {
         path: 'surveys/:id',
         name: 'Survey',
         component: () => import('@/views/feature/Survey.vue'),
@@ -360,6 +366,13 @@ const routes = [
             name: 'AdminSurveys',
             component: () => import('@/components/admin/SurveyManagement.vue'),
             meta: { title: '설문 관리' },
+          },
+          {
+            path: 'option-tour-surveys',
+            name: 'AdminOptionTourSurveys',
+            component: () =>
+              import('@/components/admin/OptionTourSurveyManagement.vue'),
+            meta: { title: '옵션투어 설문' },
           },
           {
             path: 'formbuilder',

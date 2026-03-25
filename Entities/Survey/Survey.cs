@@ -2,6 +2,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LocalRAG.Entities;
 
+public enum SurveyType
+{
+    GENERAL = 0,
+    OPTION_TOUR = 1
+}
+
 public class Survey : IIndexableEntity
 {
     public int Id { get; set; }
@@ -13,6 +19,7 @@ public class Survey : IIndexableEntity
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public SurveyType SurveyType { get; set; } = SurveyType.GENERAL;
 
     // Foreign Key for Convention
     public int? ConventionId { get; set; }

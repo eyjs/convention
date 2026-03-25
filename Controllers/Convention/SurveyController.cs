@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using System.Threading.Tasks;
 using LocalRAG.DTOs.SurveyModels;
 using LocalRAG.Interfaces;
 using LocalRAG.Constants;
@@ -23,9 +21,18 @@ namespace LocalRAG.Controllers.Convention
 
         [HttpGet]
         [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> GetAllSurveys()
+        public async Task<IActionResult> GetAllSurveys([FromQuery] string? type = null)
         {
-            var surveys = await _surveyService.GetAllSurveysAsync();
+            var surveys = await _surveyService.GetAllSurveysAsync(type);
+            return Ok(surveys);
+        }
+
+        [HttpGet("convention/{conventionId}")]
+        [Authorize]
+        public async Task<IActionResult> GetSurveysForConvention(int conventionId)
+        {
+            var userId = User.GetUserId();
+            var surveys = await _surveyService.GetSurveysForUserAsync(conventionId, userId);
             return Ok(surveys);
         }
 
@@ -77,19 +84,8 @@ namespace LocalRAG.Controllers.Convention
                 return BadRequest(ModelState);
             }
 
-            try
-            {
-                var updatedSurvey = await _surveyService.UpdateSurveyAsync(id, updateDto);
-                return Ok(updatedSurvey);
-            }
-            catch (global::System.Collections.Generic.KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (global::System.Exception ex)
-            {
-                return StatusCode(500, new { message = "An internal error occurred.", details = ex.Message });
-            }
+            var updatedSurvey = await _surveyService.UpdateSurveyAsync(id, updateDto);
+            return Ok(updatedSurvey);
         }
 
         [HttpPost("{id}/submit")]
@@ -100,41 +96,16 @@ namespace LocalRAG.Controllers.Convention
                 return BadRequest("Survey ID mismatch.");
             }
 
-            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-            {
-                return Unauthorized("Invalid user credentials.");
-            }
-
-            try
-            {
-                await _surveyService.SubmitSurveyAsync(id, submissionDto, userId);
-                return Ok(new { message = "설문이 제출되었습니다." });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An internal error occurred.", details = ex.Message });
-            }
+            var userId = User.GetUserId();
+            await _surveyService.SubmitSurveyAsync(id, submissionDto, userId);
+            return Ok(new { message = "설문이 제출되었습니다." });
         }
 
         [HttpGet("{surveyId}/responses/me")]
         [Authorize]
         public async Task<ActionResult<SurveyResponseDto>> GetUserSurveyResponse(int surveyId)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return Unauthorized("User ID not found in token.");
-            }
-
+            var userId = User.GetUserId();
             var response = await _surveyService.GetUserSurveyResponseAsync(surveyId, userId);
 
             if (response == null)
@@ -149,19 +120,12 @@ namespace LocalRAG.Controllers.Convention
         [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> DeleteSurvey(int id)
         {
-            try
+            var (success, message) = await _surveyService.DeleteSurveyAsync(id);
+            if (!success)
             {
-                var (success, message) = await _surveyService.DeleteSurveyAsync(id);
-                if (!success)
-                {
-                    return NotFound(new { message });
-                }
-                return Ok(new { message });
+                return NotFound(new { message });
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "삭제 중 오류가 발생했습니다.", details = ex.Message });
-            }
+            return Ok(new { message });
         }
 
         [HttpGet("{id}/responses")]
@@ -196,38 +160,21 @@ namespace LocalRAG.Controllers.Convention
             return Ok(stats);
         }
 
-        /// <summary>
-        /// [표준화 계약] 설문 완료 상태 조회 - 오케스트레이터용
-        /// </summary>
         [HttpGet("{id}/status")]
         [Authorize]
         public async Task<IActionResult> GetSurveyStatus(int id)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return Unauthorized("User ID not found in token.");
-            }
-
+            var userId = User.GetUserId();
             var response = await _surveyService.GetUserSurveyResponseAsync(id, userId);
-
             string status = response != null ? "Completed" : "NotStarted";
-
-            return Ok(new { status = status });
+            return Ok(new { status });
         }
 
-        /// <summary>
-        /// [표준화 계약] 설문 요약 정보 조회 - 오케스트레이터용
-        /// </summary>
         [HttpGet("{id}/summary")]
         [Authorize]
         public async Task<IActionResult> GetSurveySummary(int id)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return Unauthorized("User ID not found in token.");
-            }
+            var userId = User.GetUserId();
 
             var survey = await _surveyService.GetSurveyAsync(id);
             if (survey == null)
@@ -249,7 +196,7 @@ namespace LocalRAG.Controllers.Convention
                 summary = "미응답";
             }
 
-            return Ok(new { summary = summary });
+            return Ok(new { summary });
         }
     }
 }

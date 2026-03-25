@@ -135,71 +135,71 @@ public class UserProfileService : IUserProfileService
     {
         try
         {
-            await _unitOfWork.BeginTransactionAsync();
             var result = new BulkAssignResult
             {
                 TotalProcessed = dto.UserMappings.Count
             };
 
-            var userIds = dto.UserMappings.Select(m => m.UserId).ToList();
-
-            var existingUsersInConvention = await _unitOfWork.UserConventions.Query
-                .Where(uc => uc.ConventionId == dto.ConventionId && userIds.Contains(uc.UserId))
-                .Select(uc => uc.UserId)
-                .ToListAsync();
-
-            var invalidUserIds = userIds.Except(existingUsersInConvention).ToList();
-            if (invalidUserIds.Any())
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                result.Errors.Add($"컨벤션에 속하지 않거나 존재하지 않는 사용자 ID: {string.Join(", ", invalidUserIds)}");
-            }
+                var userIds = dto.UserMappings.Select(m => m.UserId).ToList();
 
-            var validUserIds = userIds.Except(invalidUserIds).ToList();
+                var existingUsersInConvention = await _unitOfWork.UserConventions.Query
+                    .Where(uc => uc.ConventionId == dto.ConventionId && userIds.Contains(uc.UserId))
+                    .Select(uc => uc.UserId)
+                    .ToListAsync();
 
-            var existingAttributes = await _unitOfWork.GuestAttributes.Query
-                .Where(ga => validUserIds.Contains(ga.UserId))
-                .ToListAsync();
-
-            var newAttributeKeys = dto.UserMappings
-                .SelectMany(m => m.Attributes.Keys)
-                .Distinct()
-                .ToList();
-
-            var attributesToRemove = existingAttributes
-                .Where(ea => newAttributeKeys.Contains(ea.AttributeKey))
-                .ToList();
-
-            _unitOfWork.GuestAttributes.RemoveRange(attributesToRemove);
-
-            var newAttributes = new List<GuestAttribute>();
-
-            foreach (var mapping in dto.UserMappings)
-            {
-                if (!validUserIds.Contains(mapping.UserId))
+                var invalidUserIds = userIds.Except(existingUsersInConvention).ToList();
+                if (invalidUserIds.Any())
                 {
-                    result.FailCount++;
-                    continue;
+                    result.Errors.Add($"컨벤션에 속하지 않거나 존재하지 않는 사용자 ID: {string.Join(", ", invalidUserIds)}");
                 }
 
-                foreach (var attr in mapping.Attributes)
-                {
-                    if (string.IsNullOrWhiteSpace(attr.Value))
-                        continue;
+                var validUserIds = userIds.Except(invalidUserIds).ToList();
 
-                    newAttributes.Add(new GuestAttribute
+                var existingAttributes = await _unitOfWork.GuestAttributes.Query
+                    .Where(ga => validUserIds.Contains(ga.UserId))
+                    .ToListAsync();
+
+                var newAttributeKeys = dto.UserMappings
+                    .SelectMany(m => m.Attributes.Keys)
+                    .Distinct()
+                    .ToList();
+
+                var attributesToRemove = existingAttributes
+                    .Where(ea => newAttributeKeys.Contains(ea.AttributeKey))
+                    .ToList();
+
+                _unitOfWork.GuestAttributes.RemoveRange(attributesToRemove);
+
+                var newAttributes = new List<GuestAttribute>();
+
+                foreach (var mapping in dto.UserMappings)
+                {
+                    if (!validUserIds.Contains(mapping.UserId))
                     {
-                        UserId = mapping.UserId,
-                        AttributeKey = attr.Key,
-                        AttributeValue = attr.Value
-                    });
+                        result.FailCount++;
+                        continue;
+                    }
+
+                    foreach (var attr in mapping.Attributes)
+                    {
+                        if (string.IsNullOrWhiteSpace(attr.Value))
+                            continue;
+
+                        newAttributes.Add(new GuestAttribute
+                        {
+                            UserId = mapping.UserId,
+                            AttributeKey = attr.Key,
+                            AttributeValue = attr.Value
+                        });
+                    }
+
+                    result.SuccessCount++;
                 }
 
-                result.SuccessCount++;
-            }
-
-            await _unitOfWork.GuestAttributes.AddRangeAsync(newAttributes);
-            await _unitOfWork.SaveChangesAsync();
-            await _unitOfWork.CommitTransactionAsync();
+                await _unitOfWork.GuestAttributes.AddRangeAsync(newAttributes);
+            });
 
             result.Success = true;
             result.Message = $"{result.SuccessCount}명의 참석자에게 속성이 성공적으로 할당되었습니다.";
@@ -211,7 +211,6 @@ public class UserProfileService : IUserProfileService
         }
         catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync();
             _logger.LogError(ex, "일괄 속성 할당 실패");
 
             return new BulkAssignResult

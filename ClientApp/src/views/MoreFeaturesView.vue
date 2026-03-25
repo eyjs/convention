@@ -6,50 +6,61 @@
     <div v-if="isLoading" class="flex items-center justify-center py-12">
       <div class="text-center">
         <div
-          class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+          class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"
         ></div>
-        <p class="mt-4 text-gray-600">액션 목록을 불러오는 중...</p>
+        <p class="mt-3 text-sm text-gray-500">메뉴를 불러오는 중...</p>
       </div>
     </div>
 
-    <!-- 동적 액션 렌더러 -->
-    <div v-else-if="allActions.length > 0" class="px-4 py-6">
-      <div class="space-y-3">
-        <GenericMenuItem
+    <!-- 2x2 그리드 -->
+    <div v-else-if="allActions.length > 0" class="px-4 py-5">
+      <div class="grid grid-cols-2 gap-3">
+        <div
           v-for="action in allActions"
           :key="action.id"
-          :feature="action"
-        />
+          class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 cursor-pointer hover:shadow-md hover:border-blue-200 active:scale-[0.97] transition-all duration-150 flex flex-col items-center text-center gap-2"
+          role="button"
+          tabindex="0"
+          @click="handleAction(action)"
+          @keydown.enter="handleAction(action)"
+        >
+          <!-- 아이콘 -->
+          <div
+            class="w-12 h-12 rounded-xl flex items-center justify-center"
+            :style="getIconStyle(action)"
+          >
+            <span v-if="getConfig(action).icon" class="text-2xl">{{
+              getConfig(action).icon
+            }}</span>
+            <component :is="getDefaultIcon(action)" v-else class="w-6 h-6" />
+          </div>
+
+          <!-- 제목 -->
+          <span class="text-sm font-semibold text-gray-800 leading-tight">
+            {{ action.title }}
+          </span>
+
+          <!-- 상태 뱃지 -->
+          <span
+            v-if="action.isComplete !== undefined"
+            :class="[
+              'px-2 py-0.5 text-[10px] font-medium rounded-full',
+              action.isComplete
+                ? 'bg-emerald-50 text-emerald-600'
+                : 'bg-orange-50 text-orange-600',
+            ]"
+          >
+            {{ action.isComplete ? '완료' : '미완료' }}
+          </span>
+        </div>
       </div>
     </div>
 
     <!-- 빈 상태 -->
-    <div v-else class="px-4 py-12">
-      <div
-        class="flex flex-col items-center justify-center text-center bg-white rounded-2xl shadow-sm p-8"
-      >
-        <svg
-          class="w-16 h-16 text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-          />
-        </svg>
-        <p class="text-lg text-gray-600 mb-4">
-          현재 사용 가능한 액션이 없습니다.
-        </p>
-        <button
-          class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          @click="router.push(`/conventions/${route.params.conventionId}`)"
-        >
-          홈으로 돌아가기
-        </button>
+    <div v-else class="px-4 pt-12 pb-8">
+      <div class="text-center">
+        <LayoutGrid class="w-10 h-10 text-gray-300 mx-auto mb-3" />
+        <p class="text-sm text-gray-400">등록된 메뉴가 없습니다.</p>
       </div>
     </div>
   </div>
@@ -57,43 +68,72 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
+import { ClipboardList, FileText, LayoutGrid, Zap } from 'lucide-vue-next'
 import apiClient from '@/services/api'
 import MainHeader from '@/components/common/MainHeader.vue'
-import GenericMenuItem from '@/dynamic-features/common/GenericMenuItem.vue'
+import { useAction } from '@/composables/useAction'
 
-const router = useRouter()
 const route = useRoute()
+const { executeAction } = useAction()
 const allActions = ref([])
 const isLoading = ref(false)
 
+// 액션 카테고리별 기본 아이콘
+const CATEGORY_ICONS = {
+  CARD: FileText,
+  MENU: LayoutGrid,
+  BUTTON: Zap,
+  CHECKLIST_CARD: ClipboardList,
+}
+
+function getConfig(action) {
+  try {
+    if (!action.configJson) return {}
+    return typeof action.configJson === 'string'
+      ? JSON.parse(action.configJson)
+      : action.configJson
+  } catch {
+    return {}
+  }
+}
+
+function getIconStyle(action) {
+  const config = getConfig(action)
+  return {
+    backgroundColor: config.bgColor || '#EEF2FF',
+    color: config.iconColor || '#6366F1',
+  }
+}
+
+function getDefaultIcon(action) {
+  return CATEGORY_ICONS[action.actionCategory] || Zap
+}
+
+function handleAction(action) {
+  executeAction(action)
+}
+
 onMounted(async () => {
   const conventionId = route.params.conventionId
-
   isLoading.value = true
+
   try {
-    const actionsResponse = await apiClient.get(
-      `/conventions/${conventionId}/actions/menu`,
-    )
-    console.log('Response from /actions/menu:', actionsResponse.data) // 데이터 확인용 로그
-    const statusesResponse = await apiClient.get(
-      `/conventions/${conventionId}/actions/statuses`,
-    )
+    const [actionsRes, statusesRes] = await Promise.all([
+      apiClient.get(`/conventions/${conventionId}/actions/menu`),
+      apiClient.get(`/conventions/${conventionId}/actions/statuses`),
+    ])
 
-    const actions = actionsResponse.data || []
-    const statuses = statusesResponse.data || [] // 누락된 할당 코드 추가
-
-    // 상태 정보를 맵으로 변환
+    const actions = actionsRes.data || []
+    const statuses = statusesRes.data || []
     const statusMap = new Map(statuses.map((s) => [s.conventionActionId, s]))
 
-    // 액션에 isComplete 정보 추가
     allActions.value = actions.map((action) => ({
       ...action,
-      isComplete: statusMap.get(action.id)?.isComplete || false,
+      isComplete: statusMap.get(action.id)?.isComplete,
     }))
   } catch (error) {
     console.error('Failed to load menu actions:', error)
-    console.error('Error response:', error.response)
     allActions.value = []
   } finally {
     isLoading.value = false

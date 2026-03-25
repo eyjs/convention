@@ -321,12 +321,16 @@
               />
             </div>
 
-            <!-- 이미지 갤러리 (저장된 항목만) -->
-            <div v-if="editingItem">
+            <!-- 이미지 갤러리 -->
+            <div>
               <label class="block text-sm font-medium mb-2"
                 >이미지 갤러리</label
               >
-              <div class="grid grid-cols-3 gap-2 mb-2">
+              <div
+                v-if="itemImages.length > 0 || pendingFiles.length > 0"
+                class="grid grid-cols-3 gap-2 mb-2"
+              >
+                <!-- 저장된 이미지 -->
                 <div
                   v-for="img in itemImages"
                   :key="img.id"
@@ -343,6 +347,23 @@
                     &times;
                   </button>
                 </div>
+                <!-- 대기 중 이미지 (신규 등록 시 미리보기) -->
+                <div
+                  v-for="(pf, idx) in pendingFiles"
+                  :key="'pending-' + idx"
+                  class="relative group"
+                >
+                  <img
+                    :src="pf.preview"
+                    class="w-full h-24 object-cover rounded-lg opacity-70"
+                  />
+                  <button
+                    class="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    @click="removePendingFile(idx)"
+                  >
+                    &times;
+                  </button>
+                </div>
               </div>
               <label
                 class="inline-flex items-center gap-1 px-3 py-1.5 text-sm border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
@@ -354,7 +375,7 @@
                   accept="image/*"
                   multiple
                   class="hidden"
-                  @change="uploadItemImages($event)"
+                  @change="handleImageSelect($event)"
                 />
               </label>
             </div>
@@ -567,6 +588,7 @@ const showCopyModal = ref(false)
 const editingTemplate = ref(null)
 const editingItem = ref(null)
 const itemImages = ref([])
+const pendingFiles = ref([])
 const currentTemplate = ref(null)
 const selectedTemplate = ref(null)
 const targetTemplate = ref(null)
@@ -683,6 +705,8 @@ const deleteTemplate = async (id) => {
 const addScheduleItem = (template) => {
   currentTemplate.value = template
   editingItem.value = null
+  itemImages.value = []
+  pendingFiles.value = []
   itemForm.value = {
     scheduleDate: '',
     startTime: '',
@@ -713,6 +737,7 @@ const closeItemModal = () => {
   showItemModal.value = false
   editingItem.value = null
   itemImages.value = []
+  pendingFiles.value = []
   currentTemplate.value = null
 }
 
@@ -732,11 +757,20 @@ const saveScheduleItem = async () => {
       scheduleTemplateId: currentTemplate.value.id,
     }
 
+    let itemId
     if (editingItem.value) {
       await apiClient.put(`/admin/schedule-items/${editingItem.value.id}`, data)
+      itemId = editingItem.value.id
     } else {
-      await apiClient.post('/admin/schedule-items', data)
+      const res = await apiClient.post('/admin/schedule-items', data)
+      itemId = res.data.id
     }
+
+    // 대기 중 이미지 업로드
+    if (pendingFiles.value.length > 0) {
+      await uploadPendingImages(itemId)
+    }
+
     await loadTemplates()
     closeItemModal()
   } catch (error) {
@@ -880,31 +914,69 @@ const copySelectedItems = async () => {
   }
 }
 
-const uploadItemImages = async (event) => {
+const handleImageSelect = async (event) => {
   const files = Array.from(event.target.files)
-  if (!files.length || !editingItem.value) return
+  if (!files.length) return
 
-  for (const file of files) {
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const uploadRes = await apiClient.post('/file/upload/image', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+  if (editingItem.value) {
+    // 수정 모드: 즉시 업로드
+    for (const file of files) {
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        const uploadRes = await apiClient.post('/file/upload/image', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        const res = await apiClient.post(
+          `/admin/schedule-items/${editingItem.value.id}/images`,
+          { imageUrl: uploadRes.data.url },
+        )
+        itemImages.value.push(res.data)
+      } catch (error) {
+        console.error('Image upload failed:', error)
+        alert('이미지 업로드 실패')
+      }
+    }
+    await loadTemplates()
+  } else {
+    // 신규 등록: 미리보기로 대기
+    for (const file of files) {
+      pendingFiles.value.push({
+        file,
+        preview: URL.createObjectURL(file),
       })
-      const imageUrl = uploadRes.data.url
-
-      const res = await apiClient.post(
-        `/admin/schedule-items/${editingItem.value.id}/images`,
-        { imageUrl },
-      )
-      itemImages.value.push(res.data)
-    } catch (error) {
-      console.error('Image upload failed:', error)
-      alert('이미지 업로드 실패')
     }
   }
   event.target.value = ''
-  await loadTemplates()
+}
+
+const removePendingFile = (idx) => {
+  URL.revokeObjectURL(pendingFiles.value[idx].preview)
+  pendingFiles.value.splice(idx, 1)
+}
+
+const uploadPendingImages = async (itemId) => {
+  let failCount = 0
+  for (const pf of pendingFiles.value) {
+    try {
+      const formData = new FormData()
+      formData.append('file', pf.file)
+      const uploadRes = await apiClient.post('/file/upload/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      await apiClient.post(`/admin/schedule-items/${itemId}/images`, {
+        imageUrl: uploadRes.data.url,
+      })
+    } catch (error) {
+      console.error('Image upload failed:', error)
+      failCount++
+    }
+    URL.revokeObjectURL(pf.preview)
+  }
+  pendingFiles.value = []
+  if (failCount > 0) {
+    alert(`${failCount}개 이미지 업로드에 실패했습니다.`)
+  }
 }
 
 const removeItemImage = async (imageId) => {
