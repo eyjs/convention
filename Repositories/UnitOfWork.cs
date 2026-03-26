@@ -29,8 +29,6 @@ public class UnitOfWork : IUnitOfWork
     private IMenuRepository? _menus;
     private ISectionRepository? _sections;
     private IOwnerRepository? _owners;
-    private IVectorStoreRepository? _vectorStores;
-
     // Generic Repository 인스턴스들
     private IRepository<ConventionAction>? _conventionActions;
     private IRepository<UserActionStatus>? _userActionStatuses;
@@ -48,9 +46,6 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<AttributeTemplate>? _attributeTemplates;
     private IRepository<ActionTemplate>? _actionTemplates;
     private IRepository<ActionSubmission>? _actionSubmissions;
-    private IRepository<ConventionChatMessage>? _conventionChatMessages;
-    private IRepository<LlmSetting>? _llmSettings;
-    private IRepository<VectorDataEntry>? _vectorDataEntries;
     private IRepository<SurveyQuestion>? _surveyQuestions;
     private IRepository<QuestionOption>? _questionOptions;
     private IRepository<SurveyResponse>? _surveyResponses;
@@ -109,9 +104,6 @@ public class UnitOfWork : IUnitOfWork
     public IOwnerRepository Owners =>
         _owners ??= new OwnerRepository(_context);
 
-    public IVectorStoreRepository VectorStores =>
-        _vectorStores ??= new VectorStoreRepository(_context);
-
     // ============================================================
     // Generic Repository Properties
     // ============================================================
@@ -163,15 +155,6 @@ public class UnitOfWork : IUnitOfWork
 
     public IRepository<ActionSubmission> ActionSubmissions =>
         _actionSubmissions ??= new Repository<ActionSubmission>(_context);
-
-    public IRepository<ConventionChatMessage> ConventionChatMessages =>
-        _conventionChatMessages ??= new Repository<ConventionChatMessage>(_context);
-
-    public IRepository<LlmSetting> LlmSettings =>
-        _llmSettings ??= new Repository<LlmSetting>(_context);
-
-    public IRepository<VectorDataEntry> VectorDataEntries =>
-        _vectorDataEntries ??= new Repository<VectorDataEntry>(_context);
 
     public IRepository<SurveyQuestion> SurveyQuestions =>
         _surveyQuestions ??= new Repository<SurveyQuestion>(_context);

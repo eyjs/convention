@@ -177,7 +177,7 @@
                   class="space-y-2"
                 >
                   <img
-                    :src="`http://localhost:5000${existingFileUrls[field.key]}`"
+                    :src="`${API_BASE}${existingFileUrls[field.key]}`"
                     :alt="field.label"
                     class="max-w-full h-auto max-h-64 rounded-lg border border-gray-300 cursor-pointer hover:opacity-90 transition-opacity"
                     @click="openImageViewer(existingFileUrls[field.key])"
@@ -210,7 +210,7 @@
                     class="border border-gray-300 rounded-lg overflow-hidden bg-white"
                   >
                     <iframe
-                      :src="`http://localhost:5000${existingFileUrls[field.key]}#toolbar=0&navpanes=0&scrollbar=0`"
+                      :src="`${API_BASE}${existingFileUrls[field.key]}#toolbar=0&navpanes=0&scrollbar=0`"
                       class="w-full h-64 pointer-events-none"
                       title="PDF Preview"
                     ></iframe>
@@ -321,7 +321,7 @@
           @click="closeImageViewer"
         >
           <img
-            :src="`http://localhost:5000${imageViewerUrl}`"
+            :src="`${API_BASE}${imageViewerUrl}`"
             alt="Image Viewer"
             class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
             @click.stop
@@ -384,7 +384,7 @@
 
           <!-- PDF Viewer -->
           <iframe
-            :src="`http://localhost:5000${pdfViewerUrl}`"
+            :src="`${API_BASE}${pdfViewerUrl}`"
             class="w-full h-[calc(90vh-4rem)] border-0"
             title="PDF Viewer"
           ></iframe>
@@ -401,6 +401,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
 import formBuilderService from '@/services/formBuilderService'
+
+const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/api$/, '')
 
 const props = defineProps({
   formDefinitionId: String, // 라우터에서 자동 주입 (params.formDefinitionId)
@@ -508,7 +510,7 @@ function closePdfViewer() {
 // 파일 다운로드 함수
 function downloadFile(url) {
   const link = document.createElement('a')
-  link.href = `http://localhost:5000/api/files/download?path=${encodeURIComponent(url)}`
+  link.href = `${API_BASE}/api/files/download?path=${encodeURIComponent(url)}`
   link.download = getFileName(url)
   document.body.appendChild(link)
   link.click()

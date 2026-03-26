@@ -23,8 +23,6 @@ public interface IUnitOfWork : IDisposable
     IMenuRepository Menus { get; }
     ISectionRepository Sections { get; }
     IOwnerRepository Owners { get; }
-    IVectorStoreRepository VectorStores { get; }
-
     // --- Generic Repository Properties ---
     IRepository<ConventionAction> ConventionActions { get; }
     IRepository<UserActionStatus> UserActionStatuses { get; }
@@ -50,13 +48,6 @@ public interface IUnitOfWork : IDisposable
     // Actions
     IRepository<ActionTemplate> ActionTemplates { get; }
     IRepository<ActionSubmission> ActionSubmissions { get; }
-
-    // Chat
-    IRepository<ConventionChatMessage> ConventionChatMessages { get; }
-
-    // AI / LLM
-    IRepository<LlmSetting> LlmSettings { get; }
-    IRepository<VectorDataEntry> VectorDataEntries { get; }
 
     // Survey
     IRepository<SurveyQuestion> SurveyQuestions { get; }
@@ -164,15 +155,6 @@ public interface ISectionRepository : IRepository<Section>
 public interface IOwnerRepository : IRepository<Owner>
 {
     Task<IEnumerable<Owner>> GetOwnersByConventionIdAsync(int conventionId, CancellationToken cancellationToken = default);
-}
-
-/// <summary>
-/// VectorStore Repository 인터페이스
-/// </summary>
-public interface IVectorStoreRepository : IRepository<VectorStore>
-{
-    Task<IEnumerable<VectorStore>> GetVectorsByConventionIdAsync(int conventionId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<VectorStore>> GetVectorsBySourceAsync(string sourceTable, string sourceId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

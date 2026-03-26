@@ -225,8 +225,8 @@
                 :top-level-index="getTopLevelIndex(question)"
                 @move="moveQuestion(qIndex, $event)"
                 @remove="removeQuestion(qIndex)"
-                @add-option="addOption(qIndex)"
-                @remove-option="removeOption(qIndex, $event)"
+                @add-option="addOption($event)"
+                @remove-option="removeOption($event.questionIndex, $event.optionIndex)"
                 @type-change="onQuestionTypeChange(question)"
                 @add-follow-up="addFollowUpQuestion"
                 @remove-follow-up="removeFollowUpQuestion"
@@ -351,8 +351,8 @@ const QuestionCard = {
               parentOptionText: option.optionText,
               onRemove: () => emit('remove-follow-up', fuIdx),
               'onType-change': () => emit('type-change'),
-              'onAdd-option': () => emit('add-option'),
-              'onRemove-option': (oi) => emit('remove-option', oi),
+              'onAdd-option': (idx) => emit('add-option', idx),
+              'onRemove-option': (payload) => emit('remove-option', payload),
               'onAdd-follow-up': (payload) => emit('add-follow-up', payload),
               'onRemove-follow-up': (idx) => emit('remove-follow-up', idx),
             })
@@ -406,10 +406,28 @@ const QuestionCard = {
                   title: '선택지 삭제',
                   class:
                     'flex-shrink-0 p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors',
-                  onClick: () => emit('remove-option', oIndex),
+                  onClick: () => emit('remove-option', { questionIndex: qIdx, optionIndex: oIndex }),
                 },
                 [h(X, { class: 'w-4 h-4' })],
               ),
+            ]),
+            // 설문 종료 토글
+            h('div', { class: 'ml-8 mt-1 flex items-center gap-2' }, [
+              h('label', { class: 'flex items-center gap-1.5 cursor-pointer' }, [
+                h('input', {
+                  type: 'checkbox',
+                  checked: option.isTerminating || false,
+                  onChange: (e) => {
+                    option.isTerminating = e.target.checked
+                  },
+                  class: 'rounded text-red-500 focus:ring-red-500/20 w-3.5 h-3.5',
+                }),
+                h(
+                  'span',
+                  { class: 'text-xs text-gray-500 dark:text-gray-400' },
+                  '이 선택 시 설문 종료',
+                ),
+              ]),
             ]),
             // 꼬리질문 카드들
             ...followUpCards,
@@ -437,7 +455,7 @@ const QuestionCard = {
                   type: 'button',
                   class:
                     'inline-flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors',
-                  onClick: () => emit('add-option'),
+                  onClick: () => emit('add-option', qIdx),
                 },
                 [h(Plus, { class: 'w-3.5 h-3.5' }), '선택지 추가'],
               ),
@@ -830,6 +848,7 @@ function addOption(questionIndex) {
     id: 0,
     _tempKey: tempKey,
     optionText: '',
+    isTerminating: false,
     orderIndex: survey.value.questions[questionIndex].options.length,
   })
 }

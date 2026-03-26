@@ -9,6 +9,7 @@ public class QuestionOption
     [Required]
     public string OptionText { get; set; } = string.Empty;
     public int OrderIndex { get; set; }
+    public bool IsTerminating { get; set; }
 
     public int? OptionTourId { get; set; }
     public virtual OptionTour? OptionTour { get; set; }

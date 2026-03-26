@@ -50,18 +50,6 @@
       </div>
     </nav>
 
-    <Transition name="modal-slide">
-      <div
-        v-if="uiStore.isChatOpen && conventionId && token"
-        class="fixed inset-0 bg-black bg-opacity-30 z-40 flex justify-center items-end sm:items-center sm:p-4"
-      >
-        <div
-          class="w-full max-w-sm h-[calc(100%-5rem)] sm:h-full sm:max-h-[600px] flex flex-col rounded-t-2xl sm:rounded-lg shadow-xl bg-white overflow-hidden"
-        >
-          <ConventionChat :convention-id="conventionId" :token="token" />
-        </div>
-      </div>
-    </Transition>
   </div>
 </template>
 
@@ -70,22 +58,17 @@ import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
-import { useUIStore } from '@/stores/ui'
-import ConventionChat from '@/components/ConventionChat.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
-const uiStore = useUIStore()
+const showNav = computed(() => route.meta.showNav !== false)
 
 const conventionId = computed(() => {
   const id = route.params.conventionId
   return id ? parseInt(id) : null
 })
-const token = computed(() => authStore.accessToken)
-const showNav = computed(() => route.meta.showNav !== false)
-
 const basePath = computed(() => `/conventions/${conventionId.value}`)
 
 const navItems = computed(() => [
@@ -111,14 +94,6 @@ const navItems = computed(() => [
     badge: 0,
   },
   {
-    path: 'chat',
-    label: '채팅',
-    isChat: true,
-    iconPath:
-      'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-    badge: authStore.totalUnreadCount,
-  },
-  {
     path: `${basePath.value}/features`,
     label: '더보기',
     iconPath: 'M4 6h16M4 12h16M4 18h16',
@@ -127,18 +102,13 @@ const navItems = computed(() => [
 ])
 
 function isActive(path) {
-  if (path === 'chat') return uiStore.isChatOpen
   return route.path === path
 }
 
 function navigateTo(item) {
-  if (item.isChat) {
-    uiStore.toggleChat()
-  } else {
-    router.push(item.path).catch((err) => {
-      console.error('Navigation error:', err)
-    })
-  }
+  router.push(item.path).catch((err) => {
+    console.error('Navigation error:', err)
+  })
 }
 </script>
 

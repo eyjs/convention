@@ -275,6 +275,16 @@
           </div>
         </template>
 
+        <!-- 설문 종료 안내 -->
+        <div
+          v-if="terminatingAfterIndex >= 0"
+          class="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-center"
+        >
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            선택하신 응답에 따라 설문이 종료됩니다. 아래 제출 버튼을 눌러주세요.
+          </p>
+        </div>
+
         <div class="mt-10 flex flex-col sm:flex-row justify-between gap-4">
           <button
             type="button"
@@ -341,10 +351,38 @@ const selectedOptionIds = computed(() => {
   return ids
 })
 
-// 보이는 질문: 최상위 또는 부모 옵션이 선택된 꼬리질문
+// 종료 옵션이 선택된 질문의 인덱스 (이후 질문 숨김)
+const terminatingAfterIndex = computed(() => {
+  if (!survey.value) return -1
+  const questions = survey.value.questions
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i]
+    if (q.parentOptionId) continue // 꼬리질문은 건너뜀
+    const answer = responses[q.id]
+    if (answer == null || answer === '') continue
+    const selectedIds = Array.isArray(answer) ? answer : [answer]
+    const hasTerminating = (q.options || []).some(
+      (o) => o.isTerminating && selectedIds.includes(o.id),
+    )
+    if (hasTerminating) return i
+  }
+  return -1
+})
+
+// 보이는 질문: 최상위 또는 부모 옵션이 선택된 꼬리질문 + 종료 옵션 이후 숨김
 const visibleQuestions = computed(() => {
   if (!survey.value) return []
+  let topLevelIdx = -1
   return survey.value.questions.filter((q) => {
+    if (!q.parentOptionId) topLevelIdx++
+    // 종료 옵션이 선택된 질문 이후의 최상위 질문은 숨김
+    if (
+      terminatingAfterIndex.value >= 0 &&
+      !q.parentOptionId &&
+      topLevelIdx > terminatingAfterIndex.value
+    ) {
+      return false
+    }
     if (!q.parentOptionId) return true
     return selectedOptionIds.value.has(q.parentOptionId)
   })

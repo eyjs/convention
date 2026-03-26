@@ -34,6 +34,7 @@ namespace LocalRAG.DTOs.SurveyModels
         public int Id { get; set; }
         public string OptionText { get; set; } = string.Empty;
         public int OrderIndex { get; set; }
+        public bool IsTerminating { get; set; }
         public int? OptionTourId { get; set; }
         public string? OptionTourName { get; set; }
     }

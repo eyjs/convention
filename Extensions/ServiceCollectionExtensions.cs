@@ -1,81 +1,17 @@
 using LocalRAG.Configuration;
 using LocalRAG.Interfaces;
-using LocalRAG.Providers;
-using LocalRAG.Services.Ai;
 using LocalRAG.Services.Auth;
-using LocalRAG.Services.Chat;
 using LocalRAG.Services.Convention;
 using LocalRAG.Services.Flight;
 using LocalRAG.Services.Shared;
-using LocalRAG.Services.Shared.Builders;
 using LocalRAG.Services.Upload;
 using LocalRAG.Services.UserProfile;
 using LocalRAG.Services.Admin;
-using LocalRAG.Storage;
 
 namespace LocalRAG.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    /// <summary>
-    /// AI/RAG 관련 서비스 등록
-    /// </summary>
-    public static IServiceCollection AddAiServices(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddScoped<ILlmProvider, Llama3Provider>(provider =>
-        {
-            var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-            var httpClient = httpClientFactory.CreateClient("LlmClient");
-            var configuration = provider.GetRequiredService<IConfiguration>();
-            var logger = provider.GetRequiredService<ILogger<Llama3Provider>>();
-            return new Llama3Provider(httpClient, configuration, logger);
-        });
-
-        services.AddScoped<ILlmProvider, GeminiProvider>(provider =>
-        {
-            var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-            var httpClient = httpClientFactory.CreateClient("LlmClient");
-            var configuration = provider.GetRequiredService<IConfiguration>();
-            return new GeminiProvider(httpClient, configuration);
-        });
-
-        services.AddScoped<LlmProviderManager>();
-
-        if (configuration.GetValue<bool>("EmbeddingSettings:UseOnnx", false))
-        {
-            services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
-        }
-        else
-        {
-            services.AddSingleton<IEmbeddingService, LocalEmbeddingService>();
-        }
-
-        services.AddScoped<IRagService, RagService>();
-        services.AddScoped<ConventionDocumentBuilder>();
-        services.AddScoped<IndexingService>();
-        services.AddScoped<IVectorStore, MssqlVectorStore>();
-
-        return services;
-    }
-
-    /// <summary>
-    /// 채팅 서비스 등록
-    /// </summary>
-    public static IServiceCollection AddChatServices(this IServiceCollection services)
-    {
-        services.AddScoped<IConventionChatService, ConventionChatService>();
-        services.AddScoped<IChatHistoryService, ChatHistoryService>();
-        services.AddScoped<SourceIdentifier>();
-        services.AddScoped<ChatIntentRouter>();
-        services.AddScoped<ChatPromptBuilder>();
-        services.AddScoped<LlmResponseService>();
-        services.AddScoped<RagSearchService>();
-        services.AddScoped<UserContextualDataProvider>();
-        services.AddScoped<ConventionAccessService>();
-
-        return services;
-    }
-
     /// <summary>
     /// 인증 서비스 등록
     /// </summary>
@@ -141,7 +77,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddUserContextServices(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
-        services.AddScoped<IUserContextFactory, UserContextFactory>();
         services.AddHttpClient<IFlightService, FlightService>();
 
         return services;
@@ -174,8 +109,6 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddDomainServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddAiServices(configuration);
-        services.AddChatServices();
         services.AddAuthServices();
         services.AddConventionServices();
         services.AddUserServices();

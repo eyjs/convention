@@ -6,18 +6,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace LocalRAG.Data.Configurations;
 
-public class VectorDataEntryConfiguration : IEntityTypeConfiguration<VectorDataEntry>
-{
-    public void Configure(EntityTypeBuilder<VectorDataEntry> entity)
-    {
-        entity.HasKey(e => e.Id);
-        entity.Property(e => e.EmbeddingData).HasColumnType("varbinary(max)").IsRequired();
-        entity.Property(e => e.Content).IsRequired();
-        entity.HasIndex(e => e.ConventionId);
-        entity.Property(e => e.MetadataJson).HasMaxLength(2048);
-    }
-}
-
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> entity)
@@ -352,29 +340,6 @@ public class GalleryImageConfiguration : IEntityTypeConfiguration<GalleryImage>
         entity.Property(e => e.ImageUrl).IsRequired();
         entity.Property(e => e.UploadedAt).HasDefaultValueSql("getdate()");
         entity.HasIndex(e => e.GalleryId).HasDatabaseName("IX_GalleryImage_GalleryId");
-    }
-}
-
-public class ConventionChatMessageConfiguration : IEntityTypeConfiguration<ConventionChatMessage>
-{
-    public void Configure(EntityTypeBuilder<ConventionChatMessage> entity)
-    {
-        entity.HasKey(e => e.Id);
-        entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
-
-        entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_ChatMessage_ConventionId");
-        entity.HasIndex(e => e.UserId).HasDatabaseName("IX_ChatMessage_UserId");
-        entity.HasIndex(e => e.CreatedAt).HasDatabaseName("IX_ChatMessage_CreatedAt");
-
-        entity.HasOne(e => e.Convention)
-              .WithMany()
-              .HasForeignKey(e => e.ConventionId)
-              .OnDelete(DeleteBehavior.Cascade);
-
-        entity.HasOne(e => e.User)
-              .WithMany()
-              .HasForeignKey(e => e.UserId)
-              .OnDelete(DeleteBehavior.NoAction);
     }
 }
 

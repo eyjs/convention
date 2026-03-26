@@ -208,7 +208,7 @@ public class AuthService : IAuthService
         var refreshToken = GenerateRefreshToken();
 
         trackedUser.RefreshToken = refreshToken;
-        trackedUser.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
+        trackedUser.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
         trackedUser.LastLoginAt = DateTime.UtcNow;
         await _unitOfWork.SaveChangesAsync();
 
@@ -316,7 +316,7 @@ public class AuthService : IAuthService
         var refreshToken = GenerateRefreshToken();
 
         trackedUser.RefreshToken = refreshToken;
-        trackedUser.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
+        trackedUser.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
         await _unitOfWork.SaveChangesAsync();
 
         return AuthResult<RefreshTokenResponse>.Success(new RefreshTokenResponse
@@ -353,11 +353,6 @@ public class AuthService : IAuthService
         var conventionList = new List<UserConventionInfo>();
         foreach (var uc in userConventions.Where(uc => uc.Convention != null))
         {
-            var unreadCount = await _unitOfWork.ConventionChatMessages.CountAsync(m =>
-                m.ConventionId == uc.ConventionId &&
-                m.UserId != userId &&
-                m.CreatedAt > (uc.LastChatReadTimestamp ?? DateTime.MinValue));
-
             conventionList.Add(new UserConventionInfo
             {
                 Id = uc.ConventionId,
@@ -366,7 +361,7 @@ public class AuthService : IAuthService
                 EndDate = uc.Convention.EndDate,
                 UserId = user.Id,
                 Name = user.Name,
-                UnreadCount = unreadCount
+                UnreadCount = 0
             });
         }
 

@@ -50,46 +50,20 @@
       </div>
     </nav>
 
-    <Transition name="modal-slide">
-      <div
-        v-if="uiStore.isChatOpen && conventionId && token"
-        class="fixed inset-0 bg-black bg-opacity-30 z-40 flex justify-center items-end sm:items-center sm:p-4"
-      >
-        <div
-          class="w-full max-w-sm h-[calc(100%-5rem)] sm:h-full sm:max-h-[600px] flex flex-col rounded-t-2xl sm:rounded-lg shadow-xl bg-white overflow-hidden"
-        >
-          <ConventionChat :convention-id="conventionId" :token="token" />
-        </div>
-      </div>
-    </Transition>
-    <!-- 챗봇 기능 비활성화 (필요 시 주석 해제)
-    <ChatWindow />
-    <ChatFloatingButton
-      v-if="showNav && !uiStore.isChatOpen && currentRoute === '/'"
-    />
-    -->
   </div>
 </template>
 
 <script setup>
-import { computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
-import { useUIStore } from '@/stores/ui'
-// 챗봇 기능 비활성화 (필요 시 주석 해제)
-// import ChatWindow from '@/components/chatbot/ChatWindow.vue'
-// import ChatFloatingButton from '@/components/chatbot/ChatFloatingButton.vue'
-import ConventionChat from '@/components/ConventionChat.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
-const uiStore = useUIStore()
 
-const conventionId = computed(() => conventionStore.currentConvention?.id)
-const token = computed(() => authStore.accessToken)
 const currentRoute = computed(() => route.path)
 const showNav = computed(() => route.meta.showNav !== false)
 
@@ -116,13 +90,6 @@ const navItems = computed(() => [
     badge: 0,
   },
   {
-    path: '/chat',
-    label: '채팅',
-    iconPath:
-      'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-    badge: authStore.totalUnreadCount,
-  },
-  {
     path: '/features',
     label: '더보기',
     iconPath: 'M4 6h16M4 12h16M4 18h16',
@@ -130,31 +97,11 @@ const navItems = computed(() => [
   },
 ])
 
-watch(
-  () => uiStore.isChatOpen,
-  (isOpen, wasOpen) => {
-    if (isOpen && !wasOpen) {
-      // 채팅 모달이 열릴 때
-      if (!conventionId.value || !token.value) {
-        uiStore.isChatOpen = false
-        alert(
-          '채팅 기능이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.',
-        )
-      }
-    }
-  },
-)
-
 function navigateTo(path) {
-  if (path === '/chat') {
-    uiStore.toggleChat()
-  } else if (path) {
-    // path가 유효한 경우에만 router.push 호출
+  if (path) {
     router.push(path).catch((err) => {
       console.error('Navigation error:', err)
     })
-  } else {
-    console.error('Invalid path:', path)
   }
 }
 </script>

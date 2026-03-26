@@ -2,8 +2,6 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useUIStore = defineStore('ui', () => {
-  const isChatOpen = ref(false)
-
   // 모달 스택: { id: symbol, close: function }[]
   const modalStack = ref([])
 
@@ -31,27 +29,11 @@ export const useUIStore = defineStore('ui', () => {
     return modalStack.value.length > 0
   }
 
-  function toggleChat() {
-    isChatOpen.value = !isChatOpen.value
-  }
-
-  function openChat() {
-    isChatOpen.value = true
-  }
-
-  function closeChat() {
-    isChatOpen.value = false
-  }
-
   return {
     modalStack,
     registerModal,
     unregisterModal,
     closeTopModal,
     hasOpenModal,
-    isChatOpen,
-    toggleChat,
-    openChat,
-    closeChat,
   }
 })

@@ -1,8 +1,6 @@
 using LocalRAG.Configuration;
 using LocalRAG.Data;
 using LocalRAG.Extensions;
-using LocalRAG.HealthChecks;
-using LocalRAG.Interfaces;
 using LocalRAG.Middleware;
 using LocalRAG.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,8 +9,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using System.Text;
-using LocalRAG.Hubs;
-
 var builder = WebApplication.CreateBuilder(args);
 
 if (builder.Environment.IsDevelopment())
@@ -37,16 +33,9 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
-builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
-
-// LLM Provider 전용 HttpClient (타임아웃 5분)
-builder.Services.AddHttpClient("LlmClient", client =>
-{
-    client.Timeout = TimeSpan.FromMinutes(5);
-});
 
 // 세션 추가
 builder.Services.AddDistributedMemoryCache();
@@ -132,20 +121,6 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
     };
-    options.Events = new JwtBearerEvents
-    {
-        OnMessageReceived = context =>
-        {
-            var accessToken = context.Request.Query["access_token"];
-            var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) &&
-                (path.StartsWithSegments("/chathub")))
-            {
-                context.Token = accessToken;
-            }
-            return Task.CompletedTask;
-        }
-    };
 });
 
 builder.Services.AddSingleton(jwtSettings);
@@ -158,9 +133,6 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 builder.Services.AddHealthChecks()
-    .AddCheck<LlmProviderHealthCheck>("llm_provider")
-    .AddCheck<VectorStoreHealthCheck>("vector_store")
-    .AddCheck<EmbeddingServiceHealthCheck>("embedding_service")
     .AddDbContextCheck<ConventionDbContext>("database");
 
 // --- 애플리케이션 빌드 및 미들웨어 파이프라인 구성 ---
@@ -192,7 +164,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHealthChecks("/health");
-app.MapHub<ChatHub>("/chathub");
 app.MapControllers();
 
 if (app.Environment.IsDevelopment())

@@ -122,36 +122,3 @@ public class OwnerRepository : Repository<Owner>, IOwnerRepository
             .ToListAsync(cancellationToken);
     }
 }
-
-/// <summary>
-/// VectorStore Repository 구현체
-/// </summary>
-public class VectorStoreRepository : Repository<VectorStore>, IVectorStoreRepository
-{
-    public VectorStoreRepository(ConventionDbContext context) : base(context)
-    {
-    }
-
-    public async Task<IEnumerable<VectorStore>> GetVectorsByConventionIdAsync(
-        int conventionId,
-        CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .AsNoTracking()
-            .Where(v => v.ConventionId == conventionId)
-            .OrderByDescending(v => v.RegDtm)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<VectorStore>> GetVectorsBySourceAsync(
-        string sourceTable,
-        string sourceId,
-        CancellationToken cancellationToken = default)
-    {
-        return await _dbSet
-            .AsNoTracking()
-            .Where(v => v.SourceTable == sourceTable && v.SourceId == sourceId)
-            .OrderByDescending(v => v.RegDtm)
-            .ToListAsync(cancellationToken);
-    }
-}

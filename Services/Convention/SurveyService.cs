@@ -152,6 +152,7 @@ namespace LocalRAG.Services.Convention
                         {
                             OptionText = oDto.OptionText,
                             OrderIndex = oDto.OrderIndex,
+                            IsTerminating = oDto.IsTerminating,
                             OptionTourId = oDto.OptionTourId
                         };
                         question.Options.Add(option);
@@ -764,6 +765,7 @@ namespace LocalRAG.Services.Convention
                         QuestionId = question.Id,
                         OptionText = oDto.OptionText,
                         OrderIndex = oDto.OrderIndex,
+                        IsTerminating = oDto.IsTerminating,
                         OptionTourId = oDto.OptionTourId
                     };
                     question.Options.Add(option);
@@ -772,6 +774,7 @@ namespace LocalRAG.Services.Convention
                 {
                     option.OptionText = oDto.OptionText;
                     option.OrderIndex = oDto.OrderIndex;
+                    option.IsTerminating = oDto.IsTerminating;
                     option.OptionTourId = oDto.OptionTourId;
                 }
 
@@ -845,6 +848,7 @@ namespace LocalRAG.Services.Convention
                         Id = o.Id,
                         OptionText = o.OptionText,
                         OrderIndex = o.OrderIndex,
+                        IsTerminating = o.IsTerminating,
                         OptionTourId = o.OptionTourId,
                         OptionTourName = o.OptionTour?.Name
                     }).ToList()

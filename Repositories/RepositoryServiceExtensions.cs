@@ -45,7 +45,6 @@ public static class RepositoryServiceExtensions
         services.AddScoped<IMenuRepository, MenuRepository>();
         services.AddScoped<ISectionRepository, SectionRepository>();
         services.AddScoped<IOwnerRepository, OwnerRepository>();
-        services.AddScoped<IVectorStoreRepository, VectorStoreRepository>();
         // services.AddScoped<ITransportationRepository, TransportationRepository>();
 
         return services;

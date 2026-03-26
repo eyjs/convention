@@ -40,16 +40,11 @@ public class ConventionDbContext : DbContext
     public DbSet<FileAttachment> FileAttachments { get; set; }
     public DbSet<Gallery> Galleries { get; set; }
     public DbSet<GalleryImage> GalleryImages { get; set; }
-    public DbSet<ConventionChatMessage> ConventionChatMessages { get; set; }
-
     // Form Builder System
     public DbSet<FormDefinition> FormDefinitions { get; set; }
     public DbSet<FormField> FormFields { get; set; }
     public DbSet<FormSubmission> FormSubmissions { get; set; }
 
-    public DbSet<VectorDataEntry> VectorDataEntries { get; set; } //  DbSet 추가
-    
-    public DbSet<LlmSetting> LlmSettings { get; set; }
     public DbSet<Survey> Surveys { get; set; }
     public DbSet<SurveyQuestion> SurveyQuestions { get; set; }
     public DbSet<QuestionOption> QuestionOptions { get; set; }

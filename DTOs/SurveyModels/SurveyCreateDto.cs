@@ -39,6 +39,7 @@ namespace LocalRAG.DTOs.SurveyModels
         [Required]
         public string OptionText { get; set; } = string.Empty;
         public int OrderIndex { get; set; }
+        public bool IsTerminating { get; set; }
         public int? OptionTourId { get; set; }
         /// <summary>
         /// 프론트엔드가 새 옵션에 부여하는 임시 키 (음수). 꼬리질문 연결용.
