@@ -315,6 +315,12 @@ const routes = [
         meta: { title: '통계', adminTitle: '관리자' },
       },
       {
+        path: 'guide',
+        name: 'AdminGuide',
+        component: () => import('@/views/admin/AdminGuideView.vue'),
+        meta: { title: '사용 가이드', adminTitle: '관리자' },
+      },
+      {
         path: 'conventions/:id',
         component: () => import('@/views/AdminDashboard.vue'),
         meta: {
@@ -457,9 +463,10 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  // 모달 열려있으면 모달 닫고 네비게이션 취소 (뒤로가기 시 모달 닫기)
+  // 뒤로가기 시 모달 닫기
   const uiStore = useUIStore()
-  if (uiStore.closeTopModal()) {
+  if (uiStore.hasOpenModal() && to.path !== from.path) {
+    uiStore.closeTopModal()
     next(false)
     return
   }

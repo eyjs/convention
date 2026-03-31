@@ -79,13 +79,31 @@
 
         <!-- 여권 정보 섹션 -->
         <div class="mt-6">
-          <h2 class="px-4 text-lg font-semibold text-gray-800 mb-2">
-            여권 정보
-          </h2>
+          <div class="px-4 flex items-center justify-between mb-2">
+            <h2 class="text-lg font-semibold text-gray-800">여권 정보</h2>
+            <span
+              v-if="profile.passportVerified"
+              class="px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700"
+            >
+              승인완료
+            </span>
+          </div>
+          <!-- 승인 상태 안내 -->
+          <div
+            v-if="profile.passportVerified"
+            class="mx-4 mb-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg"
+          >
+            <p class="text-xs text-green-700">
+              여권 정보가 관리자에 의해 승인되었습니다. 수정이 필요한 경우
+              관리자에게 문의해주세요.
+            </p>
+          </div>
           <div class="bg-white rounded-lg shadow">
             <ul class="divide-y divide-gray-200">
               <template v-for="field in passportFields" :key="field.key">
+                <!-- 수정 가능 (미승인) -->
                 <button
+                  v-if="field.editable"
                   class="w-full text-left px-4 py-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
                   @click="openEditFieldModal(field)"
                 >
@@ -97,6 +115,19 @@
                     <ChevronRight class="w-5 h-5 text-gray-400" />
                   </div>
                 </button>
+                <!-- 수정 불가 (승인됨) -->
+                <li
+                  v-else
+                  class="px-4 py-4 flex justify-between items-center"
+                >
+                  <span class="font-medium text-gray-700">{{
+                    field.label
+                  }}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-900">{{ field.value || '-' }}</span>
+                    <Lock class="w-4 h-4 text-green-500" />
+                  </div>
+                </li>
               </template>
               <!-- 여권 이미지 필드 -->
               <li class="px-4 py-4 flex justify-between items-center">
@@ -109,7 +140,7 @@
                     여권 이미지 확인
                   </button>
                 </div>
-                <div v-else>
+                <div v-else-if="!profile.passportVerified">
                   <label
                     for="passport-image-upload"
                     class="text-sm font-medium text-blue-600 hover:underline cursor-pointer"
@@ -123,6 +154,9 @@
                       @change="handlePassportImageUpload"
                     />
                   </label>
+                </div>
+                <div v-else>
+                  <span class="text-sm text-gray-400">-</span>
                 </div>
               </li>
             </ul>
@@ -222,7 +256,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { Camera, ChevronRight } from 'lucide-vue-next'
+import { Camera, ChevronRight, Lock } from 'lucide-vue-next'
 import 'viewerjs/dist/viewer.css'
 import { api as viewerApi } from 'v-viewer'
 import MainHeader from '@/components/common/MainHeader.vue'
@@ -307,7 +341,7 @@ const allFields = computed(() => {
       key: 'firstName',
       label: '영문 이름 (First Name)',
       value: p.firstName,
-      editable: true,
+      editable: !p.passportVerified,
       type: 'text',
       group: 'passport',
     },
@@ -315,7 +349,7 @@ const allFields = computed(() => {
       key: 'lastName',
       label: '영문 성 (Last Name)',
       value: p.lastName,
-      editable: true,
+      editable: !p.passportVerified,
       type: 'text',
       group: 'passport',
     },
@@ -323,7 +357,7 @@ const allFields = computed(() => {
       key: 'passportNumber',
       label: '여권 번호',
       value: p.passportNumber,
-      editable: true,
+      editable: !p.passportVerified,
       type: 'text',
       group: 'passport',
     },
@@ -331,7 +365,7 @@ const allFields = computed(() => {
       key: 'passportExpiryDate',
       label: '여권 만료일',
       value: p.passportExpiryDate,
-      editable: true,
+      editable: !p.passportVerified,
       type: 'date',
       group: 'passport',
     },

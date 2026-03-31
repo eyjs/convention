@@ -1,8 +1,11 @@
 using LocalRAG.Constants;
 using LocalRAG.DTOs.UploadModels;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 
 namespace LocalRAG.Controllers;
 
@@ -24,6 +27,7 @@ public class UploadController : ControllerBase
     private readonly IGroupScheduleMappingService _groupScheduleMappingService;
     private readonly INameTagUploadService _nameTagUploadService;
     private readonly IOptionTourUploadService _optionTourUploadService;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UploadController> _logger;
 
     public UploadController(
@@ -33,6 +37,7 @@ public class UploadController : ControllerBase
         IGroupScheduleMappingService groupScheduleMappingService,
         INameTagUploadService nameTagUploadService,
         IOptionTourUploadService optionTourUploadService,
+        IUnitOfWork unitOfWork,
         ILogger<UploadController> logger)
     {
         _userUploadService = userUploadService;
@@ -41,6 +46,7 @@ public class UploadController : ControllerBase
         _groupScheduleMappingService = groupScheduleMappingService;
         _nameTagUploadService = nameTagUploadService;
         _optionTourUploadService = optionTourUploadService;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -299,5 +305,185 @@ public class UploadController : ControllerBase
             _logger.LogError(ex, "Failed to upload option tours");
             return StatusCode(500, new { error = "서버 오류가 발생했습니다." });
         }
+    }
+
+    // ============================================================
+    // 다운로드 엔드포인트
+    // ============================================================
+
+    /// <summary>
+    /// 현재 참석자 목록 다운로드 (업로드 형식과 동일)
+    /// </summary>
+    [HttpGet("conventions/{conventionId}/guests/download")]
+    public async Task<IActionResult> DownloadGuests(int conventionId)
+    {
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+        var guests = await _unitOfWork.UserConventions.Query
+            .Where(uc => uc.ConventionId == conventionId)
+            .Include(uc => uc.User)
+            .OrderBy(uc => uc.GroupName).ThenBy(uc => uc.User.Name)
+            .ToListAsync();
+
+        using var package = new ExcelPackage();
+        var sheet = package.Workbook.Worksheets.Add("참석자");
+
+        // 헤더 (업로드 형식과 동일)
+        sheet.Cells[1, 1].Value = "소속";
+        sheet.Cells[1, 2].Value = "부서";
+        sheet.Cells[1, 3].Value = "이름";
+        sheet.Cells[1, 4].Value = "주민번호";
+        sheet.Cells[1, 5].Value = "전화번호";
+        sheet.Cells[1, 6].Value = "그룹";
+        sheet.Cells[1, 7].Value = "비고";
+
+        var row = 2;
+        foreach (var uc in guests)
+        {
+            var u = uc.User;
+            sheet.Cells[row, 1].Value = u.Affiliation;
+            sheet.Cells[row, 2].Value = u.CorpPart;
+            sheet.Cells[row, 3].Value = u.Name;
+            sheet.Cells[row, 4].Value = u.ResidentNumber;
+            sheet.Cells[row, 5].Value = u.Phone;
+            sheet.Cells[row, 6].Value = uc.GroupName;
+            sheet.Cells[row, 7].Value = u.Remarks;
+            row++;
+        }
+
+        sheet.Cells[sheet.Dimension?.Address ?? "A1"].AutoFitColumns();
+        var bytes = package.GetAsByteArray();
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"참석자_{DateTime.UtcNow:yyyyMMdd}.xlsx");
+    }
+
+    /// <summary>
+    /// 현재 일정 템플릿 다운로드
+    /// </summary>
+    [HttpGet("conventions/{conventionId}/schedules/download")]
+    public async Task<IActionResult> DownloadSchedules(int conventionId)
+    {
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+        var templates = await _unitOfWork.ScheduleTemplates.Query
+            .Where(t => t.ConventionId == conventionId)
+            .Include(t => t.ScheduleItems)
+            .OrderBy(t => t.OrderNum)
+            .ToListAsync();
+
+        using var package = new ExcelPackage();
+
+        foreach (var template in templates)
+        {
+            var sheetName = template.CourseName.Length > 31
+                ? template.CourseName[..31]
+                : template.CourseName;
+            var sheet = package.Workbook.Worksheets.Add(sheetName);
+
+            sheet.Cells[1, 1].Value = "날짜";
+            sheet.Cells[1, 2].Value = "시작시간";
+            sheet.Cells[1, 3].Value = "종료시간";
+            sheet.Cells[1, 4].Value = "장소";
+            sheet.Cells[1, 5].Value = "일정명";
+            sheet.Cells[1, 6].Value = "메모";
+
+            var row = 2;
+            foreach (var item in template.ScheduleItems.OrderBy(i => i.ScheduleDate).ThenBy(i => i.OrderNum))
+            {
+                sheet.Cells[row, 1].Value = item.ScheduleDate.ToString("yyyy-MM-dd");
+                sheet.Cells[row, 2].Value = item.StartTime;
+                sheet.Cells[row, 3].Value = item.EndTime;
+                sheet.Cells[row, 4].Value = item.Location;
+                sheet.Cells[row, 5].Value = item.Title;
+                sheet.Cells[row, 6].Value = item.Content;
+                row++;
+            }
+
+            sheet.Cells[sheet.Dimension?.Address ?? "A1"].AutoFitColumns();
+        }
+
+        var bytes = package.GetAsByteArray();
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"일정_{DateTime.UtcNow:yyyyMMdd}.xlsx");
+    }
+
+    /// <summary>
+    /// 현재 옵션투어 + 참석자 매핑 다운로드
+    /// </summary>
+    [HttpGet("conventions/{conventionId}/option-tours/download")]
+    public async Task<IActionResult> DownloadOptionTours(int conventionId)
+    {
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+        var optionTours = await _unitOfWork.OptionTours.Query
+            .Where(ot => ot.ConventionId == conventionId)
+            .OrderBy(ot => ot.Date).ThenBy(ot => ot.StartTime)
+            .ToListAsync();
+
+        var userOptionTours = await _unitOfWork.UserOptionTours.Query
+            .Where(uot => uot.ConventionId == conventionId)
+            .ToListAsync();
+
+        var userIds = userOptionTours.Select(uot => uot.UserId).Distinct().ToList();
+        var users = await _unitOfWork.Users.Query
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.Name, u.Phone })
+            .ToListAsync();
+
+        var userMap = users.ToDictionary(u => u.Id);
+
+        using var package = new ExcelPackage();
+
+        // 시트1: 옵션 목록
+        var sheet1 = package.Workbook.Worksheets.Add("옵션");
+        sheet1.Cells[1, 1].Value = "날짜";
+        sheet1.Cells[1, 2].Value = "시작시간";
+        sheet1.Cells[1, 3].Value = "종료시간";
+        sheet1.Cells[1, 4].Value = "옵션명";
+        sheet1.Cells[1, 5].Value = "옵션내용";
+
+        // optionTour.Id → 엑셀 행번호 매핑
+        var tourRowMap = new Dictionary<int, int>();
+        var row = 2;
+        foreach (var ot in optionTours)
+        {
+            sheet1.Cells[row, 1].Value = ot.Date.ToString("yyyy-MM-dd");
+            sheet1.Cells[row, 2].Value = ot.StartTime;
+            sheet1.Cells[row, 3].Value = ot.EndTime;
+            sheet1.Cells[row, 4].Value = ot.Name;
+            sheet1.Cells[row, 5].Value = ot.Content;
+            tourRowMap[ot.Id] = row;
+            row++;
+        }
+        sheet1.Cells[sheet1.Dimension?.Address ?? "A1"].AutoFitColumns();
+
+        // 시트2: 참석자별 매핑
+        var sheet2 = package.Workbook.Worksheets.Add("참석자매핑");
+        sheet2.Cells[1, 1].Value = "이름";
+        sheet2.Cells[1, 2].Value = "전화번호";
+        sheet2.Cells[1, 3].Value = "옵션번호";
+
+        var userGroups = userOptionTours.GroupBy(uot => uot.UserId);
+        row = 2;
+        foreach (var group in userGroups)
+        {
+            if (!userMap.TryGetValue(group.Key, out var user)) continue;
+
+            var optionRows = group
+                .Where(uot => tourRowMap.ContainsKey(uot.OptionTourId))
+                .Select(uot => tourRowMap[uot.OptionTourId])
+                .OrderBy(r => r)
+                .ToList();
+
+            sheet2.Cells[row, 1].Value = user.Name;
+            sheet2.Cells[row, 2].Value = user.Phone;
+            sheet2.Cells[row, 3].Value = string.Join(",", optionRows);
+            row++;
+        }
+        sheet2.Cells[sheet2.Dimension?.Address ?? "A1"].AutoFitColumns();
+
+        var bytes = package.GetAsByteArray();
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"옵션투어_{DateTime.UtcNow:yyyyMMdd}.xlsx");
     }
 }

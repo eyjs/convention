@@ -334,7 +334,9 @@ public class UserProfileService : IUserProfileService
             Affiliation = user.Affiliation,
             CorpName = user.CorpName,
             CorpPart = user.CorpPart,
-            ProfileImageUrl = user.ProfileImageUrl
+            ProfileImageUrl = user.ProfileImageUrl,
+            PassportVerified = user.PassportVerified,
+            PassportImageUrl = user.PassportImageUrl
         };
     }
 
@@ -390,6 +392,13 @@ public class UserProfileService : IUserProfileService
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.");
+
+        // 여권 승인 완료된 경우 여권 관련 필드 수정 차단
+        var passportFields = new[] { "firstName", "lastName", "passportNumber", "passportExpiryDate" };
+        if (user.PassportVerified && passportFields.Contains(request.FieldName))
+        {
+            return (false, "여권 정보가 승인된 상태입니다. 수정이 필요한 경우 관리자에게 문의해주세요.");
+        }
 
         switch (request.FieldName)
         {
@@ -489,6 +498,9 @@ public class UserProfileService : IUserProfileService
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.", null);
 
+        if (user.PassportVerified)
+            return (false, "여권 정보가 승인된 상태입니다. 수정이 필요한 경우 관리자에게 문의해주세요.", null);
+
         var uploadResult = await _fileUploadService.UploadImageAsync(file, "passport_images");
 
         if (string.IsNullOrEmpty(uploadResult.Url))
@@ -577,8 +589,9 @@ public class UserProfileService : IUserProfileService
             })
             .ToList();
 
-        // 게스트 속성 (조, 호차 등)
+        // 게스트 속성 (조, 호차 등) — travel_info는 시스템 예약 키이므로 제외
         var attributes = user.GuestAttributes
+            .Where(ga => ga.AttributeKey != "travel_info")
             .Select(ga => new
             {
                 key = ga.AttributeKey,

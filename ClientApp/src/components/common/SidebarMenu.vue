@@ -106,8 +106,8 @@
           </nav>
         </div>
 
-        <!-- 로그아웃 (하단 border 분리) -->
-        <div class="border-t border-gray-200 p-3">
+        <!-- 로그아웃 (하단 nav + safe-area 고려) -->
+        <div class="border-t border-gray-200 p-3 pb-safe">
           <button
             class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             @click="handleLogout"
@@ -222,5 +222,16 @@ onMounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* 하단 nav(64px) + safe-area 여백 */
+.pb-safe {
+  padding-bottom: calc(64px + 12px);
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: calc(64px + 12px + env(safe-area-inset-bottom));
+  }
 }
 </style>

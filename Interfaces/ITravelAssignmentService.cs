@@ -21,6 +21,26 @@ public interface ITravelAssignmentService
     /// 관리자: 일괄 업데이트
     /// </summary>
     Task<BulkTravelUpdateResult> BulkUpdateAsync(int conventionId, List<TravelDayUpdateRequest> assignments);
+
+    /// <summary>
+    /// 관리자: 특정 날짜의 전체 배정 삭제
+    /// </summary>
+    Task<int> RemoveDateAsync(int conventionId, string date);
+
+    /// <summary>
+    /// 엑셀 업로드: 시트별 날짜, 행별 이름+전화번호로 매칭
+    /// </summary>
+    Task<TravelUploadResult> UploadFromExcelAsync(int conventionId, Stream excelStream);
+}
+
+public class TravelUploadResult
+{
+    public bool Success { get; set; }
+    public int SheetsProcessed { get; set; }
+    public int UsersMatched { get; set; }
+    public int UsersNotFound { get; set; }
+    public List<string> Errors { get; set; } = new();
+    public List<string> Warnings { get; set; } = new();
 }
 
 // --- DTOs ---

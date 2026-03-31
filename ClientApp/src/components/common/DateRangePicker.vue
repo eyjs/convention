@@ -4,8 +4,7 @@
       label
     }}</label>
     <VDatePicker
-      v-model="dateRange"
-      is-range
+      v-model.range="dateRange"
       :masks="masks"
       :popover="{ visibility: 'click', positionFixed: true, zIndex: 9999 }"
       teleport

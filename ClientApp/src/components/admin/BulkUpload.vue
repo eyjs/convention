@@ -70,6 +70,12 @@
           <p class="mt-1 text-primary-600">
             ※ 이름 + (전화번호 OR 주민번호) 매칭으로 중복 시 업데이트
           </p>
+          <div class="mt-2 p-2 bg-primary-100 rounded text-xs text-primary-800">
+            <p class="font-semibold mb-0.5">🔐 신규 참석자 자동 계정 생성</p>
+            <p>• 로그인 ID: 자동 생성 (guest_xxx)</p>
+            <p>• 기본 비밀번호: <strong>1111</strong></p>
+            <p>• 접근 링크(SMS)로 비밀번호 없이 로그인 가능</p>
+          </div>
         </div>
       </div>
 
@@ -85,19 +91,25 @@
 
       <div class="mt-6 pt-6 border-t">
         <h3 class="font-semibold mb-3">파일 다운로드</h3>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
           <a
             href="/Sample/참석자업로드_샘플.xlsx"
             download
-            class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+            class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
           >
-            📥 참석자 업로드 샘플
+            📄 샘플
           </a>
           <button
-            class="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-md hover:bg-green-200"
+            class="inline-block px-4 py-2 bg-primary-50 text-primary-700 rounded-md hover:bg-primary-100 text-sm"
+            @click="downloadCurrentData('guests')"
+          >
+            📥 현재 참석자
+          </button>
+          <button
+            class="inline-block px-4 py-2 bg-green-50 text-green-700 rounded-md hover:bg-green-100 text-sm"
             @click="downloadGuests"
           >
-            📥 전체 참석자 속성 다운로드
+            📥 참석자 속성
           </button>
         </div>
       </div>
@@ -155,14 +167,22 @@
       />
 
       <div class="mt-6 pt-6 border-t">
-        <h3 class="font-semibold mb-3">샘플 파일</h3>
-        <a
-          href="/Sample/일정업로드_샘플.xlsx"
-          download
-          class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-        >
-          📥 일정 업로드 샘플
-        </a>
+        <h3 class="font-semibold mb-3">파일 다운로드</h3>
+        <div class="flex flex-wrap gap-2">
+          <a
+            href="/Sample/일정업로드_샘플.xlsx"
+            download
+            class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
+          >
+            📄 샘플
+          </a>
+          <button
+            class="inline-block px-4 py-2 bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 text-sm"
+            @click="downloadCurrentData('schedules')"
+          >
+            📥 현재 일정
+          </button>
+        </div>
       </div>
     </div>
 
@@ -235,13 +255,21 @@
 
       <div class="mt-6 pt-6 border-t">
         <h3 class="font-semibold mb-3">샘플 파일</h3>
-        <a
-          href="/Sample/옵션투어_업로드_샘플.xlsx"
-          download
-          class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-        >
-          📥 옵션투어 업로드 샘플
-        </a>
+        <div class="flex flex-wrap gap-2">
+          <a
+            href="/Sample/옵션투어_업로드_샘플.xlsx"
+            download
+            class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
+          >
+            📄 샘플
+          </a>
+          <button
+            class="inline-block px-4 py-2 bg-orange-50 text-orange-700 rounded-md hover:bg-orange-100 text-sm"
+            @click="downloadCurrentData('option-tours')"
+          >
+            📥 현재 옵션투어
+          </button>
+        </div>
       </div>
     </div>
 
@@ -440,6 +468,43 @@ const downloadGuests = async () => {
     window.URL.revokeObjectURL(url)
   } catch (error) {
     console.error('Failed to download guests:', error)
+    alert('다운로드 실패: ' + (error.response?.data?.message || error.message))
+  }
+}
+
+// 현재 데이터 다운로드
+const downloadCurrentData = async (type) => {
+  const urlMap = {
+    guests: `/upload/conventions/${props.conventionId}/guests/download`,
+    schedules: `/upload/conventions/${props.conventionId}/schedules/download`,
+    'option-tours': `/upload/conventions/${props.conventionId}/option-tours/download`,
+  }
+
+  try {
+    const response = await apiClient.get(urlMap[type], { responseType: 'blob' })
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+
+    const contentDisposition = response.headers['content-disposition']
+    let fileName = `${type}_download.xlsx`
+    if (contentDisposition) {
+      const match = contentDisposition.match(
+        /filename\*?=['"]?(?:UTF-8'')?([^'";]+)/i,
+      )
+      if (match) fileName = decodeURIComponent(match[1])
+    }
+
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Download failed:', error)
     alert('다운로드 실패: ' + (error.response?.data?.message || error.message))
   }
 }

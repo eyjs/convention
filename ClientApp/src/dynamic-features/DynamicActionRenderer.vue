@@ -56,9 +56,22 @@
       </div>
     </div>
 
-    <!-- 다른 액션 카테고리 렌더링 -->
+    <!-- BUTTON 그리드 (최대 4열, 항상 25%) -->
+    <div
+      v-if="buttonItems.length > 0"
+      class="grid grid-cols-4 gap-2"
+    >
+      <component
+        :is="resolveComponent('BUTTON')"
+        v-for="feature in buttonItems"
+        :key="feature.id"
+        :feature="feature"
+      />
+    </div>
+
+    <!-- 다른 액션 카테고리 렌더링 (BUTTON, CHECKLIST_CARD 제외) -->
     <template
-      v-for="feature in nonChecklistFeatures"
+      v-for="feature in otherFeatures"
       :key="feature.id || feature.actionType"
     >
       <component
@@ -94,8 +107,14 @@ const checklistItems = computed(() =>
   props.features.filter((f) => f.actionCategory === 'CHECKLIST_CARD'),
 )
 
-const nonChecklistFeatures = computed(() =>
-  props.features.filter((f) => f.actionCategory !== 'CHECKLIST_CARD'),
+const buttonItems = computed(() =>
+  props.features.filter((f) => f.actionCategory === 'BUTTON'),
+)
+
+const otherFeatures = computed(() =>
+  props.features.filter(
+    (f) => f.actionCategory !== 'CHECKLIST_CARD' && f.actionCategory !== 'BUTTON',
+  ),
 )
 
 // 표시할 체크리스트 아이템 (펼침 상태에 따라 다름)

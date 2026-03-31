@@ -15,4 +15,6 @@ public class UserProfileDto
     public string? CorpName { get; set; }
     public string? CorpPart { get; set; }
     public string? ProfileImageUrl { get; set; }
+    public bool PassportVerified { get; set; }
+    public string? PassportImageUrl { get; set; }
 }

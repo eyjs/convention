@@ -116,20 +116,7 @@
 
     <!-- 메인 컨텐츠 -->
     <div class="px-4 pt-10 space-y-6 -mt-8">
-      <!-- HOME_CONTENT_TOP 위치: 컨텐츠 영역 상단 (체크리스트 포함) -->
-      <DynamicActionRenderer
-        v-if="contentTopActions.length > 0"
-        :features="contentTopActions"
-      />
-
-      <!-- 필수 제출 사항 체크리스트 -->
-      <ChecklistProgress
-        v-if="checklistStatus && checklistStatus.totalItems > 0"
-        :checklist="checklistStatus"
-        :brand-color="brandColor"
-      />
-
-      <!-- 내 정보 -->
+      <!-- 내 정보 (대시보드 최상단) -->
       <div v-if="myInfo" class="bg-white rounded-2xl shadow-lg overflow-hidden">
         <!-- 탭 헤더 (내정보 / 동반자1 / 동반자2 ...) -->
         <div class="flex border-b overflow-x-auto">
@@ -195,7 +182,8 @@
           <!-- 배정 정보 태그 -->
           <div
             v-if="
-              myInfo.scheduleCourses.length > 0 || myInfo.attributes.length > 0
+              myInfo.scheduleCourses.length > 0 ||
+              myInfo.attributes.length > 0
             "
             class="flex flex-wrap gap-2 mb-4"
           >
@@ -353,27 +341,6 @@
               </div>
             </button>
 
-            <!-- 설문조사 (미완료만 표시) -->
-            <button
-              v-for="survey in pendingSurveys"
-              :key="'survey-' + survey.id"
-              class="w-full flex items-center justify-between py-3 text-left hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors"
-              @click="navigateTo(`/surveys/${survey.id}`)"
-            >
-              <div class="flex items-center gap-2.5">
-                <span
-                  class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs bg-gray-200 text-gray-400"
-                >
-                  —
-                </span>
-                <span class="text-sm text-gray-800">{{ survey.title }}</span>
-              </div>
-              <span
-                class="text-xs font-medium px-2 py-0.5 rounded-md bg-red-50 text-red-600"
-              >
-                미완료
-              </span>
-            </button>
           </div>
         </div>
 
@@ -520,6 +487,117 @@
           </div>
         </template>
       </BaseModal>
+
+      <!-- HOME_CONTENT_TOP 위치: 동적 액션 -->
+      <DynamicActionRenderer
+        v-if="contentTopActions.length > 0"
+        :features="contentTopActions"
+      />
+
+      <!-- 필수 제출 사항 체크리스트 -->
+      <ChecklistProgress
+        v-if="checklistStatus && checklistStatus.totalItems > 0"
+        :checklist="checklistStatus"
+        :brand-color="brandColor"
+      />
+
+      <!-- 설문조사 (미완료만 표시, 모두 완료 시 숨김) -->
+      <div
+        v-if="pendingSurveys.length > 0"
+        class="bg-white rounded-2xl shadow-lg p-5"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <div
+              class="w-8 h-8 rounded-lg flex items-center justify-center"
+              :style="{
+                backgroundColor: brandColor + '15',
+              }"
+            >
+              <svg
+                class="w-4.5 h-4.5"
+                :style="{ color: brandColor }"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-gray-900">설문조사</h2>
+              <p class="text-xs text-gray-500">
+                {{ pendingSurveys.length }}개 참여 대기
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-2.5">
+          <button
+            v-for="survey in pendingSurveys"
+            :key="'survey-' + survey.id"
+            class="w-full flex items-center justify-between p-3.5 rounded-xl border-2 border-gray-200 hover:shadow-sm transition-all text-left group"
+            :class="'hover:border-blue-500 hover:bg-blue-50'"
+            @click="navigateTo(`/surveys/${survey.id}`)"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 group-hover:bg-blue-200 transition-colors flex-shrink-0"
+              >
+                <svg
+                  class="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900">
+                  {{ survey.title }}
+                </p>
+                <p
+                  v-if="survey.description"
+                  class="text-xs text-gray-500 mt-0.5 line-clamp-1"
+                >
+                  {{ survey.description }}
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <span
+                class="text-xs font-medium px-2 py-0.5 rounded-md bg-red-50 text-red-600"
+              >
+                미완료
+              </span>
+              <svg
+                class="w-4 h-4 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </div>
+          </button>
+        </div>
+      </div>
 
       <!-- 공지사항 -->
       <div class="bg-white rounded-2xl shadow-lg p-5">

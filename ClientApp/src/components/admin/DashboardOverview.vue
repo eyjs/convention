@@ -27,6 +27,143 @@
       />
     </div>
 
+    <!-- 여권 현황 (해외 행사) -->
+    <div v-if="passportStats" class="mb-8">
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-4 sm:p-6 border-b">
+          <h3 class="text-lg font-semibold flex items-center gap-2">
+            여권 현황
+            <span
+              class="text-xs font-normal px-2 py-0.5 rounded-full"
+              :class="
+                passportAlertCount > 0
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-green-100 text-green-700'
+              "
+            >
+              {{
+                passportAlertCount > 0
+                  ? `${passportAlertCount}명 확인 필요`
+                  : '전원 완료'
+              }}
+            </span>
+          </h3>
+        </div>
+        <div class="p-4 sm:p-6">
+          <!-- 요약 카드 -->
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
+            <div class="text-center p-3 bg-green-50 rounded-lg">
+              <p class="text-2xl font-bold text-green-600">
+                {{ passportStats.verifiedCount }}
+              </p>
+              <p class="text-xs text-green-700">승인 완료</p>
+            </div>
+            <div
+              class="text-center p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+              :class="
+                passportStats.unverified?.length > 0
+                  ? 'bg-amber-50'
+                  : 'bg-gray-50'
+              "
+              @click="showPassportList('unverified')"
+            >
+              <p
+                class="text-2xl font-bold"
+                :class="
+                  passportStats.unverified?.length > 0
+                    ? 'text-amber-600'
+                    : 'text-gray-400'
+                "
+              >
+                {{ passportStats.unverified?.length || 0 }}
+              </p>
+              <p class="text-xs text-amber-700">승인 대기</p>
+            </div>
+            <div
+              class="text-center p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+              :class="
+                passportStats.noPassport?.length > 0
+                  ? 'bg-gray-100'
+                  : 'bg-gray-50'
+              "
+              @click="showPassportList('noPassport')"
+            >
+              <p
+                class="text-2xl font-bold"
+                :class="
+                  passportStats.noPassport?.length > 0
+                    ? 'text-gray-600'
+                    : 'text-gray-400'
+                "
+              >
+                {{ passportStats.noPassport?.length || 0 }}
+              </p>
+              <p class="text-xs text-gray-600">미등록</p>
+            </div>
+            <div
+              class="text-center p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+              :class="
+                passportStats.expiringSoon?.length > 0
+                  ? 'bg-orange-50'
+                  : 'bg-gray-50'
+              "
+              @click="showPassportList('expiringSoon')"
+            >
+              <p
+                class="text-2xl font-bold"
+                :class="
+                  passportStats.expiringSoon?.length > 0
+                    ? 'text-orange-600'
+                    : 'text-gray-400'
+                "
+              >
+                {{ passportStats.expiringSoon?.length || 0 }}
+              </p>
+              <p class="text-xs text-orange-700">3개월 이내 만료</p>
+            </div>
+            <div
+              class="text-center p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+              :class="
+                passportStats.expired?.length > 0
+                  ? 'bg-red-50'
+                  : 'bg-gray-50'
+              "
+              @click="showPassportList('expired')"
+            >
+              <p
+                class="text-2xl font-bold"
+                :class="
+                  passportStats.expired?.length > 0
+                    ? 'text-red-600'
+                    : 'text-gray-400'
+                "
+              >
+                {{ passportStats.expired?.length || 0 }}
+              </p>
+              <p class="text-xs text-red-700">만료됨</p>
+            </div>
+          </div>
+
+          <!-- 프로그레스 바 -->
+          <div class="bg-gray-200 rounded-full h-2.5 overflow-hidden">
+            <div
+              class="bg-green-500 h-2.5 rounded-full transition-all"
+              :style="{
+                width:
+                  passportStats.total > 0
+                    ? (passportStats.verifiedCount / passportStats.total) * 100 +
+                      '%'
+                    : '0%',
+              }"
+            ></div>
+          </div>
+          <p class="text-xs text-gray-400 mt-1 text-right">
+            {{ passportStats.verifiedCount }} / {{ passportStats.total }}명 승인
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- 속성별 통계 -->
     <div v-if="attributeStats.length > 0" class="mb-8">
       <div class="bg-white rounded-lg shadow">
@@ -233,6 +370,7 @@ const stats = ref({
 const smsHistory = ref([])
 const scheduleStats = ref([])
 const attributeStats = ref([])
+const passportStats = ref(null)
 const showAllAttributes = ref(false)
 const showAllValues = ref([])
 
@@ -244,6 +382,36 @@ const userListModal = reactive({
   extraLabel: '',
   extraField: '',
 })
+
+const passportAlertCount = computed(() => {
+  if (!passportStats.value) return 0
+  return (
+    (passportStats.value.unverified?.length || 0) +
+    (passportStats.value.noPassport?.length || 0) +
+    (passportStats.value.expiringSoon?.length || 0) +
+    (passportStats.value.expired?.length || 0)
+  )
+})
+
+function showPassportList(type) {
+  const titleMap = {
+    unverified: '여권 승인 대기',
+    noPassport: '여권 미등록',
+    expiringSoon: '여권 3개월 이내 만료',
+    expired: '여권 만료',
+  }
+  const list = passportStats.value?.[type] || []
+  if (list.length === 0) return
+
+  userListModal.title = titleMap[type]
+  userListModal.users = list
+  userListModal.loading = false
+  userListModal.extraLabel =
+    type === 'noPassport' ? '' : '만료일'
+  userListModal.extraField =
+    type === 'noPassport' ? '' : 'passportExpiryDate'
+  userListModal.open = true
+}
 
 const displayedAttributes = computed(() => {
   return showAllAttributes.value
@@ -335,6 +503,7 @@ const loadStats = async () => {
     smsHistory.value = response.data.smsHistory || []
     scheduleStats.value = response.data.scheduleStats
     attributeStats.value = response.data.attributeStats || []
+    passportStats.value = response.data.passportStats || null
     showAllValues.value = new Array(attributeStats.value.length).fill(false)
   } catch (error) {
     console.error('Failed to load stats:', error)

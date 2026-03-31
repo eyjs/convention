@@ -13,6 +13,8 @@ import {
   Bell,
   FolderOpen,
   BarChart3,
+  Bus,
+  BookOpen,
 } from 'lucide-vue-next'
 
 const rootNavItems = [
@@ -36,6 +38,13 @@ const rootNavItems = [
     icon: BarChart3,
     routeName: 'AdminStatistics',
     path: '/admin/statistics',
+  },
+  {
+    key: 'guide',
+    label: '사용 가이드',
+    icon: BookOpen,
+    routeName: 'AdminGuide',
+    path: '/admin/guide',
   },
 ]
 
@@ -102,6 +111,13 @@ const conventionNavItems = [
     icon: FormInput,
     path: 'formbuilder',
     routeName: 'AdminFormBuilder',
+  },
+  {
+    key: 'travel-assignments',
+    label: '여행 배정',
+    icon: Bus,
+    path: 'travel-assignments',
+    routeName: 'AdminTravelAssignments',
   },
   {
     key: 'upload',

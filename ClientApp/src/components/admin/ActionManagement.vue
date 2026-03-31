@@ -503,7 +503,7 @@
                 </button>
               </div>
               <!-- 비주얼 에디터 -->
-              <div v-show="htmlEditMode === 'visual'">
+              <div v-if="htmlEditMode === 'visual'">
                 <RichTextEditor
                   ref="richTextEditorRef"
                   v-model="formData[field.key]"
@@ -520,7 +520,7 @@
               ></textarea>
               <!-- 미리보기 -->
               <div
-                v-else
+                v-if="htmlEditMode === 'preview'"
                 class="border border-gray-300 rounded-lg p-4 min-h-[150px] bg-white prose prose-sm max-w-none"
                 v-html="
                   formData[field.key] ||

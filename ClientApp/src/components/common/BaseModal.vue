@@ -73,16 +73,20 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-const startPos = ref({ x: 0, y: 0 })
+const startPos = ref(null)
 const modalId = Symbol('baseModal')
 
 const onMouseDown = (e) => {
+  // backdrop에서 mousedown이 시작된 경우만 기록
   startPos.value = { x: e.clientX, y: e.clientY }
 }
 
 const onMouseUp = (e) => {
+  // mousedown이 backdrop에서 시작되지 않았으면 무시 (드래그 선택 보호)
+  if (!startPos.value) return
   const dx = Math.abs(e.clientX - startPos.value.x)
   const dy = Math.abs(e.clientY - startPos.value.y)
+  startPos.value = null
   if (dx < 5 && dy < 5) {
     close()
   }

@@ -443,7 +443,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue'
 import PrivacyPolicyModal from '@/components/common/PrivacyPolicyModal.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -618,11 +618,30 @@ const isRegistrationFormValid = computed(() => {
 
 const openLoginModal = () => {
   isModalOpen.value = true
+  history.pushState({ modal: 'login' }, '')
 }
 
 const closeLoginModal = () => {
+  if (!isModalOpen.value) return
   isModalOpen.value = false
+  // pushState로 추가한 히스토리 엔트리 제거
+  if (history.state?.modal === 'login') {
+    history.back()
+  }
 }
+
+// 뒤로가기 시 모달 닫기
+function handlePopState() {
+  if (isModalOpen.value) {
+    isModalOpen.value = false
+  }
+}
+onMounted(() => {
+  window.addEventListener('popstate', handlePopState)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('popstate', handlePopState)
+})
 
 const openPrivacyPolicyModal = () => {
   showPrivacyPolicyModal.value = true
@@ -639,11 +658,7 @@ async function handleLogin() {
     loginForm.value.password,
   )
   if (result.success) {
-    if (authStore.isAdmin) {
-      router.push('/admin')
-    } else {
-      router.push('/')
-    }
+    router.push('/')
   } else {
     errorMessage.value = result.error
   }

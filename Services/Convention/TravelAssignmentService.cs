@@ -2,7 +2,9 @@ using System.Text.Json;
 using LocalRAG.Entities;
 using LocalRAG.Interfaces;
 using LocalRAG.Repositories;
+using LocalRAG.Utilities;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 
 namespace LocalRAG.Services.Convention;
 
@@ -119,6 +121,13 @@ public class TravelAssignmentService : ITravelAssignmentService
             });
         }
 
+        // 빈 날짜 제거 (모든 필드가 비어있으면 삭제)
+        days.RemoveAll(d =>
+            string.IsNullOrEmpty(d.Bus) &&
+            string.IsNullOrEmpty(d.Hotel) &&
+            string.IsNullOrEmpty(d.Room) &&
+            string.IsNullOrEmpty(d.Memo));
+
         // 날짜 순 정렬 후 저장
         days = days.OrderBy(d => d.Date).ToList();
         var json = JsonSerializer.Serialize(new { days }, JsonOptions);
@@ -170,6 +179,13 @@ public class TravelAssignmentService : ITravelAssignmentService
                 }
             }
 
+            // 빈 날짜 제거
+            days.RemoveAll(d =>
+                string.IsNullOrEmpty(d.Bus) &&
+                string.IsNullOrEmpty(d.Hotel) &&
+                string.IsNullOrEmpty(d.Room) &&
+                string.IsNullOrEmpty(d.Memo));
+
             days = days.OrderBy(d => d.Date).ToList();
             var json = JsonSerializer.Serialize(new { days }, JsonOptions);
             await _unitOfWork.GuestAttributes.UpsertAttributeAsync(userId, TRAVEL_INFO_KEY, json);
@@ -178,6 +194,38 @@ public class TravelAssignmentService : ITravelAssignmentService
 
         await _unitOfWork.SaveChangesAsync();
         return result;
+    }
+
+    public async Task<int> RemoveDateAsync(int conventionId, string date)
+    {
+        var userIds = await _unitOfWork.UserConventions.Query
+            .Where(uc => uc.ConventionId == conventionId)
+            .Select(uc => uc.UserId)
+            .ToListAsync();
+
+        var attributes = await _unitOfWork.GuestAttributes.Query
+            .Where(ga => userIds.Contains(ga.UserId) && ga.AttributeKey == TRAVEL_INFO_KEY)
+            .ToListAsync();
+
+        var updated = 0;
+        foreach (var attr in attributes)
+        {
+            var days = ParseDays(attr.AttributeValue);
+            if (days == null) continue;
+
+            var before = days.Count;
+            days.RemoveAll(d => d.Date == date);
+            if (days.Count == before) continue;
+
+            var json = JsonSerializer.Serialize(new { days }, JsonOptions);
+            attr.AttributeValue = json;
+            updated++;
+        }
+
+        if (updated > 0)
+            await _unitOfWork.SaveChangesAsync();
+
+        return updated;
     }
 
     // --- Private Helpers ---
@@ -242,5 +290,124 @@ public class TravelAssignmentService : ITravelAssignmentService
             }
         }
         return roommates;
+    }
+
+    /// <summary>
+    /// 엑셀 업로드: 시트명=날짜(YYYY-MM-DD 또는 M/D), 행=이름|전화번호|호차|호텔|방번호|메모
+    /// </summary>
+    public async Task<TravelUploadResult> UploadFromExcelAsync(int conventionId, Stream excelStream)
+    {
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        var result = new TravelUploadResult();
+
+        try
+        {
+            using var package = new ExcelPackage(excelStream);
+            if (package.Workbook.Worksheets.Count == 0)
+            {
+                result.Errors.Add("Excel 파일에 시트가 없습니다.");
+                return result;
+            }
+
+            // 행사 참석자 로드 (이름+전화번호 매칭용)
+            var userConventions = await _unitOfWork.UserConventions.Query
+                .Where(uc => uc.ConventionId == conventionId)
+                .Select(uc => uc.UserId)
+                .ToListAsync();
+
+            var users = await _unitOfWork.Users.Query
+                .Where(u => userConventions.Contains(u.Id))
+                .Select(u => new { u.Id, u.Name, u.Phone })
+                .ToListAsync();
+
+            var allUpdates = new List<TravelDayUpdateRequest>();
+
+            foreach (var sheet in package.Workbook.Worksheets)
+            {
+                if (sheet.Dimension == null) continue;
+
+                // 시트명에서 날짜 파싱
+                var date = ParseSheetDate(sheet.Name);
+                if (date == null)
+                {
+                    result.Warnings.Add($"시트 '{sheet.Name}': 날짜 형식을 인식할 수 없습니다. (YYYY-MM-DD 또는 M/D 형식)");
+                    continue;
+                }
+
+                result.SheetsProcessed++;
+                var rowCount = sheet.Dimension.Rows;
+
+                for (int row = 2; row <= rowCount; row++)
+                {
+                    var name = sheet.Cells[row, 1].Text?.Trim();
+                    var phone = sheet.Cells[row, 2].Text?.Trim();
+                    var bus = sheet.Cells[row, 3].Text?.Trim();
+                    var hotel = sheet.Cells[row, 4].Text?.Trim();
+                    var room = sheet.Cells[row, 5].Text?.Trim();
+                    var memo = sheet.Cells[row, 6].Text?.Trim();
+
+                    if (string.IsNullOrEmpty(name)) continue;
+
+                    // 이름 + 전화번호로 매칭
+                    var matched = users.FirstOrDefault(u =>
+                    {
+                        if (u.Name != name) return false;
+                        if (string.IsNullOrEmpty(phone)) return true; // 이름만으로 유일 매칭
+                        var normalizedPhone = PhoneNumberFormatter.Normalize(phone);
+                        return !string.IsNullOrEmpty(u.Phone) &&
+                               PhoneNumberFormatter.Normalize(u.Phone) == normalizedPhone;
+                    });
+
+                    if (matched == null)
+                    {
+                        result.UsersNotFound++;
+                        result.Warnings.Add($"시트 '{sheet.Name}' Row {row}: '{name}' 참석자를 찾을 수 없습니다.");
+                        continue;
+                    }
+
+                    result.UsersMatched++;
+                    allUpdates.Add(new TravelDayUpdateRequest
+                    {
+                        UserId = matched.Id,
+                        Date = date,
+                        Bus = string.IsNullOrEmpty(bus) ? null : bus,
+                        Hotel = string.IsNullOrEmpty(hotel) ? null : hotel,
+                        Room = string.IsNullOrEmpty(room) ? null : room,
+                        Memo = string.IsNullOrEmpty(memo) ? null : memo,
+                    });
+                }
+            }
+
+            if (allUpdates.Count > 0)
+            {
+                await BulkUpdateAsync(conventionId, allUpdates);
+            }
+
+            result.Success = true;
+            _logger.LogInformation(
+                "Travel upload: {Sheets} sheets, {Matched} matched, {NotFound} not found",
+                result.SheetsProcessed, result.UsersMatched, result.UsersNotFound);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Travel assignment Excel upload failed");
+            result.Errors.Add($"업로드 실패: {ex.Message}");
+        }
+
+        return result;
+    }
+
+    private static string? ParseSheetDate(string sheetName)
+    {
+        // "2026-04-01" 형태
+        if (DateTime.TryParse(sheetName, out var parsed))
+            return parsed.ToString("yyyy-MM-dd");
+
+        // "4/1", "04/01", "4월1일" 등 → 올해 기준
+        var cleaned = sheetName.Replace("월", "/").Replace("일", "").Trim();
+        if (DateTime.TryParse(cleaned, out var parsed2))
+            return new DateTime(DateTime.Now.Year, parsed2.Month, parsed2.Day).ToString("yyyy-MM-dd");
+
+        return null;
     }
 }
