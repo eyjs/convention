@@ -39,14 +39,35 @@
         <h3 class="font-medium text-primary-900 mb-2">
           📋 엑셀 형식 (참석자 업로드)
         </h3>
-        <div class="text-sm text-primary-700 space-y-1">
-          <p>
-            <strong>컬럼 순서:</strong> 소속 | 부서 | 이름 | 사번(주민번호) |
-            전화번호 | 그룹
-          </p>
-          <p><strong>필수:</strong> 이름, 전화번호, 그룹</p>
-          <p><strong>선택:</strong> 소속, 부서, 사번(주민번호)</p>
-          <p class="mt-2 text-primary-600">
+        <div class="text-sm text-primary-700 space-y-2">
+          <div class="border-b border-primary-200 pb-2">
+            <p class="font-semibold text-primary-800">시트1: 참석자 (필수)</p>
+            <p>
+              <strong>컬럼:</strong> 소속 | 부서 | 이름 | 주민번호 | 전화번호 |
+              그룹
+            </p>
+            <p><strong>필수:</strong> 이름 + (전화번호 OR 주민번호)</p>
+          </div>
+          <div class="border-b border-primary-200 pb-2">
+            <p class="font-semibold text-primary-800">
+              시트2: 그룹-일정 매핑 (선택)
+            </p>
+            <p><strong>A열:</strong> 그룹명 | <strong>B열:</strong> 일정코스명</p>
+            <p class="text-primary-500 text-xs">
+              ※ 일정이 먼저 업로드되어 있어야 합니다
+            </p>
+          </div>
+          <div>
+            <p class="font-semibold text-primary-800">시트3: 속성 (선택)</p>
+            <p>
+              <strong>1행:</strong> 속성명 헤더 (나이, 성별, 직급 등)
+              <strong>2행~:</strong> 속성값
+            </p>
+            <p class="text-primary-500 text-xs">
+              ※ 시트1과 같은 행 번호 = 같은 사람 (이름/전화 중복 불필요)
+            </p>
+          </div>
+          <p class="mt-1 text-primary-600">
             ※ 이름 + (전화번호 OR 주민번호) 매칭으로 중복 시 업데이트
           </p>
         </div>
@@ -63,14 +84,22 @@
       <UploadResult v-if="resultGuests" :result="resultGuests" />
 
       <div class="mt-6 pt-6 border-t">
-        <h3 class="font-semibold mb-3">샘플 파일</h3>
-        <a
-          href="/Sample/참석자업로드_샘플.xlsx"
-          download
-          class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-        >
-          📥 참석자 업로드 샘플
-        </a>
+        <h3 class="font-semibold mb-3">파일 다운로드</h3>
+        <div class="flex gap-2">
+          <a
+            href="/Sample/참석자업로드_샘플.xlsx"
+            download
+            class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+          >
+            📥 참석자 업로드 샘플
+          </a>
+          <button
+            class="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-md hover:bg-green-200"
+            @click="downloadGuests"
+          >
+            📥 전체 참석자 속성 다운로드
+          </button>
+        </div>
       </div>
     </div>
 
@@ -162,19 +191,22 @@
             <p><strong>B열:</strong> 시작시간 (필수) - 예: 02:00</p>
             <p><strong>C열:</strong> 종료시간 (필수) - 예: 09:00</p>
             <p><strong>D열:</strong> 옵션명 (필수) - 예: 바뚜르산</p>
-            <p><strong>E열:</strong> 옵션ID (필수) - 사용자 지정 ID (숫자)</p>
-            <p><strong>F열:</strong> 옵션내용 (선택) - 상세 설명</p>
+            <p><strong>E열:</strong> 옵션내용 (선택) - 상세 설명</p>
+            <p class="text-orange-500 text-xs mt-1">
+              ※ 1행은 헤더, 2행부터 데이터 (행 번호 = 옵션 번호)
+            </p>
           </div>
           <div class="pt-2">
             <p class="font-semibold text-orange-800">시트2: 참석자별 매핑</p>
-            <p><strong>A열:</strong> 번호 (선택)</p>
-            <p><strong>B열:</strong> 사업단/소속 (선택)</p>
-            <p><strong>C열:</strong> 이름 (필수) - 참석자 매칭용</p>
-            <p><strong>D열:</strong> 주민번호 (조건부 필수) - 참석자 매칭용</p>
-            <p><strong>E열:</strong> 연락처 (조건부 필수) - 참석자 매칭용</p>
-            <p><strong>F열:</strong> 그룹 (선택)</p>
+            <p><strong>A열:</strong> 이름 (필수) - 참석자 매칭용</p>
+            <p><strong>B열:</strong> 주민번호 (조건부) - 참석자 매칭용</p>
+            <p><strong>C열:</strong> 연락처 (조건부) - 참석자 매칭용</p>
             <p>
-              <strong>G열:</strong> 옵션 ID (필수) - 콤마로 구분 (예: 1,2,3)
+              <strong>D열:</strong> 옵션 번호 (필수) - 시트1의 엑셀 행 번호,
+              콤마로 구분 (예: 2,3,4)
+            </p>
+            <p class="text-orange-500 text-xs mt-1">
+              ※ 이름 + (주민번호 OR 연락처) 중 하나로 참석자 매칭
             </p>
           </div>
           <p class="mt-3 text-orange-600">
@@ -213,69 +245,6 @@
       </div>
     </div>
 
-    <!-- 속성 업로드 탭 -->
-    <div v-if="activeTab === 'attributes'" class="space-y-4">
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          엑셀 파일 선택
-        </label>
-        <input
-          type="file"
-          accept=".xlsx"
-          class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-          @change="handleFileAttributes"
-        />
-      </div>
-
-      <div class="mb-4 p-4 bg-green-50 rounded-md">
-        <h3 class="font-medium text-green-900 mb-2">
-          📋 엑셀 형식 (속성 업로드)
-        </h3>
-        <div class="text-sm text-green-700 space-y-1">
-          <p><strong>A열:</strong> 이름 (필수)</p>
-          <p><strong>B열:</strong> 전화번호 (필수)</p>
-          <p><strong>C열 이후:</strong> 동적 속성 (헤더: 속성명, 값: 속성값)</p>
-          <p class="mt-2">예시: 나이 | 성별 | 직급 | 선호음식 | ...</p>
-          <p class="mt-2 text-green-600">
-            ※ 참석자에게 메타정보를 추가로 붙입니다
-          </p>
-          <p class="text-green-600">※ 통계 정보가 생성됩니다 (속성별 분포)</p>
-        </div>
-      </div>
-
-      <button
-        :disabled="!fileAttributes || uploadingAttributes"
-        class="w-full px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
-        @click="uploadAttributes"
-      >
-        {{ uploadingAttributes ? '업로드 중...' : '속성 업로드' }}
-      </button>
-
-      <UploadResult
-        v-if="resultAttributes"
-        :result="resultAttributes"
-        type="attributes"
-      />
-
-      <div class="mt-6 pt-6 border-t">
-        <h3 class="font-semibold mb-3">파일 다운로드</h3>
-        <div class="flex gap-2">
-          <a
-            href="/Sample/속성업로드_샘플.xlsx"
-            download
-            class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-          >
-            📥 속성 업로드 샘플
-          </a>
-          <button
-            class="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-md hover:bg-green-200"
-            @click="downloadGuests"
-          >
-            📥 전체 참석자 속성 다운로드
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -294,7 +263,6 @@ const props = defineProps({
 const tabs = [
   { id: 'guests', name: '참석자 업로드' },
   { id: 'schedules', name: '일정 업로드' },
-  { id: 'attributes', name: '속성 업로드' },
   { id: 'option-tours', name: '옵션투어 업로드' },
 ]
 
@@ -310,10 +278,6 @@ const fileSchedules = ref(null)
 const uploadingSchedules = ref(false)
 const resultSchedules = ref(null)
 
-// 속성 업로드 상태
-const fileAttributes = ref(null)
-const uploadingAttributes = ref(false)
-const resultAttributes = ref(null)
 
 // 옵션투어 업로드 상태
 const fileOptionTours = ref(null)
@@ -329,11 +293,6 @@ const handleFileGuests = (e) => {
 const handleFileSchedules = (e) => {
   fileSchedules.value = e.target.files[0]
   resultSchedules.value = null
-}
-
-const handleFileAttributes = (e) => {
-  fileAttributes.value = e.target.files[0]
-  resultAttributes.value = null
 }
 
 const handleFileOptionTours = (e) => {
@@ -360,16 +319,30 @@ const uploadGuests = async () => {
       },
     )
 
+    const d = response.data
+    let message = `${d.totalProcessed}명 처리 완료 (신규: ${d.usersCreated}명, 업데이트: ${d.usersUpdated}명)`
+    if (d.scheduleAssignmentsCreated > 0 || d.scheduleDuplicatesSkipped > 0) {
+      message += `\n일정 배정: ${d.scheduleAssignmentsCreated}건`
+      if (d.scheduleDuplicatesSkipped > 0)
+        message += ` (중복 스킵: ${d.scheduleDuplicatesSkipped}건)`
+    }
+    if (d.attributeUsersProcessed > 0) {
+      message += `\n속성 처리: ${d.attributeUsersProcessed}명 (신규: ${d.attributesCreated}, 업데이트: ${d.attributesUpdated})`
+    }
     resultGuests.value = {
-      success: response.data.success,
-      message: `${response.data.totalProcessed}명 처리 완료 (신규: ${response.data.usersCreated}명, 업데이트: ${response.data.usersUpdated}명)`,
+      success: d.success,
+      message,
       data: {
-        created: response.data.usersCreated,
-        updated: response.data.usersUpdated,
-        total: response.data.totalProcessed,
+        created: d.usersCreated,
+        updated: d.usersUpdated,
+        total: d.totalProcessed,
       },
-      errors: response.data.errors || [],
-      warnings: response.data.warnings || [],
+      errors: d.errors || [],
+      warnings: [
+        ...(d.warnings || []),
+        ...(d.scheduleWarnings || []),
+        ...(d.attributeWarnings || []),
+      ],
     }
   } catch (error) {
     resultGuests.value = {
@@ -471,52 +444,6 @@ const downloadGuests = async () => {
   }
 }
 
-// 속성 업로드
-const uploadAttributes = async () => {
-  if (!fileAttributes.value) return
-
-  uploadingAttributes.value = true
-  resultAttributes.value = null
-
-  const formData = new FormData()
-  formData.append('file', fileAttributes.value)
-
-  try {
-    const response = await apiClient.post(
-      `/upload/conventions/${props.conventionId}/attributes`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      },
-    )
-
-    resultAttributes.value = {
-      success: response.data.success,
-      message: `${response.data.usersProcessed}명의 속성 처리 완료 (신규: ${response.data.attributesCreated}, 업데이트: ${response.data.attributesUpdated})`,
-      data: {
-        usersProcessed: response.data.usersProcessed,
-        attributesCreated: response.data.attributesCreated,
-        attributesUpdated: response.data.attributesUpdated,
-        statistics: response.data.statistics || {},
-      },
-      errors: response.data.errors || [],
-      warnings: response.data.warnings || [],
-    }
-  } catch (error) {
-    resultAttributes.value = {
-      success: false,
-      message: '업로드 실패',
-      errors: [
-        error.response?.data?.error ||
-          error.response?.data?.message ||
-          error.message,
-      ],
-    }
-  } finally {
-    uploadingAttributes.value = false
-  }
-}
-
 // 엑셀 날짜를 YYYY-MM-DD 형식으로 변환
 const excelDateToString = (excelDate) => {
   if (typeof excelDate === 'string') return excelDate
@@ -561,9 +488,9 @@ const uploadOptionTours = async () => {
       const row = optionsRaw[i]
       if (!row || row.length === 0) continue
 
-      const [dateVal, startTime, endTime, name, optionId, content] = row
+      const [dateVal, startTime, endTime, name, content] = row
 
-      if (!dateVal || !startTime || !name || optionId == null) {
+      if (!dateVal || !startTime || !name) {
         console.warn(`옵션 시트 ${i + 1}행 스킵: 필수 값 누락`)
         continue
       }
@@ -573,7 +500,7 @@ const uploadOptionTours = async () => {
         startTime: normalizeTime(startTime),
         endTime: normalizeTime(endTime),
         name: String(name).trim(),
-        optionId: Number(optionId),
+        optionId: i + 1,
         content: content ? String(content).trim() : '',
       })
     }
@@ -587,16 +514,16 @@ const uploadOptionTours = async () => {
       const row = mappingRaw[i]
       if (!row || row.length === 0) continue
 
-      const [num, division, name, idNumber, phone, group, optionIds] = row
+      const [name, idNumber, phone, optionIds] = row
 
-      if (!name || !phone) {
+      if (!name || (!phone && !idNumber)) {
         console.warn(
-          `참석자 매핑 시트 ${i + 1}행 스킵: 이름 또는 전화번호 누락`,
+          `참석자 매핑 시트 ${i + 1}행 스킵: 이름 또는 식별정보(전화/주민번호) 누락`,
         )
         continue
       }
 
-      // 옵션ID 파싱 (콤마로 구분된 문자열 -> 배열)
+      // 옵션번호 파싱 (콤마로 구분된 문자열 -> 배열)
       let optionIdArray = []
       if (optionIds) {
         const idsStr = String(optionIds)
@@ -609,10 +536,10 @@ const uploadOptionTours = async () => {
 
       participantMappings.push({
         name: String(name).trim(),
-        phone: String(phone).trim(),
-        division: division ? String(division).trim() : '',
         idNumber: idNumber ? String(idNumber).trim() : '',
-        group: group ? String(group).trim() : '',
+        phone: phone ? String(phone).trim() : '',
+        division: '',
+        group: '',
         optionIds: optionIdArray,
       })
     }

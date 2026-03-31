@@ -18,7 +18,7 @@ public class OptionTourDto
     public string StartTime { get; set; } = string.Empty;
     public string EndTime { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public int OptionId { get; set; } // 사용자 지정 ID
+    public int OptionId { get; set; } // 행 순서 기반 자동 시퀀스
     public string Content { get; set; } = string.Empty;
 }
 

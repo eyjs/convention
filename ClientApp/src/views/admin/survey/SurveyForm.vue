@@ -226,7 +226,9 @@
                 @move="moveQuestion(qIndex, $event)"
                 @remove="removeQuestion(qIndex)"
                 @add-option="addOption($event)"
-                @remove-option="removeOption($event.questionIndex, $event.optionIndex)"
+                @remove-option="
+                  removeOption($event.questionIndex, $event.optionIndex)
+                "
                 @type-change="onQuestionTypeChange(question)"
                 @add-follow-up="addFollowUpQuestion"
                 @remove-follow-up="removeFollowUpQuestion"
@@ -406,28 +408,37 @@ const QuestionCard = {
                   title: '선택지 삭제',
                   class:
                     'flex-shrink-0 p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors',
-                  onClick: () => emit('remove-option', { questionIndex: qIdx, optionIndex: oIndex }),
+                  onClick: () =>
+                    emit('remove-option', {
+                      questionIndex: qIdx,
+                      optionIndex: oIndex,
+                    }),
                 },
                 [h(X, { class: 'w-4 h-4' })],
               ),
             ]),
             // 설문 종료 토글
             h('div', { class: 'ml-8 mt-1 flex items-center gap-2' }, [
-              h('label', { class: 'flex items-center gap-1.5 cursor-pointer' }, [
-                h('input', {
-                  type: 'checkbox',
-                  checked: option.isTerminating || false,
-                  onChange: (e) => {
-                    option.isTerminating = e.target.checked
-                  },
-                  class: 'rounded text-red-500 focus:ring-red-500/20 w-3.5 h-3.5',
-                }),
-                h(
-                  'span',
-                  { class: 'text-xs text-gray-500 dark:text-gray-400' },
-                  '이 선택 시 설문 종료',
-                ),
-              ]),
+              h(
+                'label',
+                { class: 'flex items-center gap-1.5 cursor-pointer' },
+                [
+                  h('input', {
+                    type: 'checkbox',
+                    checked: option.isTerminating || false,
+                    onChange: (e) => {
+                      option.isTerminating = e.target.checked
+                    },
+                    class:
+                      'rounded text-red-500 focus:ring-red-500/20 w-3.5 h-3.5',
+                  }),
+                  h(
+                    'span',
+                    { class: 'text-xs text-gray-500 dark:text-gray-400' },
+                    '이 선택 시 설문 종료',
+                  ),
+                ],
+              ),
             ]),
             // 꼬리질문 카드들
             ...followUpCards,

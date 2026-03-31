@@ -645,7 +645,7 @@ const handleExcelUpload = async (e) => {
 const downloadTemplate = () => {
   // Public 폴더에 있는 실제 샘플 파일 경로로 수정
   const link = document.createElement('a')
-  link.href = '/sample/명찰_일괄등록_양식.xlsx'
+  link.href = '/Sample/명찰_일괄등록_양식.xlsx'
   link.setAttribute('download', '명찰_일괄등록_양식.xlsx')
   document.body.appendChild(link)
   link.click()

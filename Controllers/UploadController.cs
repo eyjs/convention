@@ -1,3 +1,4 @@
+using LocalRAG.Constants;
 using LocalRAG.DTOs.UploadModels;
 using LocalRAG.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,7 @@ namespace LocalRAG.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // 인증 필요
+[Authorize(Roles = Constants.Roles.Admin)]
 public class UploadController : ControllerBase
 {
     private readonly IUserUploadService _userUploadService;

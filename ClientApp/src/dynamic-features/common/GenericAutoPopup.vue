@@ -29,7 +29,7 @@
         <!-- Popup Container -->
         <div
           :class="popupClasses"
-          class="relative bg-white rounded-2xl shadow-2xl transform transition-all duration-300"
+          class="relative bg-white rounded-2xl shadow-2xl transform transition-all duration-300 max-h-[90vh] flex flex-col"
           role="dialog"
           aria-modal="true"
           :aria-labelledby="`popup-title-${feature.id}`"
@@ -67,27 +67,32 @@
             />
           </div>
 
-          <!-- Content -->
-          <div class="p-6 md:p-8">
-            <!-- Title -->
-            <h2
-              :id="`popup-title-${feature.id}`"
-              class="text-xl md:text-2xl font-bold text-gray-900 mb-4"
-            >
-              {{ feature.title }}
-            </h2>
+          <!-- Scrollable Content -->
+          <div class="overflow-y-auto flex-1 min-h-0">
+            <div class="p-6 md:p-8">
+              <!-- Title -->
+              <h2
+                :id="`popup-title-${feature.id}`"
+                class="text-xl md:text-2xl font-bold text-gray-900 mb-4"
+              >
+                {{ feature.title }}
+              </h2>
 
-            <!-- Message -->
-            <div
-              v-if="config.message"
-              class="prose prose-sm md:prose-base max-w-none mb-6 text-gray-700"
-              v-html="config.message"
-            ></div>
+              <!-- Message -->
+              <div
+                v-if="config.message"
+                class="prose prose-sm md:prose-base max-w-none text-gray-700"
+                v-html="config.message"
+              ></div>
+            </div>
+          </div>
 
+          <!-- Footer (고정) -->
+          <div class="flex-shrink-0 px-6 md:px-8 pb-6 md:pb-8 pt-4 border-t border-gray-100">
             <!-- Action Buttons -->
             <div
               v-if="config.buttons && config.buttons.length > 0"
-              class="flex flex-col sm:flex-row gap-3 mb-4"
+              class="flex flex-col sm:flex-row gap-3"
             >
               <button
                 v-for="(button, index) in config.buttons"
@@ -102,7 +107,8 @@
             <!-- Don't show again checkbox -->
             <div
               v-if="config.showOnce"
-              class="flex items-center mt-4 pt-4 border-t border-gray-200"
+              class="flex items-center mt-3"
+              :class="{ 'pt-3 border-t border-gray-200': config.buttons?.length }"
             >
               <input
                 id="dont-show-again"
@@ -122,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -175,6 +181,15 @@ const shouldShow = () => {
   const dismissed = localStorage.getItem(storageKey)
   return !dismissed
 }
+
+// body 스크롤 제어
+watch(isVisible, (visible) => {
+  if (visible) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+})
 
 // Show popup based on trigger condition
 const triggerPopup = () => {
@@ -267,6 +282,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleEscape)
+  document.body.style.overflow = ''
 })
 </script>
 

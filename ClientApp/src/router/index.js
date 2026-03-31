@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
+import { useUIStore } from '@/stores/ui'
 import { dynamicFeatureRoutes } from './dynamic'
 
 const routes = [
@@ -136,6 +137,12 @@ const routes = [
         name: 'TravelInfo',
         component: () => import('@/views/features/TravelInfo.vue'),
         meta: { title: '여행 서류 제출', showNav: false },
+      },
+      {
+        path: 'checklist',
+        name: 'Checklist',
+        component: () => import('@/views/feature/ChecklistView.vue'),
+        meta: { title: '체크리스트', showNav: false },
       },
       {
         path: 'surveys',
@@ -443,6 +450,13 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  // 모달 열려있으면 모달 닫고 네비게이션 취소 (뒤로가기 시 모달 닫기)
+  const uiStore = useUIStore()
+  if (uiStore.closeTopModal()) {
+    next(false)
+    return
+  }
+
   document.title = to.meta.title || 'iFA Convention'
 
   const authStore = useAuthStore()

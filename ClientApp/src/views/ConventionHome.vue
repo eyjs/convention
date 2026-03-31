@@ -103,6 +103,12 @@
       </div>
     </div>
 
+    <!-- GLOBAL_ROOT_POPUP: 팝업 공지 (화면에 보이지 않고 팝업만 트리거) -->
+    <DynamicActionRenderer
+      v-if="globalPopupActions.length > 0"
+      :features="globalPopupActions"
+    />
+
     <!-- HOME_SUB_HEADER 위치: 헤더 배너 바로 아래 -->
     <div v-if="subHeaderActions.length > 0" class="px-4 pt-4">
       <DynamicActionRenderer :features="subHeaderActions" />
@@ -347,36 +353,27 @@
               </div>
             </button>
 
-            <!-- 설문조사 -->
-            <div
-              v-for="survey in myInfo.surveys"
+            <!-- 설문조사 (미완료만 표시) -->
+            <button
+              v-for="survey in pendingSurveys"
               :key="'survey-' + survey.id"
-              class="flex items-center justify-between py-3"
+              class="w-full flex items-center justify-between py-3 text-left hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors"
+              @click="navigateTo(`/surveys/${survey.id}`)"
             >
               <div class="flex items-center gap-2.5">
                 <span
-                  class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs"
-                  :class="
-                    survey.completed
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-200 text-gray-400'
-                  "
+                  class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs bg-gray-200 text-gray-400"
                 >
-                  {{ survey.completed ? '✓' : '—' }}
+                  —
                 </span>
                 <span class="text-sm text-gray-800">{{ survey.title }}</span>
               </div>
               <span
-                class="text-xs font-medium px-2 py-0.5 rounded-md"
-                :class="
-                  survey.completed
-                    ? 'bg-green-50 text-green-700'
-                    : 'bg-red-50 text-red-600'
-                "
+                class="text-xs font-medium px-2 py-0.5 rounded-md bg-red-50 text-red-600"
               >
-                {{ survey.completed ? '완료' : '미완료' }}
+                미완료
               </span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -774,6 +771,11 @@ const myInfo = ref(null)
 const infoTab = ref('me')
 const showPassportModal = ref(false)
 
+const pendingSurveys = computed(() => {
+  if (!myInfo.value?.surveys) return []
+  return myInfo.value.surveys.filter((s) => !s.completed)
+})
+
 // 브랜드 컬러 가져오기
 const brandColor = computed(() => {
   return conventionStore.currentConvention?.brandColor || '#10b981' // 기본값: primary-600 green
@@ -811,6 +813,11 @@ const subHeaderActions = computed(() =>
 const contentTopActions = computed(() =>
   allActions.value.filter(
     (action) => action.targetLocation === 'HOME_CONTENT_TOP',
+  ),
+)
+const globalPopupActions = computed(() =>
+  allActions.value.filter(
+    (action) => action.targetLocation === 'GLOBAL_ROOT_POPUP',
   ),
 )
 
@@ -1005,7 +1012,7 @@ async function loadDynamicActions() {
     const [actionsResponse, statusesResponse] = await Promise.all([
       apiClient.get(`/conventions/${conventionId}/actions/all`, {
         params: {
-          targetLocation: 'HOME_SUB_HEADER,HOME_CONTENT_TOP',
+          targetLocation: 'HOME_SUB_HEADER,HOME_CONTENT_TOP,GLOBAL_ROOT_POPUP',
           isActive: true,
         },
       }),

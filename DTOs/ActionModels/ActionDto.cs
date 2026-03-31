@@ -29,6 +29,11 @@ public class ConventionActionDto
     /// BehaviorType=FormBuilder일 경우, 대상 FormDefinition의 ID
     /// </summary>
     public int? TargetId { get; set; }
+
+    /// <summary>
+    /// 컴포넌트별 추가 설정 JSON (배너 URL, 팝업 내용 등)
+    /// </summary>
+    public string? ConfigJson { get; set; }
 }
 
 /// <summary>

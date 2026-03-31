@@ -31,7 +31,6 @@ public class OptionTourUploadService : IOptionTourUploadService
 
         try
         {
-            // Convention 존재 확인
             var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
             if (convention == null)
             {
@@ -45,11 +44,13 @@ public class OptionTourUploadService : IOptionTourUploadService
                 request.ParticipantMappings.Count,
                 conventionId);
 
-            // 1. 옵션투어 저장
-            var optionTourMap = new Dictionary<int, int>(); // CustomOptionId -> OptionTourId
-            foreach (var optionDto in request.Options)
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                try
+                // 1. 옵션투어 일괄 저장
+                var optionTourMap = new Dictionary<int, int>();
+                var optionEntities = new List<OptionTour>();
+
+                foreach (var optionDto in request.Options)
                 {
                     if (!DateTime.TryParse(optionDto.Date, out var date))
                     {
@@ -70,139 +71,115 @@ public class OptionTourUploadService : IOptionTourUploadService
                     };
 
                     await _unitOfWork.OptionTours.AddAsync(optionTour);
-                    await _unitOfWork.SaveChangesAsync();
+                    optionEntities.Add(optionTour);
+                }
 
-                    optionTourMap[optionDto.OptionId] = optionTour.Id;
+                // 중간 SaveChanges로 DB ID 할당 (최종 커밋은 ExecuteInTransactionAsync에서)
+                await _unitOfWork.SaveChangesAsync();
+
+                foreach (var entity in optionEntities)
+                {
+                    optionTourMap[entity.CustomOptionId] = entity.Id;
                     result.OptionsCreated++;
 
                     _logger.LogInformation(
                         "Created option tour: {Name} (CustomId: {CustomId}, Id: {Id})",
-                        optionTour.Name,
-                        optionTour.CustomOptionId,
-                        optionTour.Id);
+                        entity.Name, entity.CustomOptionId, entity.Id);
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to create option tour: {Name}", optionDto.Name);
-                    result.Warnings.Add($"옵션 '{optionDto.Name}' 생성 실패: {ex.Message}");
-                }
-            }
 
-            // 2. 참석자 매핑 처리
-            foreach (var mappingDto in request.ParticipantMappings)
-            {
-                try
-                {
-                    // 참석자 찾기: 이름 + (전화번호 OR 주민번호)
-                    User? user = null;
+                // 2. 참석자 매핑 — 메모리에서 매칭
+                var conventionUserIds = await _unitOfWork.UserConventions.Query
+                    .Where(uc => uc.ConventionId == conventionId)
+                    .Select(uc => uc.UserId)
+                    .ToListAsync();
 
-                    if (!string.IsNullOrEmpty(mappingDto.Phone))
+                var users = await _unitOfWork.Users.Query
+                    .Where(u => conventionUserIds.Contains(u.Id))
+                    .Select(u => new { u.Id, u.Name, u.Phone, u.ResidentNumber })
+                    .ToListAsync();
+
+                foreach (var mappingDto in request.ParticipantMappings)
+                {
+                    var normalizedPhone = NormalizeValue(mappingDto.Phone);
+                    var normalizedIdNumber = NormalizeValue(mappingDto.IdNumber);
+
+                    if (string.IsNullOrEmpty(mappingDto.Name) ||
+                        (string.IsNullOrEmpty(normalizedPhone) && string.IsNullOrEmpty(normalizedIdNumber)))
                     {
-                        // 전화번호로 매칭 시도
-                        var normalizedPhone = NormalizePhone(mappingDto.Phone);
-                        user = await _unitOfWork.Users.GetAsync(u =>
-                            u.Name == mappingDto.Name &&
-                            u.Phone != null &&
-                            u.Phone.Replace("-", "").Replace(" ", "") == normalizedPhone);
+                        result.Warnings.Add(
+                            $"매핑 스킵: 이름 또는 식별정보(전화/주민번호) 누락 — {mappingDto.Name}");
+                        continue;
                     }
 
-                    if (user == null && !string.IsNullOrEmpty(mappingDto.IdNumber))
-                    {
-                        // 주민번호로 매칭 시도
-                        var normalizedIdNumber = mappingDto.IdNumber.Replace("-", "").Replace(" ", "");
-                        user = await _unitOfWork.Users.GetAsync(u =>
-                            u.Name == mappingDto.Name &&
-                            u.ResidentNumber != null &&
-                            u.ResidentNumber.Replace("-", "").Replace(" ", "") == normalizedIdNumber);
-                    }
+                    var matchedUser = users.FirstOrDefault(u =>
+                        u.Name == mappingDto.Name &&
+                        !string.IsNullOrEmpty(normalizedPhone) &&
+                        NormalizeValue(u.Phone) == normalizedPhone);
 
-                    if (user == null)
+                    matchedUser ??= users.FirstOrDefault(u =>
+                        u.Name == mappingDto.Name &&
+                        !string.IsNullOrEmpty(normalizedIdNumber) &&
+                        NormalizeValue(u.ResidentNumber) == normalizedIdNumber);
+
+                    if (matchedUser == null)
                     {
                         result.Warnings.Add(
                             $"참석자를 찾을 수 없습니다: {mappingDto.Name} (전화: {mappingDto.Phone}, 주민번호: {mappingDto.IdNumber})");
                         continue;
                     }
 
-                    // 해당 참석자가 행사에 등록되어 있는지 확인
-                    var userConvention = await _unitOfWork.UserConventions.GetAsync(uc =>
-                        uc.UserId == user.Id && uc.ConventionId == conventionId);
+                    var existingMappings = await _unitOfWork.UserOptionTours.Query
+                        .Where(uot => uot.UserId == matchedUser.Id && uot.ConventionId == conventionId)
+                        .Select(uot => uot.OptionTourId)
+                        .ToListAsync();
 
-                    if (userConvention == null)
-                    {
-                        result.Warnings.Add(
-                            $"참석자 {mappingDto.Name}는 이 행사에 등록되지 않았습니다.");
-                        continue;
-                    }
+                    var existingSet = new HashSet<int>(existingMappings);
 
-                    // 옵션ID 리스트로 매핑 생성
                     foreach (var customOptionId in mappingDto.OptionIds)
                     {
                         if (!optionTourMap.TryGetValue(customOptionId, out var optionTourId))
                         {
                             result.Warnings.Add(
-                                $"참석자 {mappingDto.Name}: 옵션ID {customOptionId}를 찾을 수 없습니다.");
+                                $"참석자 {mappingDto.Name}: 옵션번호 {customOptionId}를 찾을 수 없습니다.");
                             continue;
                         }
 
-                        // 중복 체크
-                        var existing = await _unitOfWork.UserOptionTours.GetAsync(uot =>
-                            uot.UserId == user.Id &&
-                            uot.ConventionId == conventionId &&
-                            uot.OptionTourId == optionTourId);
+                        if (existingSet.Contains(optionTourId))
+                            continue;
 
-                        if (existing != null)
+                        await _unitOfWork.UserOptionTours.AddAsync(new UserOptionTour
                         {
-                            continue; // 이미 매핑되어 있음
-                        }
-
-                        var userOptionTour = new UserOptionTour
-                        {
-                            UserId = user.Id,
+                            UserId = matchedUser.Id,
                             OptionTourId = optionTourId,
                             ConventionId = conventionId,
                             CreatedAt = DateTime.UtcNow
-                        };
+                        });
 
-                        await _unitOfWork.UserOptionTours.AddAsync(userOptionTour);
+                        existingSet.Add(optionTourId);
                         result.MappingsCreated++;
                     }
-
-                    await _unitOfWork.SaveChangesAsync();
-
-                    _logger.LogInformation(
-                        "Created mappings for user {UserName} (UserId: {UserId}): {OptionCount} options",
-                        user.Name,
-                        user.Id,
-                        mappingDto.OptionIds.Count);
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to create mapping for participant: {Name}", mappingDto.Name);
-                    result.Warnings.Add($"참석자 '{mappingDto.Name}' 매핑 실패: {ex.Message}");
-                }
-            }
+            });
 
-            result.Success = result.Errors.Count == 0;
+            result.Success = true;
 
             _logger.LogInformation(
-                "Upload completed: {OptionsCreated} options, {MappingsCreated} mappings, {Errors} errors, {Warnings} warnings",
-                result.OptionsCreated,
-                result.MappingsCreated,
-                result.Errors.Count,
-                result.Warnings.Count);
+                "Upload completed: {OptionsCreated} options, {MappingsCreated} mappings, {Warnings} warnings",
+                result.OptionsCreated, result.MappingsCreated, result.Warnings.Count);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fatal error during option tour upload");
+            _logger.LogError(ex, "Option tour upload failed");
             result.Errors.Add($"업로드 중 오류 발생: {ex.Message}");
             return result;
         }
     }
 
-    private string NormalizePhone(string phone)
+    private static string NormalizeValue(string? value)
     {
-        return phone.Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
+        if (string.IsNullOrEmpty(value)) return string.Empty;
+        return value.Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
     }
 }

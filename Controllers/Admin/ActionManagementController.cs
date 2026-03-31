@@ -44,7 +44,8 @@ public class ActionManagementController : ControllerBase
                 TargetLocation = a.TargetLocation,
                 BehaviorType = a.BehaviorType.ToString(),
                 TargetId = a.TargetId,
-                TargetModuleId = a.TargetModuleId
+                TargetModuleId = a.TargetModuleId,
+                ConfigJson = a.ConfigJson
             })
             .ToListAsync();
         return Ok(actions);
@@ -66,6 +67,7 @@ public class ActionManagementController : ControllerBase
             BehaviorType = Enum.Parse<BehaviorType>(request.BehaviorType),
             TargetId = request.BehaviorType == BehaviorType.FormBuilder.ToString() ? request.TargetId : null,
             TargetModuleId = request.BehaviorType == BehaviorType.ModuleLink.ToString() ? request.TargetModuleId : null,
+            ConfigJson = request.ConfigJson,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -113,6 +115,7 @@ public class ActionManagementController : ControllerBase
         action.BehaviorType = Enum.Parse<BehaviorType>(request.BehaviorType);
         action.TargetId = request.BehaviorType == BehaviorType.FormBuilder.ToString() ? request.TargetId : null;
         action.TargetModuleId = request.BehaviorType == BehaviorType.ModuleLink.ToString() ? request.TargetModuleId : null;
+        action.ConfigJson = request.ConfigJson;
         action.UpdatedAt = DateTime.UtcNow;
 
         if (action.BehaviorType == BehaviorType.ModuleLink)

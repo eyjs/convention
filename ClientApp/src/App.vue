@@ -6,12 +6,14 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useUIStore } from '@/stores/ui'
 import { useKeyboardAdjust } from '@/composables/useKeyboardAdjust'
 import GlobalPopup from '@/components/common/GlobalPopup.vue'
 
 const authStore = useAuthStore()
+const uiStore = useUIStore()
 
 useKeyboardAdjust({
   offset: 20,
@@ -19,8 +21,19 @@ useKeyboardAdjust({
   enabled: false,
 })
 
+const onKeyDown = (e) => {
+  if (e.key === 'Escape') {
+    uiStore.closeTopModal()
+  }
+}
+
 onMounted(() => {
   authStore.ensureInitialized()
+  window.addEventListener('keydown', onKeyDown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeyDown)
 })
 </script>
 

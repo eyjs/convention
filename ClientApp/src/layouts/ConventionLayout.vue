@@ -49,7 +49,6 @@
         </button>
       </div>
     </nav>
-
   </div>
 </template>
 
