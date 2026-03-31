@@ -1034,6 +1034,7 @@ function detectPreset(action) {
   if (cat === 'BANNER') return 'banner'
   if (cat === 'CARD') return 'info-card'
   if (cat === 'AUTO_POPUP') return 'popup'
+  if (cat === 'BUTTON') return 'button'
   return null
 }
 
@@ -1130,6 +1131,28 @@ function populatePresetFormFromAction(presetId, action) {
         data.buttonLabel = ''
         data.buttonLinkType = 'close'
         data.buttonUrl = ''
+      }
+      break
+
+    case 'button':
+      data.title = action.title
+      data.targetLocation = action.targetLocation || 'HOME_SUB_HEADER'
+      data.buttonStyle = config.style || 'primary'
+      data.buttonSize = config.size || 'md'
+      if (action.behaviorType === 'ModuleLink' && action.mapsTo) {
+        data.actionType = 'internal'
+        data.internalPage = action.mapsTo.replace(/^\/conventions\/\d+\//, '')
+      } else if (action.behaviorType === 'Link' && action.mapsTo) {
+        data.actionType = 'external'
+        data.externalUrl = action.mapsTo
+      } else if (action.behaviorType === 'ShowComponentPopup' && config.popupImageUrl) {
+        data.actionType = 'imagePopup'
+        data.popupImage = config.popupImageUrl
+      } else if (action.behaviorType === 'ShowComponentPopup' && action.mapsTo) {
+        data.actionType = 'component'
+        data.componentName = action.mapsTo
+      } else {
+        data.actionType = 'internal'
       }
       break
   }

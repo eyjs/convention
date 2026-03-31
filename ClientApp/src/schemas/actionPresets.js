@@ -1,4 +1,19 @@
-import { CheckSquare, Menu, Image, Info, Bell, Settings } from 'lucide-vue-next'
+import {
+  CheckSquare,
+  Menu,
+  Image,
+  Info,
+  Bell,
+  Settings,
+  MousePointerClick,
+} from 'lucide-vue-next'
+import { popupComponents } from '@/popups/popupComponents'
+
+// 등록된 팝업 컴포넌트 목록을 드롭다운 옵션으로 변환
+const popupComponentOptions = Object.keys(popupComponents).map((key) => ({
+  value: key,
+  label: key,
+}))
 
 /**
  * Action Presets — 관리자가 쉽게 액션을 생성할 수 있는 프리셋 정의
@@ -333,6 +348,137 @@ export const ACTION_PRESETS = [
         isActive: true,
         orderNum: formData.orderNum ?? 0,
         mapsTo: null,
+        targetId: null,
+        configJson: JSON.stringify(config),
+      }
+    },
+  },
+  {
+    id: 'button',
+    label: '동적 버튼',
+    description: '페이지에 버튼 추가 (링크, 이미지 팝업 등)',
+    icon: MousePointerClick,
+    formFields: [
+      { key: 'title', label: '버튼 텍스트', type: 'text', required: true },
+      {
+        key: 'targetLocation',
+        label: '표시 위치',
+        type: 'select',
+        options: [
+          { value: 'HOME_SUB_HEADER', label: '홈 - 배너 아래' },
+          { value: 'HOME_CONTENT_TOP', label: '홈 - 콘텐츠 상단' },
+          { value: 'SCHEDULE_CONTENT_TOP', label: '일정 - 상단' },
+        ],
+        default: 'HOME_SUB_HEADER',
+      },
+      {
+        key: 'actionType',
+        label: '클릭 시 동작',
+        type: 'select',
+        options: [
+          { value: 'internal', label: '내부 페이지 이동' },
+          { value: 'external', label: '외부 링크 열기' },
+          { value: 'imagePopup', label: '이미지 팝업' },
+          ...(popupComponentOptions.length > 0
+            ? [{ value: 'component', label: '컴포넌트 팝업 (개인화)' }]
+            : []),
+        ],
+        default: 'internal',
+      },
+      {
+        key: 'internalPage',
+        label: '이동할 페이지',
+        type: 'select',
+        showIf: (fd) => fd.actionType === 'internal',
+        options: [
+          { value: 'schedule', label: '나의 일정' },
+          { value: 'board', label: '게시판' },
+          { value: 'more', label: '더보기' },
+        ],
+        default: 'schedule',
+      },
+      {
+        key: 'externalUrl',
+        label: '외부 링크 URL',
+        type: 'text',
+        showIf: (fd) => fd.actionType === 'external',
+        required: true,
+        placeholder: 'https://...',
+      },
+      {
+        key: 'popupImage',
+        label: '팝업 이미지',
+        type: 'image',
+        showIf: (fd) => fd.actionType === 'imagePopup',
+        required: true,
+      },
+      {
+        key: 'componentName',
+        label: '연결할 컴포넌트',
+        type: 'select',
+        showIf: (fd) => fd.actionType === 'component',
+        options: popupComponentOptions,
+        required: true,
+      },
+      {
+        key: 'buttonStyle',
+        label: '버튼 스타일',
+        type: 'select',
+        options: [
+          { value: 'primary', label: '파랑 (기본)' },
+          { value: 'success', label: '초록' },
+          { value: 'warning', label: '노랑' },
+          { value: 'danger', label: '빨강' },
+          { value: 'outline', label: '테두리' },
+          { value: 'ghost', label: '투명' },
+        ],
+        default: 'primary',
+      },
+      {
+        key: 'buttonSize',
+        label: '버튼 크기',
+        type: 'select',
+        options: [
+          { value: 'sm', label: '작게' },
+          { value: 'md', label: '보통' },
+          { value: 'lg', label: '크게' },
+        ],
+        default: 'md',
+      },
+    ],
+    buildPayload(formData, conventionId) {
+      const config = {
+        style: formData.buttonStyle || 'primary',
+        size: formData.buttonSize || 'md',
+      }
+
+      let behaviorType = 'StatusOnly'
+      let mapsTo = null
+
+      if (formData.actionType === 'internal' && formData.internalPage) {
+        behaviorType = 'ModuleLink'
+        mapsTo = `/conventions/${conventionId}/${formData.internalPage}`
+      } else if (formData.actionType === 'external' && formData.externalUrl) {
+        behaviorType = 'Link'
+        mapsTo = formData.externalUrl
+      } else if (formData.actionType === 'imagePopup' && formData.popupImage) {
+        behaviorType = 'ShowComponentPopup'
+        config.popupImageUrl = formData.popupImage
+      } else if (formData.actionType === 'component' && formData.componentName) {
+        behaviorType = 'ShowComponentPopup'
+        mapsTo = formData.componentName
+      }
+
+      return {
+        conventionId,
+        title: formData.title,
+        actionCategory: 'BUTTON',
+        targetLocation: formData.targetLocation || 'HOME_SUB_HEADER',
+        behaviorType,
+        deadline: null,
+        isActive: true,
+        orderNum: formData.orderNum ?? 0,
+        mapsTo,
         targetId: null,
         configJson: JSON.stringify(config),
       }

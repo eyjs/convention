@@ -99,8 +99,25 @@ export function useAction() {
         }
         break
 
-      case 'ShowComponentPopup':
-        if (mapsTo && popupComponents[mapsTo]) {
+      case 'ShowComponentPopup': {
+        // configJson에서 이미지 팝업 URL 확인
+        let config = {}
+        try {
+          config =
+            typeof action.configJson === 'string'
+              ? JSON.parse(action.configJson)
+              : action.configJson || {}
+        } catch {
+          config = {}
+        }
+
+        if (config.popupImageUrl) {
+          // 이미지 팝업: BaseModal 대신 popupStore로 이미지 표시
+          popupStore.openPopup({
+            title: title,
+            content: `<div style="text-align:center"><img src="${config.popupImageUrl}" style="max-width:100%;border-radius:8px" alt="${title}" /></div>`,
+          })
+        } else if (mapsTo && popupComponents[mapsTo]) {
           const component = defineAsyncComponent(popupComponents[mapsTo])
           popupStore.openPopup({
             title: title,
@@ -109,11 +126,12 @@ export function useAction() {
           })
         } else {
           console.warn(
-            `ShowComponentPopup action with invalid component name: ${mapsTo}`,
+            `ShowComponentPopup action with invalid config:`,
             action,
           )
         }
         break
+      }
 
       default:
         console.warn('Unknown action behaviorType:', behaviorType)
