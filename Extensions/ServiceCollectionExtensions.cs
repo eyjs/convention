@@ -38,6 +38,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPersonalTripService, LocalRAG.Services.PersonalTrip.PersonalTripService>();
         services.AddScoped<IConventionCrudService, ConventionCrudService>();
         services.AddScoped<IScheduleService, ScheduleService>();
+        services.AddScoped<ITravelAssignmentService, LocalRAG.Services.Convention.TravelAssignmentService>();
 
         return services;
     }

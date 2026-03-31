@@ -400,6 +400,13 @@ const routes = [
             component: () => import('@/components/admin/NoticeManagement.vue'),
             meta: { title: '공지사항' },
           },
+          {
+            path: 'travel-assignments',
+            name: 'AdminTravelAssignments',
+            component: () =>
+              import('@/components/admin/TravelAssignmentManager.vue'),
+            meta: { title: '여행 배정' },
+          },
         ],
       },
       {
