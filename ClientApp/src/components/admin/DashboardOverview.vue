@@ -234,12 +234,12 @@
             <h3 class="text-lg font-semibold">최근 문자 발송 이력</h3>
             <span class="text-xs text-gray-400">최근 20건</span>
           </div>
-          <button
-            class="text-sm text-primary-600 hover:text-primary-700 font-medium ml-auto"
-            @click="showSmsModal = true"
+          <router-link
+            :to="`/admin/conventions/${conventionId}/sns`"
+            class="text-sm text-primary-600 hover:text-primary-700 font-medium"
           >
-            + 문자 발송 관리
-          </button>
+            SNS 발송 관리 →
+          </router-link>
         </div>
         <div class="p-4 sm:p-6">
           <div
@@ -322,13 +322,6 @@
       </div>
     </div>
 
-    <!-- SMS 관리 모달 -->
-    <SmsManagementModal
-      v-if="showSmsModal"
-      :convention-id="conventionId"
-      @close="showSmsModal = false"
-    />
-
     <!-- 공통 명단 모달 -->
     <UserListModal
       :is-open="userListModal.open"
@@ -349,7 +342,6 @@ import { Users, Calendar, ClipboardCheck } from 'lucide-vue-next'
 import apiClient from '@/services/api'
 import AdminStatsCard from '@/components/admin/ui/AdminStatsCard.vue'
 import AdminBadge from '@/components/admin/ui/AdminBadge.vue'
-import SmsManagementModal from './sms/SmsManagementModal.vue'
 import UserListModal from '@/components/admin/UserListModal.vue'
 
 const props = defineProps({
@@ -359,7 +351,6 @@ const props = defineProps({
 const router = useRouter()
 const route = useRoute()
 
-const showSmsModal = ref(false)
 const stats = ref({
   totalGuests: 0,
   totalSchedules: 0,

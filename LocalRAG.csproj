@@ -32,6 +32,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Popbill" Version="1.61.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="$(SpaRoot)package.json" />
     <None Include="$(SpaRoot)vite.config.js" />
     <None Include="$(SpaRoot)tailwind.config.js" />

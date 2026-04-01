@@ -15,6 +15,7 @@ import {
   BarChart3,
   Bus,
   BookOpen,
+  MessageSquare,
 } from 'lucide-vue-next'
 
 const rootNavItems = [
@@ -132,6 +133,13 @@ const conventionNavItems = [
     icon: Bell,
     path: 'notices',
     routeName: 'AdminNotices',
+  },
+  {
+    key: 'sns',
+    label: 'SNS 발송',
+    icon: MessageSquare,
+    path: 'sns',
+    routeName: 'AdminSns',
   },
 ]
 

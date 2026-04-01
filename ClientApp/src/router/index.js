@@ -413,6 +413,12 @@ const routes = [
               import('@/components/admin/TravelAssignmentManager.vue'),
             meta: { title: '여행 배정' },
           },
+          {
+            path: 'sns',
+            name: 'AdminSns',
+            component: () => import('@/components/admin/SnsManagement.vue'),
+            meta: { title: 'SNS 발송' },
+          },
         ],
       },
       {

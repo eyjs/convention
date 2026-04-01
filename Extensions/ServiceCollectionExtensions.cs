@@ -52,6 +52,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISmsService, LocalRAG.Services.Shared.SmsService>();
         services.AddSingleton<ITemplateVariableService, TemplateVariableService>();
         services.AddScoped<SmsTemplateContextFactory>();
+        services.AddScoped<IKakaoAlimtalkService, KakaoAlimtalkService>();
 
         return services;
     }

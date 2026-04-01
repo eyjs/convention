@@ -70,6 +70,7 @@ public class SmsService : ISmsService
                 ReceiverName = receiverName,
                 ReceiverPhone = phoneNumber,
                 Message = message,
+                SnsType = message.Length > 90 ? "LMS" : "SMS",
                 ExternalId = externalId,
                 SentAt = DateTime.UtcNow
             };

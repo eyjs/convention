@@ -37,8 +37,13 @@ public class SmsLog
     public string Message { get; set; } = string.Empty;
 
     /// <summary>
-    /// 외부 프로시저 반환 ID (cmp_msg_id)
-    /// 이 ID를 통해 추후 성공/실패 여부를 추적
+    /// 발송 유형: SMS, LMS, ALIMTALK
+    /// </summary>
+    [MaxLength(20)]
+    public string SnsType { get; set; } = "SMS";
+
+    /// <summary>
+    /// 외부 프로시저 반환 ID (cmp_msg_id) 또는 팝빌 접수번호
     /// </summary>
     [MaxLength(100)]
     public string? ExternalId { get; set; }
