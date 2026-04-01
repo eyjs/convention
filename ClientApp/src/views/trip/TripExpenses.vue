@@ -412,17 +412,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, createApp } from 'vue'
+import {
+  ref,
+  computed,
+  onMounted,
+  watch,
+  createApp,
+  defineAsyncComponent,
+} from 'vue'
 import { useRouter } from 'vue-router'
 import MainHeader from '@/components/common/MainHeader.vue'
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue'
 import apiClient from '@/services/api'
 import dayjs from 'dayjs'
-import * as XLSX from 'xlsx'
-import { jsPDF } from 'jspdf'
-import html2canvas from 'html2canvas'
-import VueApexCharts from 'vue3-apexcharts'
-import PrintableExpenses from './PrintableExpenses.vue'
+
+const VueApexCharts = defineAsyncComponent(() => import('vue3-apexcharts'))
 
 const props = defineProps({
   id: String, // 라우터에서 자동 주입 (params.id)
@@ -681,8 +685,9 @@ function formatDate(dateStr) {
   return dateStr ? dayjs(dateStr).format('M/D') : ''
 }
 
-function exportToExcel() {
+async function exportToExcel() {
   showExportMenu.value = false
+  const XLSX = await import('xlsx')
   const wb = XLSX.utils.book_new()
 
   const dailyData = [['일자', '구분', '내용', '카테고리', '금액']]
@@ -816,6 +821,13 @@ function exportToExcel() {
 
 async function exportToPDF() {
   showExportMenu.value = false
+
+  const [{ default: html2canvas }, { jsPDF }, { default: PrintableExpenses }] =
+    await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+      import('./PrintableExpenses.vue'),
+    ])
 
   const printContainer = document.createElement('div')
   printContainer.style.position = 'fixed'

@@ -143,7 +143,9 @@
               >
               <div class="min-w-0 flex-1">
                 <p class="text-xs text-gray-400">메모</p>
-                <p class="text-sm text-gray-700 break-words whitespace-pre-line">
+                <p
+                  class="text-sm text-gray-700 break-words whitespace-pre-line"
+                >
                   {{ day.memo }}
                 </p>
               </div>

@@ -57,10 +57,7 @@
     </div>
 
     <!-- BUTTON 그리드 (최대 4열, 항상 25%) -->
-    <div
-      v-if="buttonItems.length > 0"
-      class="grid grid-cols-4 gap-2"
-    >
+    <div v-if="buttonItems.length > 0" class="grid grid-cols-4 gap-2">
       <component
         :is="resolveComponent('BUTTON')"
         v-for="feature in buttonItems"
@@ -113,7 +110,8 @@ const buttonItems = computed(() =>
 
 const otherFeatures = computed(() =>
   props.features.filter(
-    (f) => f.actionCategory !== 'CHECKLIST_CARD' && f.actionCategory !== 'BUTTON',
+    (f) =>
+      f.actionCategory !== 'CHECKLIST_CARD' && f.actionCategory !== 'BUTTON',
   ),
 )
 

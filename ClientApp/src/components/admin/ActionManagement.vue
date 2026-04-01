@@ -928,7 +928,9 @@ async function handleImageUpload(event, fieldKey) {
     })
     formData.value[fieldKey] = response.data.url
   } catch (error) {
-    alert('이미지 업로드 실패: ' + (error.response?.data?.message || error.message))
+    alert(
+      '이미지 업로드 실패: ' + (error.response?.data?.message || error.message),
+    )
   }
 }
 
@@ -1145,10 +1147,16 @@ function populatePresetFormFromAction(presetId, action) {
       } else if (action.behaviorType === 'Link' && action.mapsTo) {
         data.actionType = 'external'
         data.externalUrl = action.mapsTo
-      } else if (action.behaviorType === 'ShowComponentPopup' && config.popupImageUrl) {
+      } else if (
+        action.behaviorType === 'ShowComponentPopup' &&
+        config.popupImageUrl
+      ) {
         data.actionType = 'imagePopup'
         data.popupImage = config.popupImageUrl
-      } else if (action.behaviorType === 'ShowComponentPopup' && action.mapsTo) {
+      } else if (
+        action.behaviorType === 'ShowComponentPopup' &&
+        action.mapsTo
+      ) {
         data.actionType = 'component'
         data.componentName = action.mapsTo
       } else {

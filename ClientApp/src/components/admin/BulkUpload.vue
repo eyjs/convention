@@ -52,7 +52,9 @@
             <p class="font-semibold text-primary-800">
               시트2: 그룹-일정 매핑 (선택)
             </p>
-            <p><strong>A열:</strong> 그룹명 | <strong>B열:</strong> 일정코스명</p>
+            <p>
+              <strong>A열:</strong> 그룹명 | <strong>B열:</strong> 일정코스명
+            </p>
             <p class="text-primary-500 text-xs">
               ※ 일정이 먼저 업로드되어 있어야 합니다
             </p>
@@ -272,7 +274,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -305,7 +306,6 @@ const resultGuests = ref(null)
 const fileSchedules = ref(null)
 const uploadingSchedules = ref(false)
 const resultSchedules = ref(null)
-
 
 // 옵션투어 업로드 상태
 const fileOptionTours = ref(null)

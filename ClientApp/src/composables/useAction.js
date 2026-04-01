@@ -125,10 +125,7 @@ export function useAction() {
             targetId: targetId,
           })
         } else {
-          console.warn(
-            `ShowComponentPopup action with invalid config:`,
-            action,
-          )
+          console.warn(`ShowComponentPopup action with invalid config:`, action)
         }
         break
       }

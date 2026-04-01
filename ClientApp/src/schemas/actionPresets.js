@@ -464,7 +464,10 @@ export const ACTION_PRESETS = [
       } else if (formData.actionType === 'imagePopup' && formData.popupImage) {
         behaviorType = 'ShowComponentPopup'
         config.popupImageUrl = formData.popupImage
-      } else if (formData.actionType === 'component' && formData.componentName) {
+      } else if (
+        formData.actionType === 'component' &&
+        formData.componentName
+      ) {
         behaviorType = 'ShowComponentPopup'
         mapsTo = formData.componentName
       }

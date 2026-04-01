@@ -112,7 +112,7 @@
             <td class="px-6 py-4">
               <button
                 :class="[
-                  'flex',
+                  'inline-flex',
                   'items-center',
                   'gap-1',
                   'px-3',
@@ -120,6 +120,7 @@
                   'rounded-full',
                   'text-xs',
                   'font-semibold',
+                  'whitespace-nowrap',
                   'transition-colors',
                   notice.isPinned
                     ? 'bg-red-100 text-red-800 hover:bg-red-200'

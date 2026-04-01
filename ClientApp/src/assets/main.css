@@ -70,12 +70,12 @@
   --color-primary-100: 199 240 230; /* #c7f0e6 */
   --color-primary-200: 160 229 212; /* #a0e5d4 */
   --color-primary-300: 110 212 191; /* #6ed4bf */
-  --color-primary-400: 60 194 170;  /* #3cc2aa */
-  --color-primary-500: 23 177 133;  /* #17B185 */
-  --color-primary-600: 18 141 106;  /* #128d6a */
-  --color-primary-700: 14 105 79;   /* #0e694f */
-  --color-primary-800: 10 70 53;    /* #0a4635 */
-  --color-primary-900: 6 35 26;     /* #06231a */
+  --color-primary-400: 60 194 170; /* #3cc2aa */
+  --color-primary-500: 23 177 133; /* #17B185 */
+  --color-primary-600: 18 141 106; /* #128d6a */
+  --color-primary-700: 14 105 79; /* #0e694f */
+  --color-primary-800: 10 70 53; /* #0a4635 */
+  --color-primary-900: 6 35 26; /* #06231a */
 }
 
 /* 전역 스타일 */
@@ -97,8 +97,6 @@
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
-
-
 }
 
 /* 커스텀 스크롤바 */

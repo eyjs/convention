@@ -144,9 +144,12 @@ onMounted(async () => {
         items.push({
           ...action,
           isComplete: status?.isComplete,
-          badge: status?.isComplete !== undefined
-            ? (status.isComplete ? '완료' : '미완료')
-            : undefined,
+          badge:
+            status?.isComplete !== undefined
+              ? status.isComplete
+                ? '완료'
+                : '미완료'
+              : undefined,
           badgeClass: status?.isComplete
             ? 'bg-emerald-50 text-emerald-600'
             : 'bg-orange-50 text-orange-600',

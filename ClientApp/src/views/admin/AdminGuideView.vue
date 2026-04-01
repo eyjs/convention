@@ -51,9 +51,7 @@
               class="ml-2 px-1.5 py-0.5 bg-red-500 text-white text-[10px] rounded-full font-bold"
               >핵심</span
             >
-            <p class="text-xs opacity-70">
-              명단 + 일정매핑 + 속성 한번에
-            </p>
+            <p class="text-xs opacity-70">명단 + 일정매핑 + 속성 한번에</p>
           </div>
         </div>
         <div class="text-gray-300 text-lg">↓</div>

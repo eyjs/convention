@@ -371,9 +371,7 @@ async function removeDate() {
 async function copyFromPreviousDate() {
   if (!previousDate.value) return
   if (
-    !confirm(
-      `${formatDateTab(previousDate.value)}의 배정 정보를 복사할까요?`,
-    )
+    !confirm(`${formatDateTab(previousDate.value)}의 배정 정보를 복사할까요?`)
   )
     return
 
@@ -502,9 +500,7 @@ async function handleExcelUpload(event) {
   } catch (error) {
     uploadResult.value = {
       success: false,
-      warnings: [
-        error.response?.data?.error || error.message || '업로드 실패',
-      ],
+      warnings: [error.response?.data?.error || error.message || '업로드 실패'],
     }
   } finally {
     uploading.value = false

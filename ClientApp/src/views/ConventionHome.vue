@@ -182,8 +182,7 @@
           <!-- 배정 정보 태그 -->
           <div
             v-if="
-              myInfo.scheduleCourses.length > 0 ||
-              myInfo.attributes.length > 0
+              myInfo.scheduleCourses.length > 0 || myInfo.attributes.length > 0
             "
             class="flex flex-wrap gap-2 mb-4"
           >
@@ -340,7 +339,6 @@
                 </svg>
               </div>
             </button>
-
           </div>
         </div>
 

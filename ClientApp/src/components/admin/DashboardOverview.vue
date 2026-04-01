@@ -124,9 +124,7 @@
             <div
               class="text-center p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
               :class="
-                passportStats.expired?.length > 0
-                  ? 'bg-red-50'
-                  : 'bg-gray-50'
+                passportStats.expired?.length > 0 ? 'bg-red-50' : 'bg-gray-50'
               "
               @click="showPassportList('expired')"
             >
@@ -151,7 +149,8 @@
               :style="{
                 width:
                   passportStats.total > 0
-                    ? (passportStats.verifiedCount / passportStats.total) * 100 +
+                    ? (passportStats.verifiedCount / passportStats.total) *
+                        100 +
                       '%'
                     : '0%',
               }"
@@ -406,10 +405,8 @@ function showPassportList(type) {
   userListModal.title = titleMap[type]
   userListModal.users = list
   userListModal.loading = false
-  userListModal.extraLabel =
-    type === 'noPassport' ? '' : '만료일'
-  userListModal.extraField =
-    type === 'noPassport' ? '' : 'passportExpiryDate'
+  userListModal.extraLabel = type === 'noPassport' ? '' : '만료일'
+  userListModal.extraField = type === 'noPassport' ? '' : 'passportExpiryDate'
   userListModal.open = true
 }
 

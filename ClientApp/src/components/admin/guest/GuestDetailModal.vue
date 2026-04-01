@@ -35,15 +35,10 @@
             </dl>
           </div>
 
-          <div
-            v-if="
-              guestDetail?.attributes &&
-              Object.keys(guestDetail.attributes).length > 0
-            "
-          >
+          <div v-if="Object.keys(filteredAttributes()).length > 0">
             <h3 class="font-semibold mb-3">속성 정보</h3>
             <dl class="space-y-2 text-sm">
-              <div v-for="(value, key) in guestDetail.attributes" :key="key">
+              <div v-for="(value, key) in filteredAttributes()" :key="key">
                 <dt class="text-gray-500 inline">{{ key }}:</dt>
                 <dd class="inline ml-2 font-medium">{{ value }}</dd>
               </div>
@@ -84,9 +79,14 @@
             <div>
               <dt class="text-gray-500">여권사본</dt>
               <dd class="font-medium">
-                {{
-                  guestDetail.passport.passportImageUrl ? '업로드됨' : '미등록'
-                }}
+                <button
+                  v-if="guestDetail.passport.passportImageUrl"
+                  class="text-blue-600 hover:underline"
+                  @click="showPassportImage"
+                >
+                  이미지 보기
+                </button>
+                <span v-else class="text-gray-400">미등록</span>
               </dd>
             </div>
             <div>
@@ -187,6 +187,8 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import 'viewerjs/dist/viewer.css'
+import { api as viewerApi } from 'v-viewer'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
 
@@ -201,9 +203,28 @@ const emit = defineEmits(['close'])
 const guestDetail = ref(null)
 const loading = ref(false)
 
+const HIDDEN_ATTRIBUTES = ['travel_info']
+
+const filteredAttributes = () => {
+  if (!guestDetail.value?.attributes) return {}
+  return Object.fromEntries(
+    Object.entries(guestDetail.value.attributes).filter(
+      ([key]) => !HIDDEN_ATTRIBUTES.includes(key),
+    ),
+  )
+}
+
 const formatDate = (dateStr) => {
   const date = new Date(dateStr)
   return `${date.getMonth() + 1}/${date.getDate()}`
+}
+
+function showPassportImage() {
+  if (guestDetail.value?.passport?.passportImageUrl) {
+    viewerApi({
+      images: [guestDetail.value.passport.passportImageUrl],
+    })
+  }
 }
 
 watch(

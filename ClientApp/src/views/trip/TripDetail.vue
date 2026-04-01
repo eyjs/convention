@@ -239,26 +239,53 @@
   />
 </template>
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import {
+  ref,
+  computed,
+  onMounted,
+  watch,
+  nextTick,
+  defineAsyncComponent,
+} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MainHeader from '@/components/common/MainHeader.vue'
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
-import CommonDatePicker from '@/components/common/CommonDatePicker.vue'
-import GooglePlacesAutocomplete from '@/components/common/GooglePlacesAutocomplete.vue'
-import KakaoMapSearchModal from '@/components/common/KakaoMapSearchModal.vue'
-import AccommodationDetailModal from '@/components/personalTrip/AccommodationDetailModal.vue'
-import AccommodationManagementModal from '@/components/personalTrip/AccommodationManagementModal.vue'
-import ShareTripModal from '@/components/personalTrip/ShareTripModal.vue'
 import TripDashboardComponent from '@/components/personalTrip/TripDashboardComponent.vue'
 import TripHeroCard from '@/components/personalTrip/TripHeroCard.vue'
-import TripInfoModal from '@/components/personalTrip/TripInfoModal.vue'
-import TripItinerarySection from '@/components/personalTrip/TripItinerarySection.vue'
-import TripReminderModal from '@/components/personalTrip/TripReminderModal.vue'
 import apiClient from '@/services/api'
 import { useGoogleMaps } from '@/composables/useGoogleMaps'
 import { BellIcon } from 'lucide-vue-next'
 import dayjs from 'dayjs'
+
+// 모달/대형 컴포넌트는 lazy loading
+const CommonDatePicker = defineAsyncComponent(
+  () => import('@/components/common/CommonDatePicker.vue'),
+)
+const GooglePlacesAutocomplete = defineAsyncComponent(
+  () => import('@/components/common/GooglePlacesAutocomplete.vue'),
+)
+const KakaoMapSearchModal = defineAsyncComponent(
+  () => import('@/components/common/KakaoMapSearchModal.vue'),
+)
+const AccommodationDetailModal = defineAsyncComponent(
+  () => import('@/components/personalTrip/AccommodationDetailModal.vue'),
+)
+const AccommodationManagementModal = defineAsyncComponent(
+  () => import('@/components/personalTrip/AccommodationManagementModal.vue'),
+)
+const ShareTripModal = defineAsyncComponent(
+  () => import('@/components/personalTrip/ShareTripModal.vue'),
+)
+const TripInfoModal = defineAsyncComponent(
+  () => import('@/components/personalTrip/TripInfoModal.vue'),
+)
+const TripItinerarySection = defineAsyncComponent(
+  () => import('@/components/personalTrip/TripItinerarySection.vue'),
+)
+const TripReminderModal = defineAsyncComponent(
+  () => import('@/components/personalTrip/TripReminderModal.vue'),
+)
 
 // Props for readonly mode and shared access
 const props = defineProps({

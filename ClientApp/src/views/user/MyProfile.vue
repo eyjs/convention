@@ -116,10 +116,7 @@
                   </div>
                 </button>
                 <!-- 수정 불가 (승인됨) -->
-                <li
-                  v-else
-                  class="px-4 py-4 flex justify-between items-center"
-                >
+                <li v-else class="px-4 py-4 flex justify-between items-center">
                   <span class="font-medium text-gray-700">{{
                     field.label
                   }}</span>

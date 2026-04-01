@@ -317,6 +317,17 @@
               />
             </div>
           </div>
+          <!-- 여권 이미지 뷰어 (수정 모드에서만) -->
+          <div v-if="editingGuest?.passport?.passportImageUrl" class="pt-2">
+            <label class="block text-sm font-medium mb-1">여권사본</label>
+            <button
+              type="button"
+              class="text-sm text-blue-600 hover:underline"
+              @click="showPassportImage"
+            >
+              이미지 보기
+            </button>
+          </div>
         </div>
 
         <div>
@@ -590,6 +601,8 @@
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { X, Copy } from 'lucide-vue-next'
+import 'viewerjs/dist/viewer.css'
+import { api as viewerApi } from 'v-viewer'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
 
@@ -604,6 +617,14 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'saved'])
+
+function showPassportImage() {
+  if (props.editingGuest?.passport?.passportImageUrl) {
+    viewerApi({
+      images: [props.editingGuest.passport.passportImageUrl],
+    })
+  }
+}
 
 // 탭 상태
 const activeTab = ref('manual')

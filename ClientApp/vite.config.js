@@ -34,12 +34,35 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Quill 관련 모듈만 별도 청크로 분리 (순환참조 방지)
           if (
             id.includes('node_modules/quill') ||
             id.includes('node_modules/parchment')
           ) {
             return 'quill'
+          }
+          if (id.includes('node_modules/xlsx')) {
+            return 'xlsx'
+          }
+          if (
+            id.includes('node_modules/jspdf') ||
+            id.includes('node_modules/html2canvas')
+          ) {
+            return 'pdf-export'
+          }
+          if (id.includes('node_modules/apexcharts') || id.includes('node_modules/vue3-apexcharts')) {
+            return 'apexcharts'
+          }
+          if (id.includes('node_modules/vue-datepicker-next')) {
+            return 'datepicker'
+          }
+          if (id.includes('node_modules/lucide-vue-next')) {
+            return 'lucide-icons'
+          }
+          if (id.includes('node_modules/country-state-city')) {
+            return 'country-state-city'
+          }
+          if (id.includes('node_modules/dayjs')) {
+            return 'dayjs'
           }
         },
       },

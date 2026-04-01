@@ -88,7 +88,9 @@
           </div>
 
           <!-- Footer (고정) -->
-          <div class="flex-shrink-0 px-6 md:px-8 pb-6 md:pb-8 pt-4 border-t border-gray-100">
+          <div
+            class="flex-shrink-0 px-6 md:px-8 pb-6 md:pb-8 pt-4 border-t border-gray-100"
+          >
             <!-- Action Buttons -->
             <div
               v-if="config.buttons && config.buttons.length > 0"
@@ -108,7 +110,9 @@
             <div
               v-if="config.showOnce"
               class="flex items-center mt-3"
-              :class="{ 'pt-3 border-t border-gray-200': config.buttons?.length }"
+              :class="{
+                'pt-3 border-t border-gray-200': config.buttons?.length,
+              }"
             >
               <input
                 id="dont-show-again"

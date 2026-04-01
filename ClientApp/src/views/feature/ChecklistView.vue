@@ -55,22 +55,19 @@
           v-for="item in checklist.items"
           :key="item.actionId"
           class="flex items-center gap-3 px-4 py-3.5 cursor-pointer active:bg-gray-50 transition-colors"
-          :class="{ 'opacity-50': isExpired(item.deadline) && !item.isComplete }"
+          :class="{
+            'opacity-50': isExpired(item.deadline) && !item.isComplete,
+          }"
           @click="toggleItem(item)"
         >
           <!-- 체크 아이콘 -->
           <div
             class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
             :class="
-              item.isComplete
-                ? 'bg-emerald-500'
-                : 'border-2 border-gray-300'
+              item.isComplete ? 'bg-emerald-500' : 'border-2 border-gray-300'
             "
           >
-            <Check
-              v-if="item.isComplete"
-              class="w-3.5 h-3.5 text-white"
-            />
+            <Check v-if="item.isComplete" class="w-3.5 h-3.5 text-white" />
           </div>
 
           <!-- 제목 + 마감일 -->
@@ -78,9 +75,7 @@
             <p
               class="text-sm font-medium"
               :class="
-                item.isComplete
-                  ? 'text-gray-400 line-through'
-                  : 'text-gray-900'
+                item.isComplete ? 'text-gray-400 line-through' : 'text-gray-900'
               "
             >
               {{ item.title }}
@@ -95,7 +90,9 @@
               "
             >
               {{ formatDeadline(item.deadline) }}
-              <span v-if="isExpired(item.deadline) && !item.isComplete"> (마감)</span>
+              <span v-if="isExpired(item.deadline) && !item.isComplete">
+                (마감)</span
+              >
             </p>
           </div>
 
@@ -108,10 +105,7 @@
       </div>
 
       <!-- 빈 상태 -->
-      <div
-        v-else
-        class="text-center py-12"
-      >
+      <div v-else class="text-center py-12">
         <ClipboardList class="w-10 h-10 text-gray-300 mx-auto mb-3" />
         <p class="text-sm text-gray-400">등록된 체크리스트가 없습니다.</p>
       </div>
@@ -167,7 +161,9 @@ async function toggleItem(item) {
     item.isComplete = !item.isComplete
 
     // 진행률 재계산
-    checklist.completedItems = checklist.items.filter((i) => i.isComplete).length
+    checklist.completedItems = checklist.items.filter(
+      (i) => i.isComplete,
+    ).length
     checklist.progressPercentage =
       checklist.totalItems > 0
         ? Math.round((checklist.completedItems * 100) / checklist.totalItems)
