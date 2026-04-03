@@ -35,6 +35,13 @@ namespace LocalRAG.Entities
         public string DeleteYn { get; set; } = string.Empty;
         public string CompleteYn { get; set; } = "N";
 
+        // 여행 정보
+        public string? Location { get; set; }
+        public string? DestinationCity { get; set; }
+        public string? DestinationCountryCode { get; set; }
+        public string? EmergencyContactsJson { get; set; }
+        public string? MeetingPointInfo { get; set; }
+
     public ICollection<UserConvention> UserConventions { get; set; } = new List<UserConvention>();
     public ICollection<ScheduleTemplate> ScheduleTemplates { get; set; } = new List<ScheduleTemplate>();
         public ICollection<Menu> Menus { get; set; } = new List<Menu>();

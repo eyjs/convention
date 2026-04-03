@@ -10,4 +10,9 @@ public class UpdateConventionRequest
     public string? BrandColor { get; set; }
     public string? ThemePreset { get; set; }
     public string? ConventionImg { get; set; }
+    public string? Location { get; set; }
+    public string? DestinationCity { get; set; }
+    public string? DestinationCountryCode { get; set; }
+    public string? EmergencyContactsJson { get; set; }
+    public string? MeetingPointInfo { get; set; }
 }

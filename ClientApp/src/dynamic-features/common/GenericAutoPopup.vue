@@ -106,23 +106,20 @@
               </button>
             </div>
 
-            <!-- Don't show again checkbox -->
+            <!-- Don't show again button -->
             <div
               v-if="config.showOnce"
-              class="flex items-center mt-3"
+              class="mt-3"
               :class="{
                 'pt-3 border-t border-gray-200': config.buttons?.length,
               }"
             >
-              <input
-                id="dont-show-again"
-                v-model="dontShowAgain"
-                type="checkbox"
-                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-              />
-              <label for="dont-show-again" class="ml-2 text-sm text-gray-600">
+              <button
+                class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                @click="dismissPermanently"
+              >
                 다시 보지 않기
-              </label>
+              </button>
             </div>
           </div>
         </div>
@@ -144,7 +141,6 @@ const props = defineProps({
 
 const router = useRouter()
 const isVisible = ref(false)
-const dontShowAgain = ref(false)
 
 // Parse config
 const config = computed(() => {
@@ -219,11 +215,13 @@ const triggerPopup = () => {
 
 // Handle close
 const handleClose = () => {
-  if (dontShowAgain.value && config.value.showOnce) {
-    const storageKey = getStorageKey()
-    localStorage.setItem(storageKey, 'true')
-  }
+  isVisible.value = false
+}
 
+// "다시 보지 않기" 클릭 시 즉시 localStorage 저장 + 닫기
+const dismissPermanently = () => {
+  const storageKey = getStorageKey()
+  localStorage.setItem(storageKey, 'true')
   isVisible.value = false
 }
 

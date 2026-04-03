@@ -121,6 +121,11 @@ public class ConventionCrudService : IConventionCrudService
             convention.BrandColor,
             convention.ThemePreset,
             convention.ConventionImg,
+            convention.Location,
+            convention.DestinationCity,
+            convention.DestinationCountryCode,
+            convention.EmergencyContactsJson,
+            convention.MeetingPointInfo,
             convention.DeleteYn,
             convention.CompleteYn,
             convention.RegDtm,
@@ -144,6 +149,11 @@ public class ConventionCrudService : IConventionCrudService
             BrandColor = request.BrandColor ?? "#6366f1",
             ThemePreset = request.ThemePreset ?? "default",
             ConventionImg = request.ConventionImg,
+            Location = request.Location,
+            DestinationCity = request.DestinationCity,
+            DestinationCountryCode = request.DestinationCountryCode,
+            EmergencyContactsJson = request.EmergencyContactsJson,
+            MeetingPointInfo = request.MeetingPointInfo,
             RegDtm = DateTime.Now,
             DeleteYn = DeleteStatus.Active,
             CompleteYn = DeleteStatus.Active
@@ -193,6 +203,11 @@ public class ConventionCrudService : IConventionCrudService
         convention.BrandColor = request.BrandColor ?? convention.BrandColor;
         convention.ThemePreset = request.ThemePreset ?? convention.ThemePreset;
         convention.ConventionImg = request.ConventionImg ?? convention.ConventionImg;
+        convention.Location = request.Location ?? convention.Location;
+        convention.DestinationCity = request.DestinationCity ?? convention.DestinationCity;
+        convention.DestinationCountryCode = request.DestinationCountryCode ?? convention.DestinationCountryCode;
+        convention.EmergencyContactsJson = request.EmergencyContactsJson ?? convention.EmergencyContactsJson;
+        convention.MeetingPointInfo = request.MeetingPointInfo ?? convention.MeetingPointInfo;
 
         _unitOfWork.Conventions.Update(convention);
         await _unitOfWork.SaveChangesAsync();

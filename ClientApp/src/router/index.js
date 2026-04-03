@@ -139,6 +139,12 @@ const routes = [
         meta: { title: '여행 서류 제출', showNav: false },
       },
       {
+        path: 'travel-guide',
+        name: 'TravelGuide',
+        component: () => import('@/views/TravelGuide.vue'),
+        meta: { title: '여행 가이드', showNav: true },
+      },
+      {
         path: 'checklist',
         name: 'Checklist',
         component: () => import('@/views/feature/ChecklistView.vue'),
