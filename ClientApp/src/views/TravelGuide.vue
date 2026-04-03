@@ -3,59 +3,6 @@
     <MainHeader title="여행 가이드" :show-back="true" />
 
     <div class="max-w-2xl mx-auto px-4 py-4 space-y-4">
-      <!-- 날씨 -->
-      <div v-if="weather.available" class="bg-white rounded-2xl shadow-md p-5">
-        <h3 class="text-sm font-semibold text-gray-500 mb-3">현지 날씨</h3>
-        <div class="flex items-center gap-4">
-          <img
-            v-if="weather.icon"
-            :src="`https://openweathermap.org/img/wn/${weather.icon}@2x.png`"
-            class="w-16 h-16"
-            alt="날씨"
-          />
-          <div>
-            <p class="text-3xl font-bold text-gray-900">{{ weather.temp }}°C</p>
-            <p class="text-sm text-gray-600">
-              {{ weather.description }}
-            </p>
-            <p class="text-xs text-gray-400">
-              {{ travelInfo.destinationCity }} · 체감 {{ weather.feelsLike }}°C
-              · 습도 {{ weather.humidity }}%
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 환율 -->
-      <div v-if="exchange.available" class="bg-white rounded-2xl shadow-md p-5">
-        <h3 class="text-sm font-semibold text-gray-500 mb-3">환율 정보</h3>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-2xl font-bold text-gray-900">
-              {{ exchange.description }}
-            </p>
-            <p class="text-xs text-gray-400">
-              {{ exchange.currencyName }} ({{ exchange.currencyCode }})
-            </p>
-          </div>
-          <!-- 간이 환율 계산 -->
-          <div class="text-right">
-            <input
-              v-model.number="exchangeInput"
-              type="number"
-              class="w-24 px-2 py-1 border rounded text-right text-sm"
-              placeholder="KRW"
-            />
-            <p
-              v-if="exchangeInput"
-              class="text-sm font-medium text-primary-600 mt-1"
-            >
-              ≈ {{ convertedAmount }} {{ exchange.currencyCode }}
-            </p>
-          </div>
-        </div>
-      </div>
-
       <!-- 긴급연락처 -->
       <div
         v-if="emergencyContacts.length > 0"
@@ -134,12 +81,7 @@
 
       <!-- 정보 없음 -->
       <div
-        v-if="
-          !weather.available &&
-          !exchange.available &&
-          emergencyContacts.length === 0 &&
-          !travelInfo.meetingPointInfo
-        "
+        v-if="emergencyContacts.length === 0 && !travelInfo.meetingPointInfo"
         class="text-center py-12 text-gray-400"
       >
         <p>아직 등록된 여행 정보가 없습니다</p>
@@ -162,9 +104,6 @@ const route = useRoute()
 const conventionId = route.params.conventionId
 
 const travelInfo = ref({})
-const weather = ref({ available: false })
-const exchange = ref({ available: false })
-const exchangeInput = ref(null)
 
 const emergencyContacts = computed(() => {
   try {
@@ -179,11 +118,6 @@ const emergencyContacts = computed(() => {
   }
 })
 
-const convertedAmount = computed(() => {
-  if (!exchangeInput.value || !exchange.value.rate) return ''
-  return (exchangeInput.value * exchange.value.rate).toFixed(2)
-})
-
 async function loadTravelInfo() {
   try {
     const res = await apiClient.get(`/conventions/${conventionId}/travel-guide`)
@@ -193,43 +127,5 @@ async function loadTravelInfo() {
   }
 }
 
-async function loadWeather() {
-  try {
-    const res = await apiClient.get(
-      `/conventions/${conventionId}/travel-guide/weather`,
-    )
-    if (res.data.available === false) {
-      weather.value = { available: false }
-      return
-    }
-    const d = res.data
-    weather.value = {
-      available: true,
-      temp: Math.round(d.main?.temp),
-      feelsLike: Math.round(d.main?.feels_like),
-      humidity: d.main?.humidity,
-      description: d.weather?.[0]?.description,
-      icon: d.weather?.[0]?.icon,
-    }
-  } catch {
-    weather.value = { available: false }
-  }
-}
-
-async function loadExchangeRate() {
-  try {
-    const res = await apiClient.get(
-      `/conventions/${conventionId}/travel-guide/exchange-rate`,
-    )
-    exchange.value = res.data
-  } catch {
-    exchange.value = { available: false }
-  }
-}
-
-onMounted(() => {
-  loadTravelInfo()
-  loadWeather()
-  loadExchangeRate()
-})
+onMounted(loadTravelInfo)
 </script>

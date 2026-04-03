@@ -109,35 +109,16 @@
       :features="globalPopupActions"
     />
 
-    <!-- 날씨/환율 미니 위젯 + 여행가이드 링크 -->
-    <div
-      v-if="weatherData.available || exchangeData.available"
-      class="px-4 pt-4"
-    >
+    <!-- 여행 가이드 링크 -->
+    <div v-if="hasTravelGuide" class="px-4 pt-4">
       <router-link
         :to="`/conventions/${conventionId}/travel-guide`"
         class="flex items-center gap-3 bg-white rounded-xl shadow-sm p-3 hover:shadow-md transition-shadow"
       >
-        <div v-if="weatherData.available" class="flex items-center gap-1.5">
-          <img
-            :src="`https://openweathermap.org/img/wn/${weatherData.icon}.png`"
-            class="w-8 h-8"
-            alt=""
-          />
-          <span class="text-sm font-semibold text-gray-900"
-            >{{ weatherData.temp }}°</span
-          >
-        </div>
-        <div
-          v-if="weatherData.available && exchangeData.available"
-          class="w-px h-6 bg-gray-200"
-        ></div>
-        <div v-if="exchangeData.available" class="text-xs text-gray-600">
-          {{ exchangeData.description }}
-        </div>
-        <div class="ml-auto text-xs text-primary-500 font-medium">
-          여행 가이드 →
-        </div>
+        <span class="text-lg">🧳</span>
+        <span class="text-sm font-medium text-gray-700">여행 가이드</span>
+        <span class="text-xs text-gray-400">긴급연락처 · 집결지 · 캘린더</span>
+        <span class="ml-auto text-xs text-primary-500 font-medium">→</span>
       </router-link>
     </div>
 
@@ -1145,34 +1126,20 @@ async function loadDynamicActions() {
   }
 }
 
-// 날씨/환율 미니 위젯
-const weatherData = ref({ available: false })
-const exchangeData = ref({ available: false })
+// 여행 가이드 링크 표시 여부
+const hasTravelGuide = ref(false)
 
-async function loadWeatherWidget() {
+async function checkTravelGuide() {
   try {
-    const res = await apiClient.get(
-      `/conventions/${conventionId}/travel-guide/weather`,
+    const res = await apiClient.get(`/conventions/${conventionId}/travel-guide`)
+    const d = res.data
+    hasTravelGuide.value = !!(
+      d.emergencyContacts ||
+      d.meetingPointInfo ||
+      d.location
     )
-    if (res.data.available === false) return
-    weatherData.value = {
-      available: true,
-      temp: Math.round(res.data.main?.temp),
-      icon: res.data.weather?.[0]?.icon,
-    }
   } catch {
-    // 날씨 없으면 위젯 숨김
-  }
-}
-
-async function loadExchangeWidget() {
-  try {
-    const res = await apiClient.get(
-      `/conventions/${conventionId}/travel-guide/exchange-rate`,
-    )
-    exchangeData.value = res.data
-  } catch {
-    // 환율 없으면 위젯 숨김
+    hasTravelGuide.value = false
   }
 }
 
@@ -1189,8 +1156,7 @@ onMounted(async () => {
     loadChecklist(),
     loadDynamicActions(),
     loadMyInfo(),
-    loadWeatherWidget(),
-    loadExchangeWidget(),
+    checkTravelGuide(),
   ])
 
   loading.value = false
