@@ -37,47 +37,33 @@
       <div class="max-w-2xl mx-auto px-4 py-4">
         <!-- 내 정보 점검 -->
         <div
-          class="bg-white rounded-xl shadow-sm mb-4 overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+          class="bg-white rounded-xl shadow-sm mb-4 px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
           @click="router.push('/my-profile')"
         >
-          <div
-            class="px-4 py-2.5 flex items-center justify-between"
-            :class="allChecksPassed ? 'bg-green-50' : 'bg-amber-50'"
-          >
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-semibold text-gray-700">내 정보</span>
             <span
-              class="text-sm font-semibold"
-              :class="allChecksPassed ? 'text-green-700' : 'text-amber-700'"
+              class="text-xs font-medium"
+              :class="allChecksPassed ? 'text-green-600' : 'text-amber-600'"
             >
-              {{
-                allChecksPassed
-                  ? '✅ 정보 등록 완료'
-                  : '⚠️ 등록이 필요한 정보가 있습니다'
-              }}
+              {{ passedCount }}/{{ infoChecks.length }}
             </span>
-            <svg
-              class="w-4 h-4 flex-shrink-0"
-              :class="allChecksPassed ? 'text-green-400' : 'text-amber-400'"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
           </div>
-          <div v-if="!allChecksPassed" class="px-4 py-3 space-y-1.5">
+          <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
+              class="h-full rounded-full transition-all duration-500"
+              :class="allChecksPassed ? 'bg-green-500' : 'bg-amber-500'"
+              :style="{ width: `${(passedCount / infoChecks.length) * 100}%` }"
+            ></div>
+          </div>
+          <div v-if="!allChecksPassed" class="flex flex-wrap gap-1.5 mt-2">
+            <span
               v-for="check in failedChecks"
               :key="check.key"
-              class="flex items-center gap-2 text-sm"
+              class="px-2 py-0.5 bg-red-50 text-red-500 text-xs rounded"
             >
-              <span class="text-red-400">✕</span>
-              <span class="text-gray-600">{{ check.label }}</span>
-            </div>
+              {{ check.label }}
+            </span>
           </div>
         </div>
 
@@ -307,6 +293,7 @@ const infoChecks = computed(() => {
   ]
 })
 const failedChecks = computed(() => infoChecks.value.filter((c) => !c.ok))
+const passedCount = computed(() => infoChecks.value.filter((c) => c.ok).length)
 const allChecksPassed = computed(() => failedChecks.value.length === 0)
 
 const passportExpiryDays = computed(() => {
