@@ -43,49 +43,36 @@ public class DbSmsSender : ISmsSender
                 command.Parameters.Add(new SqlParameter("@p_rcv_name", rcvName));
                 command.Parameters.Add(new SqlParameter("@p_msg", message));
 
-                // 결과값('result')을 읽어옵니다.
-                // 프로시저가 디버깅용 SELECT 후 실제 결과를 반환하므로 NextResult()가 필요할 수 있음
+                // 프로시저가 2개 결과셋 반환:
+                // 1번째: 디버깅용 (SenderID, SendDtm, ...) → 스킵
+                // 2번째: SELECT 'result' = @return_value → 실제 발송 결과
                 using (var reader = await command.ExecuteReaderAsync())
                 {
-                    do
+                    // 1번째 결과셋 스킵
+                    await reader.NextResultAsync();
+
+                    // 2번째 결과셋에서 return_value 읽기
+                    if (await reader.ReadAsync())
                     {
-                        if (await reader.ReadAsync())
+                        var returnValue = reader.GetValue(0)?.ToString();
+                        _logger.LogInformation("SMS Proc return_value: {Result}, To: {Mobile}", returnValue, mobile);
+
+                        // return_value가 있으면 발송 성공으로 간주
+                        if (!string.IsNullOrEmpty(returnValue))
                         {
-                            try
-                            {
-                                // 컬럼명에 의존하지 않고 첫 번째 컬럼 값을 읽음
-                                var cmpMsgId = reader.GetValue(0)?.ToString();
-                                
-                                // 값이 있고, 길이가 충분히 길면(ID로 추정되면) 반환
-                                if (!string.IsNullOrEmpty(cmpMsgId) && cmpMsgId.Length > 1)
-                                {
-                                    _logger.LogInformation("SMS Core Sent. ID: {Id}, To: {Mobile}", cmpMsgId, mobile);
-                                    return cmpMsgId;
-                                }
-                            }
-                            catch (Exception)
-                            {
-                                // 읽기 실패 시 다음 결과셋으로
-                            }
+                            return returnValue;
                         }
-                    } while (await reader.NextResultAsync());
+                    }
                 }
             }
             
             _logger.LogWarning("SMS Core executed but no ID returned. To: {Mobile}", mobile);
             return null;
         }
-        /* 
         catch (Exception ex)
         {
-            _logger.LogError(ex, "SMS Core Error. To: {Mobile}", mobile);
+            _logger.LogError(ex, "SMS 발송 실패. To: {Mobile}", mobile);
             return null;
-        }
-        */
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "SMS Core Error. To: {Mobile}", mobile);
-            throw; // 디버깅을 위해 예외 재발생
         }
     }
 }
