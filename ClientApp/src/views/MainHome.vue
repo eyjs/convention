@@ -1,24 +1,12 @@
 <template>
   <div class="min-h-screen relative bg-gray-50">
-    <!-- Decorative Background Elements -->
+    <!-- Decorative Background -->
     <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-      <!-- Large gradient blobs -->
       <div
         class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-sky-200/15 to-blue-200/15 rounded-full blur-3xl"
       ></div>
       <div
         class="absolute top-1/3 -left-32 w-80 h-80 bg-gradient-to-br from-blue-200/12 to-cyan-200/12 rounded-full blur-3xl"
-      ></div>
-      <div
-        class="absolute bottom-20 right-1/4 w-64 h-64 bg-gradient-to-br from-cyan-200/12 to-sky-200/12 rounded-full blur-3xl"
-      ></div>
-
-      <!-- Subtle pattern overlay -->
-      <div
-        class="absolute inset-0 opacity-[0.02]"
-        style="
-          background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%239C92AC&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
-        "
       ></div>
     </div>
 
@@ -57,160 +45,91 @@
       <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
 
       <div class="max-w-2xl mx-auto px-4 py-4">
-        <!-- 환영 메시지 (Hero Section) -->
+        <!-- 환영 배너 -->
         <div
-          class="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 rounded-2xl shadow-xl p-8 mb-8 text-white"
+          class="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 rounded-2xl shadow-xl p-6 mb-6 text-white"
         >
-          <!-- Background decorative elements -->
           <div class="absolute inset-0 overflow-hidden">
             <div
               class="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-pink-200/15 to-violet-200/15 rounded-full blur-3xl"
             ></div>
-            <div
-              class="absolute bottom-1/3 left-1/4 w-56 h-56 bg-gradient-to-br from-purple-200/12 to-fuchsia-200/12 rounded-full blur-3xl"
-            ></div>
-
-            <!-- Subtle dot pattern -->
-            <div
-              class="absolute inset-0 opacity-[0.03]"
-              style="
-                background-image: url('data:image/svg+xml,%3Csvg width=&quot;20&quot; height=&quot;20&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;%23FFFFFF&quot; fill-opacity=&quot;1&quot;%3E%3Ccircle cx=&quot;2&quot; cy=&quot;2&quot; r=&quot;1&quot;/%3E%3C/g%3E%3C/svg%3E');
-              "
-            ></div>
           </div>
-
           <div class="relative z-10">
-            <h2 class="text-3xl font-bold mb-2">
-              안녕하세요,<br />{{ userName }}님!
+            <h2 class="text-2xl font-bold mb-1">
+              {{ userName }}님, 안녕하세요!
             </h2>
-            <p class="text-lg text-white/90">스타투어에 오신 것을 환영합니다</p>
+            <p class="text-sm text-white/80">iFA STARTOUR</p>
           </div>
-
-          <!-- Decorative circles -->
           <div
-            class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"
-          ></div>
-          <div
-            class="absolute bottom-0 right-8 w-24 h-24 bg-white/10 rounded-full -mb-12"
+            class="absolute top-0 right-0 w-28 h-28 bg-white/10 rounded-full -mr-14 -mt-14"
           ></div>
         </div>
 
-        <!-- 다가오는 일정 D-day -->
-        <div v-if="dashboard.preparations?.length > 0" class="mb-6">
+        <!-- 내 여권 정보 -->
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">내 여권</h3>
           <div
-            v-for="prep in dashboard.preparations"
-            :key="prep.conventionId"
-            class="bg-white rounded-2xl shadow-md overflow-hidden mb-3 cursor-pointer hover:shadow-lg transition-shadow"
-            @click="router.push(`/conventions/${prep.conventionId}`)"
+            class="bg-white rounded-2xl shadow-md p-5 cursor-pointer hover:shadow-lg transition-shadow"
+            @click="router.push('/my-profile')"
           >
-            <div
-              class="p-5"
-              :style="{
-                borderLeft: `4px solid ${prep.brandColor || '#6366f1'}`,
-              }"
-            >
-              <div class="flex items-center justify-between mb-3">
+            <div v-if="dashboard.passport?.passportNumber" class="space-y-3">
+              <div class="flex items-center justify-between">
                 <div>
-                  <h3 class="font-bold text-gray-900">{{ prep.title }}</h3>
-                  <p v-if="prep.location" class="text-xs text-gray-500 mt-0.5">
-                    {{ prep.location }}
+                  <p class="text-xs text-gray-500">여권번호</p>
+                  <p class="text-lg font-bold text-gray-900 tracking-wider">
+                    {{ dashboard.passport.passportNumber }}
                   </p>
                 </div>
-                <div
-                  class="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-bold text-white"
-                  :style="{
-                    backgroundColor: prep.brandColor || '#6366f1',
-                  }"
+                <span
+                  class="px-2.5 py-1 rounded-full text-xs font-semibold"
+                  :class="
+                    dashboard.passport.verified
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                  "
                 >
-                  D-{{ getDDay(prep.startDate) }}
-                </div>
+                  {{ dashboard.passport.verified ? '승인완료' : '승인대기' }}
+                </span>
               </div>
-
-              <!-- 준비 현황 프로그레스 -->
-              <div class="flex gap-3">
-                <!-- 여권 -->
-                <div
-                  class="flex-1 px-3 py-2 rounded-lg text-center text-xs"
-                  :class="
-                    prep.passport.verified
-                      ? 'bg-green-50 text-green-700'
-                      : prep.passport.hasNumber
-                        ? 'bg-yellow-50 text-yellow-700'
-                        : 'bg-red-50 text-red-600'
-                  "
-                >
-                  <span class="block text-base mb-0.5">{{
-                    prep.passport.verified
-                      ? '✅'
-                      : prep.passport.hasNumber
-                        ? '⏳'
-                        : '❌'
-                  }}</span>
-                  여권
+              <div class="flex gap-4 text-sm">
+                <div>
+                  <p class="text-xs text-gray-400">영문명</p>
+                  <p class="font-medium text-gray-700">
+                    {{
+                      dashboard.passport.firstName ||
+                      dashboard.passport.lastName
+                        ? `${dashboard.passport.firstName || ''} ${dashboard.passport.lastName || ''}`
+                        : '-'
+                    }}
+                  </p>
                 </div>
-                <!-- 체크리스트 -->
-                <div
-                  class="flex-1 px-3 py-2 rounded-lg text-center text-xs"
-                  :class="
-                    prep.checklist.total === 0
-                      ? 'bg-gray-50 text-gray-400'
-                      : prep.checklist.completed === prep.checklist.total
-                        ? 'bg-green-50 text-green-700'
-                        : 'bg-yellow-50 text-yellow-700'
-                  "
-                >
-                  <span class="block text-base mb-0.5">{{
-                    prep.checklist.total === 0
-                      ? '—'
-                      : `${prep.checklist.completed}/${prep.checklist.total}`
-                  }}</span>
-                  체크리스트
-                </div>
-                <!-- 설문 -->
-                <div
-                  class="flex-1 px-3 py-2 rounded-lg text-center text-xs"
-                  :class="
-                    prep.pendingSurveys === 0
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-red-50 text-red-600'
-                  "
-                >
-                  <span class="block text-base mb-0.5">{{
-                    prep.pendingSurveys === 0 ? '✅' : prep.pendingSurveys
-                  }}</span>
-                  {{ prep.pendingSurveys === 0 ? '설문 완료' : '미완료 설문' }}
-                </div>
-                <!-- 공지 -->
-                <div
-                  v-if="prep.unreadNotices > 0"
-                  class="flex-1 px-3 py-2 rounded-lg text-center text-xs bg-blue-50 text-blue-700"
-                >
-                  <span class="block text-base mb-0.5">{{
-                    prep.unreadNotices
-                  }}</span>
-                  새 공지
+                <div>
+                  <p class="text-xs text-gray-400">만료일</p>
+                  <p class="font-medium" :class="passportExpiryClass">
+                    {{
+                      dashboard.passport.passportExpiryDate
+                        ? dashboard.passport.passportExpiryDate
+                        : '-'
+                    }}
+                    <span v-if="passportExpiryDays !== null" class="text-xs">
+                      ({{
+                        passportExpiryDays > 0
+                          ? `${passportExpiryDays}일 남음`
+                          : '만료됨'
+                      }})
+                    </span>
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- 다가오는 일정 미리보기 -->
-        <div v-if="dashboard.upcomingSchedules?.length > 0" class="mb-6">
-          <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">
-            다가오는 일정
-          </h3>
-          <div class="space-y-2">
-            <div
-              v-for="(schedule, i) in dashboard.upcomingSchedules"
-              :key="i"
-              class="bg-white rounded-xl shadow-sm p-4 flex items-start gap-3"
-            >
+            <!-- 미등록 상태 -->
+            <div v-else class="text-center py-4">
               <div
-                class="flex-shrink-0 w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center"
+                class="w-14 h-14 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center"
               >
                 <svg
-                  class="w-6 h-6 text-primary-600"
+                  class="w-7 h-7 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -219,71 +138,119 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
               </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <span
-                    class="px-2 py-0.5 bg-primary-600 text-white text-xs font-bold rounded"
-                    >{{ formatScheduleDate(schedule.date) }}</span
-                  >
-                  <span
-                    v-if="schedule.time"
-                    class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded"
-                    >{{ schedule.time }}</span
-                  >
-                </div>
-                <h4 class="font-semibold text-gray-900 text-sm">
-                  {{ schedule.title }}
-                </h4>
-                <p
-                  v-if="schedule.location"
-                  class="text-xs text-gray-500 mt-0.5"
-                >
-                  {{ schedule.location }}
-                </p>
-              </div>
+              <p class="text-gray-600 font-medium mb-1">
+                여권 정보를 등록해주세요
+              </p>
+              <p class="text-xs text-gray-400">
+                해외 행사 참여를 위해 여권 정보가 필요합니다
+              </p>
             </div>
           </div>
         </div>
 
-        <!-- 최신 공지사항 -->
-        <div v-if="dashboard.recentNotices?.length > 0" class="mb-6">
-          <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">최신 공지</h3>
-          <div class="space-y-2">
+        <!-- 나의 여행 이력 -->
+        <div v-if="dashboard.travelHistory?.totalTrips > 0" class="mb-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">
+            나의 여행 이력
+          </h3>
+          <div class="bg-white rounded-2xl shadow-md p-5">
+            <div class="flex items-center gap-6 mb-4">
+              <div class="text-center">
+                <p class="text-3xl font-bold text-primary-600">
+                  {{ dashboard.travelHistory.totalTrips }}
+                </p>
+                <p class="text-xs text-gray-500">총 참여</p>
+              </div>
+              <div class="text-center">
+                <p class="text-3xl font-bold text-green-600">
+                  {{ dashboard.travelHistory.completedTrips }}
+                </p>
+                <p class="text-xs text-gray-500">완료</p>
+              </div>
+              <div class="text-center">
+                <p class="text-3xl font-bold text-blue-600">
+                  {{ dashboard.travelHistory.visitedCountries?.length || 0 }}
+                </p>
+                <p class="text-xs text-gray-500">방문 국가</p>
+              </div>
+            </div>
+            <!-- 방문 도시 태그 -->
             <div
-              v-for="notice in dashboard.recentNotices"
-              :key="notice.id"
-              class="bg-white rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-shadow"
-              @click="
-                router.push(
-                  `/conventions/${notice.conventionId}/board/${notice.id}`,
-                )
-              "
+              v-if="dashboard.travelHistory.visitedCities?.length > 0"
+              class="flex flex-wrap gap-2"
             >
-              <div class="flex items-start justify-between gap-2">
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-1">
-                    <span
-                      class="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
-                      >{{ notice.conventionTitle }}</span
-                    >
-                    <span
-                      v-if="notice.isPinned"
-                      class="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded"
-                      >필독</span
-                    >
-                  </div>
-                  <h4 class="font-medium text-gray-900 text-sm line-clamp-1">
-                    {{ notice.title }}
-                  </h4>
-                </div>
-                <span class="text-xs text-gray-400 flex-shrink-0">{{
-                  formatDate(notice.createdAt)
+              <span
+                v-for="city in dashboard.travelHistory.visitedCities"
+                :key="city"
+                class="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+              >
+                {{ city }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 인천공항 현황 -->
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">
+            인천공항 현황
+          </h3>
+          <div class="bg-white rounded-2xl shadow-md p-5">
+            <div v-if="airportLoading" class="text-center py-4 text-gray-400">
+              <div
+                class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"
+              ></div>
+              <p class="text-sm">인천공항 정보 조회 중...</p>
+            </div>
+            <div v-else-if="airportFlights.length > 0">
+              <div class="flex items-center justify-between mb-3">
+                <p class="text-sm text-gray-500">
+                  오늘 출발편
+                  <span class="font-semibold text-gray-900"
+                    >{{ airportFlights.length }}건</span
+                  >
+                </p>
+                <span class="text-xs text-gray-400">{{
+                  new Date().toLocaleDateString('ko-KR')
                 }}</span>
               </div>
+              <div class="space-y-2">
+                <div
+                  v-for="flight in airportFlights.slice(0, 5)"
+                  :key="flight.flightNum || flight.flightId"
+                  class="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg text-sm"
+                >
+                  <div class="flex items-center gap-3">
+                    <span class="font-bold text-gray-900">{{
+                      flight.flightNum || flight.flightId
+                    }}</span>
+                    <span class="text-gray-500">{{ flight.airport }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-700">{{
+                      flight.scheduleTime || flight.scheduleDateTime
+                    }}</span>
+                    <span
+                      class="px-1.5 py-0.5 rounded text-xs font-medium"
+                      :class="
+                        getFlightStatusClass(flight.status || flight.remark)
+                      "
+                    >
+                      {{ flight.status || flight.remark || '정상' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p class="text-xs text-gray-400 mt-3 text-center">
+                인천국제공항 출발편 기준 (최근 5편)
+              </p>
+            </div>
+            <div v-else class="text-center py-4 text-gray-400">
+              <p class="text-sm">현재 조회 가능한 항공편이 없습니다</p>
             </div>
           </div>
         </div>
@@ -312,46 +279,22 @@
 
           <div
             v-else-if="activeConventions.length === 0"
-            class="bg-white rounded-2xl shadow-md p-8 text-center mx-1"
+            class="bg-white rounded-2xl shadow-md p-8 text-center"
           >
-            <div
-              class="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center"
-            >
-              <svg
-                class="w-10 h-10 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
-            </div>
             <p class="text-gray-600 font-medium">
               진행중인 스타투어가 없습니다
             </p>
           </div>
 
-          <!-- 수평 스크롤 카드 -->
           <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
             <div class="flex gap-4 pb-2">
               <div
                 v-for="convention in activeConventions.slice(0, 10)"
                 :key="convention.id"
-                onclick=""
-                role="button"
-                tabindex="0"
                 class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow cursor-pointer overflow-hidden group"
                 @click="goToConvention(convention)"
               >
-                <!-- 상단 이미지 영역 -->
-                <div
-                  class="relative h-[200px] overflow-hidden pointer-events-none"
-                >
+                <div class="relative h-[200px] overflow-hidden">
                   <div
                     v-if="convention.conventionImg"
                     class="absolute inset-0 bg-cover bg-center"
@@ -362,36 +305,14 @@
                   <div
                     v-else
                     class="absolute inset-0 bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500"
-                  >
-                    <div
-                      class="absolute inset-0 flex items-center justify-center"
-                    >
-                      <svg
-                        class="w-20 h-20 text-white/25"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
-                      </svg>
-                    </div>
-                  </div>
+                  ></div>
                 </div>
-
-                <!-- 카드 정보 -->
                 <div class="p-4">
                   <h4
                     class="font-bold text-gray-900 text-lg mb-2 line-clamp-1 group-hover:text-rose-600 transition-colors"
                   >
                     {{ convention.title }}
                   </h4>
-
-                  <!-- 날짜 -->
                   <div class="flex items-center gap-2 text-sm text-gray-500">
                     <svg
                       class="w-4 h-4 flex-shrink-0"
@@ -422,22 +343,15 @@
           <div class="flex justify-between items-center mb-4 px-1">
             <h3 class="text-xl font-bold text-gray-900">종료된 스타투어</h3>
           </div>
-
           <div class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
             <div class="flex gap-4 pb-2">
               <div
                 v-for="convention in completedConventions.slice(0, 10)"
                 :key="convention.id"
-                onclick=""
-                role="button"
-                tabindex="0"
                 class="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow cursor-pointer overflow-hidden group"
                 @click="goToConvention(convention)"
               >
-                <!-- 상단 이미지 영역 -->
-                <div
-                  class="relative h-[200px] overflow-hidden pointer-events-none"
-                >
+                <div class="relative h-[200px] overflow-hidden">
                   <div
                     v-if="convention.conventionImg"
                     class="absolute inset-0 bg-cover bg-center"
@@ -448,42 +362,19 @@
                   <div
                     v-else
                     class="absolute inset-0 bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600"
-                  >
-                    <div
-                      class="absolute inset-0 flex items-center justify-center"
-                    >
-                      <svg
-                        class="w-20 h-20 text-white/25"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                  <!-- 종료 뱃지 -->
+                  ></div>
                   <div
                     class="absolute top-3 left-3 px-2 py-1 bg-black/50 text-white text-xs font-medium rounded-md backdrop-blur-sm"
                   >
                     종료됨
                   </div>
                 </div>
-
-                <!-- 카드 정보 -->
                 <div class="p-4">
                   <h4
                     class="font-bold text-gray-700 text-lg mb-2 line-clamp-1 group-hover:text-gray-900 transition-colors"
                   >
                     {{ convention.title }}
                   </h4>
-
-                  <!-- 날짜 -->
                   <div class="flex items-center gap-2 text-sm text-gray-400">
                     <svg
                       class="w-4 h-4 flex-shrink-0"
@@ -529,6 +420,8 @@ const conventionsLoading = ref(true)
 const conventions = ref([])
 const dashboard = ref({})
 const isSidebarOpen = ref(false)
+const airportFlights = ref([])
+const airportLoading = ref(false)
 
 const activeConventions = computed(() =>
   conventions.value.filter((c) => c.completeYn !== 'Y'),
@@ -538,7 +431,24 @@ const completedConventions = computed(() =>
   conventions.value.filter((c) => c.completeYn === 'Y'),
 )
 
-// 행사 목록 로드
+// 여권 만료일 D-day
+const passportExpiryDays = computed(() => {
+  const expiry = dashboard.value.passport?.passportExpiryDate
+  if (!expiry) return null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const exp = new Date(expiry)
+  exp.setHours(0, 0, 0, 0)
+  return Math.ceil((exp - today) / (1000 * 60 * 60 * 24))
+})
+
+const passportExpiryClass = computed(() => {
+  if (passportExpiryDays.value === null) return 'text-gray-700'
+  if (passportExpiryDays.value <= 0) return 'text-red-600 font-semibold'
+  if (passportExpiryDays.value <= 180) return 'text-yellow-600 font-semibold'
+  return 'text-gray-700'
+})
+
 async function loadConventions() {
   conventionsLoading.value = true
   try {
@@ -552,16 +462,45 @@ async function loadConventions() {
   }
 }
 
-// 네비게이션
-function goToConvention(convention) {
-  if (!convention?.id) {
-    console.warn('goToConvention: invalid convention', convention)
-    return
+async function loadDashboard() {
+  try {
+    const res = await apiClient.get('/users/home-dashboard')
+    dashboard.value = res.data
+  } catch (e) {
+    console.error('대시보드 로드 실패:', e)
   }
+}
+
+async function loadAirportStatus() {
+  airportLoading.value = true
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const now = new Date()
+    const fromTime = `${String(now.getHours()).padStart(2, '0')}:00`
+    const toTime = `${String(Math.min(now.getHours() + 3, 23)).padStart(2, '0')}:59`
+
+    const res = await apiClient.get('/flight/incheon', {
+      params: {
+        date: today,
+        flightType: 'departure',
+        fromTime,
+        toTime,
+      },
+    })
+    airportFlights.value = Array.isArray(res.data) ? res.data : []
+  } catch (e) {
+    console.error('인천공항 조회 실패:', e)
+    airportFlights.value = []
+  } finally {
+    airportLoading.value = false
+  }
+}
+
+function goToConvention(convention) {
+  if (!convention?.id) return
   router.push(`/conventions/${convention.id}`)
 }
 
-// 날짜 포맷
 function formatDate(dateString) {
   if (!dateString) return ''
   const date = new Date(dateString)
@@ -572,39 +511,22 @@ function formatDate(dateString) {
   })
 }
 
-function formatScheduleDate(dateString) {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return `${date.getMonth() + 1}/${date.getDate()}`
-}
-
-function getDDay(startDate) {
-  if (!startDate) return 0
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const start = new Date(startDate)
-  start.setHours(0, 0, 0, 0)
-  const diff = Math.ceil((start - today) / (1000 * 60 * 60 * 24))
-  return diff > 0 ? diff : 0
-}
-
-async function loadDashboard() {
-  try {
-    const res = await apiClient.get('/users/home-dashboard')
-    dashboard.value = res.data
-  } catch (e) {
-    console.error('대시보드 로드 실패:', e)
-  }
+function getFlightStatusClass(status) {
+  if (!status || status === '정상' || status === '출발')
+    return 'bg-green-100 text-green-700'
+  if (status.includes('지연')) return 'bg-red-100 text-red-700'
+  if (status.includes('결항')) return 'bg-gray-100 text-gray-700'
+  return 'bg-blue-100 text-blue-700'
 }
 
 onMounted(() => {
   loadConventions()
   loadDashboard()
+  loadAirportStatus()
 })
 </script>
 
 <style scoped>
-/* 수평 스크롤바 숨기기 */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;

@@ -647,118 +647,51 @@ public class UserProfileService : IUserProfileService
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId);
 
-        var activeConventions = await _unitOfWork.UserConventions.Query
-            .Where(uc => uc.UserId == userId && uc.Convention.CompleteYn != "Y" && uc.Convention.DeleteYn == "N")
-            .Select(uc => uc.Convention)
-            .OrderBy(c => c.StartDate)
+        // 여권 정보
+        var passport = new
+        {
+            firstName = user?.FirstName,
+            lastName = user?.LastName,
+            passportNumber = user?.PassportNumber,
+            passportExpiryDate = user?.PassportExpiryDate?.ToString("yyyy-MM-dd"),
+            passportImageUrl = user?.PassportImageUrl,
+            verified = user?.PassportVerified ?? false
+        };
+
+        // 여행 이력 — 전체 참여 행사 (종료 포함)
+        var allConventions = await _unitOfWork.UserConventions.Query
+            .Where(uc => uc.UserId == userId && uc.Convention.DeleteYn == "N")
+            .Select(uc => new
+            {
+                uc.Convention.Title,
+                uc.Convention.DestinationCity,
+                uc.Convention.DestinationCountryCode,
+                uc.Convention.StartDate,
+                uc.Convention.CompleteYn
+            })
+            .OrderByDescending(c => c.StartDate)
             .ToListAsync();
 
-        var preparationList = new List<object>();
-        foreach (var conv in activeConventions)
+        var travelHistory = new
         {
-            var checklistActionIds = await _unitOfWork.ConventionActions.Query
-                .Where(a => a.ConventionId == conv.Id && a.ActionCategory == "CHECKLIST_CARD" && a.IsActive)
-                .Select(a => a.Id)
-                .ToListAsync();
-
-            var completedChecklist = checklistActionIds.Count > 0
-                ? await _unitOfWork.UserActionStatuses.Query
-                    .Where(s => s.UserId == userId && checklistActionIds.Contains(s.ConventionActionId) && s.IsComplete)
-                    .CountAsync()
-                : 0;
-
-            var totalSurveys = await _unitOfWork.Surveys.Query
-                .Where(s => s.ConventionId == conv.Id && s.IsActive)
-                .CountAsync();
-            var completedSurveys = await _unitOfWork.SurveyResponses.Query
-                .Where(r => r.UserId == userId && r.Survey.ConventionId == conv.Id)
-                .Select(r => r.SurveyId)
+            totalTrips = allConventions.Count,
+            completedTrips = allConventions.Count(c => c.CompleteYn == "Y"),
+            visitedCities = allConventions
+                .Where(c => !string.IsNullOrEmpty(c.DestinationCity))
+                .Select(c => c.DestinationCity)
                 .Distinct()
-                .CountAsync();
-            var pendingSurveys = totalSurveys - completedSurveys;
-
-            var unreadNotices = await _unitOfWork.Notices.Query
-                .Where(n => n.ConventionId == conv.Id && !n.IsDeleted)
-                .CountAsync();
-
-            preparationList.Add(new
-            {
-                conventionId = conv.Id,
-                title = conv.Title,
-                startDate = conv.StartDate,
-                location = conv.Location,
-                brandColor = conv.BrandColor,
-                passport = new
-                {
-                    hasNumber = !string.IsNullOrEmpty(user?.PassportNumber),
-                    hasImage = !string.IsNullOrEmpty(user?.PassportImageUrl),
-                    verified = user?.PassportVerified ?? false
-                },
-                checklist = new
-                {
-                    total = checklistActionIds.Count,
-                    completed = completedChecklist
-                },
-                pendingSurveys = pendingSurveys > 0 ? pendingSurveys : 0,
-                unreadNotices
-            });
-        }
-
-        var upcomingSchedules = new List<object>();
-        var nearestConvention = activeConventions.FirstOrDefault();
-        if (nearestConvention != null)
-        {
-            var userTemplateIds = await _unitOfWork.GuestScheduleTemplates.Query
-                .Where(gst => gst.UserId == userId && gst.ScheduleTemplate.ConventionId == nearestConvention.Id)
-                .Select(gst => gst.ScheduleTemplateId)
-                .ToListAsync();
-
-            if (userTemplateIds.Any())
-            {
-                var today = DateTime.Today;
-                var items = await _unitOfWork.ScheduleItems.Query
-                    .Where(si => userTemplateIds.Contains(si.ScheduleTemplateId) && si.ScheduleDate >= today)
-                    .OrderBy(si => si.ScheduleDate).ThenBy(si => si.StartTime)
-                    .Take(3)
-                    .Select(si => new
-                    {
-                        date = si.ScheduleDate,
-                        time = si.StartTime,
-                        title = si.Title,
-                        location = si.Location
-                    })
-                    .ToListAsync();
-
-                upcomingSchedules.AddRange(items);
-            }
-        }
-
-        var conventionIds = activeConventions.Select(c => c.Id).ToList();
-        var recentNotices = new List<object>();
-        if (conventionIds.Any())
-        {
-            var notices = await _unitOfWork.Notices.Query
-                .Where(n => conventionIds.Contains(n.ConventionId) && !n.IsDeleted)
-                .OrderByDescending(n => n.CreatedAt)
-                .Take(5)
-                .ToListAsync();
-
-            recentNotices = notices.Select(n => (object)new
-            {
-                n.Id,
-                n.ConventionId,
-                n.Title,
-                n.IsPinned,
-                n.CreatedAt,
-                conventionTitle = activeConventions.FirstOrDefault(c => c.Id == n.ConventionId)?.Title ?? ""
-            }).ToList();
-        }
+                .ToList(),
+            visitedCountries = allConventions
+                .Where(c => !string.IsNullOrEmpty(c.DestinationCountryCode))
+                .Select(c => c.DestinationCountryCode)
+                .Distinct()
+                .ToList()
+        };
 
         return new
         {
-            preparations = preparationList,
-            upcomingSchedules,
-            recentNotices
+            passport,
+            travelHistory
         };
     }
 }
