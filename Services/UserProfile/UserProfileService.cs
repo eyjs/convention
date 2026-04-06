@@ -658,40 +658,49 @@ public class UserProfileService : IUserProfileService
             verified = user?.PassportVerified ?? false
         };
 
-        // 여행 이력 — 전체 참여 행사 (종료 포함)
-        var allConventions = await _unitOfWork.UserConventions.Query
-            .Where(uc => uc.UserId == userId && uc.Convention.DeleteYn == "N")
-            .Select(uc => new
-            {
-                uc.Convention.Title,
-                uc.Convention.DestinationCity,
-                uc.Convention.DestinationCountryCode,
-                uc.Convention.StartDate,
-                uc.Convention.CompleteYn
-            })
-            .OrderByDescending(c => c.StartDate)
+        // 진행중인 행사에서 내 일정 (오늘~7일 후)
+        var activeConventionIds = await _unitOfWork.UserConventions.Query
+            .Where(uc => uc.UserId == userId && uc.Convention.CompleteYn != "Y" && uc.Convention.DeleteYn == "N")
+            .Select(uc => uc.ConventionId)
             .ToListAsync();
 
-        var travelHistory = new
+        var mySchedules = new List<object>();
+        if (activeConventionIds.Any())
         {
-            totalTrips = allConventions.Count,
-            completedTrips = allConventions.Count(c => c.CompleteYn == "Y"),
-            visitedCities = allConventions
-                .Where(c => !string.IsNullOrEmpty(c.DestinationCity))
-                .Select(c => c.DestinationCity)
-                .Distinct()
-                .ToList(),
-            visitedCountries = allConventions
-                .Where(c => !string.IsNullOrEmpty(c.DestinationCountryCode))
-                .Select(c => c.DestinationCountryCode)
-                .Distinct()
-                .ToList()
-        };
+            var myTemplateIds = await _unitOfWork.GuestScheduleTemplates.Query
+                .Where(gst => gst.UserId == userId && activeConventionIds.Contains(gst.ScheduleTemplate.ConventionId))
+                .Select(gst => gst.ScheduleTemplateId)
+                .ToListAsync();
+
+            if (myTemplateIds.Any())
+            {
+                var today = DateTime.Today;
+                var weekLater = today.AddDays(7);
+                var items = await _unitOfWork.ScheduleItems.Query
+                    .Where(si => myTemplateIds.Contains(si.ScheduleTemplateId)
+                        && si.ScheduleDate >= today && si.ScheduleDate <= weekLater)
+                    .OrderBy(si => si.ScheduleDate).ThenBy(si => si.StartTime)
+                    .Take(10)
+                    .Select(si => new
+                    {
+                        si.Id,
+                        date = si.ScheduleDate,
+                        time = si.StartTime,
+                        endTime = si.EndTime,
+                        title = si.Title,
+                        location = si.Location,
+                        conventionId = si.ScheduleTemplate.ConventionId
+                    })
+                    .ToListAsync();
+
+                mySchedules.AddRange(items);
+            }
+        }
 
         return new
         {
             passport,
-            travelHistory
+            mySchedules
         };
     }
 }
