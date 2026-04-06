@@ -35,8 +35,9 @@
       <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
 
       <div class="max-w-2xl mx-auto px-4 py-4">
-        <!-- 내 정보 점검 -->
+        <!-- 내 정보 점검 (미완료 항목이 있을 때만 표시) -->
         <div
+          v-if="!allChecksPassed"
           class="bg-white rounded-xl shadow-sm mb-4 px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
           @click="router.push('/my-profile')"
         >

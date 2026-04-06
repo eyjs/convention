@@ -1,5 +1,15 @@
 <template>
-  <div class="min-h-screen min-h-dvh bg-gray-50">
+  <!-- 로딩 스피너 -->
+  <div
+    v-if="uiStore.isLoading"
+    class="min-h-screen min-h-dvh flex items-center justify-center"
+  >
+    <div
+      class="inline-block w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+      :style="{ borderColor: brandColor, borderTopColor: 'transparent' }"
+    ></div>
+  </div>
+  <div v-else class="min-h-screen min-h-dvh bg-gray-50">
     <!-- 공통 헤더 사용 -->
     <MainHeader title="나의 일정" :show-back="true">
       <template #actions>
@@ -636,6 +646,7 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useUIStore } from '@/stores/ui'
 import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
@@ -648,6 +659,7 @@ import dayjs from 'dayjs'
 const route = useRoute()
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
+const uiStore = useUIStore()
 
 const showCalendarView = ref(false)
 const selectedDate = ref('')
@@ -1050,6 +1062,7 @@ onMounted(async () => {
     nextTick(() => handleDateScroll())
   } catch (error) {
     console.error('Failed to load schedules:', error)
+  } finally {
   }
 
   // Load dynamic actions separately

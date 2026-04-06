@@ -24,22 +24,45 @@ const processQueue = (error, token = null) => {
   failedQueue = []
 }
 
-// 요청 인터셉터 - 토큰 자동 추가
+// 글로벌 로딩 프로그레스바 연동
+import { useUIStore } from '@/stores/ui'
+
+let _uiStore = null
+function getUIStore() {
+  if (!_uiStore) {
+    try {
+      _uiStore = useUIStore()
+    } catch {
+      // pinia가 아직 초기화 안 됐으면 무시
+    }
+  }
+  return _uiStore
+}
+
+// 요청 인터셉터 - 토큰 자동 추가 + 로딩
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    getUIStore()?.startLoading()
     return config
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    getUIStore()?.stopLoading()
+    return Promise.reject(error)
+  },
 )
 
-// 응답 인터셉터 - 토큰 만료 처리
+// 응답 인터셉터 - 토큰 만료 처리 + 로딩
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    getUIStore()?.stopLoading()
+    return response
+  },
   async (error) => {
+    getUIStore()?.stopLoading()
     const originalRequest = error.config
 
     const requestUrl = originalRequest?.url || ''

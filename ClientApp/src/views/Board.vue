@@ -1,5 +1,15 @@
 <template>
-  <div class="min-h-screen min-h-dvh bg-gray-50">
+  <!-- 로딩 스피너 -->
+  <div
+    v-if="uiStore.isLoading"
+    class="min-h-screen min-h-dvh flex items-center justify-center"
+  >
+    <div
+      class="inline-block w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+      :style="{ borderColor: brandColor, borderTopColor: 'transparent' }"
+    ></div>
+  </div>
+  <div v-else class="min-h-screen min-h-dvh bg-gray-50">
     <!-- 공통 헤더 사용 -->
     <MainHeader title="게시판" :show-back="true" />
 
@@ -590,6 +600,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
+import { useUIStore } from '@/stores/ui'
 import { useNoticeNavigation } from '@/composables/useNoticeNavigation'
 import apiClient from '@/services/api'
 import { useQuillEditor } from '@/composables/useQuillEditor'
@@ -603,6 +614,10 @@ const route = useRoute()
 const viewer = ref(null)
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
+const uiStore = useUIStore()
+const brandColor = computed(
+  () => conventionStore.currentConvention?.brandColor || '#10b981',
+)
 const { getPendingNotice } = useNoticeNavigation()
 const isAdmin = computed(() => authStore.user?.role === 'Admin')
 
@@ -968,6 +983,18 @@ onUnmounted(() => {})
   .modal-slide-leave-to .bg-white {
     transform: scale(0.95);
     opacity: 0;
+  }
+}
+
+@keyframes loading-bar {
+  0% {
+    width: 10%;
+  }
+  50% {
+    width: 70%;
+  }
+  100% {
+    width: 90%;
   }
 }
 </style>
