@@ -938,7 +938,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MainHeader from '@/components/common/MainHeader.vue'
 import BottomNavigationBar from '@/components/common/BottomNavigationBar.vue'
@@ -1067,14 +1067,19 @@ const currentKakaoSearchInitialLocation = computed(() => {
 })
 
 // --- Lifecycle and Data Loading ---
+let nowTimer = null
 onMounted(async () => {
   await loadTrip()
   loadScript()
-  setInterval(() => {
+  nowTimer = setInterval(() => {
     now.value = new Date()
-  }, 60000)
+  }, 300000) // 5분마다 갱신
   await nextTick()
   handleDayFilterScroll()
+})
+
+onUnmounted(() => {
+  if (nowTimer) clearInterval(nowTimer)
 })
 
 // Watch for route changes (when navigating between different trips)
@@ -1221,32 +1226,13 @@ const groupedItinerary = computed(() => {
       return timeA.localeCompare(timeB)
     })
 
-    // 일반 일정만 필터링해서 거리 계산
-    const itineraryOnly = items.filter((item) => item.type === 'itinerary')
-    const itemsWithDistance = calculateItemDistances(itineraryOnly)
-    const totalDistance = calculateTotalDistance(itineraryOnly)
-
-    // 거리 정보를 원본 items 배열에 병합
-    const distanceMap = new Map()
-    itemsWithDistance.forEach((item) => {
-      distanceMap.set(item.id, item.distanceToNext)
-    })
-
-    // 전체 items에 거리 정보 추가 (일반 일정만)
-    items.forEach((item) => {
-      if (item.type === 'itinerary' && distanceMap.has(item.id)) {
-        item.distanceToNext = distanceMap.get(item.id)
-      }
-    })
-
     const currentDate = new Date(startDate)
     currentDate.setDate(startDate.getDate() + i - 1)
 
     allDays.push({
       dayNumber: i,
       date: currentDate,
-      items: items, // 교통편 포함된 전체 아이템 (거리 정보 포함)
-      totalDistance,
+      items,
     })
   }
 
@@ -1254,12 +1240,33 @@ const groupedItinerary = computed(() => {
 })
 
 const filteredItinerary = computed(() => {
-  if (selectedDay.value === null) {
-    return groupedItinerary.value
-  }
-  return groupedItinerary.value.filter(
-    (day) => day.dayNumber === selectedDay.value,
-  )
+  const days =
+    selectedDay.value === null
+      ? groupedItinerary.value
+      : groupedItinerary.value.filter(
+          (day) => day.dayNumber === selectedDay.value,
+        )
+
+  // 거리 계산은 필터된 결과에만 적용 (lazy)
+  return days.map((day) => {
+    const itineraryOnly = day.items.filter((item) => item.type === 'itinerary')
+    const itemsWithDistance = calculateItemDistances(itineraryOnly)
+    const totalDistance = calculateTotalDistance(itineraryOnly)
+
+    const distanceMap = new Map()
+    itemsWithDistance.forEach((item) => {
+      distanceMap.set(item.id, item.distanceToNext)
+    })
+
+    const items = day.items.map((item) => {
+      if (item.type === 'itinerary' && distanceMap.has(item.id)) {
+        return { ...item, distanceToNext: distanceMap.get(item.id) }
+      }
+      return item
+    })
+
+    return { ...day, items, totalDistance }
+  })
 })
 
 watch(groupedItinerary, async () => {
@@ -1268,22 +1275,21 @@ watch(groupedItinerary, async () => {
 })
 
 const currentItineraryItemId = computed(() => {
+  if (!trip.value.startDate || !trip.value.itineraryItems?.length) return null
   const currentTime = now.value
-  for (const dayGroup of groupedItinerary.value) {
-    const tripDate = new Date(trip.value.startDate)
-    tripDate.setDate(tripDate.getDate() + dayGroup.dayNumber - 1)
-    for (const item of dayGroup.items) {
-      if (item.startTime && item.endTime) {
-        const startDateTime = new Date(
-          `${tripDate.toISOString().split('T')[0]}T${item.startTime}`,
-        )
-        const endDateTime = new Date(
-          `${tripDate.toISOString().split('T')[0]}T${item.endTime}`,
-        )
-        if (currentTime >= startDateTime && currentTime <= endDateTime)
-          return item.id
-      }
-    }
+  const startDate = new Date(trip.value.startDate)
+  const startDateStr = startDate.toISOString().split('T')[0]
+
+  for (const item of trip.value.itineraryItems) {
+    if (!item.startTime || !item.endTime) continue
+    const dayOffset = (item.dayNumber || 1) - 1
+    const itemDate = new Date(startDate)
+    itemDate.setDate(startDate.getDate() + dayOffset)
+    const dateStr = itemDate.toISOString().split('T')[0]
+
+    const start = new Date(`${dateStr}T${item.startTime}`)
+    const end = new Date(`${dateStr}T${item.endTime}`)
+    if (currentTime >= start && currentTime <= end) return item.id
   }
   return null
 })
