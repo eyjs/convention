@@ -346,4 +346,23 @@ public class UserController : ControllerBase
             return StatusCode(500, new { message = "행사 목록 조회 중 오류가 발생했습니다." });
         }
     }
+
+    /// <summary>
+    /// 메인홈 대시보드 — 진행중인 행사의 준비 현황 + 다가오는 일정 + 최신 공지
+    /// </summary>
+    [HttpGet("home-dashboard")]
+    public async Task<IActionResult> GetHomeDashboard()
+    {
+        try
+        {
+            var userId = User.GetUserId();
+            var dashboard = await _userProfileService.GetHomeDashboardAsync(userId);
+            return Ok(dashboard);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "홈 대시보드 조회 실패");
+            return StatusCode(500, new { message = "홈 대시보드 조회 중 오류가 발생했습니다." });
+        }
+    }
 }

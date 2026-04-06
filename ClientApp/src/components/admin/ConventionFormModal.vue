@@ -119,6 +119,109 @@
           </div>
         </div>
 
+        <!-- 여행 정보 -->
+        <div class="border rounded-lg p-4 bg-gray-50 space-y-4">
+          <h3 class="text-sm font-semibold text-gray-700">여행 정보</h3>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >행사 장소</label
+            >
+            <input
+              v-model="form.location"
+              type="text"
+              class="w-full px-3 py-2 border rounded-lg"
+              placeholder="예: 로마 힐튼호텔"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >목적지 국가/도시</label
+            >
+            <div class="grid grid-cols-2 gap-3">
+              <select
+                v-model="selectedCountry"
+                class="w-full px-3 py-2 border rounded-lg text-sm"
+                @change="onCountryChange"
+              >
+                <option value="">국가 선택</option>
+                <option v-for="c in countryList" :key="c.code" :value="c.code">
+                  {{ c.name }}
+                </option>
+              </select>
+              <select
+                v-model="form.destinationCity"
+                class="w-full px-3 py-2 border rounded-lg text-sm"
+                :disabled="!selectedCountry"
+              >
+                <option value="">도시 선택</option>
+                <option
+                  v-for="city in filteredCities"
+                  :key="city.en"
+                  :value="city.en"
+                >
+                  {{ city.ko }} ({{ city.en }})
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-sm font-medium text-gray-700"
+                >긴급 연락처</label
+              >
+              <button
+                type="button"
+                class="text-xs text-primary-600 hover:underline"
+                @click="addEmergencyContact"
+              >
+                + 추가
+              </button>
+            </div>
+            <div class="space-y-2">
+              <div
+                v-for="(contact, i) in emergencyContacts"
+                :key="i"
+                class="flex gap-2 items-center"
+              >
+                <input
+                  v-model="contact.role"
+                  type="text"
+                  class="w-24 px-2 py-1.5 border rounded text-sm"
+                  placeholder="역할"
+                />
+                <input
+                  v-model="contact.name"
+                  type="text"
+                  class="flex-1 px-2 py-1.5 border rounded text-sm"
+                  placeholder="이름"
+                />
+                <input
+                  v-model="contact.phone"
+                  type="text"
+                  class="flex-1 px-2 py-1.5 border rounded text-sm"
+                  placeholder="연락처"
+                />
+                <button
+                  type="button"
+                  class="text-red-400 hover:text-red-600"
+                  @click="emergencyContacts.splice(i, 1)"
+                >
+                  <X class="w-4 h-4" />
+                </button>
+              </div>
+              <p
+                v-if="emergencyContacts.length === 0"
+                class="text-xs text-gray-400"
+              >
+                인솔자, 현지 가이드 등 긴급 연락처를 등록하세요
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- 브랜드 컬러 -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -211,7 +314,192 @@ const form = ref({
   conventionImg: null,
   renderType: 'STANDARD',
   themePreset: 'default',
+  location: '',
+  destinationCity: '',
+  destinationCountryCode: '',
 })
+
+const emergencyContacts = ref([])
+const selectedCountry = ref('')
+
+const countryList = [
+  { code: 'JP', name: '일본' },
+  { code: 'CN', name: '중국' },
+  { code: 'TW', name: '대만' },
+  { code: 'HK', name: '홍콩' },
+  { code: 'TH', name: '태국' },
+  { code: 'VN', name: '베트남' },
+  { code: 'SG', name: '싱가포르' },
+  { code: 'MY', name: '말레이시아' },
+  { code: 'ID', name: '인도네시아' },
+  { code: 'PH', name: '필리핀' },
+  { code: 'IN', name: '인도' },
+  { code: 'AE', name: 'UAE' },
+  { code: 'TR', name: '튀르키예' },
+  { code: 'US', name: '미국' },
+  { code: 'CA', name: '캐나다' },
+  { code: 'MX', name: '멕시코' },
+  { code: 'GB', name: '영국' },
+  { code: 'FR', name: '프랑스' },
+  { code: 'DE', name: '독일' },
+  { code: 'IT', name: '이탈리아' },
+  { code: 'ES', name: '스페인' },
+  { code: 'PT', name: '포르투갈' },
+  { code: 'CH', name: '스위스' },
+  { code: 'AT', name: '오스트리아' },
+  { code: 'CZ', name: '체코' },
+  { code: 'HU', name: '헝가리' },
+  { code: 'GR', name: '그리스' },
+  { code: 'AU', name: '호주' },
+  { code: 'NZ', name: '뉴질랜드' },
+  { code: 'KR', name: '대한민국' },
+]
+
+const cityData = {
+  JP: [
+    { ko: '도쿄', en: 'Tokyo' },
+    { ko: '오사카', en: 'Osaka' },
+    { ko: '교토', en: 'Kyoto' },
+    { ko: '후쿠오카', en: 'Fukuoka' },
+    { ko: '삿포로', en: 'Sapporo' },
+    { ko: '나고야', en: 'Nagoya' },
+    { ko: '오키나와', en: 'Okinawa' },
+  ],
+  CN: [
+    { ko: '베이징', en: 'Beijing' },
+    { ko: '상하이', en: 'Shanghai' },
+    { ko: '광저우', en: 'Guangzhou' },
+    { ko: '선전', en: 'Shenzhen' },
+    { ko: '청두', en: 'Chengdu' },
+  ],
+  TW: [
+    { ko: '타이베이', en: 'Taipei' },
+    { ko: '가오슝', en: 'Kaohsiung' },
+  ],
+  HK: [{ ko: '홍콩', en: 'Hong Kong' }],
+  TH: [
+    { ko: '방콕', en: 'Bangkok' },
+    { ko: '치앙마이', en: 'Chiang Mai' },
+    { ko: '푸켓', en: 'Phuket' },
+    { ko: '파타야', en: 'Pattaya' },
+  ],
+  VN: [
+    { ko: '하노이', en: 'Hanoi' },
+    { ko: '호치민', en: 'Ho Chi Minh City' },
+    { ko: '다낭', en: 'Da Nang' },
+    { ko: '나트랑', en: 'Nha Trang' },
+  ],
+  SG: [{ ko: '싱가포르', en: 'Singapore' }],
+  MY: [
+    { ko: '쿠알라룸푸르', en: 'Kuala Lumpur' },
+    { ko: '코타키나발루', en: 'Kota Kinabalu' },
+  ],
+  ID: [
+    { ko: '발리', en: 'Bali' },
+    { ko: '자카르타', en: 'Jakarta' },
+  ],
+  PH: [
+    { ko: '마닐라', en: 'Manila' },
+    { ko: '세부', en: 'Cebu' },
+    { ko: '보라카이', en: 'Boracay' },
+  ],
+  IN: [
+    { ko: '뉴델리', en: 'New Delhi' },
+    { ko: '뭄바이', en: 'Mumbai' },
+  ],
+  AE: [
+    { ko: '두바이', en: 'Dubai' },
+    { ko: '아부다비', en: 'Abu Dhabi' },
+  ],
+  TR: [
+    { ko: '이스탄불', en: 'Istanbul' },
+    { ko: '안탈리아', en: 'Antalya' },
+  ],
+  US: [
+    { ko: '뉴욕', en: 'New York' },
+    { ko: 'LA', en: 'Los Angeles' },
+    { ko: '라스베이거스', en: 'Las Vegas' },
+    { ko: '샌프란시스코', en: 'San Francisco' },
+    { ko: '시카고', en: 'Chicago' },
+    { ko: '하와이', en: 'Honolulu' },
+  ],
+  CA: [
+    { ko: '밴쿠버', en: 'Vancouver' },
+    { ko: '토론토', en: 'Toronto' },
+  ],
+  MX: [
+    { ko: '칸쿤', en: 'Cancun' },
+    { ko: '멕시코시티', en: 'Mexico City' },
+  ],
+  GB: [
+    { ko: '런던', en: 'London' },
+    { ko: '에든버러', en: 'Edinburgh' },
+  ],
+  FR: [
+    { ko: '파리', en: 'Paris' },
+    { ko: '니스', en: 'Nice' },
+  ],
+  DE: [
+    { ko: '베를린', en: 'Berlin' },
+    { ko: '뮌헨', en: 'Munich' },
+    { ko: '프랑크푸르트', en: 'Frankfurt' },
+  ],
+  IT: [
+    { ko: '로마', en: 'Rome' },
+    { ko: '밀라노', en: 'Milan' },
+    { ko: '피렌체', en: 'Florence' },
+    { ko: '베네치아', en: 'Venice' },
+  ],
+  ES: [
+    { ko: '바르셀로나', en: 'Barcelona' },
+    { ko: '마드리드', en: 'Madrid' },
+  ],
+  PT: [
+    { ko: '리스본', en: 'Lisbon' },
+    { ko: '포르투', en: 'Porto' },
+  ],
+  CH: [
+    { ko: '취리히', en: 'Zurich' },
+    { ko: '제네바', en: 'Geneva' },
+    { ko: '루체른', en: 'Lucerne' },
+  ],
+  AT: [
+    { ko: '비엔나', en: 'Vienna' },
+    { ko: '잘츠부르크', en: 'Salzburg' },
+  ],
+  CZ: [{ ko: '프라하', en: 'Prague' }],
+  HU: [{ ko: '부다페스트', en: 'Budapest' }],
+  GR: [
+    { ko: '아테네', en: 'Athens' },
+    { ko: '산토리니', en: 'Santorini' },
+  ],
+  AU: [
+    { ko: '시드니', en: 'Sydney' },
+    { ko: '멜버른', en: 'Melbourne' },
+  ],
+  NZ: [
+    { ko: '오클랜드', en: 'Auckland' },
+    { ko: '퀸스타운', en: 'Queenstown' },
+  ],
+  KR: [
+    { ko: '서울', en: 'Seoul' },
+    { ko: '부산', en: 'Busan' },
+    { ko: '제주', en: 'Jeju' },
+  ],
+}
+
+const filteredCities = computed(() => {
+  return cityData[selectedCountry.value] || []
+})
+
+function onCountryChange() {
+  form.value.destinationCountryCode = selectedCountry.value
+  form.value.destinationCity = ''
+}
+
+function addEmergencyContact() {
+  emergencyContacts.value.push({ role: '', name: '', phone: '' })
+}
 
 // Image upload state
 const coverImageInput = ref(null)
@@ -263,6 +551,19 @@ watch(
         conventionImg: newVal.conventionImg,
         renderType: newVal.renderType || 'STANDARD',
         themePreset: newVal.themePreset || 'default',
+        location: newVal.location || '',
+        destinationCity: newVal.destinationCity || '',
+        destinationCountryCode: newVal.destinationCountryCode || '',
+      }
+      selectedCountry.value = newVal.destinationCountryCode || ''
+      // 긴급연락처 파싱
+      try {
+        const contacts = newVal.emergencyContactsJson
+          ? JSON.parse(newVal.emergencyContactsJson)
+          : []
+        emergencyContacts.value = Array.isArray(contacts) ? contacts : []
+      } catch {
+        emergencyContacts.value = []
       }
       // 기본색상이면 체크박스 체크
       useDefaultColor.value = brandColor === DEFAULT_BRAND_COLOR
@@ -339,7 +640,16 @@ const handleSubmit = async () => {
         return
       }
     }
-    await emit('save', form.value)
+    const payload = {
+      ...form.value,
+      emergencyContactsJson:
+        emergencyContacts.value.length > 0
+          ? JSON.stringify(
+              emergencyContacts.value.filter((c) => c.name || c.phone),
+            )
+          : null,
+    }
+    await emit('save', payload)
   } finally {
     saving.value = false
   }

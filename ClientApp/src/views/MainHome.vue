@@ -95,6 +95,199 @@
           ></div>
         </div>
 
+        <!-- 다가오는 일정 D-day -->
+        <div v-if="dashboard.preparations?.length > 0" class="mb-6">
+          <div
+            v-for="prep in dashboard.preparations"
+            :key="prep.conventionId"
+            class="bg-white rounded-2xl shadow-md overflow-hidden mb-3 cursor-pointer hover:shadow-lg transition-shadow"
+            @click="router.push(`/conventions/${prep.conventionId}`)"
+          >
+            <div
+              class="p-5"
+              :style="{
+                borderLeft: `4px solid ${prep.brandColor || '#6366f1'}`,
+              }"
+            >
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h3 class="font-bold text-gray-900">{{ prep.title }}</h3>
+                  <p v-if="prep.location" class="text-xs text-gray-500 mt-0.5">
+                    {{ prep.location }}
+                  </p>
+                </div>
+                <div
+                  class="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-bold text-white"
+                  :style="{
+                    backgroundColor: prep.brandColor || '#6366f1',
+                  }"
+                >
+                  D-{{ getDDay(prep.startDate) }}
+                </div>
+              </div>
+
+              <!-- 준비 현황 프로그레스 -->
+              <div class="flex gap-3">
+                <!-- 여권 -->
+                <div
+                  class="flex-1 px-3 py-2 rounded-lg text-center text-xs"
+                  :class="
+                    prep.passport.verified
+                      ? 'bg-green-50 text-green-700'
+                      : prep.passport.hasNumber
+                        ? 'bg-yellow-50 text-yellow-700'
+                        : 'bg-red-50 text-red-600'
+                  "
+                >
+                  <span class="block text-base mb-0.5">{{
+                    prep.passport.verified
+                      ? '✅'
+                      : prep.passport.hasNumber
+                        ? '⏳'
+                        : '❌'
+                  }}</span>
+                  여권
+                </div>
+                <!-- 체크리스트 -->
+                <div
+                  class="flex-1 px-3 py-2 rounded-lg text-center text-xs"
+                  :class="
+                    prep.checklist.total === 0
+                      ? 'bg-gray-50 text-gray-400'
+                      : prep.checklist.completed === prep.checklist.total
+                        ? 'bg-green-50 text-green-700'
+                        : 'bg-yellow-50 text-yellow-700'
+                  "
+                >
+                  <span class="block text-base mb-0.5">{{
+                    prep.checklist.total === 0
+                      ? '—'
+                      : `${prep.checklist.completed}/${prep.checklist.total}`
+                  }}</span>
+                  체크리스트
+                </div>
+                <!-- 설문 -->
+                <div
+                  class="flex-1 px-3 py-2 rounded-lg text-center text-xs"
+                  :class="
+                    prep.pendingSurveys === 0
+                      ? 'bg-green-50 text-green-700'
+                      : 'bg-red-50 text-red-600'
+                  "
+                >
+                  <span class="block text-base mb-0.5">{{
+                    prep.pendingSurveys === 0 ? '✅' : prep.pendingSurveys
+                  }}</span>
+                  {{ prep.pendingSurveys === 0 ? '설문 완료' : '미완료 설문' }}
+                </div>
+                <!-- 공지 -->
+                <div
+                  v-if="prep.unreadNotices > 0"
+                  class="flex-1 px-3 py-2 rounded-lg text-center text-xs bg-blue-50 text-blue-700"
+                >
+                  <span class="block text-base mb-0.5">{{
+                    prep.unreadNotices
+                  }}</span>
+                  새 공지
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 다가오는 일정 미리보기 -->
+        <div v-if="dashboard.upcomingSchedules?.length > 0" class="mb-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">
+            다가오는 일정
+          </h3>
+          <div class="space-y-2">
+            <div
+              v-for="(schedule, i) in dashboard.upcomingSchedules"
+              :key="i"
+              class="bg-white rounded-xl shadow-sm p-4 flex items-start gap-3"
+            >
+              <div
+                class="flex-shrink-0 w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center"
+              >
+                <svg
+                  class="w-6 h-6 text-primary-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span
+                    class="px-2 py-0.5 bg-primary-600 text-white text-xs font-bold rounded"
+                    >{{ formatScheduleDate(schedule.date) }}</span
+                  >
+                  <span
+                    v-if="schedule.time"
+                    class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded"
+                    >{{ schedule.time }}</span
+                  >
+                </div>
+                <h4 class="font-semibold text-gray-900 text-sm">
+                  {{ schedule.title }}
+                </h4>
+                <p
+                  v-if="schedule.location"
+                  class="text-xs text-gray-500 mt-0.5"
+                >
+                  {{ schedule.location }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 최신 공지사항 -->
+        <div v-if="dashboard.recentNotices?.length > 0" class="mb-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">최신 공지</h3>
+          <div class="space-y-2">
+            <div
+              v-for="notice in dashboard.recentNotices"
+              :key="notice.id"
+              class="bg-white rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-shadow"
+              @click="
+                router.push(
+                  `/conventions/${notice.conventionId}/board/${notice.id}`,
+                )
+              "
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span
+                      class="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                      >{{ notice.conventionTitle }}</span
+                    >
+                    <span
+                      v-if="notice.isPinned"
+                      class="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded"
+                      >필독</span
+                    >
+                  </div>
+                  <h4 class="font-medium text-gray-900 text-sm line-clamp-1">
+                    {{ notice.title }}
+                  </h4>
+                </div>
+                <span class="text-xs text-gray-400 flex-shrink-0">{{
+                  formatDate(notice.createdAt)
+                }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 진행중인 스타투어 -->
         <div class="mb-8">
           <div class="flex justify-between items-center mb-4 px-1">
@@ -334,6 +527,7 @@ const userName = computed(() => authStore.user?.name || '사용자')
 
 const conventionsLoading = ref(true)
 const conventions = ref([])
+const dashboard = ref({})
 const isSidebarOpen = ref(false)
 
 const activeConventions = computed(() =>
@@ -378,8 +572,34 @@ function formatDate(dateString) {
   })
 }
 
+function formatScheduleDate(dateString) {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return `${date.getMonth() + 1}/${date.getDate()}`
+}
+
+function getDDay(startDate) {
+  if (!startDate) return 0
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const start = new Date(startDate)
+  start.setHours(0, 0, 0, 0)
+  const diff = Math.ceil((start - today) / (1000 * 60 * 60 * 24))
+  return diff > 0 ? diff : 0
+}
+
+async function loadDashboard() {
+  try {
+    const res = await apiClient.get('/users/home-dashboard')
+    dashboard.value = res.data
+  } catch (e) {
+    console.error('대시보드 로드 실패:', e)
+  }
+}
+
 onMounted(() => {
   loadConventions()
+  loadDashboard()
 })
 </script>
 

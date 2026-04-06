@@ -642,4 +642,123 @@ public class UserProfileService : IUserProfileService
             surveys
         };
     }
+
+    public async Task<object> GetHomeDashboardAsync(int userId)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+
+        var activeConventions = await _unitOfWork.UserConventions.Query
+            .Where(uc => uc.UserId == userId && uc.Convention.CompleteYn != "Y" && uc.Convention.DeleteYn == "N")
+            .Select(uc => uc.Convention)
+            .OrderBy(c => c.StartDate)
+            .ToListAsync();
+
+        var preparationList = new List<object>();
+        foreach (var conv in activeConventions)
+        {
+            var checklistActionIds = await _unitOfWork.ConventionActions.Query
+                .Where(a => a.ConventionId == conv.Id && a.ActionCategory == "CHECKLIST_CARD" && a.IsActive)
+                .Select(a => a.Id)
+                .ToListAsync();
+
+            var completedChecklist = checklistActionIds.Count > 0
+                ? await _unitOfWork.UserActionStatuses.Query
+                    .Where(s => s.UserId == userId && checklistActionIds.Contains(s.ConventionActionId) && s.IsComplete)
+                    .CountAsync()
+                : 0;
+
+            var totalSurveys = await _unitOfWork.Surveys.Query
+                .Where(s => s.ConventionId == conv.Id && s.IsActive)
+                .CountAsync();
+            var completedSurveys = await _unitOfWork.SurveyResponses.Query
+                .Where(r => r.UserId == userId && r.Survey.ConventionId == conv.Id)
+                .Select(r => r.SurveyId)
+                .Distinct()
+                .CountAsync();
+            var pendingSurveys = totalSurveys - completedSurveys;
+
+            var unreadNotices = await _unitOfWork.Notices.Query
+                .Where(n => n.ConventionId == conv.Id && n.DeleteYn == "N")
+                .CountAsync();
+
+            preparationList.Add(new
+            {
+                conventionId = conv.Id,
+                title = conv.Title,
+                startDate = conv.StartDate,
+                location = conv.Location,
+                brandColor = conv.BrandColor,
+                passport = new
+                {
+                    hasNumber = !string.IsNullOrEmpty(user?.PassportNumber),
+                    hasImage = !string.IsNullOrEmpty(user?.PassportImageUrl),
+                    verified = user?.PassportVerified ?? false
+                },
+                checklist = new
+                {
+                    total = checklistActionIds.Count,
+                    completed = completedChecklist
+                },
+                pendingSurveys = pendingSurveys > 0 ? pendingSurveys : 0,
+                unreadNotices
+            });
+        }
+
+        var upcomingSchedules = new List<object>();
+        var nearestConvention = activeConventions.FirstOrDefault();
+        if (nearestConvention != null)
+        {
+            var userTemplateIds = await _unitOfWork.GuestScheduleTemplates.Query
+                .Where(gst => gst.UserId == userId && gst.ScheduleTemplate.ConventionId == nearestConvention.Id)
+                .Select(gst => gst.ScheduleTemplateId)
+                .ToListAsync();
+
+            if (userTemplateIds.Any())
+            {
+                var today = DateTime.Today;
+                var items = await _unitOfWork.ScheduleItems.Query
+                    .Where(si => userTemplateIds.Contains(si.ScheduleTemplateId) && si.ScheduleDate >= today)
+                    .OrderBy(si => si.ScheduleDate).ThenBy(si => si.StartTime)
+                    .Take(3)
+                    .Select(si => new
+                    {
+                        date = si.ScheduleDate,
+                        time = si.StartTime,
+                        title = si.Title,
+                        location = si.Location
+                    })
+                    .ToListAsync();
+
+                upcomingSchedules.AddRange(items);
+            }
+        }
+
+        var conventionIds = activeConventions.Select(c => c.Id).ToList();
+        var recentNotices = new List<object>();
+        if (conventionIds.Any())
+        {
+            var notices = await _unitOfWork.Notices.Query
+                .Where(n => conventionIds.Contains(n.ConventionId) && n.DeleteYn == "N")
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(5)
+                .ToListAsync();
+
+            recentNotices = notices.Select(n => (object)new
+            {
+                n.Id,
+                n.ConventionId,
+                n.Title,
+                n.IsPinned,
+                n.CreatedAt,
+                conventionTitle = activeConventions.FirstOrDefault(c => c.Id == n.ConventionId)?.Title ?? ""
+            }).ToList();
+        }
+
+        return new
+        {
+            preparations = preparationList,
+            upcomingSchedules,
+            recentNotices
+        };
+    }
 }
