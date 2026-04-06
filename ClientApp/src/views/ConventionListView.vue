@@ -149,9 +149,17 @@ async function handleSaveConvention(conventionData) {
   }
 }
 
-function editConvention(convention) {
-  editingConvention.value = { ...convention }
-  showCreateModal.value = true
+async function editConvention(convention) {
+  try {
+    const res = await apiClient.get(`/conventions/${convention.id}`)
+    editingConvention.value = res.data
+    showCreateModal.value = true
+  } catch (e) {
+    console.error('행사 상세 로드 실패:', e)
+    // fallback: 목록 데이터 사용
+    editingConvention.value = { ...convention }
+    showCreateModal.value = true
+  }
 }
 
 async function completeConvention(conventionId) {
