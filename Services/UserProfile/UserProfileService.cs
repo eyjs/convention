@@ -678,7 +678,7 @@ public class UserProfileService : IUserProfileService
             var pendingSurveys = totalSurveys - completedSurveys;
 
             var unreadNotices = await _unitOfWork.Notices.Query
-                .Where(n => n.ConventionId == conv.Id && n.DeleteYn == "N")
+                .Where(n => n.ConventionId == conv.Id && !n.IsDeleted)
                 .CountAsync();
 
             preparationList.Add(new
@@ -738,7 +738,7 @@ public class UserProfileService : IUserProfileService
         if (conventionIds.Any())
         {
             var notices = await _unitOfWork.Notices.Query
-                .Where(n => conventionIds.Contains(n.ConventionId) && n.DeleteYn == "N")
+                .Where(n => conventionIds.Contains(n.ConventionId) && !n.IsDeleted)
                 .OrderByDescending(n => n.CreatedAt)
                 .Take(5)
                 .ToListAsync();
