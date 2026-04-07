@@ -45,7 +45,10 @@ public class DbSmsSender : ISmsSender
 
                 // 프로시저가 2개 결과셋 반환:
                 // 1번째: 디버깅용 (SenderID, SendDtm, ...) → 스킵
-                // 2번째: SELECT 'result' = @return_value → 실제 발송 결과
+                // 2번째: SELECT 'result' = @return_value → [SKT].[dbo].[usp_lms_send] 결과
+                //
+                // 성공 코드: 0 이상 (정상 접수)
+                // 실패 코드: 음수 (-1, -99999999 등)
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     // 1번째 결과셋 스킵
@@ -54,14 +57,24 @@ public class DbSmsSender : ISmsSender
                     // 2번째 결과셋에서 return_value 읽기
                     if (await reader.ReadAsync())
                     {
-                        var returnValue = reader.GetValue(0)?.ToString();
-                        _logger.LogInformation("SMS Proc return_value: {Result}, To: {Mobile}", returnValue, mobile);
+                        var rawValue = reader.GetValue(0);
+                        _logger.LogInformation("SMS Proc return_value: {Result} ({Type}), To: {Mobile}",
+                            rawValue, rawValue?.GetType().Name ?? "null", mobile);
 
-                        // return_value가 있으면 발송 성공으로 간주
-                        if (!string.IsNullOrEmpty(returnValue))
+                        // 숫자 성공 코드 검증 (0 이상)
+                        if (rawValue != null && int.TryParse(rawValue.ToString(), out var code))
                         {
-                            return returnValue;
+                            if (code >= 0)
+                            {
+                                return code.ToString();
+                            }
+
+                            _logger.LogWarning("SMS 발송 실패 — 프로시저 에러코드: {Code}, To: {Mobile}", code, mobile);
+                            return null;
                         }
+
+                        // 비숫자 반환은 실패로 간주
+                        _logger.LogWarning("SMS 발송 결과 파싱 실패 — Raw: {Raw}, To: {Mobile}", rawValue, mobile);
                     }
                 }
             }

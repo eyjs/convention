@@ -30,10 +30,11 @@ public class UserRepository : Repository<User>, IUserRepository
     /// </summary>
     public async Task<User?> GetByLoginIdAsync(
         string loginId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool tracking = false)
     {
-        return await _dbSet
-            .AsNoTracking()
+        var query = tracking ? _dbSet.AsQueryable() : _dbSet.AsNoTracking();
+        return await query
             .FirstOrDefaultAsync(u => u.LoginId == loginId, cancellationToken);
     }
 

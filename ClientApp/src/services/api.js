@@ -1,4 +1,5 @@
 import axios from 'axios'
+import router from '@/router'
 import { useUIStore } from '@/stores/ui'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
@@ -112,7 +113,7 @@ apiClient.interceptors.response.use(
         processQueue(err, null)
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
-        window.location.href = '/login'
+        router.push('/login').catch(() => {})
         return Promise.reject(err)
       } finally {
         isRefreshing = false

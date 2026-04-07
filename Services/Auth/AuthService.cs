@@ -185,41 +185,33 @@ public class AuthService : IAuthService
     public async Task<AuthResult<LoginResponse>> LoginAsync(LoginRequest request)
     {
         var loginId = request.LoginId?.Trim() ?? string.Empty;
-        var user = await _unitOfWork.Users.GetByLoginIdAsync(loginId);
+        // tracking: true — 아래에서 바로 수정할 것이므로 tracked 엔티티로 조회
+        var user = await _unitOfWork.Users.GetByLoginIdAsync(loginId, tracking: true);
 
         if (user == null)
         {
-            _logger.LogWarning("Login failed: user not found for LoginId={LoginId}", request.LoginId);
+            _logger.LogWarning("Login failed: user not found for LoginId={LoginId}", loginId);
             return AuthResult<LoginResponse>.Fail("아이디 또는 비밀번호를 확인해주세요.", AuthErrorType.Unauthorized);
         }
 
         if (!user.IsActive)
         {
-            _logger.LogWarning("Login failed: user {LoginId} is inactive", request.LoginId);
+            _logger.LogWarning("Login failed: user {LoginId} is inactive", loginId);
             return AuthResult<LoginResponse>.Fail("아이디 또는 비밀번호를 확인해주세요.", AuthErrorType.Unauthorized);
         }
 
         if (!VerifyPassword(request.Password, user.PasswordHash))
         {
-            _logger.LogWarning("Login failed: password mismatch for {LoginId}, hash length={HashLength}", request.LoginId, user.PasswordHash?.Length ?? 0);
+            _logger.LogWarning("Login failed: password mismatch for {LoginId}, hash length={HashLength}", loginId, user.PasswordHash?.Length ?? 0);
             return AuthResult<LoginResponse>.Fail("아이디 또는 비밀번호를 확인해주세요.", AuthErrorType.Unauthorized);
         }
 
-        // GetByLoginIdAsync는 AsNoTracking이므로 tracked 엔티티로 다시 조회
-        var trackedUser = await _unitOfWork.Users.GetByIdAsync(user.Id);
-        if (trackedUser == null)
-        {
-            return AuthResult<LoginResponse>.Fail(
-                "아이디 또는 비밀번호를 확인해주세요.",
-                AuthErrorType.Unauthorized);
-        }
-
-        var accessToken = GenerateAccessToken(trackedUser);
+        var accessToken = GenerateAccessToken(user);
         var refreshToken = GenerateRefreshToken();
 
-        trackedUser.RefreshToken = refreshToken;
-        trackedUser.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
-        trackedUser.LastLoginAt = DateTime.UtcNow;
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
+        user.LastLoginAt = DateTime.UtcNow;
         await _unitOfWork.SaveChangesAsync();
 
         return AuthResult<LoginResponse>.Success(new LoginResponse
@@ -228,10 +220,10 @@ public class AuthService : IAuthService
             RefreshToken = refreshToken,
             User = new LoginUserInfo
             {
-                Id = trackedUser.Id,
-                LoginId = trackedUser.LoginId,
-                Name = trackedUser.Name,
-                Role = trackedUser.Role
+                Id = user.Id,
+                LoginId = user.LoginId,
+                Name = user.Name,
+                Role = user.Role
             }
         });
     }

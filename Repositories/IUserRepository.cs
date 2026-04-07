@@ -15,7 +15,8 @@ public interface IUserRepository : IRepository<User>
     /// <summary>
     /// LoginId로 사용자를 조회합니다.
     /// </summary>
-    Task<User?> GetByLoginIdAsync(string loginId, CancellationToken cancellationToken = default);
+    /// <param name="tracking">true면 EF가 변경 추적을 활성화 (수정 가능)</param>
+    Task<User?> GetByLoginIdAsync(string loginId, CancellationToken cancellationToken = default, bool tracking = false);
 
     /// <summary>
     /// 이름으로 사용자를 검색합니다.
