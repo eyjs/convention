@@ -1,8 +1,8 @@
 <template>
-  <!-- 로딩 스피너 -->
+  <!-- 페이지 초기화/데이터 로딩 중: 렌더링 과정 은닉 -->
   <div
-    v-if="uiStore.isLoading"
-    class="min-h-screen min-h-dvh flex items-center justify-center"
+    v-if="!pageReady"
+    class="min-h-screen min-h-dvh flex items-center justify-center bg-gray-50"
   >
     <div
       class="inline-block w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
@@ -671,6 +671,7 @@ const dateScrollContainer = ref(null)
 const showLeftScroll = ref(false)
 const showRightScroll = ref(false)
 const selectedSchedule = ref(null)
+const pageReady = ref(false)
 const allSchedules = ref([]) // 전체 일정 저장
 const allOptionTours = ref([]) // 전체 옵션투어 저장
 const allActions = ref([]) // 전체 동적 액션 저장
@@ -1066,11 +1067,13 @@ onMounted(async () => {
     nextTick(() => handleDateScroll())
   } catch (error) {
     console.error('Failed to load schedules:', error)
-  } finally {
   }
 
   // Load dynamic actions separately
   await loadDynamicActions()
+
+  // 모든 초기 로딩 완료 → 페이지 렌더링
+  pageReady.value = true
 })
 </script>
 

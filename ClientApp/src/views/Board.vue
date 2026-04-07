@@ -1,8 +1,8 @@
 <template>
-  <!-- 로딩 스피너 -->
+  <!-- 페이지 초기화/데이터 로딩 중: 렌더링 과정 은닉 -->
   <div
-    v-if="uiStore.isLoading"
-    class="min-h-screen min-h-dvh flex items-center justify-center"
+    v-if="!pageReady"
+    class="min-h-screen min-h-dvh flex items-center justify-center bg-gray-50"
   >
     <div
       class="inline-block w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
@@ -614,6 +614,7 @@ const route = useRoute()
 const viewer = ref(null)
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
+const pageReady = ref(false)
 const uiStore = useUIStore()
 const brandColor = computed(
   () => conventionStore.currentConvention?.brandColor || '#10b981',
@@ -943,6 +944,8 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Failed to initialize Board:', error)
+  } finally {
+    pageReady.value = true
   }
 })
 
