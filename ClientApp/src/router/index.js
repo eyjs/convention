@@ -407,12 +407,6 @@ const routes = [
             meta: { title: '엑셀 업로드' },
           },
           {
-            path: 'notices',
-            name: 'AdminNotices',
-            component: () => import('@/components/admin/NoticeManagement.vue'),
-            meta: { title: '공지사항' },
-          },
-          {
             path: 'travel-assignments',
             name: 'AdminTravelAssignments',
             component: () =>

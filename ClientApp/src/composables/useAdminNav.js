@@ -10,7 +10,6 @@ import {
   ClipboardList,
   FormInput,
   Upload,
-  Bell,
   FolderOpen,
   BarChart3,
   Bus,
@@ -126,13 +125,6 @@ const conventionNavItems = [
     icon: Upload,
     path: 'upload',
     routeName: 'AdminUpload',
-  },
-  {
-    key: 'notices',
-    label: '공지사항',
-    icon: Bell,
-    path: 'notices',
-    routeName: 'AdminNotices',
   },
   {
     key: 'sns',
