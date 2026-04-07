@@ -26,6 +26,10 @@ public class AdminSmsController : ControllerBase
         _logger = logger;
     }
 
+    // 상한/제한 상수
+    private const int MaxRecipientsPerRequest = 5000;
+    private const int MaxMessageLength = 2000; // 프로시저 @p_msg VARCHAR(2000)
+
     /// <summary>
     /// 엑셀 기반 단발성 문자 발송
     /// 클라이언트에서 수신자별 변수 치환 완료된 메시지를 받아 개별 발송
@@ -35,6 +39,9 @@ public class AdminSmsController : ControllerBase
     {
         if (dto.Recipients == null || dto.Recipients.Count == 0)
             return BadRequest(new { message = "수신자가 없습니다." });
+
+        if (dto.Recipients.Count > MaxRecipientsPerRequest)
+            return BadRequest(new { message = $"수신자는 한 번에 최대 {MaxRecipientsPerRequest}명까지 가능합니다." });
 
         var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
         if (convention == null)
@@ -47,27 +54,30 @@ public class AdminSmsController : ControllerBase
 
         foreach (var recipient in dto.Recipients)
         {
-            if (string.IsNullOrWhiteSpace(recipient.Phone))
+            // 전화번호 정규화: 숫자만 남기기 (하이픈/공백/괄호 등 제거)
+            var normalizedPhone = NormalizePhone(recipient.Phone);
+
+            if (string.IsNullOrWhiteSpace(normalizedPhone))
             {
-                result.FailCount++;
-                result.FailedItems.Add(new SmsDirectFailItem
-                {
-                    Name = recipient.Name,
-                    Phone = recipient.Phone,
-                    Reason = "전화번호 없음"
-                });
+                AddFail(result, recipient, "전화번호 없음");
+                continue;
+            }
+
+            if (!IsValidKoreanMobile(normalizedPhone))
+            {
+                AddFail(result, recipient, $"잘못된 전화번호 형식: {recipient.Phone}");
                 continue;
             }
 
             if (string.IsNullOrWhiteSpace(recipient.Message))
             {
-                result.FailCount++;
-                result.FailedItems.Add(new SmsDirectFailItem
-                {
-                    Name = recipient.Name,
-                    Phone = recipient.Phone,
-                    Reason = "메시지 없음"
-                });
+                AddFail(result, recipient, "메시지 없음");
+                continue;
+            }
+
+            if (recipient.Message.Length > MaxMessageLength)
+            {
+                AddFail(result, recipient, $"메시지가 너무 깁니다 ({recipient.Message.Length}/{MaxMessageLength}자)");
                 continue;
             }
 
@@ -76,7 +86,7 @@ public class AdminSmsController : ControllerBase
                 var success = await _smsService.SendSmsAsync(
                     conventionId,
                     recipient.Name ?? "Guest",
-                    recipient.Phone,
+                    normalizedPhone,
                     recipient.Message);
 
                 if (success)
@@ -85,25 +95,13 @@ public class AdminSmsController : ControllerBase
                 }
                 else
                 {
-                    result.FailCount++;
-                    result.FailedItems.Add(new SmsDirectFailItem
-                    {
-                        Name = recipient.Name,
-                        Phone = recipient.Phone,
-                        Reason = "발송 실패"
-                    });
+                    AddFail(result, recipient, "발송 실패");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "SMS 발송 오류 — To: {Phone}", recipient.Phone);
-                result.FailCount++;
-                result.FailedItems.Add(new SmsDirectFailItem
-                {
-                    Name = recipient.Name,
-                    Phone = recipient.Phone,
-                    Reason = ex.Message
-                });
+                AddFail(result, recipient, ex.Message);
             }
         }
 
@@ -112,5 +110,44 @@ public class AdminSmsController : ControllerBase
             conventionId, result.TotalCount, result.SuccessCount, result.FailCount);
 
         return Ok(result);
+    }
+
+    private static void AddFail(SendSmsDirectResult result, SmsDirectRecipient recipient, string reason)
+    {
+        result.FailCount++;
+        result.FailedItems.Add(new SmsDirectFailItem
+        {
+            Name = recipient.Name,
+            Phone = recipient.Phone,
+            Reason = reason
+        });
+    }
+
+    /// <summary>
+    /// 전화번호 정규화: 숫자만 남기기
+    /// "010-1234-5678" → "01012345678"
+    /// "010 1234 5678" → "01012345678"
+    /// "+82 10 1234 5678" → "821012345678" (국제번호도 그대로 보존)
+    /// </summary>
+    private static string NormalizePhone(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return string.Empty;
+        var digits = System.Text.RegularExpressions.Regex.Replace(phone, @"\D", "");
+
+        // +82로 시작하는 국제번호를 010 형식으로 변환 (82 + 10xxxxxxxx → 010xxxxxxxx)
+        if (digits.StartsWith("82") && digits.Length >= 11)
+        {
+            digits = "0" + digits.Substring(2);
+        }
+
+        return digits;
+    }
+
+    /// <summary>
+    /// 한국 휴대폰 번호 형식 검증 (010/011/016/017/018/019 + 7~8자리)
+    /// </summary>
+    private static bool IsValidKoreanMobile(string phone)
+    {
+        return System.Text.RegularExpressions.Regex.IsMatch(phone, @"^01[016789]\d{7,8}$");
     }
 }

@@ -612,9 +612,14 @@ async function handleFileUpload(event) {
   try {
     const XLSX = await import('xlsx')
     const data = await file.arrayBuffer()
-    const workbook = XLSX.read(data)
+    // cellText: false + raw: false → 모든 셀 값을 formatted string으로 읽어 앞 0 보존
+    const workbook = XLSX.read(data, { cellText: false })
     const sheet = workbook.Sheets[workbook.SheetNames[0]]
-    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+    const rows = XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      defval: '',
+      raw: false,
+    })
 
     if (rows.length < 2) {
       uploadError.value = '데이터가 없습니다 (헤더 + 데이터 행 필요)'
@@ -630,13 +635,24 @@ async function handleFileUpload(event) {
     // D열부터 #{...} 패턴 헤더를 변수로 파싱
     const varNames = []
     const varColIndices = []
+    const duplicates = []
     for (let i = 3; i < header.length; i++) {
       const cell = String(header[i] ?? '').trim()
       const m = cell.match(/^#\{([^}]+)\}$/)
       if (m) {
-        varNames.push(m[1])
+        const key = m[1]
+        if (varNames.includes(key)) {
+          duplicates.push(key)
+          continue
+        }
+        varNames.push(key)
         varColIndices.push(i)
       }
+    }
+
+    if (duplicates.length > 0) {
+      uploadError.value = `중복된 변수명: ${duplicates.join(', ')} (첫 번째 컬럼만 사용됩니다)`
+      // 계속 진행
     }
 
     // 데이터 행 파싱
@@ -644,9 +660,8 @@ async function handleFileUpload(event) {
     for (let r = 1; r < rows.length; r++) {
       const row = rows[r]
       const name = String(row[1] ?? '').trim()
-      const phone = String(row[2] ?? '')
-        .trim()
-        .replace(/-/g, '')
+      // 전화번호 정규화: 숫자만 남기기 (공백/하이픈/괄호/+ 제거)
+      const phone = String(row[2] ?? '').replace(/\D/g, '')
       if (!name && !phone) continue // 빈 행 스킵
 
       const vars = {}
