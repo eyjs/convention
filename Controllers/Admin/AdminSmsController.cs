@@ -5,6 +5,7 @@ using LocalRAG.DTOs.AdminModels;
 using LocalRAG.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Controllers.Admin;
 
@@ -30,6 +31,31 @@ public class AdminSmsController : ControllerBase
     // 상한/제한 상수
     private const int MaxRecipientsPerRequest = 5000;
     private const int MaxMessageLength = 2000; // 프로시저 @p_msg VARCHAR(2000)
+
+    /// <summary>
+    /// 행사별 SMS 발송 이력 조회 (최신순)
+    /// </summary>
+    [HttpGet("conventions/{conventionId}/sms-logs")]
+    public async Task<IActionResult> GetSmsLogs(int conventionId, [FromQuery] int limit = 200)
+    {
+        var logs = await _unitOfWork.SmsLogs.Query
+            .Where(l => l.ConventionId == conventionId)
+            .OrderByDescending(l => l.SentAt)
+            .Take(limit)
+            .Select(l => new
+            {
+                l.Id,
+                l.ReceiverName,
+                l.ReceiverPhone,
+                l.Message,
+                l.SnsType,
+                l.ExternalId,
+                SentAt = l.SentAt.ToString("yyyy-MM-dd HH:mm:ss")
+            })
+            .ToListAsync();
+
+        return Ok(logs);
+    }
 
     /// <summary>
     /// 단건 문자 발송 — 클라이언트에서 순차 호출하여 실시간 진행률 표시용
