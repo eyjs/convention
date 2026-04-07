@@ -1,12 +1,9 @@
 using LocalRAG.Constants;
 using LocalRAG.Interfaces;
-using LocalRAG.Entities;
 using LocalRAG.DTOs.AdminModels;
 using LocalRAG.Repositories;
-using LocalRAG.Services.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LocalRAG.Controllers.Admin;
 
@@ -17,126 +14,103 @@ public class AdminSmsController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ISmsService _smsService;
-    private readonly ITemplateVariableService _templateService;
-    private readonly SmsTemplateContextFactory _contextFactory;
+    private readonly ILogger<AdminSmsController> _logger;
 
     public AdminSmsController(
         IUnitOfWork unitOfWork,
         ISmsService smsService,
-        ITemplateVariableService templateService,
-        SmsTemplateContextFactory contextFactory)
+        ILogger<AdminSmsController> logger)
     {
         _unitOfWork = unitOfWork;
         _smsService = smsService;
-        _templateService = templateService;
-        _contextFactory = contextFactory;
+        _logger = logger;
     }
 
-    [HttpPost("conventions/{conventionId}/sms/send")]
-    public async Task<IActionResult> SendSmsBulk(int conventionId, [FromBody] SendSmsRequestDto dto)
+    /// <summary>
+    /// 엑셀 기반 단발성 문자 발송
+    /// 클라이언트에서 수신자별 변수 치환 완료된 메시지를 받아 개별 발송
+    /// </summary>
+    [HttpPost("conventions/{conventionId}/sms/send-direct")]
+    public async Task<IActionResult> SendSmsDirect(int conventionId, [FromBody] SendSmsDirectRequestDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.Content))
-            return BadRequest(new { message = "발송할 내용이 없습니다." });
-
-        if (dto.TargetUserIds == null || !dto.TargetUserIds.Any())
-            return BadRequest(new { message = "수신자가 선택되지 않았습니다." });
+        if (dto.Recipients == null || dto.Recipients.Count == 0)
+            return BadRequest(new { message = "수신자가 없습니다." });
 
         var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
-        if (convention == null) return NotFound("행사 정보를 찾을 수 없습니다.");
+        if (convention == null)
+            return NotFound(new { message = "행사 정보를 찾을 수 없습니다." });
 
-        var users = await _unitOfWork.Users.Query
-            .Where(u => dto.TargetUserIds.Contains(u.Id))
-            .Include(u => u.GuestAttributes)
-            .ToListAsync();
-
-        int successCount = 0;
-        int failCount = 0;
-
-        foreach (var user in users)
+        var result = new SendSmsDirectResult
         {
-            var context = _contextFactory.Create(user, convention);
-            string message = _templateService.ReplaceVariables(dto.Content, context);
-            bool result = await _smsService.SendSmsAsync(conventionId, user.Name, user.Phone, message);
+            TotalCount = dto.Recipients.Count
+        };
 
-            if (result) successCount++;
-            else failCount++;
+        foreach (var recipient in dto.Recipients)
+        {
+            if (string.IsNullOrWhiteSpace(recipient.Phone))
+            {
+                result.FailCount++;
+                result.FailedItems.Add(new SmsDirectFailItem
+                {
+                    Name = recipient.Name,
+                    Phone = recipient.Phone,
+                    Reason = "전화번호 없음"
+                });
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(recipient.Message))
+            {
+                result.FailCount++;
+                result.FailedItems.Add(new SmsDirectFailItem
+                {
+                    Name = recipient.Name,
+                    Phone = recipient.Phone,
+                    Reason = "메시지 없음"
+                });
+                continue;
+            }
+
+            try
+            {
+                var success = await _smsService.SendSmsAsync(
+                    conventionId,
+                    recipient.Name ?? "Guest",
+                    recipient.Phone,
+                    recipient.Message);
+
+                if (success)
+                {
+                    result.SuccessCount++;
+                }
+                else
+                {
+                    result.FailCount++;
+                    result.FailedItems.Add(new SmsDirectFailItem
+                    {
+                        Name = recipient.Name,
+                        Phone = recipient.Phone,
+                        Reason = "발송 실패"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "SMS 발송 오류 — To: {Phone}", recipient.Phone);
+                result.FailCount++;
+                result.FailedItems.Add(new SmsDirectFailItem
+                {
+                    Name = recipient.Name,
+                    Phone = recipient.Phone,
+                    Reason = ex.Message
+                });
+            }
         }
 
-        return Ok(new
-        {
-            message = $"총 {dto.TargetUserIds.Count}건 중 성공: {successCount}, 실패: {failCount}",
-            successCount,
-            failCount
-        });
-    }
+        _logger.LogInformation(
+            "SMS 일괄 발송 완료 — Convention: {ConvId}, Total: {Total}, Success: {Success}, Fail: {Fail}",
+            conventionId, result.TotalCount, result.SuccessCount, result.FailCount);
 
-    [HttpPost("conventions/{conventionId}/sms/preview")]
-    public async Task<IActionResult> PreviewSms(int conventionId, [FromBody] SmsPreviewRequestDto dto)
-    {
-        if (string.IsNullOrWhiteSpace(dto.Content))
-            return BadRequest(new { message = "내용이 없습니다." });
-
-        var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
-        if (convention == null) return NotFound("행사 정보를 찾을 수 없습니다.");
-
-        var user = await _unitOfWork.Users.Query
-            .Include(u => u.GuestAttributes)
-            .FirstOrDefaultAsync(u => u.Id == dto.TargetUserId);
-
-        if (user == null) return NotFound("사용자를 찾을 수 없습니다.");
-
-        var context = _contextFactory.Create(user, convention);
-        string previewMessage = _templateService.ReplaceVariables(dto.Content, context);
-
-        return Ok(new { previewMessage, context });
-    }
-
-    [HttpGet("sms-templates")]
-    public async Task<IActionResult> GetSmsTemplates()
-    {
-        var templates = await _unitOfWork.SmsTemplates.Query
-            .OrderByDescending(t => t.Id)
-            .Select(t => new SmsTemplateDto
-            {
-                Id = t.Id,
-                Title = t.TemplateName,
-                Content = t.TemplateContent,
-                CreatedAt = t.RegDtm
-            })
-            .ToListAsync();
-        return Ok(templates);
-    }
-
-    [HttpPost("sms-templates")]
-    public async Task<IActionResult> CreateSmsTemplate([FromBody] SmsTemplateDto dto)
-    {
-        var template = new SmsTemplate
-        {
-            TemplateName = dto.Title,
-            TemplateContent = dto.Content,
-            RegDtm = DateTime.UtcNow,
-            DeleteYn = DeleteStatus.ActiveNumeric
-        };
-        await _unitOfWork.SmsTemplates.AddAsync(template);
-        await _unitOfWork.SaveChangesAsync();
-
-        dto.Id = template.Id;
-        dto.CreatedAt = template.RegDtm;
-
-        return Ok(dto);
-    }
-
-    [HttpPut("sms-templates/{id}")]
-    public async Task<IActionResult> UpdateSmsTemplate(int id, [FromBody] SmsTemplateDto dto)
-    {
-        var template = await _unitOfWork.SmsTemplates.GetByIdAsync(id);
-        if (template == null) return NotFound();
-
-        template.TemplateName = dto.Title;
-        template.TemplateContent = dto.Content;
-
-        _unitOfWork.SmsTemplates.Update(template);
-        await _unitOfWork.SaveChangesAsync();
-        return Ok(dto);
+        return Ok(result);
     }
 }

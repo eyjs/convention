@@ -21,247 +21,218 @@
       </div>
     </div>
 
-    <!-- 문자 발송 탭 -->
-    <div v-if="activeTab === 'sms'" class="space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- 좌: 템플릿 목록 -->
-        <div class="bg-white rounded-lg shadow">
-          <div class="p-4 border-b flex items-center justify-between">
-            <h3 class="font-semibold text-gray-900">문자 템플릿</h3>
-            <button
-              class="px-3 py-1.5 bg-primary-500 text-white text-xs rounded-lg hover:bg-primary-600"
-              @click="startNewSmsTemplate"
-            >
-              + 새 템플릿
-            </button>
+    <!-- 문자 발송 탭 (엑셀 기반 단발성) -->
+    <div v-if="activeTab === 'sms'" class="space-y-4">
+      <!-- 1. 엑셀 업로드 -->
+      <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="font-semibold text-gray-900">수신자 엑셀 업로드</h3>
+            <p class="text-xs text-gray-500 mt-1">
+              A열: 번호 · B열: 이름 · C열: 전화번호 · D열부터: 헤더에
+              <code class="text-blue-600">#{변수명}</code> 패턴
+            </p>
           </div>
-          <div class="p-4 space-y-2 max-h-[500px] overflow-y-auto">
-            <div
-              v-if="smsTemplatesLoading"
-              class="text-center py-8 text-gray-400"
+          <button
+            class="text-xs text-blue-600 hover:underline"
+            @click="downloadSample"
+          >
+            샘플 다운로드
+          </button>
+        </div>
+        <div class="flex items-center gap-3">
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".xlsx,.xls"
+            class="flex-1 text-sm file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+            @change="handleFileUpload"
+          />
+          <button
+            v-if="recipients.length > 0"
+            class="px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-lg"
+            @click="resetData"
+          >
+            초기화
+          </button>
+        </div>
+        <div
+          v-if="uploadError"
+          class="mt-2 p-2 bg-red-50 text-red-600 text-xs rounded"
+        >
+          {{ uploadError }}
+        </div>
+        <div
+          v-if="recipients.length > 0"
+          class="mt-3 flex items-center gap-4 text-sm text-gray-600"
+        >
+          <span
+            >수신자 <strong>{{ recipients.length }}명</strong></span
+          >
+          <span
+            >변수 <strong>{{ dynamicVariables.length }}개</strong></span
+          >
+        </div>
+      </div>
+
+      <!-- 2. 메시지 편집 + 수신자 선택 -->
+      <div
+        v-if="recipients.length > 0"
+        class="grid grid-cols-1 lg:grid-cols-2 gap-4"
+      >
+        <!-- 편집기 -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-gray-900 mb-3">메시지 작성</h3>
+          <textarea
+            ref="smsTextarea"
+            v-model="smsContent"
+            rows="10"
+            class="w-full px-3 py-2 border rounded-lg text-sm font-mono resize-none"
+            placeholder="안녕하세요 #{이름}님, 배정된 방은 #{방번호}호 입니다."
+          ></textarea>
+          <p class="text-xs text-gray-400 mt-1">
+            {{ smsContent.length }}자
+            <span v-if="smsContent.length > 90" class="text-amber-500"
+              >(LMS)</span
             >
-              로딩 중...
+            <span v-else class="text-green-500">(SMS)</span>
+          </p>
+
+          <!-- 변수 퀵버튼 -->
+          <div class="mt-3">
+            <label class="block text-xs font-medium text-gray-500 mb-1.5"
+              >변수 삽입</label
+            >
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                v-for="v in fixedVariables"
+                :key="v.key"
+                class="px-2 py-1 bg-green-50 text-green-700 text-xs rounded border border-green-200 hover:bg-green-100"
+                @click="insertVariable(v.key)"
+              >
+                {{ v.label }}
+              </button>
+              <button
+                v-for="v in dynamicVariables"
+                :key="v"
+                class="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded border border-blue-200 hover:bg-blue-100"
+                @click="insertVariable(v)"
+              >
+                #{{ '{' }}{{ v }}{{ '}' }}
+              </button>
             </div>
+          </div>
+
+          <!-- 미리보기 -->
+          <div v-if="previewRecipient" class="mt-3">
+            <label class="block text-xs font-medium text-gray-500 mb-1.5">
+              {{ previewRecipient.name }} 미리보기
+            </label>
             <div
-              v-for="tpl in smsTemplates"
-              :key="tpl.id"
-              class="p-3 border rounded-lg cursor-pointer hover:border-primary-300 transition-colors"
-              :class="{
-                'border-primary-500 bg-primary-50':
-                  selectedSmsTemplate?.id === tpl.id,
-              }"
-              @click="selectSmsTemplate(tpl)"
+              class="bg-gray-100 rounded-lg p-3 text-sm font-mono whitespace-pre-wrap min-h-[60px]"
             >
-              <div class="flex items-center justify-between mb-1">
-                <span class="font-medium text-sm text-gray-900">{{
-                  tpl.title
-                }}</span>
-                <button
-                  class="text-xs text-gray-400 hover:text-primary-600"
-                  @click.stop="editSmsTemplate(tpl)"
-                >
-                  수정
-                </button>
-              </div>
-              <p class="text-xs text-gray-500 line-clamp-2">
-                {{ tpl.content }}
-              </p>
-            </div>
-            <div
-              v-if="!smsTemplatesLoading && smsTemplates.length === 0"
-              class="text-center py-8 text-gray-400 text-sm"
-            >
-              등록된 템플릿이 없습니다
+              {{ previewMessage }}
             </div>
           </div>
         </div>
 
-        <!-- 중: 편집기 -->
-        <div class="bg-white rounded-lg shadow">
-          <div class="p-4 border-b">
+        <!-- 수신자 -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <div class="flex items-center justify-between mb-3">
             <h3 class="font-semibold text-gray-900">
-              {{
-                smsEditingId
-                  ? '템플릿 수정'
-                  : selectedSmsTemplate
-                    ? '발송 내용'
-                    : '새 템플릿'
-              }}
-            </h3>
-          </div>
-          <div class="p-4 space-y-4">
-            <div v-if="smsEditMode">
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >템플릿명</label
-              >
-              <input
-                v-model="smsEditForm.title"
-                type="text"
-                class="w-full px-3 py-2 border rounded-lg text-sm"
-                placeholder="예: 행사 안내 문자"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >내용</label
-              >
-              <textarea
-                ref="smsTextarea"
-                v-model="smsContent"
-                rows="8"
-                class="w-full px-3 py-2 border rounded-lg text-sm font-mono resize-none"
-                placeholder="안녕하세요 #{guest_name}님, #{title} 안내드립니다."
-              ></textarea>
-              <p class="text-xs text-gray-400 mt-1">
-                {{ smsContent.length }}자
-                <span v-if="smsContent.length > 90" class="text-amber-500"
-                  >(LMS)</span
-                >
-                <span v-else class="text-green-500">(SMS)</span>
-              </p>
-            </div>
-            <!-- 변수 -->
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1.5"
-                >변수 삽입</label
-              >
-              <div class="flex flex-wrap gap-1.5">
-                <button
-                  v-for="v in templateVariables"
-                  :key="v.key"
-                  class="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded border border-blue-200 hover:bg-blue-100"
-                  @click="insertSmsVariable(v.key)"
-                >
-                  {{ v.label }}
-                </button>
-              </div>
-            </div>
-            <div v-if="smsEditMode" class="flex gap-2">
-              <button
-                class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm"
-                @click="cancelSmsEdit"
-              >
-                취소
-              </button>
-              <button
-                class="px-3 py-2 bg-primary-500 text-white rounded-lg text-sm"
-                :disabled="!smsEditForm.title || !smsContent"
-                @click="saveSmsTemplate"
-              >
-                저장
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 우: 수신자 + 발송 -->
-        <div class="bg-white rounded-lg shadow">
-          <div class="p-4 border-b flex items-center justify-between">
-            <h3 class="font-semibold text-gray-900">
-              수신자 ({{ smsSelectedIds.length }}명)
+              수신자 ({{ selectedIds.length }}/{{ recipients.length }})
             </h3>
             <div class="flex gap-2">
               <button
                 class="text-xs text-primary-600 hover:underline"
-                @click="smsSelectAll"
+                @click="selectAll"
               >
                 전체
               </button>
               <button
                 class="text-xs text-gray-500 hover:underline"
-                @click="smsSelectedIds = []"
+                @click="selectedIds = []"
               >
                 해제
               </button>
             </div>
           </div>
-          <div class="p-4">
-            <div
-              v-if="guestsLoading"
-              class="text-center py-4 text-gray-400 text-sm"
+          <input
+            v-model="recipientSearch"
+            type="text"
+            placeholder="이름/전화번호 검색"
+            class="w-full px-3 py-2 border rounded-lg text-sm mb-2"
+          />
+          <div
+            class="max-h-[400px] overflow-y-auto space-y-1 border rounded-lg p-2"
+          >
+            <label
+              v-for="r in filteredRecipients"
+              :key="r.no"
+              class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer text-sm"
+              @click="previewRecipientNo = r.no"
             >
-              로딩 중...
-            </div>
-            <template v-else>
               <input
-                v-model="smsSearch"
-                type="text"
-                placeholder="이름/전화번호/부서 검색"
-                class="w-full px-3 py-2 border rounded-lg text-sm mb-2"
+                v-model="selectedIds"
+                type="checkbox"
+                :value="r.no"
+                class="rounded border-gray-300 text-primary-500"
+                @click.stop
               />
-              <div
-                class="max-h-[300px] overflow-y-auto space-y-1 border rounded-lg p-2 mb-4"
-              >
-                <label
-                  v-for="user in smsFilteredGuests"
-                  :key="user.id"
-                  class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer text-sm"
-                >
-                  <input
-                    v-model="smsSelectedIds"
-                    type="checkbox"
-                    :value="user.id"
-                    class="rounded border-gray-300 text-primary-500"
-                  />
-                  <span class="text-gray-900">{{ user.guestName }}</span>
-                  <span class="text-xs text-gray-400">{{
-                    user.telephone
-                  }}</span>
-                  <span v-if="user.corpPart" class="text-xs text-gray-400"
-                    >· {{ user.corpPart }}</span
-                  >
-                  <span v-if="!user.telephone" class="text-xs text-red-400"
-                    >(번호없음)</span
-                  >
-                </label>
-                <div
-                  v-if="smsFilteredGuests.length === 0"
-                  class="text-center text-xs text-gray-400 py-2"
-                >
-                  검색 결과가 없습니다
-                </div>
-              </div>
-            </template>
-            <!-- 미리보기 -->
+              <span class="text-xs text-gray-400 w-6">{{ r.no }}</span>
+              <span class="text-gray-900">{{ r.name }}</span>
+              <span class="text-xs text-gray-400 ml-auto">{{ r.phone }}</span>
+            </label>
             <div
-              v-if="smsPreview"
-              class="mb-4 bg-gray-100 rounded-lg p-3 text-sm font-mono whitespace-pre-wrap"
+              v-if="filteredRecipients.length === 0"
+              class="text-center text-xs text-gray-400 py-2"
             >
-              {{ smsPreview }}
-            </div>
-            <div class="flex gap-2">
-              <button
-                class="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm"
-                :disabled="!smsContent || smsSelectedIds.length === 0"
-                @click="previewSms"
-              >
-                미리보기
-              </button>
-              <button
-                class="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg text-sm disabled:opacity-50"
-                :disabled="
-                  !smsContent || smsSelectedIds.length === 0 || smsSending
-                "
-                @click="sendSms"
-              >
-                {{
-                  smsSending ? '발송 중...' : `${smsSelectedIds.length}명 발송`
-                }}
-              </button>
-            </div>
-            <div
-              v-if="smsSendResult"
-              class="mt-3 p-3 rounded-lg text-sm font-medium"
-              :class="
-                smsSendResult.failCount === 0
-                  ? 'bg-green-50 text-green-800'
-                  : 'bg-amber-50 text-amber-800'
-              "
-            >
-              {{ smsSendResult.message }}
+              검색 결과가 없습니다
             </div>
           </div>
+
+          <!-- 발송 -->
+          <button
+            class="w-full mt-3 px-4 py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 disabled:opacity-50"
+            :disabled="!smsContent || selectedIds.length === 0 || smsSending"
+            @click="sendSms"
+          >
+            {{
+              smsSending
+                ? '발송 중...'
+                : `${selectedIds.length}명에게 문자 발송`
+            }}
+          </button>
+
+          <div
+            v-if="smsSendResult"
+            class="mt-3 p-3 rounded-lg text-sm font-medium"
+            :class="
+              smsSendResult.failCount === 0
+                ? 'bg-green-50 text-green-800'
+                : 'bg-amber-50 text-amber-800'
+            "
+          >
+            총 {{ smsSendResult.totalCount }}건 중 성공:
+            {{ smsSendResult.successCount }}, 실패:
+            {{ smsSendResult.failCount }}
+            <ul
+              v-if="smsSendResult.failedItems?.length > 0"
+              class="mt-2 text-xs"
+            >
+              <li v-for="(f, i) in smsSendResult.failedItems" :key="i">
+                • {{ f.name }} ({{ f.phone }}): {{ f.reason }}
+              </li>
+            </ul>
+          </div>
         </div>
+      </div>
+
+      <div
+        v-else
+        class="bg-white rounded-lg shadow p-8 text-center text-gray-400"
+      >
+        <p>엑셀 파일을 업로드하면 수신자와 변수가 자동으로 준비됩니다</p>
       </div>
     </div>
 
@@ -553,17 +524,7 @@ const tabs = [
 ]
 const activeTab = ref('sms')
 
-const templateVariables = [
-  { key: 'guest_name', label: '참석자명' },
-  { key: 'guest_phone', label: '전화번호' },
-  { key: 'corp_part', label: '부서' },
-  { key: 'title', label: '행사명' },
-  { key: 'start_date', label: '시작일' },
-  { key: 'end_date', label: '종료일' },
-  { key: 'url', label: '접속URL' },
-]
-
-// --- 공통 데이터 ---
+// --- 알림톡 탭용 공통: 참석자 목록 ---
 const guests = ref([])
 const guestsLoading = ref(false)
 const smsHistory = ref([])
@@ -591,95 +552,144 @@ async function loadSmsHistory() {
   }
 }
 
-// --- SMS ---
-const smsTemplates = ref([])
-const smsTemplatesLoading = ref(false)
-const selectedSmsTemplate = ref(null)
-const smsEditMode = ref(false)
-const smsEditingId = ref(null)
-const smsEditForm = ref({ title: '', content: '' })
+// ============================================================
+// SMS — 엑셀 기반 단발성 발송
+// ============================================================
+
+// 고정 변수 (엑셀 B, C열 기반)
+const fixedVariables = [
+  { key: '이름', label: '#{이름}' },
+  { key: '전화번호', label: '#{전화번호}' },
+]
+
+// 메모리 상태 (페이지 새로고침 시 초기화)
+const recipients = ref([]) // [{ no, name, phone, vars: {} }]
+const dynamicVariables = ref([]) // ['방번호', '식사', ...]
 const smsContent = ref('')
 const smsTextarea = ref(null)
-const smsSelectedIds = ref([])
-const smsSearch = ref('')
-const smsFilteredGuests = computed(() => {
-  const kw = smsSearch.value.trim().toLowerCase()
-  if (!kw) return guests.value
-  return guests.value.filter(
-    (g) =>
-      (g.guestName || '').toLowerCase().includes(kw) ||
-      (g.telephone || '').includes(kw) ||
-      (g.corpPart || '').toLowerCase().includes(kw),
-  )
-})
-const smsPreview = ref('')
+const fileInput = ref(null)
+const uploadError = ref('')
+const selectedIds = ref([])
+const recipientSearch = ref('')
+const previewRecipientNo = ref(null)
 const smsSending = ref(false)
 const smsSendResult = ref(null)
 
-async function loadSmsTemplates() {
-  smsTemplatesLoading.value = true
+const filteredRecipients = computed(() => {
+  const kw = recipientSearch.value.trim().toLowerCase()
+  if (!kw) return recipients.value
+  return recipients.value.filter(
+    (r) =>
+      (r.name || '').toLowerCase().includes(kw) || (r.phone || '').includes(kw),
+  )
+})
+
+const previewRecipient = computed(() => {
+  if (previewRecipientNo.value == null) return null
+  return recipients.value.find((r) => r.no === previewRecipientNo.value) || null
+})
+
+const previewMessage = computed(() => {
+  if (!previewRecipient.value) return ''
+  return renderMessage(smsContent.value, previewRecipient.value)
+})
+
+// 변수 치환
+function renderMessage(template, recipient) {
+  return template.replace(/#\{([^}]+)\}/g, (match, key) => {
+    if (key === '이름') return recipient.name || ''
+    if (key === '전화번호') return recipient.phone || ''
+    return recipient.vars[key] ?? match
+  })
+}
+
+// 엑셀 업로드 처리
+async function handleFileUpload(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  uploadError.value = ''
+
   try {
-    const res = await apiClient.get('/admin/sms-templates')
-    smsTemplates.value = res.data
+    const XLSX = await import('xlsx')
+    const data = await file.arrayBuffer()
+    const workbook = XLSX.read(data)
+    const sheet = workbook.Sheets[workbook.SheetNames[0]]
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+
+    if (rows.length < 2) {
+      uploadError.value = '데이터가 없습니다 (헤더 + 데이터 행 필요)'
+      return
+    }
+
+    const header = rows[0]
+    if (header.length < 3) {
+      uploadError.value = '최소 A(번호), B(이름), C(전화번호) 열이 필요합니다'
+      return
+    }
+
+    // D열부터 #{...} 패턴 헤더를 변수로 파싱
+    const varNames = []
+    const varColIndices = []
+    for (let i = 3; i < header.length; i++) {
+      const cell = String(header[i] ?? '').trim()
+      const m = cell.match(/^#\{([^}]+)\}$/)
+      if (m) {
+        varNames.push(m[1])
+        varColIndices.push(i)
+      }
+    }
+
+    // 데이터 행 파싱
+    const parsed = []
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r]
+      const name = String(row[1] ?? '').trim()
+      const phone = String(row[2] ?? '')
+        .trim()
+        .replace(/-/g, '')
+      if (!name && !phone) continue // 빈 행 스킵
+
+      const vars = {}
+      varNames.forEach((vn, idx) => {
+        vars[vn] = String(row[varColIndices[idx]] ?? '').trim()
+      })
+
+      parsed.push({
+        no: parsed.length + 1,
+        name,
+        phone,
+        vars,
+      })
+    }
+
+    if (parsed.length === 0) {
+      uploadError.value = '유효한 데이터 행이 없습니다'
+      return
+    }
+
+    recipients.value = parsed
+    dynamicVariables.value = varNames
+    selectedIds.value = parsed.map((r) => r.no)
+    previewRecipientNo.value = parsed[0].no
+    smsSendResult.value = null
   } catch (e) {
-    console.error('SMS 템플릿 로드 실패:', e)
-  } finally {
-    smsTemplatesLoading.value = false
+    console.error('엑셀 파싱 실패:', e)
+    uploadError.value = '엑셀 파일을 읽을 수 없습니다: ' + e.message
   }
 }
 
-function selectSmsTemplate(tpl) {
-  selectedSmsTemplate.value = tpl
-  smsContent.value = tpl.content
-  smsEditMode.value = false
-}
-
-function startNewSmsTemplate() {
-  smsEditingId.value = null
-  smsEditForm.value = { title: '', content: '' }
+function resetData() {
+  recipients.value = []
+  dynamicVariables.value = []
+  selectedIds.value = []
+  previewRecipientNo.value = null
   smsContent.value = ''
-  smsEditMode.value = true
+  smsSendResult.value = null
+  uploadError.value = ''
+  if (fileInput.value) fileInput.value.value = ''
 }
 
-function editSmsTemplate(tpl) {
-  smsEditingId.value = tpl.id
-  smsEditForm.value = { title: tpl.title, content: tpl.content }
-  smsContent.value = tpl.content
-  smsEditMode.value = true
-}
-
-function cancelSmsEdit() {
-  smsEditMode.value = false
-  if (selectedSmsTemplate.value) {
-    smsContent.value = selectedSmsTemplate.value.content
-  }
-}
-
-async function saveSmsTemplate() {
-  try {
-    const payload = {
-      title: smsEditForm.value.title,
-      content: smsContent.value,
-    }
-    if (smsEditingId.value) {
-      await apiClient.put(`/admin/sms-templates/${smsEditingId.value}`, payload)
-      const idx = smsTemplates.value.findIndex(
-        (t) => t.id === smsEditingId.value,
-      )
-      if (idx >= 0)
-        smsTemplates.value[idx] = { ...smsTemplates.value[idx], ...payload }
-    } else {
-      const res = await apiClient.post('/admin/sms-templates', payload)
-      smsTemplates.value.unshift(res.data)
-      selectedSmsTemplate.value = res.data
-    }
-    smsEditMode.value = false
-  } catch (e) {
-    alert('템플릿 저장 실패')
-  }
-}
-
-function insertSmsVariable(key) {
+function insertVariable(key) {
   const tag = `#{${key}}`
   const textarea = smsTextarea.value
   if (textarea) {
@@ -696,47 +706,65 @@ function insertSmsVariable(key) {
   }
 }
 
-function smsSelectAll() {
-  smsSelectedIds.value = guests.value
-    .filter((g) => g.telephone)
-    .map((g) => g.id)
+function selectAll() {
+  selectedIds.value = recipients.value.map((r) => r.no)
 }
 
-async function previewSms() {
-  if (smsSelectedIds.value.length === 0) return
+async function downloadSample() {
   try {
-    const res = await apiClient.post(
-      `/admin/conventions/${conventionId}/sms/preview`,
-      {
-        content: smsContent.value,
-        targetUserId: smsSelectedIds.value[0],
-      },
-    )
-    smsPreview.value = res.data.previewMessage
-  } catch {
-    smsPreview.value = '미리보기 실패'
+    const XLSX = await import('xlsx')
+    const header = ['번호', '이름', '전화번호', '#{방번호}', '#{식사}', '#{조}']
+    const rows = [
+      header,
+      [1, '홍길동', '01012345678', '301', '한식', 'A조'],
+      [2, '김철수', '01087654321', '302', '양식', 'B조'],
+    ]
+    const ws = XLSX.utils.aoa_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '수신자')
+    XLSX.writeFile(wb, '문자발송_샘플.xlsx')
+  } catch (e) {
+    console.error('샘플 다운로드 실패:', e)
   }
 }
 
 async function sendSms() {
-  if (!confirm(`${smsSelectedIds.value.length}명에게 문자를 발송하시겠습니까?`))
-    return
+  const targets = recipients.value.filter((r) =>
+    selectedIds.value.includes(r.no),
+  )
+  if (targets.length === 0) return
+  if (!confirm(`${targets.length}명에게 문자를 발송하시겠습니까?`)) return
+
   smsSending.value = true
   smsSendResult.value = null
+
   try {
+    // 클라이언트에서 변수 치환 후 백엔드 전송
+    const payload = {
+      recipients: targets.map((r) => ({
+        name: r.name,
+        phone: r.phone,
+        message: renderMessage(smsContent.value, r),
+      })),
+    }
+
     const res = await apiClient.post(
-      `/admin/conventions/${conventionId}/sms/send`,
-      {
-        content: smsContent.value,
-        targetUserIds: smsSelectedIds.value,
-      },
+      `/admin/conventions/${conventionId}/sms/send-direct`,
+      payload,
     )
     smsSendResult.value = res.data
-    loadSmsHistory()
   } catch (e) {
     smsSendResult.value = {
-      message: e.response?.data?.message || '발송 실패',
-      failCount: 1,
+      totalCount: targets.length,
+      successCount: 0,
+      failCount: targets.length,
+      failedItems: [
+        {
+          name: '',
+          phone: '',
+          reason: e.response?.data?.message || e.message,
+        },
+      ],
     }
   } finally {
     smsSending.value = false
@@ -832,7 +860,6 @@ async function sendAlimtalk() {
 
 onMounted(() => {
   loadGuests()
-  loadSmsTemplates()
   loadSmsHistory()
   loadPopbillTemplates()
   loadPopbillBalance()
