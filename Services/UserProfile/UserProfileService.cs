@@ -599,9 +599,16 @@ public class UserProfileService : IUserProfileService
             })
             .ToList();
 
-        // 설문조사 상태
+        // 설문조사 상태 — 기간 내 + 활성 상태만 (KST 기준)
+        var kstNow = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.UtcNow,
+            TimeZoneInfo.FindSystemTimeZoneById(
+                OperatingSystem.IsWindows() ? "Korea Standard Time" : "Asia/Seoul"));
+
         var surveys = await _unitOfWork.Surveys.Query
             .Where(s => s.ConventionId == conventionId && s.IsActive)
+            .Where(s => !s.StartDate.HasValue || s.StartDate <= kstNow)
+            .Where(s => !s.EndDate.HasValue || s.EndDate >= kstNow)
             .Select(s => new
             {
                 id = s.Id,

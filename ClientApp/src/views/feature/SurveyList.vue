@@ -50,13 +50,9 @@
             </div>
             <span
               class="ml-3 flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-medium"
-              :class="
-                survey.isCompleted
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                  : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-              "
+              :class="getStatusBadgeClass(survey)"
             >
-              {{ survey.isCompleted ? '완료' : '미완료' }}
+              {{ getStatusLabel(survey) }}
             </span>
           </div>
         </router-link>
@@ -79,10 +75,42 @@ const loading = ref(true)
 
 const conventionId = computed(() => route.params.conventionId)
 
+function getStatus(survey) {
+  const now = new Date()
+  if (survey.isCompleted) return 'completed'
+  if (survey.startDate && new Date(survey.startDate) > now) return 'upcoming'
+  if (survey.endDate && new Date(survey.endDate) < now) return 'expired'
+  return 'active'
+}
+
+function getStatusLabel(survey) {
+  const status = getStatus(survey)
+  return {
+    active: '진행중',
+    upcoming: '예정',
+    expired: '기간만료',
+    completed: '완료',
+  }[status]
+}
+
+function getStatusBadgeClass(survey) {
+  const status = getStatus(survey)
+  return {
+    active:
+      'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+    upcoming:
+      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    expired: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
+    completed:
+      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  }[status]
+}
+
+const STATUS_ORDER = { active: 0, upcoming: 1, completed: 2, expired: 3 }
+
 const sortedSurveys = computed(() => {
   return [...surveys.value].sort((a, b) => {
-    if (a.isCompleted === b.isCompleted) return 0
-    return a.isCompleted ? 1 : -1
+    return STATUS_ORDER[getStatus(a)] - STATUS_ORDER[getStatus(b)]
   })
 })
 

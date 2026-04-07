@@ -63,14 +63,11 @@ namespace LocalRAG.Services.Convention
                 return Enumerable.Empty<SurveyDto>();
             }
 
-            // 설문 날짜는 KST(UTC+9)로 저장되므로 KST 기준으로 비교
-            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, KstTimeZone);
-
+            // 더보기 목록은 과거/만료된 설문도 포함 (상태 뱃지로 구분)
+            // 진행중 설문은 홈 화면(MyConventionInfo)에서 별도 필터링됨
             var surveys = await _unitOfWork.Surveys.Query
                 .AsNoTracking()
                 .Where(s => s.ConventionId == conventionId && s.IsActive)
-                .Where(s => !s.StartDate.HasValue || s.StartDate <= now)
-                .Where(s => !s.EndDate.HasValue || s.EndDate >= now)
                 .OrderByDescending(s => s.Id)
                 .Select(s => new SurveyDto
                 {
