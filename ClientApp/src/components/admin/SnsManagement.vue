@@ -182,28 +182,46 @@
             >
               로딩 중...
             </div>
-            <div
-              v-else
-              class="max-h-[300px] overflow-y-auto space-y-1 border rounded-lg p-2 mb-4"
-            >
-              <label
-                v-for="user in guests"
-                :key="user.userId"
-                class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer text-sm"
+            <template v-else>
+              <input
+                v-model="smsSearch"
+                type="text"
+                placeholder="이름/전화번호/부서 검색"
+                class="w-full px-3 py-2 border rounded-lg text-sm mb-2"
+              />
+              <div
+                class="max-h-[300px] overflow-y-auto space-y-1 border rounded-lg p-2 mb-4"
               >
-                <input
-                  v-model="smsSelectedIds"
-                  type="checkbox"
-                  :value="user.userId"
-                  class="rounded border-gray-300 text-primary-500"
-                />
-                <span class="text-gray-900">{{ user.guestName }}</span>
-                <span class="text-xs text-gray-400">{{ user.telephone }}</span>
-                <span v-if="!user.telephone" class="text-xs text-red-400"
-                  >(번호없음)</span
+                <label
+                  v-for="user in smsFilteredGuests"
+                  :key="user.id"
+                  class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer text-sm"
                 >
-              </label>
-            </div>
+                  <input
+                    v-model="smsSelectedIds"
+                    type="checkbox"
+                    :value="user.id"
+                    class="rounded border-gray-300 text-primary-500"
+                  />
+                  <span class="text-gray-900">{{ user.guestName }}</span>
+                  <span class="text-xs text-gray-400">{{
+                    user.telephone
+                  }}</span>
+                  <span v-if="user.corpPart" class="text-xs text-gray-400"
+                    >· {{ user.corpPart }}</span
+                  >
+                  <span v-if="!user.telephone" class="text-xs text-red-400"
+                    >(번호없음)</span
+                  >
+                </label>
+                <div
+                  v-if="smsFilteredGuests.length === 0"
+                  class="text-center text-xs text-gray-400 py-2"
+                >
+                  검색 결과가 없습니다
+                </div>
+              </div>
+            </template>
             <!-- 미리보기 -->
             <div
               v-if="smsPreview"
@@ -405,25 +423,40 @@
                   </button>
                 </div>
               </div>
+              <input
+                v-model="alimtalkSearch"
+                type="text"
+                placeholder="이름/전화번호/부서 검색"
+                class="w-full px-3 py-2 border rounded-lg text-sm mb-2"
+              />
               <div
                 class="max-h-[200px] overflow-y-auto space-y-1 border rounded-lg p-2"
               >
                 <label
-                  v-for="user in guests"
-                  :key="user.userId"
+                  v-for="user in alimtalkFilteredGuests"
+                  :key="user.id"
                   class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer text-sm"
                 >
                   <input
                     v-model="alimtalkSelectedIds"
                     type="checkbox"
-                    :value="user.userId"
+                    :value="user.id"
                     class="rounded border-gray-300 text-yellow-500"
                   />
                   <span class="text-gray-900">{{ user.guestName }}</span>
                   <span class="text-xs text-gray-400">{{
                     user.telephone
                   }}</span>
+                  <span v-if="user.corpPart" class="text-xs text-gray-400"
+                    >· {{ user.corpPart }}</span
+                  >
                 </label>
+                <div
+                  v-if="alimtalkFilteredGuests.length === 0"
+                  class="text-center text-xs text-gray-400 py-2"
+                >
+                  검색 결과가 없습니다
+                </div>
               </div>
             </div>
 
@@ -506,7 +539,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import apiClient from '@/services/api'
 import { useRoute } from 'vue-router'
 
@@ -568,6 +601,17 @@ const smsEditForm = ref({ title: '', content: '' })
 const smsContent = ref('')
 const smsTextarea = ref(null)
 const smsSelectedIds = ref([])
+const smsSearch = ref('')
+const smsFilteredGuests = computed(() => {
+  const kw = smsSearch.value.trim().toLowerCase()
+  if (!kw) return guests.value
+  return guests.value.filter(
+    (g) =>
+      (g.guestName || '').toLowerCase().includes(kw) ||
+      (g.telephone || '').includes(kw) ||
+      (g.corpPart || '').toLowerCase().includes(kw),
+  )
+})
 const smsPreview = ref('')
 const smsSending = ref(false)
 const smsSendResult = ref(null)
@@ -655,7 +699,7 @@ function insertSmsVariable(key) {
 function smsSelectAll() {
   smsSelectedIds.value = guests.value
     .filter((g) => g.telephone)
-    .map((g) => g.userId)
+    .map((g) => g.id)
 }
 
 async function previewSms() {
@@ -708,6 +752,17 @@ const selectedPopbillTemplate = ref(null)
 const alimtalkContent = ref('')
 const alimtalkAltContent = ref('')
 const alimtalkSelectedIds = ref([])
+const alimtalkSearch = ref('')
+const alimtalkFilteredGuests = computed(() => {
+  const kw = alimtalkSearch.value.trim().toLowerCase()
+  if (!kw) return guests.value
+  return guests.value.filter(
+    (g) =>
+      (g.guestName || '').toLowerCase().includes(kw) ||
+      (g.telephone || '').includes(kw) ||
+      (g.corpPart || '').toLowerCase().includes(kw),
+  )
+})
 const alimtalkSending = ref(false)
 const alimtalkResult = ref(null)
 
@@ -742,7 +797,7 @@ function selectPopbillTemplate(tpl) {
 function alimtalkSelectAll() {
   alimtalkSelectedIds.value = guests.value
     .filter((g) => g.telephone)
-    .map((g) => g.userId)
+    .map((g) => g.id)
 }
 
 async function sendAlimtalk() {
