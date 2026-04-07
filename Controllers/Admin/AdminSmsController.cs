@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using LocalRAG.Constants;
 using LocalRAG.Interfaces;
 using LocalRAG.DTOs.AdminModels;
@@ -29,6 +30,45 @@ public class AdminSmsController : ControllerBase
     // 상한/제한 상수
     private const int MaxRecipientsPerRequest = 5000;
     private const int MaxMessageLength = 2000; // 프로시저 @p_msg VARCHAR(2000)
+
+    /// <summary>
+    /// 단건 문자 발송 — 클라이언트에서 순차 호출하여 실시간 진행률 표시용
+    /// </summary>
+    [HttpPost("conventions/{conventionId}/sms/send-one")]
+    public async Task<IActionResult> SendSmsOne(int conventionId, [FromBody] SmsDirectRecipient recipient)
+    {
+        if (recipient == null)
+            return BadRequest(new { success = false, reason = "요청이 비어있습니다." });
+
+        var normalizedPhone = NormalizePhone(recipient.Phone);
+        if (string.IsNullOrWhiteSpace(normalizedPhone))
+            return Ok(new { success = false, reason = "전화번호 없음" });
+
+        if (!IsValidKoreanMobile(normalizedPhone))
+            return Ok(new { success = false, reason = $"잘못된 번호 형식: {recipient.Phone}" });
+
+        if (string.IsNullOrWhiteSpace(recipient.Message))
+            return Ok(new { success = false, reason = "메시지 없음" });
+
+        if (recipient.Message.Length > MaxMessageLength)
+            return Ok(new { success = false, reason = $"메시지가 너무 깁니다 ({recipient.Message.Length}/{MaxMessageLength}자)" });
+
+        try
+        {
+            var success = await _smsService.SendSmsAsync(
+                conventionId,
+                recipient.Name ?? "Guest",
+                normalizedPhone,
+                recipient.Message);
+
+            return Ok(new { success, reason = success ? null : "발송 실패" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SMS 단건 발송 오류 — To: {Phone}", normalizedPhone);
+            return Ok(new { success = false, reason = ex.Message });
+        }
+    }
 
     /// <summary>
     /// 엑셀 기반 단발성 문자 발송
@@ -132,7 +172,7 @@ public class AdminSmsController : ControllerBase
     private static string NormalizePhone(string? phone)
     {
         if (string.IsNullOrWhiteSpace(phone)) return string.Empty;
-        var digits = System.Text.RegularExpressions.Regex.Replace(phone, @"\D", "");
+        var digits = Regex.Replace(phone, @"\D", "");
 
         // +82로 시작하는 국제번호를 010 형식으로 변환 (82 + 10xxxxxxxx → 010xxxxxxxx)
         if (digits.StartsWith("82") && digits.Length >= 11)
@@ -148,6 +188,6 @@ public class AdminSmsController : ControllerBase
     /// </summary>
     private static bool IsValidKoreanMobile(string phone)
     {
-        return System.Text.RegularExpressions.Regex.IsMatch(phone, @"^01[016789]\d{7,8}$");
+        return Regex.IsMatch(phone, @"^01[016789]\d{7,8}$");
     }
 }

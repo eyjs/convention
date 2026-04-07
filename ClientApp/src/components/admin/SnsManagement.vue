@@ -191,17 +191,43 @@
             </div>
           </div>
 
-          <!-- 발송 -->
+          <!-- 발송 진행중: 프로그레스바 -->
+          <div v-if="smsSending" class="mt-3 space-y-2">
+            <div class="flex items-center justify-between text-sm">
+              <span class="font-medium text-gray-700">
+                발송 중
+                <span v-if="sendingProgress.name" class="text-gray-500">
+                  — {{ sendingProgress.name }}
+                </span>
+              </span>
+              <span class="font-mono text-primary-600">
+                {{ sendingProgress.current }}/{{ sendingProgress.total }}
+              </span>
+            </div>
+            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                class="h-full bg-primary-500 transition-all duration-200"
+                :style="{
+                  width: `${(sendingProgress.current / sendingProgress.total) * 100}%`,
+                }"
+              ></div>
+            </div>
+            <button
+              class="w-full px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200"
+              @click="cancelSending"
+            >
+              중지
+            </button>
+          </div>
+
+          <!-- 발송 버튼 -->
           <button
+            v-else
             class="w-full mt-3 px-4 py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 disabled:opacity-50"
-            :disabled="!smsContent || selectedIds.length === 0 || smsSending"
+            :disabled="!smsContent || selectedIds.length === 0"
             @click="sendSms"
           >
-            {{
-              smsSending
-                ? '발송 중...'
-                : `${selectedIds.length}명에게 문자 발송`
-            }}
+            {{ selectedIds.length }}명에게 문자 발송
           </button>
 
           <div
@@ -218,7 +244,7 @@
             {{ smsSendResult.failCount }}
             <ul
               v-if="smsSendResult.failedItems?.length > 0"
-              class="mt-2 text-xs"
+              class="mt-2 text-xs max-h-32 overflow-y-auto"
             >
               <li v-for="(f, i) in smsSendResult.failedItems" :key="i">
                 • {{ f.name }} ({{ f.phone }}): {{ f.reason }}
@@ -743,6 +769,10 @@ async function downloadSample() {
   }
 }
 
+// 발송 진행률 상태
+const sendingProgress = ref({ current: 0, total: 0, name: '' })
+const sendingCancel = ref(false)
+
 async function sendSms() {
   const targets = recipients.value.filter((r) =>
     selectedIds.value.includes(r.no),
@@ -752,38 +782,65 @@ async function sendSms() {
 
   smsSending.value = true
   smsSendResult.value = null
+  sendingCancel.value = false
+  sendingProgress.value = { current: 0, total: targets.length, name: '' }
+
+  const result = {
+    totalCount: targets.length,
+    successCount: 0,
+    failCount: 0,
+    failedItems: [],
+  }
 
   try {
-    // 클라이언트에서 변수 치환 후 백엔드 전송
-    const payload = {
-      recipients: targets.map((r) => ({
-        name: r.name,
-        phone: r.phone,
-        message: renderMessage(smsContent.value, r),
-      })),
-    }
+    for (let i = 0; i < targets.length; i++) {
+      if (sendingCancel.value) break
 
-    const res = await apiClient.post(
-      `/admin/conventions/${conventionId}/sms/send-direct`,
-      payload,
-    )
-    smsSendResult.value = res.data
-  } catch (e) {
-    smsSendResult.value = {
-      totalCount: targets.length,
-      successCount: 0,
-      failCount: targets.length,
-      failedItems: [
-        {
-          name: '',
-          phone: '',
+      const r = targets[i]
+      sendingProgress.value = {
+        current: i + 1,
+        total: targets.length,
+        name: r.name,
+      }
+
+      try {
+        const res = await apiClient.post(
+          `/admin/conventions/${conventionId}/sms/send-one`,
+          {
+            name: r.name,
+            phone: r.phone,
+            message: renderMessage(smsContent.value, r),
+          },
+        )
+
+        if (res.data.success) {
+          result.successCount++
+        } else {
+          result.failCount++
+          result.failedItems.push({
+            name: r.name,
+            phone: r.phone,
+            reason: res.data.reason || '발송 실패',
+          })
+        }
+      } catch (e) {
+        result.failCount++
+        result.failedItems.push({
+          name: r.name,
+          phone: r.phone,
           reason: e.response?.data?.message || e.message,
-        },
-      ],
+        })
+      }
     }
   } finally {
+    smsSendResult.value = result
     smsSending.value = false
+    sendingProgress.value = { current: 0, total: 0, name: '' }
   }
+}
+
+function cancelSending() {
+  sendingCancel.value = true
 }
 
 // --- 알림톡 ---
