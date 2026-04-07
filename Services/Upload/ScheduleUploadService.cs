@@ -182,11 +182,16 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                 // 결과 정보 추가 (화면 표시용)
                 foreach (var item in scheduleItems)
                 {
+                    DateTime? scheduleDateTime = item.ScheduleDate;
+                    if (!string.IsNullOrEmpty(item.StartTime) && TimeSpan.TryParse(item.StartTime, out var ts))
+                    {
+                        scheduleDateTime = item.ScheduleDate.Add(ts);
+                    }
                     result.CreatedActions.Add(new ConventionActionInfo
                     {
                         Id = item.Id,
                         Title = item.Title,
-                        ScheduleDateTime = item.ScheduleDate.Add(TimeSpan.Parse(item.StartTime))
+                        ScheduleDateTime = scheduleDateTime
                     });
                 }
 
@@ -244,11 +249,15 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
         var rowCount = sheet.Dimension.Rows;
         result.TotalRows = rowCount - 1; // 헤더 제외
 
-        // 기존 일정 조회 (충돌 감지용)
-        var existingItems = await _unitOfWork.ScheduleItems.Query
+        // 기존 일정 조회 — 충돌 감지용 Dictionary 인덱싱 (O(1) 조회)
+        var existingList = await _unitOfWork.ScheduleItems.Query
             .Where(si => si.ScheduleTemplate.ConventionId == conventionId)
-            .Select(si => new { si.ScheduleDate, si.StartTime, si.EndTime, si.Title, si.ScheduleTemplate.CourseName })
+            .Select(si => new { si.ScheduleDate, si.StartTime, si.Title, si.ScheduleTemplate.CourseName })
             .ToListAsync();
+
+        var existingIndex = existingList
+            .GroupBy(e => (e.ScheduleDate.Date, e.StartTime ?? ""))
+            .ToDictionary(g => g.Key, g => g.First());
 
         // 이전 행에서 파싱된 날짜 — 다음 행의 날짜 누락 시 상속
         DateTime? lastDate = null;
@@ -343,14 +352,11 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                 item.EndTime = endTimeStr;
             }
 
-            // 충돌 감지: 같은 날짜 + 시작시간 겹침
+            // 충돌 감지: Dictionary 기반 O(1) 조회
             if (!string.IsNullOrEmpty(startTimeStr))
             {
-                var conflict = existingItems.FirstOrDefault(e =>
-                    e.ScheduleDate.Date == scheduleDate.Value.Date &&
-                    e.StartTime == startTimeStr);
-
-                if (conflict != null)
+                var key = (scheduleDate.Value.Date, startTimeStr);
+                if (existingIndex.TryGetValue(key, out var conflict))
                 {
                     item.HasConflict = true;
                     item.ConflictDetail = $"기존 [{conflict.CourseName}] {conflict.Title}";
@@ -424,22 +430,55 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
             int itemOrderNum = 0;
             foreach (var item in itemsToSave)
             {
+                // 서버 재검증 — 클라이언트 변조 방지
                 if (!DateTime.TryParse(item.Date, out var date)) continue;
-                if (string.IsNullOrEmpty(item.Title)) continue;
+
+                var title = item.Title?.Trim();
+                if (string.IsNullOrEmpty(title)) continue;
+
+                // 날짜가 행사 기간 밖이면 거부 (±7일 여유)
+                if (convention.StartDate.HasValue && convention.EndDate.HasValue)
+                {
+                    var min = convention.StartDate.Value.AddDays(-7);
+                    var max = convention.EndDate.Value.AddDays(7);
+                    if (date < min || date > max)
+                    {
+                        _logger.LogWarning("Schedule item date out of range: {Date}, Title: {Title}", date, title);
+                        continue;
+                    }
+                }
+
+                // 시간 재검증
+                string startTime = string.Empty;
+                if (!string.IsNullOrEmpty(item.StartTime) && TimeSpan.TryParse(item.StartTime, out _))
+                {
+                    startTime = item.StartTime;
+                }
+
+                string? endTime = null;
+                if (!string.IsNullOrEmpty(item.EndTime) && TimeSpan.TryParse(item.EndTime, out _))
+                {
+                    endTime = item.EndTime;
+                }
 
                 scheduleItems.Add(new ScheduleItem
                 {
                     ScheduleTemplate = scheduleTemplate,
                     ScheduleDate = date,
-                    // 시작시간 미정은 빈 문자열로 저장 (엔티티 non-null 제약)
-                    StartTime = item.StartTime ?? string.Empty,
-                    EndTime = item.EndTime,
-                    Title = item.Title,
-                    Content = item.Content,
-                    Location = item.Location,
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    Title = title,
+                    Content = item.Content?.Length > 4000 ? item.Content.Substring(0, 4000) : item.Content,
+                    Location = item.Location?.Length > 500 ? item.Location.Substring(0, 500) : item.Location,
                     OrderNum = itemOrderNum++,
                     CreatedAt = DateTime.UtcNow
                 });
+            }
+
+            if (scheduleItems.Count == 0)
+            {
+                result.Errors.Add("저장 가능한 일정이 없습니다. (행사 기간 외 또는 데이터 오류)");
+                return result;
             }
 
             scheduleTemplate.ScheduleItems = scheduleItems;
@@ -489,11 +528,22 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
         {
             return dt.Date;
         }
-        if (value is double d || (value is decimal dec && (d = (double)dec) > 0))
+
+        double? serialDouble = value switch
+        {
+            double dv => dv,
+            decimal dec => (double)dec,
+            float f => f,
+            int i => i,
+            long l => l,
+            _ => null
+        };
+
+        if (serialDouble.HasValue && serialDouble.Value > 1000)
         {
             try
             {
-                return DateTime.FromOADate(d).Date;
+                return DateTime.FromOADate(serialDouble.Value).Date;
             }
             catch { }
         }

@@ -34,6 +34,9 @@ export function useTableSort(items, defaultKey = null, defaultDir = 'asc') {
     return path.split('.').reduce((o, k) => (o ? o[k] : undefined), obj)
   }
 
+  // ISO 날짜 형식 (yyyy-MM-dd 또는 yyyy-MM-ddTHH:mm)
+  const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2})?/
+
   function compare(a, b) {
     if (a == null && b == null) return 0
     if (a == null) return 1
@@ -42,11 +45,17 @@ export function useTableSort(items, defaultKey = null, defaultDir = 'asc') {
     // 숫자
     if (typeof a === 'number' && typeof b === 'number') return a - b
 
-    // 날짜 문자열 (ISO 형식 또는 Date 객체)
-    const aDate = new Date(a)
-    const bDate = new Date(b)
-    if (!isNaN(aDate) && !isNaN(bDate) && String(a).match(/\d{4}/)) {
-      return aDate - bDate
+    // Date 객체
+    if (a instanceof Date && b instanceof Date) return a - b
+
+    // ISO 날짜 문자열만 Date로 비교
+    if (
+      typeof a === 'string' &&
+      typeof b === 'string' &&
+      ISO_DATE_REGEX.test(a) &&
+      ISO_DATE_REGEX.test(b)
+    ) {
+      return new Date(a) - new Date(b)
     }
 
     // 문자열

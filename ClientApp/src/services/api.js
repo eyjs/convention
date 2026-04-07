@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useUIStore } from '@/stores/ui'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -25,8 +26,6 @@ const processQueue = (error, token = null) => {
 }
 
 // 글로벌 로딩 프로그레스바 연동
-import { useUIStore } from '@/stores/ui'
-
 let _uiStore = null
 function getUIStore() {
   if (!_uiStore) {

@@ -144,9 +144,10 @@ public class AuthService : IAuthService
             return AuthResult<RegisterResponse>.Fail("이미 사용 중인 아이디입니다.");
         }
 
-        if (!string.IsNullOrEmpty(request.Email))
+        var email = request.Email?.Trim();
+        if (!string.IsNullOrEmpty(email))
         {
-            var existingEmail = await _unitOfWork.Users.GetAsync(u => u.Email == request.Email);
+            var existingEmail = await _unitOfWork.Users.GetAsync(u => u.Email == email);
             if (existingEmail != null)
             {
                 return AuthResult<RegisterResponse>.Fail("이미 사용 중인 이메일입니다.");
@@ -158,7 +159,7 @@ public class AuthService : IAuthService
             LoginId = loginId,
             PasswordHash = HashPassword(request.Password),
             Name = request.Name?.Trim() ?? string.Empty,
-            Email = request.Email?.Trim(),
+            Email = email,
             Phone = request.Phone?.Trim(),
             Role = Roles.User, // 일반 회원가입은 User 역할
             IsActive = true,
