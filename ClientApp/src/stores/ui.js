@@ -5,23 +5,26 @@ export const useUIStore = defineStore('ui', () => {
   // 글로벌 로딩 프로그레스바
   const activeRequests = ref(0)
   const isLoading = ref(false)
-  let loadingTimer = null
+  let loadingStartAt = 0
+  const MIN_DISPLAY_MS = 300 // 최소 노출 시간 (깜빡임 방지)
 
   function startLoading() {
     activeRequests.value++
     if (!isLoading.value) {
-      // 200ms 지연 후 표시 (짧은 요청은 프로그레스바 안 보임)
-      loadingTimer = setTimeout(() => {
-        if (activeRequests.value > 0) isLoading.value = true
-      }, 200)
+      isLoading.value = true
+      loadingStartAt = Date.now()
     }
   }
 
   function stopLoading() {
     activeRequests.value = Math.max(0, activeRequests.value - 1)
     if (activeRequests.value === 0) {
-      clearTimeout(loadingTimer)
-      isLoading.value = false
+      // 너무 빨리 사라지지 않도록 최소 표시 시간 보장
+      const elapsed = Date.now() - loadingStartAt
+      const remaining = Math.max(0, MIN_DISPLAY_MS - elapsed)
+      setTimeout(() => {
+        if (activeRequests.value === 0) isLoading.value = false
+      }, remaining)
     }
   }
 
