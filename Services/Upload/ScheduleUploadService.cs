@@ -91,62 +91,71 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                 var scheduleItems = new List<ScheduleItem>();
                 int itemOrderNum = 0;
 
+                // 현재 연도 (한글 날짜 파싱용: "4월 9일" → 2026-04-09)
+                int currentYear = convention.StartDate?.Year ?? DateTime.Now.Year;
+
                 for (int row = 2; row <= rowCount; row++) // 1행은 헤더
                 {
-                    // A~F열 읽기
-                    var dateText = sheet.Cells[row, 1].Text?.Trim(); // A: 날짜 (2025-11-17)
-                    var startTimeText = sheet.Cells[row, 2].Text?.Trim(); // B: 시작시간 (09:00)
-                    var endTimeText = sheet.Cells[row, 3].Text?.Trim(); // C: 종료시간 (11:30)
-                    var locationText = sheet.Cells[row, 4].Text?.Trim(); // D: 장소 (호텔로비)
-                    var titleText = sheet.Cells[row, 5].Text?.Trim(); // E: 일정명 (개인정비)
-                    var memoText = sheet.Cells[row, 6].Value?.ToString(); // F: 메모 (줄바꿈 보존)
+                    // A~F열 읽기 — Value(원본)와 Text(서식 적용) 모두 활용
+                    var dateCell = sheet.Cells[row, 1];
+                    var startTimeCell = sheet.Cells[row, 2];
+                    var endTimeCell = sheet.Cells[row, 3];
+                    var locationText = sheet.Cells[row, 4].Text?.Trim();
+                    var titleText = sheet.Cells[row, 5].Text?.Trim();
+                    var memoText = sheet.Cells[row, 6].Value?.ToString();
 
-                    // 필수 필드 확인 (날짜, 시작시간, 일정명)
-                    if (string.IsNullOrEmpty(dateText) || string.IsNullOrEmpty(startTimeText) || string.IsNullOrEmpty(titleText))
+                    var dateText = dateCell.Text?.Trim();
+                    var startTimeText = startTimeCell.Text?.Trim();
+                    var endTimeText = endTimeCell.Text?.Trim();
+
+                    // 빈 행은 건너뛰기 (모든 필수 필드가 비어있을 때)
+                    if (string.IsNullOrEmpty(dateText) && string.IsNullOrEmpty(startTimeText) && string.IsNullOrEmpty(titleText))
                     {
-                        // 모든 필드가 비어있으면 빈 행으로 간주하여 건너뛰기
-                        if (string.IsNullOrEmpty(dateText) && string.IsNullOrEmpty(startTimeText) && string.IsNullOrEmpty(titleText))
+                        continue;
+                    }
+
+                    // 필수 필드 확인
+                    if (string.IsNullOrEmpty(dateText) || string.IsNullOrEmpty(titleText))
+                    {
+                        result.Warnings.Add($"Row {row}: 필수 항목이 누락되었습니다. (날짜, 일정명은 필수입니다.)");
+                        continue;
+                    }
+
+                    // === 날짜 파싱 (3가지 형식 지원) ===
+                    DateTime? scheduleDate = ParseDate(dateCell, dateText, currentYear);
+                    if (scheduleDate == null)
+                    {
+                        result.Warnings.Add($"Row {row}: 날짜 형식을 인식할 수 없습니다. ({dateText})");
+                        continue;
+                    }
+
+                    // === 시작시간 파싱 ===
+                    string? startTimeStr = ParseTime(startTimeCell, startTimeText);
+                    if (string.IsNullOrEmpty(startTimeStr))
+                    {
+                        result.Warnings.Add($"Row {row}: 시작시간 형식을 인식할 수 없습니다. ({startTimeText})");
+                        continue;
+                    }
+
+                    // === 종료시간 파싱 (선택) ===
+                    string? endTimeStr = null;
+                    if (!string.IsNullOrEmpty(endTimeText))
+                    {
+                        endTimeStr = ParseTime(endTimeCell, endTimeText);
+                        if (endTimeStr == null)
                         {
-                            continue;
+                            result.Warnings.Add($"Row {row}: 종료시간 형식을 인식할 수 없습니다. ({endTimeText})");
+                            // 종료시간은 선택이므로 경고만 남기고 진행
                         }
-
-                        result.Warnings.Add($"Row {row}: 필수 항목이 누락되었습니다. (날짜, 시작시간, 일정명은 필수입니다.)");
-                        continue;
                     }
 
-                    // 날짜 파싱
-                    DateTime scheduleDate;
-                    try
-                    {
-                        scheduleDate = DateTime.Parse(dateText);
-                    }
-                    catch (FormatException)
-                    {
-                        result.Warnings.Add($"Row {row}: 잘못된 날짜 형식입니다. ({dateText}) - 올바른 형식: 2025-11-17");
-                        continue;
-                    }
-
-                    // 시작시간 검증 (HH:mm 형식)
-                    if (!TimeSpan.TryParse(startTimeText, out _))
-                    {
-                        result.Warnings.Add($"Row {row}: 잘못된 시작시간 형식입니다. ({startTimeText}) - 올바른 형식: 09:00");
-                        continue;
-                    }
-
-                    // 종료시간 검증 (선택사항)
-                    if (!string.IsNullOrEmpty(endTimeText) && !TimeSpan.TryParse(endTimeText, out _))
-                    {
-                        result.Warnings.Add($"Row {row}: 잘못된 종료시간 형식입니다. ({endTimeText}) - 올바른 형식: 11:30");
-                        continue;
-                    }
-
-                    // ScheduleItem 생성 (개별 일정)
+                    // ScheduleItem 생성
                     var scheduleItem = new ScheduleItem
                     {
-                        ScheduleTemplate = scheduleTemplate, // Navigation property 설정
-                        ScheduleDate = scheduleDate,
-                        StartTime = startTimeText,
-                        EndTime = string.IsNullOrEmpty(endTimeText) ? null : endTimeText,
+                        ScheduleTemplate = scheduleTemplate,
+                        ScheduleDate = scheduleDate.Value,
+                        StartTime = startTimeStr,
+                        EndTime = endTimeStr,
                         Title = titleText,
                         Content = memoText,
                         Location = string.IsNullOrEmpty(locationText) ? null : locationText,
@@ -157,7 +166,7 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                     scheduleItems.Add(scheduleItem);
                     itemOrderNum++;
 
-                    _logger.LogDebug("Created schedule item: {Title} at {Date} {Time}", titleText, scheduleDate, startTimeText);
+                    _logger.LogDebug("Created schedule item: {Title} at {Date} {Time}", titleText, scheduleDate, startTimeStr);
                 }
 
                 // ScheduleTemplate의 ScheduleItems 컬렉션에 추가
@@ -200,5 +209,103 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// 날짜 셀 파싱 — 3가지 형식 지원
+    /// 1) Excel 시리얼 숫자 (45978 → 2025-11-17)
+    /// 2) DateTime 값 (서식으로 저장된 경우)
+    /// 3) 텍스트: "2025-11-17", "4월 9일", "11/17" 등
+    /// </summary>
+    private DateTime? ParseDate(OfficeOpenXml.ExcelRange cell, string? text, int fallbackYear)
+    {
+        // 1) 셀 값이 DateTime이거나 숫자(시리얼)인 경우
+        var value = cell.Value;
+        if (value is DateTime dt)
+        {
+            return dt.Date;
+        }
+        if (value is double d || (value is decimal dec && (d = (double)dec) > 0))
+        {
+            try
+            {
+                return DateTime.FromOADate(d).Date;
+            }
+            catch { }
+        }
+
+        if (string.IsNullOrWhiteSpace(text)) return null;
+
+        // 2) 표준 날짜 형식 시도
+        if (DateTime.TryParse(text, out var parsed))
+        {
+            return parsed.Date;
+        }
+
+        // 3) 한글 날짜 "4월 9일" 형식
+        var match = System.Text.RegularExpressions.Regex.Match(text, @"(\d{1,2})\s*월\s*(\d{1,2})\s*일");
+        if (match.Success)
+        {
+            int month = int.Parse(match.Groups[1].Value);
+            int day = int.Parse(match.Groups[2].Value);
+            try
+            {
+                return new DateTime(fallbackYear, month, day);
+            }
+            catch { }
+        }
+
+        // 4) Excel 시리얼이 텍스트로 온 경우 ("45978")
+        if (double.TryParse(text, out var serial) && serial > 1000)
+        {
+            try
+            {
+                return DateTime.FromOADate(serial).Date;
+            }
+            catch { }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 시간 셀 파싱 — 2가지 형식 지원
+    /// 1) Excel 시간 시리얼 (0.375 → 09:00)
+    /// 2) 텍스트 "09:00", "9:00", "21:00"
+    /// </summary>
+    private string? ParseTime(OfficeOpenXml.ExcelRange cell, string? text)
+    {
+        // 1) 셀 값이 숫자(시간 시리얼)인 경우
+        var value = cell.Value;
+        double serial = 0;
+        if (value is double d) serial = d;
+        else if (value is decimal dec) serial = (double)dec;
+
+        if (serial > 0 && serial < 1)
+        {
+            var totalMinutes = (int)Math.Round(serial * 24 * 60);
+            var h = totalMinutes / 60;
+            var m = totalMinutes % 60;
+            return $"{h:D2}:{m:D2}";
+        }
+
+        if (string.IsNullOrWhiteSpace(text)) return null;
+
+        // 2) 텍스트 파싱 (HH:mm, H:mm)
+        if (TimeSpan.TryParse(text, out var ts))
+        {
+            return $"{ts.Hours:D2}:{ts.Minutes:D2}";
+        }
+
+        // 3) 텍스트가 시리얼 숫자인 경우 ("0.375")
+        if (double.TryParse(text, out var serialText) && serialText > 0 && serialText < 1)
+        {
+            var totalMinutes = (int)Math.Round(serialText * 24 * 60);
+            var h = totalMinutes / 60;
+            var m = totalMinutes % 60;
+            return $"{h:D2}:{m:D2}";
+        }
+
+        return null;
     }
 }

@@ -131,7 +131,14 @@ public class AuthService : IAuthService
 
     public async Task<AuthResult<RegisterResponse>> RegisterAsync(RegisterRequest request)
     {
-        var existingUser = await _unitOfWork.Users.GetByLoginIdAsync(request.LoginId);
+        // LoginId 공백 제거 — 로그인 시 불일치 방지
+        var loginId = request.LoginId?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(loginId))
+        {
+            return AuthResult<RegisterResponse>.Fail("아이디를 입력해주세요.");
+        }
+
+        var existingUser = await _unitOfWork.Users.GetByLoginIdAsync(loginId);
         if (existingUser != null)
         {
             return AuthResult<RegisterResponse>.Fail("이미 사용 중인 아이디입니다.");
@@ -148,12 +155,12 @@ public class AuthService : IAuthService
 
         var user = new User
         {
-            LoginId = request.LoginId,
+            LoginId = loginId,
             PasswordHash = HashPassword(request.Password),
-            Name = request.Name,
-            Email = request.Email,
-            Phone = request.Phone,
-            Role = Roles.Guest,
+            Name = request.Name?.Trim() ?? string.Empty,
+            Email = request.Email?.Trim(),
+            Phone = request.Phone?.Trim(),
+            Role = Roles.User, // 일반 회원가입은 User 역할
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -162,7 +169,8 @@ public class AuthService : IAuthService
         await _unitOfWork.Users.AddAsync(user);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("New user registered: {LoginId}", user.LoginId);
+        _logger.LogInformation("New user registered: LoginId={LoginId}, Id={Id}, HashLen={HashLen}",
+            user.LoginId, user.Id, user.PasswordHash?.Length ?? 0);
 
         return AuthResult<RegisterResponse>.Success(new RegisterResponse
         {
@@ -175,7 +183,8 @@ public class AuthService : IAuthService
 
     public async Task<AuthResult<LoginResponse>> LoginAsync(LoginRequest request)
     {
-        var user = await _unitOfWork.Users.GetByLoginIdAsync(request.LoginId);
+        var loginId = request.LoginId?.Trim() ?? string.Empty;
+        var user = await _unitOfWork.Users.GetByLoginIdAsync(loginId);
 
         if (user == null)
         {

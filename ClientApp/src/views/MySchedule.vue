@@ -582,9 +582,13 @@
             </div>
           </div>
 
-          <!-- 참여 그룹 & 참석자 보기 (편의 옵션) - 옵션투어는 제외 -->
+          <!-- 참여 그룹 & 참석자 보기 (관리자만) - 옵션투어는 제외 -->
           <div
-            v-if="selectedSchedule.group && !selectedSchedule.isOptionTour"
+            v-if="
+              isAdmin &&
+              selectedSchedule.group &&
+              !selectedSchedule.isOptionTour
+            "
             class="pt-4 border-t mt-6"
           >
             <div class="p-4 bg-gray-50 rounded-xl">
