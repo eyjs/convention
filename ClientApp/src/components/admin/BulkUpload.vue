@@ -274,6 +274,16 @@
         </div>
       </div>
     </div>
+
+    <!-- 일정 업로드 미리보기 모달 -->
+    <ScheduleUploadPreviewModal
+      v-if="showScheduleModal"
+      :is-open="showScheduleModal"
+      :convention-id="conventionId"
+      :preview="schedulePreview"
+      @close="showScheduleModal = false"
+      @saved="handleScheduleSaved"
+    />
   </div>
 </template>
 
@@ -282,6 +292,7 @@ import { ref } from 'vue'
 import apiClient from '@/services/api'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import UploadResult from './UploadResult.vue'
+import ScheduleUploadPreviewModal from './ScheduleUploadPreviewModal.vue'
 import * as XLSX from 'xlsx'
 
 const props = defineProps({
@@ -306,6 +317,8 @@ const resultGuests = ref(null)
 const fileSchedules = ref(null)
 const uploadingSchedules = ref(false)
 const resultSchedules = ref(null)
+const schedulePreview = ref(null)
+const showScheduleModal = ref(false)
 
 // 옵션투어 업로드 상태
 const fileOptionTours = ref(null)
@@ -321,6 +334,21 @@ const handleFileGuests = (e) => {
 const handleFileSchedules = (e) => {
   fileSchedules.value = e.target.files[0]
   resultSchedules.value = null
+}
+
+const handleScheduleSaved = (saveResult) => {
+  resultSchedules.value = {
+    success: saveResult.success,
+    message: `${saveResult.itemsCreated}개 일정 저장 완료`,
+    data: {
+      templates: saveResult.templatesCreated,
+      actions: saveResult.createdActions || [],
+    },
+    errors: saveResult.errors || [],
+    warnings: saveResult.warnings || [],
+  }
+  fileSchedules.value = null
+  schedulePreview.value = null
 }
 
 const handleFileOptionTours = (e) => {
@@ -387,7 +415,7 @@ const uploadGuests = async () => {
   }
 }
 
-// 일정 업로드
+// 일정 업로드 — 미리보기 호출
 const uploadSchedules = async () => {
   if (!fileSchedules.value) return
 
@@ -398,28 +426,20 @@ const uploadSchedules = async () => {
   formData.append('file', fileSchedules.value)
 
   try {
-    const response = await apiClient.post(
-      `/upload/conventions/${props.conventionId}/schedule-templates`,
+    const previewRes = await apiClient.post(
+      `/upload/conventions/${props.conventionId}/schedule-templates/preview`,
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' },
       },
     )
 
-    resultSchedules.value = {
-      success: response.data.success,
-      message: `${response.data.templatesCreated}개 일정 템플릿 생성됨`,
-      data: {
-        templates: response.data.templatesCreated,
-        actions: response.data.createdActions || [],
-      },
-      errors: response.data.errors || [],
-      warnings: response.data.warnings || [],
-    }
+    schedulePreview.value = previewRes.data
+    showScheduleModal.value = true
   } catch (error) {
     resultSchedules.value = {
       success: false,
-      message: '업로드 실패',
+      message: '미리보기 실패',
       errors: [
         error.response?.data?.error ||
           error.response?.data?.message ||

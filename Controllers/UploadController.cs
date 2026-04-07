@@ -133,6 +133,52 @@ public class UploadController : ControllerBase
     }
 
     /// <summary>
+    /// 일정 업로드 미리보기 — 파싱만 수행하고 결과 반환 (저장 X)
+    /// </summary>
+    [HttpPost("conventions/{conventionId}/schedule-templates/preview")]
+    [ProducesResponseType(typeof(DTOs.UploadModels.ScheduleTemplatePreviewResult), 200)]
+    public async Task<IActionResult> PreviewScheduleTemplates(int conventionId, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { error = "파일이 비어있습니다." });
+
+        if (!file.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Excel 파일(.xlsx)만 업로드 가능합니다." });
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var result = await _scheduleTemplateUploadService.PreviewScheduleTemplatesAsync(conventionId, stream);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to preview schedule templates");
+            return StatusCode(500, new { error = "미리보기 처리 중 오류가 발생했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 미리보기 확인 후 일정 템플릿 최종 저장
+    /// </summary>
+    [HttpPost("conventions/{conventionId}/schedule-templates/confirm")]
+    [ProducesResponseType(typeof(ScheduleTemplateUploadResult), 200)]
+    public async Task<IActionResult> ConfirmScheduleTemplates(int conventionId, [FromBody] DTOs.UploadModels.ScheduleTemplateConfirmRequest request)
+    {
+        try
+        {
+            var result = await _scheduleTemplateUploadService.ConfirmScheduleTemplatesAsync(conventionId, request);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to confirm schedule templates");
+            return StatusCode(500, new { error = "저장 중 오류가 발생했습니다." });
+        }
+    }
+
+    /// <summary>
     /// 참석자 속성 업로드
     /// Excel 형식: [이름|전화번호|속성1|속성2|...]
     /// 통계 정보 포함

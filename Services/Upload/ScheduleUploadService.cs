@@ -211,6 +211,234 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
         return result;
     }
 
+    // ============================================================
+    // Preview / Confirm 방식 (신규)
+    // ============================================================
+
+    public async Task<ScheduleTemplatePreviewResult> PreviewScheduleTemplatesAsync(int conventionId, Stream excelStream)
+    {
+        var result = new ScheduleTemplatePreviewResult();
+
+        var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
+        if (convention == null)
+        {
+            result.Errors.Add($"Convention {conventionId}를 찾을 수 없습니다.");
+            return result;
+        }
+
+        using var package = new ExcelPackage(excelStream);
+        if (package.Workbook.Worksheets.Count < 1)
+        {
+            result.Errors.Add("Excel 파일에 시트가 없습니다.");
+            return result;
+        }
+
+        var sheet = package.Workbook.Worksheets[0];
+        if (sheet.Dimension == null)
+        {
+            result.Errors.Add("시트가 비어있습니다.");
+            return result;
+        }
+
+        int currentYear = convention.StartDate?.Year ?? DateTime.Now.Year;
+        var rowCount = sheet.Dimension.Rows;
+        result.TotalRows = rowCount - 1; // 헤더 제외
+
+        // 기존 일정 조회 (충돌 감지용)
+        var existingItems = await _unitOfWork.ScheduleItems.Query
+            .Where(si => si.ScheduleTemplate.ConventionId == conventionId)
+            .Select(si => new { si.ScheduleDate, si.StartTime, si.EndTime, si.Title, si.ScheduleTemplate.CourseName })
+            .ToListAsync();
+
+        for (int row = 2; row <= rowCount; row++)
+        {
+            var dateCell = sheet.Cells[row, 1];
+            var startTimeCell = sheet.Cells[row, 2];
+            var endTimeCell = sheet.Cells[row, 3];
+            var locationText = sheet.Cells[row, 4].Text?.Trim();
+            var titleText = sheet.Cells[row, 5].Text?.Trim();
+            var memoText = sheet.Cells[row, 6].Value?.ToString();
+
+            var dateText = dateCell.Text?.Trim();
+            var startTimeText = startTimeCell.Text?.Trim();
+            var endTimeText = endTimeCell.Text?.Trim();
+
+            // 완전히 빈 행은 스킵 (집계에 포함 X)
+            if (string.IsNullOrEmpty(dateText) && string.IsNullOrEmpty(startTimeText) && string.IsNullOrEmpty(titleText))
+            {
+                result.TotalRows--;
+                continue;
+            }
+
+            var item = new SchedulePreviewItem
+            {
+                Row = row,
+                Location = locationText,
+                Title = titleText,
+                Content = memoText,
+            };
+
+            // 날짜 파싱
+            var scheduleDate = ParseDate(dateCell, dateText, currentYear);
+            if (scheduleDate == null)
+            {
+                item.Status = "skipped";
+                item.Message = $"날짜 형식을 인식할 수 없습니다. ({dateText})";
+                item.Date = dateText;
+                result.SkippedRows++;
+                result.Items.Add(item);
+                continue;
+            }
+            item.Date = scheduleDate.Value.ToString("yyyy-MM-dd");
+
+            // 필수 제목
+            if (string.IsNullOrEmpty(titleText))
+            {
+                item.Status = "skipped";
+                item.Message = "일정명이 비어있습니다.";
+                result.SkippedRows++;
+                result.Items.Add(item);
+                continue;
+            }
+
+            // 시작시간 파싱
+            var startTimeStr = ParseTime(startTimeCell, startTimeText);
+            if (string.IsNullOrEmpty(startTimeStr))
+            {
+                item.Status = "skipped";
+                item.Message = $"시작시간 형식을 인식할 수 없습니다. ({startTimeText})";
+                result.SkippedRows++;
+                result.Items.Add(item);
+                continue;
+            }
+            item.StartTime = startTimeStr;
+
+            // 종료시간 파싱 (선택)
+            if (!string.IsNullOrEmpty(endTimeText))
+            {
+                var endTimeStr = ParseTime(endTimeCell, endTimeText);
+                if (endTimeStr == null)
+                {
+                    item.Status = "warning";
+                    item.Message = $"종료시간 형식을 인식할 수 없습니다. ({endTimeText})";
+                    result.WarningRows++;
+                }
+                item.EndTime = endTimeStr;
+            }
+
+            // 충돌 감지: 같은 날짜 + 시작시간 겹침
+            var conflict = existingItems.FirstOrDefault(e =>
+                e.ScheduleDate.Date == scheduleDate.Value.Date &&
+                e.StartTime == startTimeStr);
+
+            if (conflict != null)
+            {
+                item.HasConflict = true;
+                item.ConflictDetail = $"기존 [{conflict.CourseName}] {conflict.Title}";
+                result.ConflictRows++;
+            }
+
+            if (item.Status == "valid") result.ValidRows++;
+            result.Items.Add(item);
+        }
+
+        return result;
+    }
+
+    public async Task<ScheduleTemplateUploadResult> ConfirmScheduleTemplatesAsync(int conventionId, ScheduleTemplateConfirmRequest request)
+    {
+        var result = new ScheduleTemplateUploadResult();
+
+        try
+        {
+            var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
+            if (convention == null)
+            {
+                result.Errors.Add($"Convention {conventionId}를 찾을 수 없습니다.");
+                return result;
+            }
+
+            if (string.IsNullOrWhiteSpace(request.CourseName))
+            {
+                result.Errors.Add("코스명을 입력해주세요.");
+                return result;
+            }
+
+            // skipped 제외한 valid + warning 만 저장
+            var itemsToSave = request.Items
+                .Where(i => i.Status != "skipped")
+                .ToList();
+
+            if (itemsToSave.Count == 0)
+            {
+                result.Errors.Add("저장할 일정이 없습니다.");
+                return result;
+            }
+
+            var maxOrderNum = await _unitOfWork.ScheduleTemplates.Query
+                .Where(st => st.ConventionId == conventionId)
+                .MaxAsync(st => (int?)st.OrderNum) ?? 0;
+
+            var scheduleTemplate = new ScheduleTemplate
+            {
+                ConventionId = conventionId,
+                CourseName = request.CourseName.Trim(),
+                Description = request.Description ?? "Excel 일정 업로드",
+                OrderNum = maxOrderNum + 1,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.ScheduleTemplates.AddAsync(scheduleTemplate);
+
+            var scheduleItems = new List<ScheduleItem>();
+            int itemOrderNum = 0;
+            foreach (var item in itemsToSave)
+            {
+                if (!DateTime.TryParse(item.Date, out var date)) continue;
+                if (string.IsNullOrEmpty(item.StartTime) || string.IsNullOrEmpty(item.Title)) continue;
+
+                scheduleItems.Add(new ScheduleItem
+                {
+                    ScheduleTemplate = scheduleTemplate,
+                    ScheduleDate = date,
+                    StartTime = item.StartTime,
+                    EndTime = item.EndTime,
+                    Title = item.Title,
+                    Content = item.Content,
+                    Location = item.Location,
+                    OrderNum = itemOrderNum++,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            scheduleTemplate.ScheduleItems = scheduleItems;
+            await _unitOfWork.SaveChangesAsync();
+
+            result.Success = true;
+            result.TemplatesCreated = 1;
+            result.ItemsCreated = scheduleItems.Count;
+
+            foreach (var item in scheduleItems)
+            {
+                result.CreatedActions.Add(new ConventionActionInfo
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    ScheduleDateTime = item.ScheduleDate.Add(TimeSpan.Parse(item.StartTime))
+                });
+            }
+
+            _logger.LogInformation("Schedule confirmed: course={Course}, items={Count}", request.CourseName, scheduleItems.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Schedule confirm failed");
+            result.Errors.Add($"저장 실패: {ex.Message}");
+        }
+
+        return result;
+    }
+
     /// <summary>
     /// 날짜 셀 파싱 — 3가지 형식 지원
     /// 1) Excel 시리얼 숫자 (45978 → 2025-11-17)
