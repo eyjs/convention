@@ -29,6 +29,7 @@
           </div>
         </main>
       </div>
+      <ScrollToTopButton />
     </template>
   </div>
 </template>
@@ -38,6 +39,7 @@ import { ref, computed, provide, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminHeader from '@/components/admin/AdminHeader.vue'
 import AdminSidebar from '@/components/admin/AdminSidebar.vue'
+import ScrollToTopButton from '@/components/common/ScrollToTopButton.vue'
 
 const route = useRoute()
 const sidebarOpen = ref(false)

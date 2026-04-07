@@ -1,41 +1,67 @@
 <template>
   <div class="min-h-screen relative bg-gray-50">
+    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+      <div
+        class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-sky-200/15 to-blue-200/15 rounded-full blur-3xl"
+      ></div>
+    </div>
+
     <div class="relative z-10">
       <!-- 상단 로고 + 메뉴 -->
       <div class="sticky top-0 z-40 bg-white shadow-sm">
-        <div class="px-4 py-3">
-          <div class="flex items-center justify-between">
-            <img
-              src="https://www.ifa.co.kr/Images/logo.png"
-              alt="iFA"
-              class="h-8 object-contain"
-            />
-            <button
-              class="p-2 -mr-2 rounded-lg text-gray-500 hover:bg-gray-100"
-              @click="isSidebarOpen = true"
+        <div class="px-4 py-3 flex items-center justify-between">
+          <img
+            src="https://www.ifa.co.kr/Images/logo.png"
+            alt="iFA"
+            class="h-8 object-contain"
+          />
+          <button
+            class="p-2 -mr-2 rounded-lg text-gray-500 hover:bg-gray-100"
+            @click="isSidebarOpen = true"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
-          </div>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
         </div>
       </div>
 
       <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
 
       <div class="max-w-2xl mx-auto px-4 py-4">
-        <!-- 내 정보 점검 (미완료 항목이 있을 때만 표시) -->
+        <!-- Hero: 인사말 -->
+        <div
+          class="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 rounded-2xl shadow-xl p-6 mb-4 text-white"
+        >
+          <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div
+              class="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-pink-200/15 to-violet-200/15 rounded-full blur-3xl"
+            ></div>
+          </div>
+          <div
+            class="absolute top-0 right-0 w-28 h-28 bg-white/10 rounded-full -mr-14 -mt-14"
+          ></div>
+          <div
+            class="absolute bottom-0 right-8 w-20 h-20 bg-white/10 rounded-full -mb-10"
+          ></div>
+
+          <div class="relative z-10">
+            <h2 class="text-2xl font-bold mb-1">안녕하세요 {{ userName }}님</h2>
+            <p class="text-sm text-white/80">iFA STARTOUR</p>
+          </div>
+        </div>
+
+        <!-- 내 정보 점검 -->
         <div
           v-if="!allChecksPassed"
           class="bg-white rounded-xl shadow-sm mb-4 px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
@@ -43,21 +69,17 @@
         >
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm font-semibold text-gray-700">내 정보</span>
-            <span
-              class="text-xs font-medium"
-              :class="allChecksPassed ? 'text-green-600' : 'text-amber-600'"
-            >
+            <span class="text-xs font-medium text-amber-600">
               {{ passedCount }}/{{ infoChecks.length }}
             </span>
           </div>
           <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
-              class="h-full rounded-full transition-all duration-500"
-              :class="allChecksPassed ? 'bg-green-500' : 'bg-amber-500'"
+              class="h-full bg-amber-500 rounded-full transition-all duration-500"
               :style="{ width: `${(passedCount / infoChecks.length) * 100}%` }"
             ></div>
           </div>
-          <div v-if="!allChecksPassed" class="flex flex-wrap gap-1.5 mt-2">
+          <div class="flex flex-wrap gap-1.5 mt-2">
             <span
               v-for="check in failedChecks"
               :key="check.key"
@@ -68,81 +90,17 @@
           </div>
         </div>
 
-        <!-- 내 일정 타임테이블 -->
-        <div v-if="dashboard.mySchedules?.length > 0" class="mb-6">
-          <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">내 일정</h3>
-          <div class="bg-white rounded-2xl shadow-md overflow-hidden">
-            <div
-              v-for="(schedule, i) in dashboard.mySchedules"
-              :key="schedule.id || i"
-              class="flex items-stretch border-b last:border-b-0"
-            >
-              <!-- 시간 -->
-              <div
-                class="flex-shrink-0 w-20 py-3 px-3 flex flex-col items-center justify-center"
-                :class="isToday(schedule.date) ? 'bg-primary-50' : 'bg-gray-50'"
-              >
-                <span
-                  class="text-xs font-medium"
-                  :class="
-                    isToday(schedule.date)
-                      ? 'text-primary-600'
-                      : 'text-gray-500'
-                  "
-                  >{{ formatScheduleDate(schedule.date) }}</span
-                >
-                <span
-                  class="text-sm font-bold"
-                  :class="
-                    isToday(schedule.date)
-                      ? 'text-primary-700'
-                      : 'text-gray-700'
-                  "
-                  >{{ schedule.time || '—' }}</span
-                >
-              </div>
-              <!-- 내용 -->
-              <div
-                class="flex-1 py-3 px-4 min-w-0 cursor-pointer hover:bg-gray-50 transition-colors"
-                @click="
-                  schedule.conventionId &&
-                  router.push(`/conventions/${schedule.conventionId}/schedule`)
-                "
-              >
-                <p class="font-medium text-gray-900 text-sm truncate">
-                  {{ schedule.title }}
-                </p>
-                <p
-                  v-if="schedule.location"
-                  class="text-xs text-gray-500 truncate mt-0.5"
-                >
-                  {{ schedule.location }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 진행중인 스타투어 (가로 스크롤) -->
+        <!-- 진행중인 스타투어 -->
         <div class="mb-6">
-          <div class="flex justify-between items-center mb-3 px-1">
-            <h3 class="text-lg font-bold text-gray-900">진행중인 스타투어</h3>
-          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">
+            진행중인 스타투어
+          </h3>
 
           <div
-            v-if="conventionsLoading"
-            class="text-center py-12 text-gray-500"
+            v-if="activeConventions.length === 0"
+            class="bg-white rounded-2xl shadow-sm p-8 text-center"
           >
-            <div
-              class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"
-            ></div>
-          </div>
-
-          <div
-            v-else-if="activeConventions.length === 0"
-            class="bg-white rounded-2xl shadow-md p-8 text-center"
-          >
-            <p class="text-gray-500">진행중인 스타투어가 없습니다</p>
+            <p class="text-sm text-gray-500">진행중인 스타투어가 없습니다</p>
           </div>
 
           <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
@@ -203,20 +161,20 @@
           </div>
         </div>
 
-        <!-- 종료된 스타투어 -->
+        <!-- 지난 스타투어 -->
         <div v-if="completedConventions.length > 0" class="mb-8">
           <h3 class="text-lg font-bold text-gray-500 mb-3 px-1">
-            종료된 스타투어
+            지난 스타투어
           </h3>
           <div class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
             <div class="flex gap-3 pb-2">
               <div
-                v-for="convention in completedConventions.slice(0, 10)"
+                v-for="convention in completedConventions"
                 :key="convention.id"
-                class="flex-shrink-0 w-[200px] bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden opacity-75"
+                class="flex-shrink-0 w-[220px] bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden opacity-80"
                 @click="goToConvention(convention)"
               >
-                <div class="relative h-[100px] overflow-hidden">
+                <div class="relative h-[120px] overflow-hidden">
                   <div
                     v-if="convention.conventionImg"
                     class="absolute inset-0 bg-cover bg-center grayscale"
@@ -238,6 +196,9 @@
                   <h4 class="font-semibold text-gray-600 text-sm line-clamp-1">
                     {{ convention.title }}
                   </h4>
+                  <p class="text-xs text-gray-400 mt-0.5">
+                    {{ formatDate(convention.startDate) }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -258,7 +219,8 @@ import apiClient from '@/services/api'
 const router = useRouter()
 const authStore = useAuthStore()
 
-const conventionsLoading = ref(true)
+const userName = computed(() => authStore.user?.name || '사용자')
+
 const conventions = ref([])
 const dashboard = ref({})
 const isSidebarOpen = ref(false)
@@ -274,49 +236,28 @@ const completedConventions = computed(() =>
 const infoChecks = computed(() => {
   const p = dashboard.value.passport || {}
   return [
-    { key: 'passportNumber', label: '여권번호 등록', ok: !!p.passportNumber },
+    { key: 'passportNumber', label: '여권번호', ok: !!p.passportNumber },
     {
       key: 'passportName',
-      label: '영문 이름 등록',
+      label: '영문명',
       ok: !!(p.firstName && p.lastName),
     },
     {
       key: 'passportExpiry',
-      label: '여권 만료일 등록',
+      label: '만료일',
       ok: !!p.passportExpiryDate,
     },
     {
       key: 'passportImage',
-      label: '여권 사본 업로드',
+      label: '여권 사본',
       ok: !!p.passportImageUrl,
     },
-    { key: 'passportVerified', label: '여권 승인', ok: !!p.verified },
+    { key: 'passportVerified', label: '승인', ok: !!p.verified },
   ]
 })
 const failedChecks = computed(() => infoChecks.value.filter((c) => !c.ok))
 const passedCount = computed(() => infoChecks.value.filter((c) => c.ok).length)
 const allChecksPassed = computed(() => failedChecks.value.length === 0)
-
-const passportExpiryDays = computed(() => {
-  const expiry = dashboard.value.passport?.passportExpiryDate
-  if (!expiry) return null
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const exp = new Date(expiry)
-  exp.setHours(0, 0, 0, 0)
-  return Math.ceil((exp - today) / (1000 * 60 * 60 * 24))
-})
-
-function isToday(dateStr) {
-  if (!dateStr) return false
-  const d = new Date(dateStr)
-  const today = new Date()
-  return (
-    d.getFullYear() === today.getFullYear() &&
-    d.getMonth() === today.getMonth() &&
-    d.getDate() === today.getDate()
-  )
-}
 
 function getDDay(startDate) {
   if (!startDate) return 0
@@ -338,22 +279,12 @@ function formatDate(dateString) {
   })
 }
 
-function formatScheduleDate(dateStr) {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  const days = ['일', '월', '화', '수', '목', '금', '토']
-  return `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`
-}
-
 async function loadConventions() {
-  conventionsLoading.value = true
   try {
     const res = await apiClient.get('/users/conventions')
     conventions.value = res.data
-  } catch (e) {
+  } catch {
     conventions.value = []
-  } finally {
-    conventionsLoading.value = false
   }
 }
 

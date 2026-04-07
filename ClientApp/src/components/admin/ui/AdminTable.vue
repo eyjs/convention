@@ -14,10 +14,48 @@
                   : col.align === 'right'
                     ? 'text-right'
                     : 'text-left',
+                col.sortable
+                  ? 'cursor-pointer hover:bg-gray-100 select-none'
+                  : '',
               ]"
               :style="col.width ? { width: col.width } : {}"
+              @click="col.sortable && $emit('sort', col.key)"
             >
-              {{ col.label }}
+              <div
+                class="flex items-center gap-1"
+                :class="{
+                  'justify-center': col.align === 'center',
+                  'justify-end': col.align === 'right',
+                }"
+              >
+                <span>{{ col.label }}</span>
+                <span v-if="col.sortable" class="text-gray-400">
+                  <svg
+                    v-if="sortKey === col.key && sortDir === 'asc'"
+                    class="w-3 h-3 text-primary-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M5 12l5-5 5 5H5z" />
+                  </svg>
+                  <svg
+                    v-else-if="sortKey === col.key && sortDir === 'desc'"
+                    class="w-3 h-3 text-primary-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M5 8l5 5 5-5H5z" />
+                  </svg>
+                  <svg
+                    v-else
+                    class="w-3 h-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M5 8l5-5 5 5H5zm0 4l5 5 5-5H5z" opacity="0.4" />
+                  </svg>
+                </span>
+              </div>
             </th>
           </tr>
         </thead>
@@ -69,5 +107,15 @@ defineProps({
     type: [Object, Function],
     default: null,
   },
+  sortKey: {
+    type: String,
+    default: null,
+  },
+  sortDir: {
+    type: String,
+    default: 'asc',
+  },
 })
+
+defineEmits(['sort'])
 </script>

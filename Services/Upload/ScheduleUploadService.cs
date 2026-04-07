@@ -250,6 +250,9 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
             .Select(si => new { si.ScheduleDate, si.StartTime, si.EndTime, si.Title, si.ScheduleTemplate.CourseName })
             .ToListAsync();
 
+        // 이전 행에서 파싱된 날짜 — 다음 행의 날짜 누락 시 상속
+        DateTime? lastDate = null;
+
         for (int row = 2; row <= rowCount; row++)
         {
             var dateCell = sheet.Cells[row, 1];
@@ -264,7 +267,7 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
             var endTimeText = endTimeCell.Text?.Trim();
 
             // 완전히 빈 행은 스킵 (집계에 포함 X)
-            if (string.IsNullOrEmpty(dateText) && string.IsNullOrEmpty(startTimeText) && string.IsNullOrEmpty(titleText))
+            if (string.IsNullOrEmpty(dateText) && string.IsNullOrEmpty(startTimeText) && string.IsNullOrEmpty(titleText) && string.IsNullOrEmpty(locationText))
             {
                 result.TotalRows--;
                 continue;
@@ -278,38 +281,54 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                 Content = memoText,
             };
 
-            // 날짜 파싱
-            var scheduleDate = ParseDate(dateCell, dateText, currentYear);
+            // 날짜 파싱 (없으면 이전 행 날짜 상속)
+            DateTime? scheduleDate = ParseDate(dateCell, dateText, currentYear);
+            var warnings = new List<string>();
+
             if (scheduleDate == null)
             {
-                item.Status = "skipped";
-                item.Message = $"날짜 형식을 인식할 수 없습니다. ({dateText})";
-                item.Date = dateText;
-                result.SkippedRows++;
-                result.Items.Add(item);
-                continue;
+                if (lastDate.HasValue)
+                {
+                    scheduleDate = lastDate;
+                    warnings.Add("날짜 누락 → 이전 행 날짜 상속");
+                }
+                else
+                {
+                    item.Status = "skipped";
+                    item.Message = $"날짜 형식을 인식할 수 없습니다. ({dateText})";
+                    item.Date = dateText;
+                    result.SkippedRows++;
+                    result.Items.Add(item);
+                    continue;
+                }
             }
+            lastDate = scheduleDate;
             item.Date = scheduleDate.Value.ToString("yyyy-MM-dd");
 
-            // 필수 제목
+            // 필수 제목 — 없으면 장소를 제목으로 대체하여 살림
             if (string.IsNullOrEmpty(titleText))
             {
-                item.Status = "skipped";
-                item.Message = "일정명이 비어있습니다.";
-                result.SkippedRows++;
-                result.Items.Add(item);
-                continue;
+                if (!string.IsNullOrEmpty(locationText))
+                {
+                    item.Title = locationText;
+                    warnings.Add("일정명 누락 → 장소를 제목으로 대체");
+                }
+                else
+                {
+                    item.Status = "skipped";
+                    item.Message = "일정명과 장소가 모두 비어있습니다.";
+                    result.SkippedRows++;
+                    result.Items.Add(item);
+                    continue;
+                }
             }
 
-            // 시작시간 파싱
+            // 시작시간 파싱 — 없으면 이전 행 종료시간 상속 또는 null 허용
             var startTimeStr = ParseTime(startTimeCell, startTimeText);
             if (string.IsNullOrEmpty(startTimeStr))
             {
-                item.Status = "skipped";
-                item.Message = $"시작시간 형식을 인식할 수 없습니다. ({startTimeText})";
-                result.SkippedRows++;
-                result.Items.Add(item);
-                continue;
+                // 시작시간 누락 — 일정은 저장하되 "시간 미정"으로 warning
+                warnings.Add("시작시간 미정");
             }
             item.StartTime = startTimeStr;
 
@@ -319,26 +338,37 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                 var endTimeStr = ParseTime(endTimeCell, endTimeText);
                 if (endTimeStr == null)
                 {
-                    item.Status = "warning";
-                    item.Message = $"종료시간 형식을 인식할 수 없습니다. ({endTimeText})";
-                    result.WarningRows++;
+                    warnings.Add($"종료시간 인식 실패 ({endTimeText})");
                 }
                 item.EndTime = endTimeStr;
             }
 
             // 충돌 감지: 같은 날짜 + 시작시간 겹침
-            var conflict = existingItems.FirstOrDefault(e =>
-                e.ScheduleDate.Date == scheduleDate.Value.Date &&
-                e.StartTime == startTimeStr);
-
-            if (conflict != null)
+            if (!string.IsNullOrEmpty(startTimeStr))
             {
-                item.HasConflict = true;
-                item.ConflictDetail = $"기존 [{conflict.CourseName}] {conflict.Title}";
-                result.ConflictRows++;
+                var conflict = existingItems.FirstOrDefault(e =>
+                    e.ScheduleDate.Date == scheduleDate.Value.Date &&
+                    e.StartTime == startTimeStr);
+
+                if (conflict != null)
+                {
+                    item.HasConflict = true;
+                    item.ConflictDetail = $"기존 [{conflict.CourseName}] {conflict.Title}";
+                    result.ConflictRows++;
+                }
             }
 
-            if (item.Status == "valid") result.ValidRows++;
+            // warning 집계
+            if (warnings.Count > 0)
+            {
+                item.Status = "warning";
+                item.Message = string.Join(", ", warnings);
+                result.WarningRows++;
+            }
+            else
+            {
+                result.ValidRows++;
+            }
             result.Items.Add(item);
         }
 
@@ -395,13 +425,14 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
             foreach (var item in itemsToSave)
             {
                 if (!DateTime.TryParse(item.Date, out var date)) continue;
-                if (string.IsNullOrEmpty(item.StartTime) || string.IsNullOrEmpty(item.Title)) continue;
+                if (string.IsNullOrEmpty(item.Title)) continue;
 
                 scheduleItems.Add(new ScheduleItem
                 {
                     ScheduleTemplate = scheduleTemplate,
                     ScheduleDate = date,
-                    StartTime = item.StartTime,
+                    // 시작시간 미정은 빈 문자열로 저장 (엔티티 non-null 제약)
+                    StartTime = item.StartTime ?? string.Empty,
                     EndTime = item.EndTime,
                     Title = item.Title,
                     Content = item.Content,
@@ -420,11 +451,16 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
 
             foreach (var item in scheduleItems)
             {
+                DateTime? dt = item.ScheduleDate;
+                if (!string.IsNullOrEmpty(item.StartTime) && TimeSpan.TryParse(item.StartTime, out var ts))
+                {
+                    dt = item.ScheduleDate.Add(ts);
+                }
                 result.CreatedActions.Add(new ConventionActionInfo
                 {
                     Id = item.Id,
                     Title = item.Title,
-                    ScheduleDateTime = item.ScheduleDate.Add(TimeSpan.Parse(item.StartTime))
+                    ScheduleDateTime = dt
                 });
             }
 
