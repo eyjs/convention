@@ -67,12 +67,19 @@
       <button class="px-1.5 py-0.5 hover:bg-gray-100 rounded" @click="$emit('zoom', zoom + 25)">+</button>
     </div>
 
-    <span class="text-xs text-gray-400 ml-2">{{ saveStatus }}</span>
+    <button
+      class="px-3 py-1 rounded text-xs font-medium"
+      :class="isDirty ? 'bg-blue-600 text-white hover:bg-blue-700' : 'border text-gray-400'"
+      @click="$emit('save-now')"
+    >
+      💾 저장
+    </button>
+    <span class="text-xs text-gray-400 ml-1">{{ saveStatus }}</span>
     <button class="px-3 py-1 border rounded hover:bg-gray-50 text-xs" @click="$emit('export-png')">PNG</button>
   </div>
 </template>
 
 <script setup>
-defineProps({ name: String, mode: String, zoom: Number, canUndo: Boolean, canRedo: Boolean, saveStatus: String, hasBg: Boolean, bgLocked: Boolean })
-defineEmits(['update:name', 'mode', 'upload-bg', 'toggle-bg-lock', 'undo', 'redo', 'zoom', 'zoom-fit', 'export-png'])
+defineProps({ name: String, mode: String, zoom: Number, canUndo: Boolean, canRedo: Boolean, saveStatus: String, hasBg: Boolean, bgLocked: Boolean, isDirty: Boolean })
+defineEmits(['update:name', 'mode', 'upload-bg', 'toggle-bg-lock', 'undo', 'redo', 'zoom', 'zoom-fit', 'export-png', 'save-now'])
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen flex flex-col bg-gray-100">
+  <div class="h-screen h-dvh flex flex-col bg-gray-100 overflow-hidden">
     <PinEditorToolbar
       :name="layout?.name || ''"
       :mode="pc.mode.value"
@@ -7,8 +7,10 @@
       :can-undo="history.canUndo.value"
       :can-redo="history.canRedo.value"
       :save-status="saveStatus"
+      :is-dirty="_isDirty"
       :has-bg="!!layout?.backgroundImageUrl"
       :bg-locked="pc.bgLocked.value"
+      @save-now="saveNow"
       @toggle-bg-lock="pc.toggleBgLock"
       @update:name="(v) => { if (layout) { layout.name = v; markDirty() } }"
       @mode="pc.setMode"
@@ -29,7 +31,7 @@
       </div>
 
       <!-- 우측 패널 -->
-      <div class="w-72 flex-shrink-0 print:hidden">
+      <div class="w-80 flex-shrink-0 print:hidden">
         <PinPropertyPanel
           :selected-pin="selectedPin"
           :guests="guests"
@@ -39,6 +41,7 @@
           @set-group="({ pinId, group }) => { pc.setGroup(pinId, group); markDirty() }"
           @delete="() => { pc.deleteSelected(); markDirty() }"
           @quick-assign="quickAssign"
+          @create-pin-for="createPinFor"
         />
       </div>
     </div>
@@ -117,11 +120,35 @@ const saveStatus = computed(() => {
 })
 
 let historyTimer = null
+let _isDirty = false
+
 function markDirty() {
+  _isDirty = true
   dirtyCounter.value++
   autoSave.trigger()
   if (historyTimer) clearTimeout(historyTimer)
   historyTimer = setTimeout(() => history.push(pc.toLayoutJSON()), 500)
+}
+
+// 즉시 저장 (페이지 이탈 시 사용)
+async function saveNow() {
+  if (!layout.value) return
+  try {
+    const json = pc.toLayoutJSON()
+    // 핀이 없고 배경도 없으면 저장 스킵 (데이터 유실 방지)
+    if (json.pins.length === 0 && !layout.value.backgroundImageUrl) {
+      console.warn('Empty layout, skip save')
+      return
+    }
+    await apiClient.put(`/admin/seating-layouts/${layoutId}`, {
+      name: layout.value.name,
+      layoutJson: JSON.stringify(json),
+    })
+    _isDirty = false
+    console.log('Saved:', json.pins.length, 'pins')
+  } catch (e) {
+    console.error('Save failed:', e)
+  }
 }
 
 function undo() {
@@ -160,12 +187,25 @@ function onAssignSelect(guest) {
 }
 
 function quickAssign(guest) {
-  // 선택된 핀이 있고 미배정이면 바로 배정
   if (selectedPin.value && !selectedPin.value.userId) {
     pc.assignUser(selectedPin.value.id, guest)
     selectedPin.value = null
     markDirty()
   }
+}
+
+function createPinFor(guest) {
+  const cvs = pc.canvas()
+  if (!cvs) return
+  const vpt = cvs.viewportTransform
+  const z = cvs.getZoom()
+  const centerX = Math.round((-vpt[4] + cvs.width / 2) / z)
+  const centerY = Math.round((-vpt[5] + cvs.height / 2) / z)
+
+  // 직접 핀 추가 (loadLayoutJSON 없이)
+  pc.addPinWithUser(centerX, centerY, guest)
+  markDirty()
+  pc.setMode('select')
 }
 
 // 키보드
@@ -178,6 +218,7 @@ function onKeyDown(e) {
   else if (e.key === 'v' && !e.ctrlKey) pc.setMode('select')
   else if (e.key === 'p' && !e.ctrlKey) pc.setMode('pin')
   else if (e.key === 'h' && !e.ctrlKey) pc.setMode('pan')
+  else if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveNow() }
   else if (e.key === 'Escape') pc.setMode('select')
 }
 
@@ -215,12 +256,18 @@ onMounted(async () => {
 
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
+  window.addEventListener('beforeunload', onBeforeUnload)
 })
 
+// 페이지 이탈 시 즉시 저장
+function onBeforeUnload() { saveNow() }
+
 onUnmounted(() => {
+  saveNow() // Vue 라우트 이동 시
   pc.dispose()
   window.removeEventListener('keydown', onKeyDown)
   window.removeEventListener('keyup', onKeyUp)
+  window.removeEventListener('beforeunload', onBeforeUnload)
 })
 </script>
 

@@ -15,6 +15,8 @@ export function usePinCanvas(canvasElRef, containerRef, options = {}) {
   let _spaceHeld = false
   let _isPanning = false
   let _panLast = null
+  let _isLoadingLayout = false
+  let _lastGoodState = { pins: [], groups: [] }
 
   // ===== 초기화 =====
   function init() {
@@ -99,10 +101,19 @@ export function usePinCanvas(canvasElRef, containerRef, options = {}) {
       canvas.defaultCursor = 'grabbing'
       return
     }
-    // 핀 찍기 모드 — 빈 영역 클릭 시만
-    if (mode.value === 'pin' && !opt.target && !readonly) {
-      const p = canvas.getPointer(opt.e)
-      _addPin(Math.round(p.x), Math.round(p.y))
+    // 핀 찍기 모드
+    if (mode.value === 'pin' && !readonly) {
+      if (!opt.target) {
+        // 빈 영역 → 핀 추가
+        const p = canvas.getPointer(opt.e)
+        _addPin(Math.round(p.x), Math.round(p.y))
+        onModified()
+      }
+      // 기존 핀 클릭 → 선택 모드로 전환하여 이동 가능
+      if (opt.target && opt.target._pinId) {
+        setMode('select')
+        canvas.setActiveObject(opt.target)
+      }
     }
   }
 
@@ -142,16 +153,8 @@ export function usePinCanvas(canvasElRef, containerRef, options = {}) {
       originY: 'center',
     })
 
-    const label = new fabric.Text(userName ? userName.substring(0, 2) : '', {
-      fontSize: PIN_FONT,
-      fontWeight: 'bold',
-      fill: userId ? '#ffffff' : '#9ca3af',
-      originX: 'center',
-      originY: 'center',
-      top: 1,
-    })
-
-    const pin = new fabric.Group([circle, label], {
+    // Text 제거 — Fabric v5 + Chrome 호환 이슈 방지. 이름은 사이드패널에서 확인
+    const pin = new fabric.Group([circle], {
       left: x,
       top: y,
       originX: 'center',
@@ -167,6 +170,12 @@ export function usePinCanvas(canvasElRef, containerRef, options = {}) {
     })
 
     canvas.add(pin)
+    return id
+  }
+
+  function addPinWithUser(x, y, user) {
+    const id = _addPin(x, y, { id: 'p_' + Date.now() + '_' + Math.floor(Math.random() * 1000), x, y, group: null, userId: user.id, userName: user.name })
+    if (canvas) canvas.requestRenderAll()
     return id
   }
 
@@ -275,7 +284,7 @@ export function usePinCanvas(canvasElRef, containerRef, options = {}) {
 
   // ===== 직렬화 =====
   function toLayoutJSON() {
-    if (!canvas) return { pins: [], groups: [] }
+    if (!canvas) return _lastGoodState || { pins: [], groups: [] }
     const pins = []
     canvas.getObjects().forEach((o) => {
       if (!o._pinId || !o._pinData) return
@@ -289,26 +298,42 @@ export function usePinCanvas(canvasElRef, containerRef, options = {}) {
         groupSet.set(p.group, { id: p.group, label: p.group, color: COLORS[_groupColorIndex(p.group) % COLORS.length] })
       }
     })
-    return { pins, groups: [...groupSet.values()] }
+    const result = { pins, groups: [...groupSet.values()] }
+    // 핀이 있으면 마지막 정상 상태 갱신 (빈 데이터로 덮어쓰기 방지)
+    if (pins.length > 0) _lastGoodState = result
+    return result
   }
 
   function loadLayoutJSON(data) {
     if (!canvas) return
-    // 기존 핀 제거
-    canvas.getObjects().filter((o) => o._pinId).forEach((o) => canvas.remove(o))
-    _groupColors = {}
-    _groupIdx = 0
+    _isLoadingLayout = true
+    try {
+      // 기존 핀 제거
+      canvas.getObjects().filter((o) => o._pinId).forEach((o) => canvas.remove(o))
+      _groupColors = {}
+      _groupIdx = 0
 
-    // 그룹 색상 프리로드
-    for (const g of data.groups || []) {
-      _groupColors[g.id] = _groupIdx++
-    }
+      // 그룹 색상 프리로드
+      for (const g of data.groups || []) {
+        _groupColors[g.id] = _groupIdx++
+      }
 
-    // 핀 생성
-    for (const p of data.pins || []) {
-      _addPin(p.x, p.y, p)
+      // 핀 생성
+      for (const p of data.pins || []) {
+        _addPin(p.x, p.y, p)
+      }
+
+      // 마지막 정상 상태 갱신
+      if (data.pins && data.pins.length > 0) {
+        _lastGoodState = { pins: [...data.pins], groups: [...(data.groups || [])] }
+      }
+
+      canvas.requestRenderAll()
+    } catch (e) {
+      console.error('loadLayoutJSON error:', e)
+    } finally {
+      _isLoadingLayout = false
     }
-    canvas.requestRenderAll()
   }
 
   // 하위 호환: 기존 tables/decors/lines 구조도 변환
@@ -353,9 +378,18 @@ export function usePinCanvas(canvasElRef, containerRef, options = {}) {
   function setMode(m) {
     mode.value = m
     if (!canvas) return
-    if (m === 'pin') { canvas.defaultCursor = 'crosshair'; canvas.selection = false }
-    else if (m === 'pan') { canvas.defaultCursor = 'grab'; canvas.selection = false }
-    else { canvas.defaultCursor = 'default'; canvas.selection = !readonly }
+    if (m === 'pin') {
+      canvas.defaultCursor = 'crosshair'
+      canvas.selection = false
+      // 개별 핀은 드래그 가능하게 유지
+      canvas.forEachObject((o) => { if (o._pinId) { o.selectable = true; o.evented = true } })
+    } else if (m === 'pan') {
+      canvas.defaultCursor = 'grab'
+      canvas.selection = false
+    } else {
+      canvas.defaultCursor = 'default'
+      canvas.selection = !readonly
+    }
   }
 
   // ===== 내보내기 =====
@@ -476,7 +510,7 @@ export function usePinCanvas(canvasElRef, containerRef, options = {}) {
     zoom, cursorPos, mode, setMode,
     setBackground, toggleBgLock, bgLocked, setZoom, zoomToFit,
     deleteSelected, downloadPNG,
-    assignUser, clearUser, setGroup, removePin,
+    addPinWithUser, assignUser, clearUser, setGroup, removePin,
     toLayoutJSON, loadLayoutJSON, loadLegacyLayout,
     highlightUser, stopHighlight, setupTouch,
     handleKeyDown, handleKeyUp,
