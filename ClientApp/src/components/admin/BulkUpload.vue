@@ -59,18 +59,9 @@
               ※ 일정이 먼저 업로드되어 있어야 합니다
             </p>
           </div>
-          <div>
-            <p class="font-semibold text-primary-800">시트3: 속성 (선택)</p>
-            <p>
-              <strong>1행:</strong> 속성명 헤더 (나이, 성별, 직급 등)
-              <strong>2행~:</strong> 속성값
-            </p>
-            <p class="text-primary-500 text-xs">
-              ※ 시트1과 같은 행 번호 = 같은 사람 (이름/전화 중복 불필요)
-            </p>
-          </div>
           <p class="mt-1 text-primary-600">
-            ※ 이름 + (전화번호 OR 주민번호) 매칭으로 중복 시 업데이트
+            ※ 업로드 시 기존 참석자는 엑셀 기준으로 완전히 교체됩니다
+            (User 계정/메타데이터는 보존)
           </p>
           <div class="mt-2 p-2 bg-primary-100 rounded text-xs text-primary-800">
             <p class="font-semibold mb-0.5">🔐 신규 참석자 자동 계정 생성</p>
@@ -94,13 +85,12 @@
       <div class="mt-6 pt-6 border-t">
         <h3 class="font-semibold mb-3">파일 다운로드</h3>
         <div class="flex flex-wrap gap-2">
-          <a
-            href="/Sample/참석자업로드_샘플.xlsx"
-            download
+          <button
             class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
+            @click="downloadGuestSample"
           >
             📄 샘플
-          </a>
+          </button>
           <button
             class="inline-block px-4 py-2 bg-primary-50 text-primary-700 rounded-md hover:bg-primary-100 text-sm"
             @click="downloadCurrentData('guests')"
@@ -171,13 +161,12 @@
       <div class="mt-6 pt-6 border-t">
         <h3 class="font-semibold mb-3">파일 다운로드</h3>
         <div class="flex flex-wrap gap-2">
-          <a
-            href="/Sample/일정업로드_샘플.xlsx"
-            download
+          <button
             class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
+            @click="downloadScheduleSample"
           >
             📄 샘플
-          </a>
+          </button>
           <button
             class="inline-block px-4 py-2 bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 text-sm"
             @click="downloadCurrentData('schedules')"
@@ -258,13 +247,12 @@
       <div class="mt-6 pt-6 border-t">
         <h3 class="font-semibold mb-3">샘플 파일</h3>
         <div class="flex flex-wrap gap-2">
-          <a
-            href="/Sample/옵션투어_업로드_샘플.xlsx"
-            download
+          <button
             class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
+            @click="downloadOptionTourSample"
           >
             📄 샘플
-          </a>
+          </button>
           <button
             class="inline-block px-4 py-2 bg-orange-50 text-orange-700 rounded-md hover:bg-orange-100 text-sm"
             @click="downloadCurrentData('option-tours')"
@@ -360,6 +348,26 @@ const handleFileOptionTours = (e) => {
 const uploadGuests = async () => {
   if (!fileGuests.value) return
 
+  // 현재 참석자 수 조회 후 확인 다이얼로그
+  let currentCount = 0
+  try {
+    const countRes = await apiClient.get(
+      `/admin/conventions/${props.conventionId}/guests`,
+    )
+    currentCount = Array.isArray(countRes.data) ? countRes.data.length : 0
+  } catch {
+    // 조회 실패 시 0으로 진행
+  }
+
+  const confirmMsg =
+    `이 작업은 현재 행사의 참석자 목록을 엑셀 기준으로 완전히 교체합니다.\n\n` +
+    `• 기존 참석자 ${currentCount}명이 이 행사에서 제외됩니다.\n` +
+    `• 엑셀 파일의 참석자로 재등록됩니다.\n` +
+    `• User 계정과 개인 메타데이터(속성)는 유지됩니다.\n\n` +
+    `계속하시겠습니까?`
+
+  if (!confirm(confirmMsg)) return
+
   uploadingGuests.value = true
   resultGuests.value = null
 
@@ -376,14 +384,11 @@ const uploadGuests = async () => {
     )
 
     const d = response.data
-    let message = `${d.totalProcessed}명 처리 완료 (신규: ${d.usersCreated}명, 업데이트: ${d.usersUpdated}명)`
+    let message = `기존 ${d.removedUserConventions || 0}명 삭제, ${d.usersCreated + d.usersUpdated}명 재등록 완료 (신규 User: ${d.usersCreated}명, 기존 User 재사용: ${d.usersUpdated}명)`
     if (d.scheduleAssignmentsCreated > 0 || d.scheduleDuplicatesSkipped > 0) {
       message += `\n일정 배정: ${d.scheduleAssignmentsCreated}건`
       if (d.scheduleDuplicatesSkipped > 0)
         message += ` (중복 스킵: ${d.scheduleDuplicatesSkipped}건)`
-    }
-    if (d.attributeUsersProcessed > 0) {
-      message += `\n속성 처리: ${d.attributeUsersProcessed}명 (신규: ${d.attributesCreated}, 업데이트: ${d.attributesUpdated})`
     }
     resultGuests.value = {
       success: d.success,
@@ -490,6 +495,77 @@ const downloadGuests = async () => {
     console.error('Failed to download guests:', error)
     alert('다운로드 실패: ' + (error.response?.data?.message || error.message))
   }
+}
+
+// ===== 샘플 엑셀 생성 (클라이언트) =====
+function saveWorkbook(wb, filename) {
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+  const blob = new Blob([wbout], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+}
+
+// 참석자 업로드 샘플 (시트1: 참석자 / 시트2: 그룹-일정매핑)
+function downloadGuestSample() {
+  const wb = XLSX.utils.book_new()
+
+  // 시트1: 참석자
+  const sheet1 = [
+    ['번호', '소속/부서', '이름', '주민등록번호', '전화번호', '그룹명', '비고'],
+    [1, '영업팀', '홍길동', '900101-1234567', '010-1234-5678', 'A조', ''],
+    [2, '개발팀', '김영희', '920202-2345678', '010-2345-6789', 'A조', ''],
+    [3, '마케팅팀', '이철수', '', '010-3456-7890', 'B조', 'VIP'],
+  ]
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet1), '참석자')
+
+  // 시트2: 그룹-일정매핑
+  const sheet2 = [
+    ['그룹명', '일정코스명'],
+    ['A조', '기본코스'],
+    ['B조', 'VIP코스'],
+  ]
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(sheet2),
+    '그룹-일정매핑',
+  )
+
+  saveWorkbook(wb, '참석자업로드_샘플.xlsx')
+}
+
+// 일정 업로드 샘플
+function downloadScheduleSample() {
+  const wb = XLSX.utils.book_new()
+  const sheet = [
+    ['날짜', '시작시간', '종료시간', '장소', '일정명', '메모'],
+    ['2026-05-01', '09:00', '10:00', '인천공항 T1', '집결', '3층 A카운터'],
+    ['2026-05-01', '11:00', '14:00', '비행', 'KE123 탑승', ''],
+    ['2026-05-01', '16:00', '18:00', '호텔 로비', '체크인', ''],
+    ['2026-05-02', '09:00', '12:00', '콜로세움', '관광', ''],
+    ['2026-05-02', '13:00', '15:00', '현지 레스토랑', '점심', ''],
+  ]
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet), '일정')
+  saveWorkbook(wb, '일정업로드_샘플.xlsx')
+}
+
+// 옵션투어 업로드 샘플
+function downloadOptionTourSample() {
+  const wb = XLSX.utils.book_new()
+  const sheet = [
+    ['투어명', '설명', '가격', '날짜', '시작시간', '종료시간', '정원'],
+    ['바티칸 투어', '성 베드로 대성당 + 박물관', 120, '2026-05-03', '09:00', '13:00', 20],
+    ['나이트 투어', '로마 야경 워킹 투어', 50, '2026-05-03', '19:00', '22:00', 15],
+  ]
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet), '옵션투어')
+  saveWorkbook(wb, '옵션투어_업로드_샘플.xlsx')
 }
 
 // 현재 데이터 다운로드

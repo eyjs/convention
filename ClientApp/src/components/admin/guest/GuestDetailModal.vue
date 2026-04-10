@@ -38,9 +38,22 @@
           <div v-if="Object.keys(filteredAttributes()).length > 0">
             <h3 class="font-semibold mb-3">속성 정보</h3>
             <dl class="space-y-2 text-sm">
-              <div v-for="(value, key) in filteredAttributes()" :key="key">
-                <dt class="text-gray-500 inline">{{ key }}:</dt>
-                <dd class="inline ml-2 font-medium">{{ value }}</dd>
+              <div
+                v-for="(value, key) in filteredAttributes()"
+                :key="key"
+                class="flex items-center justify-between gap-2"
+              >
+                <div class="flex-1 min-w-0">
+                  <dt class="text-gray-500 inline">{{ key }}:</dt>
+                  <dd class="inline ml-2 font-medium">{{ value }}</dd>
+                </div>
+                <button
+                  type="button"
+                  class="text-xs text-red-500 hover:text-red-700 hover:underline flex-shrink-0"
+                  @click="handleDeleteAttribute(key)"
+                >
+                  삭제
+                </button>
               </div>
             </dl>
           </div>
@@ -224,6 +237,24 @@ function showPassportImage() {
     viewerApi({
       images: [guestDetail.value.passport.passportImageUrl],
     })
+  }
+}
+
+async function handleDeleteAttribute(key) {
+  if (!props.guestId) return
+  if (!confirm(`속성 '${key}'을(를) 삭제하시겠습니까?`)) return
+  try {
+    await apiClient.delete(
+      `/admin/guests/${props.guestId}/attributes/${encodeURIComponent(key)}`,
+    )
+    // 로컬 상태 업데이트
+    if (guestDetail.value?.attributes) {
+      const next = { ...guestDetail.value.attributes }
+      delete next[key]
+      guestDetail.value = { ...guestDetail.value, attributes: next }
+    }
+  } catch (e) {
+    alert(e.response?.data?.message || '속성 삭제에 실패했습니다.')
   }
 }
 

@@ -44,6 +44,7 @@ public class ScheduleService : IScheduleService
                     {
                         si.Id, si.ScheduleDate, si.StartTime, si.EndTime,
                         si.Title, si.Location, si.Content, si.OrderNum,
+                        si.SeatingLayoutId,
                         Images = si.Images.OrderBy(img => img.OrderNum).Select(img => new
                         {
                             img.Id, img.ImageUrl, img.OrderNum
@@ -125,7 +126,8 @@ public class ScheduleService : IScheduleService
             Title = dto.Title,
             Location = dto.Location,
             Content = dto.Content,
-            OrderNum = dto.OrderNum
+            OrderNum = dto.OrderNum,
+            SeatingLayoutId = dto.SeatingLayoutId
         };
 
         await _unitOfWork.ScheduleItems.AddAsync(item);
@@ -146,6 +148,7 @@ public class ScheduleService : IScheduleService
         item.Location = dto.Location;
         item.Content = dto.Content;
         item.OrderNum = dto.OrderNum;
+        item.SeatingLayoutId = dto.SeatingLayoutId;
 
         await _unitOfWork.SaveChangesAsync();
         return item;
@@ -359,6 +362,7 @@ public class ScheduleService : IScheduleService
                 OrderNum = s.ScheduleItem.OrderNum,
                 CourseName = s.CourseName,
                 ParticipantCount = participantCounts.GetValueOrDefault(s.TemplateId, 0),
+                SeatingLayoutId = s.ScheduleItem.SeatingLayoutId,
                 Images = s.ScheduleItem.Images.OrderBy(img => img.OrderNum).Select(img => new ScheduleImageDto
                 {
                     Id = img.Id,

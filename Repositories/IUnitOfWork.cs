@@ -41,6 +41,9 @@ public interface IUnitOfWork : IDisposable
     IRepository<GalleryImage> GalleryImages { get; }
     IRepository<FileAttachment> FileAttachments { get; }
 
+    // Seating
+    IRepository<SeatingLayout> SeatingLayouts { get; }
+
     // Attributes
     IRepository<AttributeDefinition> AttributeDefinitions { get; }
     IRepository<AttributeTemplate> AttributeTemplates { get; }

@@ -15,8 +15,9 @@
     <!-- 2x2 그리드 -->
     <div v-else class="px-4 py-5">
       <div class="grid grid-cols-2 gap-3">
-        <!-- 설문조사 고정 메뉴 -->
+        <!-- 설문조사 고정 메뉴 (발행된 설문이 있을 때만 노출) -->
         <div
+          v-if="hasSurveys"
           class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 cursor-pointer hover:shadow-md hover:border-blue-200 active:scale-[0.97] transition-all duration-150 flex flex-col items-center text-center gap-2"
           role="button"
           tabindex="0"
@@ -88,6 +89,7 @@ const router = useRouter()
 const { executeAction } = useAction()
 const menuItems = ref([])
 const isLoading = ref(false)
+const hasSurveys = ref(false)
 
 const CATEGORY_ICONS = {
   CARD: FileText,
@@ -142,10 +144,15 @@ onMounted(async () => {
   isLoading.value = true
 
   try {
-    const [actionsRes, statusesRes] = await Promise.all([
+    const [actionsRes, statusesRes, surveysRes] = await Promise.all([
       apiClient.get(`/conventions/${conventionId}/actions/menu`),
       apiClient.get(`/conventions/${conventionId}/actions/statuses`),
+      apiClient
+        .get(`/surveys/convention/${conventionId}`)
+        .catch(() => ({ data: [] })),
     ])
+    hasSurveys.value =
+      Array.isArray(surveysRes.data) && surveysRes.data.length > 0
 
     const actions = actionsRes.data || []
     const statuses = statusesRes.data || []

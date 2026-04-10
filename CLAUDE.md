@@ -41,13 +41,90 @@ npm run build                 # ClientApp/dist 출력
 npm run lint                  # ESLint 검사
 npm run format                # Prettier 포맷팅
 
-# DB 마이그레이션
+# DB 마이그레이션 (로컬)
 dotnet ef migrations add <Name>
 dotnet ef database update
 
 # 프로덕션 빌드
 dotnet publish                # 프론트엔드 자동 빌드 포함 (dist → wwwroot)
 ```
+
+## 운영 서버 배포
+
+### 서버 정보
+- **웹서버**: `172.25.0.21` (Windows Server, IIS)
+- **DB서버**: `172.25.1.21` (SQL Server, DB명: `STARTOUR`, 계정: `startour`)
+- **도메인**: `https://event.ifa.co.kr`
+- **앱풀**: `event.ifa.co.kr`
+- **배포 경로**: `D:\WebServer\event.ifa.co.kr`
+- **SMB 공유**: `\\172.25.0.21\webapp` → 로컬 `W:` 드라이브 매핑
+
+### 배포 방법 — `deploy.ps1`
+
+PowerShell에서 실행:
+```powershell
+cd C:\Users\USER\dev\startour\convention
+.\deploy.ps1
+```
+
+#### 배포 흐름 (2단계 robocopy)
+1. `dotnet publish -c Release` (로컬)
+2. `W:` 드라이브 매핑 확인
+3. **앱풀 중지** → Enter (수동 모드: 서버 IIS에서 앱풀 중지 후)
+4. **Phase 1**: 백엔드 dll만 복사 (wwwroot 제외, ~1-3초) — **downtime 구간**
+5. **앱풀 시작** → Enter (서버 IIS에서 앱풀 시작 후) — **downtime 종료**
+6. **Phase 2**: wwwroot 프론트엔드 복사 (무중단, ~60초)
+7. 헬스체크 (`/health`)
+
+#### 옵션
+```powershell
+.\deploy.ps1                    # 전체 (publish + 배포)
+.\deploy.ps1 -SkipPublish       # publish 생략, 기존 빌드로 복사만
+.\deploy.ps1 -DryRun            # 시뮬레이션 (실제 복사 없음)
+```
+
+#### 배포 기록
+- 매 배포 시 `C:\deploy\history\deploy_YYYYMMDD_HHMMSS.txt` 리포트 자동 생성
+- robocopy 로그: `C:\deploy\deploy.log`
+
+#### W: 드라이브 매핑 (최초 1회)
+```cmd
+net use W: \\172.25.0.21\webapp /user:172.25.0.21\wnstn1342 "vmffpdl2@" /persistent:yes
+```
+
+#### 제외 항목 (robocopy)
+- `wwwroot/uploads/` — 사용자 업로드 파일
+- `logs/`, `App_Data/` — 서버 로그
+- `appsettings.Production.json` — 운영 설정
+- `web.config` — IIS 설정
+
+### 운영 DB 마이그레이션
+
+EF Core 명령으로 직접 적용 (VPN 필요):
+```bash
+dotnet ef database update --connection "Server=172.25.1.21;Database=STARTOUR;User Id=startour;Password=ifaelql!@#\$;TrustServerCertificate=true;Encrypt=false;"
+```
+
+#### 마이그레이션 추가 순서
+```bash
+# 1. 엔티티/DbContext 수정 후 마이그레이션 생성
+dotnet ef migrations add <MigrationName>
+
+# 2. 로컬 빌드 검증
+dotnet build --no-restore
+
+# 3. 운영 DB 적용
+dotnet ef database update --connection "Server=172.25.1.21;Database=STARTOUR;User Id=startour;Password=ifaelql!@#\$;TrustServerCertificate=true;Encrypt=false;"
+
+# 4. 코드 배포
+.\deploy.ps1
+```
+
+#### 주의사항
+- **마이그레이션은 코드 배포 전에 먼저 적용** — 새 테이블/컬럼이 없으면 앱이 500 에러
+- **`dotnet ef database update`는 VPN 연결 상태에서만 가능** (172.25.1.21 접근 필요)
+- **롤백**: `dotnet ef database update <이전MigrationName>` (단, 데이터 손실 가능)
+- 비밀번호의 `!@#$` 특수문자 — bash에서 `\$`로 이스케이프 필요
 
 ## 프로젝트 구조
 

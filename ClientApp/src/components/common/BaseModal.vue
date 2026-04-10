@@ -3,10 +3,10 @@
     <div
       v-if="isOpen"
       class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end md:items-center z-50 md:p-4"
-      @mousedown.self="onMouseDown"
-      @mouseup.self="onMouseUp"
-      @touchstart.self="onTouchStart"
-      @touchend.self="onTouchEnd"
+      @mousedown="onBackdropMouseDown"
+      @mouseup="onBackdropMouseUp"
+      @touchstart="onBackdropTouchStart"
+      @touchend="onBackdropTouchEnd"
     >
       <div
         class="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-h-[90vh] flex flex-col overflow-hidden modal-content"
@@ -58,8 +58,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { computed, watch, onUnmounted } from 'vue'
 import { useUIStore } from '@/stores/ui'
+import { useBackdropClose } from '@/composables/useBackdropClose'
 
 const uiStore = useUIStore()
 
@@ -73,42 +74,18 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-const startPos = ref(null)
 const modalId = Symbol('baseModal')
-
-const onMouseDown = (e) => {
-  // backdrop에서 mousedown이 시작된 경우만 기록
-  startPos.value = { x: e.clientX, y: e.clientY }
-}
-
-const onMouseUp = (e) => {
-  // mousedown이 backdrop에서 시작되지 않았으면 무시 (드래그 선택 보호)
-  if (!startPos.value) return
-  const dx = Math.abs(e.clientX - startPos.value.x)
-  const dy = Math.abs(e.clientY - startPos.value.y)
-  startPos.value = null
-  if (dx < 5 && dy < 5) {
-    close()
-  }
-}
-
-const onTouchStart = (e) => {
-  const touch = e.touches[0]
-  startPos.value = { x: touch.clientX, y: touch.clientY }
-}
-
-const onTouchEnd = (e) => {
-  const touch = e.changedTouches[0]
-  const dx = Math.abs(touch.clientX - startPos.value.x)
-  const dy = Math.abs(touch.clientY - startPos.value.y)
-  if (dx < 5 && dy < 5) {
-    close()
-  }
-}
 
 const close = () => {
   emit('close')
 }
+
+const {
+  onBackdropMouseDown,
+  onBackdropMouseUp,
+  onBackdropTouchStart,
+  onBackdropTouchEnd,
+} = useBackdropClose(close)
 
 const maxWidthClass = computed(() => {
   return {

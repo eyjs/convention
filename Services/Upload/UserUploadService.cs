@@ -63,6 +63,53 @@ public class UserUploadService : IUserUploadService
 
             _logger.LogInformation("Processing {RowCount} rows from Excel", rowCount);
 
+            // ===== 교체 모드: 기존 convention 종속 데이터 삭제 =====
+            // User 레코드와 GuestAttribute는 유지 (User 단위 개인 정보)
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                var existingUcs = (await _unitOfWork.UserConventions
+                    .FindAsync(uc => uc.ConventionId == conventionId)).ToList();
+
+                // 1) UserActionStatus 삭제 (해당 convention)
+                var existingActionStatuses = (await _unitOfWork.UserActionStatuses
+                    .FindAsync(uas => uas.ConventionAction.ConventionId == conventionId)).ToList();
+                if (existingActionStatuses.Count > 0)
+                {
+                    _unitOfWork.UserActionStatuses.RemoveRange(existingActionStatuses);
+                }
+
+                // 2) GuestScheduleTemplate (그룹-일정 매핑) 삭제 (해당 convention)
+                var existingGuestSchedules = (await _unitOfWork.GuestScheduleTemplates
+                    .FindAsync(gst => gst.ScheduleTemplate.ConventionId == conventionId)).ToList();
+                if (existingGuestSchedules.Count > 0)
+                {
+                    _unitOfWork.GuestScheduleTemplates.RemoveRange(existingGuestSchedules);
+                }
+
+                // 3) UserConvention 삭제 (해당 convention)
+                if (existingUcs.Count > 0)
+                {
+                    _unitOfWork.UserConventions.RemoveRange(existingUcs);
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+
+                result.RemovedUserConventions = existingUcs.Count;
+                _logger.LogInformation(
+                    "Cleared convention {ConventionId}: {Ucs} UserConventions, {Actions} UserActionStatuses, {GstMaps} GuestScheduleTemplates",
+                    conventionId, existingUcs.Count, existingActionStatuses.Count, existingGuestSchedules.Count);
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogError(ex, "Failed to clear existing convention data");
+                result.Errors.Add($"기존 참석자 데이터 삭제 실패: {ex.Message}");
+                result.Success = false;
+                return result;
+            }
+
             // 시트1 처리 후 행별 UserId 매핑 (시트2/3에서 사용)
             var rowUserMap = new Dictionary<int, int>(); // excelRow -> userId
             var rowNewUserMap = new Dictionary<int, User>(); // excelRow -> 신규 User 객체 (SaveChanges 후 Id 할당)
@@ -157,31 +204,19 @@ public class UserUploadService : IUserUploadService
 
                         _unitOfWork.Users.Update(existingUser);
 
-                        var existingUserConvention = (await _unitOfWork.UserConventions
-                            .FindAsync(uc => uc.UserId == existingUser.Id && uc.ConventionId == conventionId))
-                            .FirstOrDefault();
-
-                        if (existingUserConvention != null)
+                        // 교체 모드: 기존 UserConvention은 이미 삭제됨 → 항상 신규 생성
+                        await _unitOfWork.UserConventions.AddAsync(new UserConvention
                         {
-                            existingUserConvention.GroupName = groupName;
-                            _unitOfWork.UserConventions.Update(existingUserConvention);
-                            result.UsersUpdated++;
-                        }
-                        else
-                        {
-                            await _unitOfWork.UserConventions.AddAsync(new UserConvention
-                            {
-                                UserId = existingUser.Id,
-                                ConventionId = conventionId,
-                                GroupName = groupName,
-                                AccessToken = Guid.NewGuid().ToString("N"),
-                                CreatedAt = DateTime.UtcNow
-                            });
-                            result.UsersCreated++;
-                        }
+                            UserId = existingUser.Id,
+                            ConventionId = conventionId,
+                            GroupName = groupName,
+                            AccessToken = Guid.NewGuid().ToString("N"),
+                            CreatedAt = DateTime.UtcNow
+                        });
+                        result.UsersUpdated++; // 기존 User 재사용
 
                         rowUserMap[row] = existingUser.Id;
-                        _logger.LogDebug("Updated user: {UserName} (Row {Row})", userName, row);
+                        _logger.LogDebug("Reused user: {UserName} (Row {Row})", userName, row);
                     }
                     else
                     {
@@ -252,11 +287,11 @@ public class UserUploadService : IUserUploadService
                 await ProcessScheduleMappingSheet(conventionId, package.Workbook.Worksheets[1], result);
             }
 
-            // 시트3: 속성 처리 (시트1과 같은 행 = 같은 사람)
-            if (package.Workbook.Worksheets.Count >= 3)
-            {
-                await ProcessAttributeSheet(package.Workbook.Worksheets[2], rowUserMap, result);
-            }
+            // 시트3(속성)은 처리하지 않음 — GuestAttribute는 User 단위 메타데이터이며
+            // 행사에 종속되지 않으므로 별도 기능으로 분리
+
+            // 모든 시트 처리 성공 → 트랜잭션 커밋
+            await _unitOfWork.CommitTransactionAsync();
         }
         catch (Exception ex)
         {
@@ -266,6 +301,16 @@ public class UserUploadService : IUserUploadService
             {
                 result.Errors.Add($"상세: {ex.InnerException.Message}");
             }
+            // 트랜잭션 롤백
+            try
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+            }
+            catch (Exception rollbackEx)
+            {
+                _logger.LogError(rollbackEx, "Transaction rollback failed");
+            }
+            result.Success = false;
         }
 
         return result;

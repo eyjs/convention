@@ -312,6 +312,26 @@
               />
             </div>
 
+            <div v-if="seatingLayouts.length > 0">
+              <label class="block text-sm font-medium mb-1">좌석 배치도 연결</label>
+              <select
+                v-model="itemForm.seatingLayoutId"
+                class="w-full px-3 py-2 border rounded-lg text-sm"
+              >
+                <option :value="null">연결 없음</option>
+                <option
+                  v-for="sl in seatingLayouts"
+                  :key="sl.id"
+                  :value="sl.id"
+                >
+                  {{ sl.name }}
+                </option>
+              </select>
+              <p class="text-xs text-gray-500 mt-1">
+                연결하면 사용자 일정에서 "내 자리 보기" 버튼이 표시됩니다
+              </p>
+            </div>
+
             <div>
               <label class="block text-sm font-medium mb-1">상세 내용</label>
               <RichTextEditor
@@ -608,7 +628,9 @@ const itemForm = ref({
   title: '',
   location: '',
   content: '',
+  seatingLayoutId: null,
 })
+const seatingLayouts = ref([])
 
 const formatDate = (dateStr) => {
   const date = new Date(dateStr)
@@ -630,13 +652,18 @@ const stripHtml = (html) => {
 
 const loadTemplates = async () => {
   try {
-    const response = await apiClient.get(
-      `/admin/conventions/${props.conventionId}/schedule-templates`,
-    )
-    templates.value = response.data
-    console.log('✅ Templates loaded:', response.data)
+    const [templatesRes, layoutsRes] = await Promise.all([
+      apiClient.get(
+        `/admin/conventions/${props.conventionId}/schedule-templates`,
+      ),
+      apiClient
+        .get(`/admin/conventions/${props.conventionId}/seating-layouts`)
+        .catch(() => ({ data: [] })),
+    ])
+    templates.value = templatesRes.data
+    seatingLayouts.value = layoutsRes.data || []
   } catch (error) {
-    console.error('❌ Failed to load templates:', error)
+    console.error('Failed to load templates:', error)
   }
 }
 
@@ -714,6 +741,7 @@ const addScheduleItem = (template) => {
     title: '',
     location: '',
     content: '',
+    seatingLayoutId: null,
   }
   showItemModal.value = true
 }
@@ -729,6 +757,7 @@ const editScheduleItem = (template, item) => {
     title: item.title,
     location: item.location || '',
     content: item.content || '',
+    seatingLayoutId: item.seatingLayoutId || null,
   }
   showItemModal.value = true
 }

@@ -589,15 +589,8 @@ public class UserProfileService : IUserProfileService
             })
             .ToList();
 
-        // 게스트 속성 (조, 호차 등) — travel_info는 시스템 예약 키이므로 제외
-        var attributes = user.GuestAttributes
-            .Where(ga => ga.AttributeKey != "travel_info")
-            .Select(ga => new
-            {
-                key = ga.AttributeKey,
-                value = ga.AttributeValue
-            })
-            .ToList();
+        // 게스트 속성은 관리자 전용 메타데이터 — 일반 사용자 응답에서 제외
+        var attributes = new List<object>();
 
         // 설문조사 상태 — 기간 내 + 활성 상태만 (KST 기준)
         var kstNow = TimeZoneInfo.ConvertTimeFromUtc(

@@ -8,6 +8,25 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>StarTour</title>
+    <style>
+      /* JS 번들 로드 전 첫 페인트용 배경 — 로그인 splash와 동일 톤 */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: radial-gradient(
+            ellipse at center,
+            #1e3a5f 0%,
+            #0f1f3a 50%,
+            #050d1c 100%
+          ),
+          linear-gradient(180deg, #1a2540 0%, #050d1c 100%);
+        min-height: 100vh;
+      }
+      #app {
+        min-height: 100vh;
+      }
+    </style>
     <script
       type="text/javascript"
       src="//dapi.kakao.com/v2/maps/sdk.js?appkey=%VITE_KAKAO_MAP_API_KEY%&libraries=services,clusterer,drawing"

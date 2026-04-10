@@ -192,11 +192,9 @@
             </div>
           </div>
 
-          <!-- 배정 정보 태그 -->
+          <!-- 배정 정보 태그 (속성은 관리자 전용 메타데이터이므로 노출 제외) -->
           <div
-            v-if="
-              myInfo.scheduleCourses.length > 0 || myInfo.attributes.length > 0
-            "
+            v-if="myInfo.scheduleCourses.length > 0"
             class="flex flex-wrap gap-2 mb-4"
           >
             <span
@@ -210,20 +208,14 @@
             >
               {{ course.courseName }}
             </span>
-            <span
-              v-for="attr in myInfo.attributes"
-              :key="attr.key"
-              class="px-2.5 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-700"
-            >
-              {{ attr.key }}: {{ attr.value }}
-            </span>
           </div>
 
           <!-- 준비 상태 체크리스트 -->
           <div class="space-y-0 divide-y divide-gray-100">
-            <!-- 여권 -->
+            <!-- 여권 (해외 행사만) -->
             <!-- prettier-ignore -->
             <button
+              v-if="isOverseas"
               class="w-full flex items-center justify-between py-3 text-left hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors"
               @click="showPassportModal = true"
             >
@@ -375,8 +367,8 @@
           </div>
 
           <div class="space-y-0 divide-y divide-gray-100">
-            <!-- 동반자 여권 -->
-            <div class="flex items-center justify-between py-3">
+            <!-- 동반자 여권 (해외 행사만) -->
+            <div v-if="isOverseas" class="flex items-center justify-between py-3">
               <div class="flex items-center gap-2.5">
                 <span
                   class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs"
@@ -854,6 +846,9 @@ const { setPendingNotice } = useNoticeNavigation()
 
 const loading = ref(true)
 const convention = computed(() => conventionStore.currentConvention)
+const isOverseas = computed(
+  () => convention.value?.conventionType === 'OVERSEAS',
+)
 const allActions = ref([]) // 전체 동적 액션 저장
 const checklistStatus = ref(null)
 const myInfo = ref(null)

@@ -4,8 +4,10 @@
       v-if="isOpen"
       class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end"
       :class="zIndexClass"
-      @mousedown.self="onMouseDown"
-      @mouseup.self="onMouseUp"
+      @mousedown="onBackdropMouseDown"
+      @mouseup="onBackdropMouseUp"
+      @touchstart="onBackdropTouchStart"
+      @touchend="onBackdropTouchEnd"
     >
       <div
         class="bg-white rounded-t-2xl shadow-2xl w-full max-h-[90vh] flex flex-col"
@@ -60,8 +62,9 @@
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted } from 'vue'
+import { watch, onUnmounted } from 'vue'
 import { useUIStore } from '@/stores/ui'
+import { useBackdropClose } from '@/composables/useBackdropClose'
 
 const uiStore = useUIStore()
 
@@ -75,8 +78,18 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-const startPos = ref({ x: 0, y: 0 })
 const modalId = Symbol('modal') // 고유 ID
+
+const close = () => {
+  emit('close')
+}
+
+const {
+  onBackdropMouseDown,
+  onBackdropMouseUp,
+  onBackdropTouchStart,
+  onBackdropTouchEnd,
+} = useBackdropClose(close)
 
 // 모달 열림/닫힘 시 body 스크롤 제어 및 스택 관리
 watch(
@@ -107,21 +120,6 @@ onUnmounted(() => {
   document.body.style.touchAction = ''
 })
 
-const onMouseDown = (e) => {
-  startPos.value = { x: e.clientX, y: e.clientY }
-}
-
-const onMouseUp = (e) => {
-  const dx = Math.abs(e.clientX - startPos.value.x)
-  const dy = Math.abs(e.clientY - startPos.value.y)
-  if (dx < 5 && dy < 5) {
-    close()
-  }
-}
-
-const close = () => {
-  emit('close')
-}
 </script>
 
 <style scoped>

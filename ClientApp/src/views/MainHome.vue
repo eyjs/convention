@@ -61,33 +61,39 @@
           </div>
         </div>
 
-        <!-- 내 정보 점검 -->
+        <!-- 여권 정보 카드 (해외 행사만, 승인 완료 시 숨김) -->
         <div
-          v-if="!allChecksPassed"
+          v-if="showPassportCard"
           class="bg-white rounded-xl shadow-sm mb-4 px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
+          :class="passportCardBorder"
           @click="router.push('/my-profile')"
         >
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-semibold text-gray-700">내 정보</span>
-            <span class="text-xs font-medium text-amber-600">
-              {{ passedCount }}/{{ infoChecks.length }}
-            </span>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold text-gray-800">여권 정보</span>
+              <span
+                class="px-2 py-0.5 text-xs font-medium rounded"
+                :class="passportStatusBadgeClass"
+              >
+                {{ passportStatusLabel }}
+              </span>
+            </div>
+            <span class="text-xs text-gray-400">입력하러 가기 ›</span>
           </div>
-          <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              class="h-full bg-amber-500 rounded-full transition-all duration-500"
-              :style="{ width: `${(passedCount / infoChecks.length) * 100}%` }"
-            ></div>
-          </div>
-          <div class="flex flex-wrap gap-1.5 mt-2">
-            <span
-              v-for="check in failedChecks"
-              :key="check.key"
-              class="px-2 py-0.5 bg-red-50 text-red-500 text-xs rounded"
+          <p class="text-xs text-gray-600 mt-1.5">{{ passportStatusMessage }}</p>
+          <ul
+            v-if="missingPassportFields.length > 0"
+            class="mt-2 space-y-0.5"
+          >
+            <li
+              v-for="item in missingPassportFields"
+              :key="item"
+              class="text-xs text-gray-500 flex items-center gap-1"
             >
-              {{ check.label }}
-            </span>
-          </div>
+              <span class="text-red-400">•</span>
+              {{ item }}
+            </li>
+          </ul>
         </div>
 
         <!-- 진행중인 스타투어 -->
@@ -128,6 +134,16 @@
                     class="absolute top-3 right-3 px-3 py-1 bg-black/50 backdrop-blur-sm text-white text-sm font-bold rounded-full"
                   >
                     D-{{ getDDay(convention.startDate) }}
+                  </div>
+                  <div
+                    class="absolute top-3 left-3 px-2.5 py-1 text-xs font-semibold rounded-full shadow"
+                    :class="
+                      isConventionOverseas(convention)
+                        ? 'bg-sky-500 text-white'
+                        : 'bg-emerald-500 text-white'
+                    "
+                  >
+                    {{ isConventionOverseas(convention) ? '해외' : '국내' }}
                   </div>
                 </div>
                 <div class="p-4">
@@ -187,9 +203,23 @@
                     class="absolute inset-0 bg-gradient-to-br from-gray-400 to-gray-500"
                   ></div>
                   <div
-                    class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/50 text-white text-xs rounded backdrop-blur-sm"
+                    class="absolute top-2 left-2 flex items-center gap-1"
                   >
-                    종료
+                    <span
+                      class="px-1.5 py-0.5 bg-black/50 text-white text-xs rounded backdrop-blur-sm"
+                    >
+                      종료
+                    </span>
+                    <span
+                      class="px-1.5 py-0.5 text-xs font-semibold rounded backdrop-blur-sm"
+                      :class="
+                        isConventionOverseas(convention)
+                          ? 'bg-sky-500/90 text-white'
+                          : 'bg-emerald-500/90 text-white'
+                      "
+                    >
+                      {{ isConventionOverseas(convention) ? '해외' : '국내' }}
+                    </span>
                   </div>
                 </div>
                 <div class="p-3">
@@ -225,39 +255,105 @@ const conventions = ref([])
 const dashboard = ref({})
 const isSidebarOpen = ref(false)
 
+// 국내/해외 판정 — conventionType SSOT
+function isConventionOverseas(c) {
+  return c?.conventionType === 'OVERSEAS'
+}
+
+// 행사 종료 판정: completeYn='Y' 또는 endDate가 오늘 이전
+function isConventionEnded(c) {
+  if (c.completeYn === 'Y') return true
+  if (!c.endDate) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const end = new Date(c.endDate)
+  end.setHours(0, 0, 0, 0)
+  return end < today
+}
+
 const activeConventions = computed(() =>
-  conventions.value.filter((c) => c.completeYn !== 'Y'),
+  conventions.value.filter((c) => !isConventionEnded(c)),
 )
 const completedConventions = computed(() =>
-  conventions.value.filter((c) => c.completeYn === 'Y'),
+  conventions.value.filter((c) => isConventionEnded(c)),
 )
 
-// 정보 점검
-const infoChecks = computed(() => {
+// 여권 정보 점검 — 국내 행사 제외, 승인 완료 시 숨김
+const hasOverseasConvention = computed(() =>
+  activeConventions.value.some((c) => c.conventionType === 'OVERSEAS'),
+)
+
+const passportFieldChecks = computed(() => {
   const p = dashboard.value.passport || {}
   return [
-    { key: 'passportNumber', label: '여권번호', ok: !!p.passportNumber },
+    { key: 'passportNumber', label: '여권번호 미입력', ok: !!p.passportNumber },
     {
       key: 'passportName',
-      label: '영문명',
+      label: '영문명(First/Last) 미입력',
       ok: !!(p.firstName && p.lastName),
     },
     {
       key: 'passportExpiry',
-      label: '만료일',
+      label: '여권 만료일 미입력',
       ok: !!p.passportExpiryDate,
     },
     {
       key: 'passportImage',
-      label: '여권 사본',
+      label: '여권 사본 미업로드',
       ok: !!p.passportImageUrl,
     },
-    { key: 'passportVerified', label: '승인', ok: !!p.verified },
   ]
 })
-const failedChecks = computed(() => infoChecks.value.filter((c) => !c.ok))
-const passedCount = computed(() => infoChecks.value.filter((c) => c.ok).length)
-const allChecksPassed = computed(() => failedChecks.value.length === 0)
+
+const missingPassportFields = computed(() =>
+  passportFieldChecks.value.filter((c) => !c.ok).map((c) => c.label),
+)
+
+const isPassportVerified = computed(
+  () => !!(dashboard.value.passport && dashboard.value.passport.verified),
+)
+
+const allPassportFieldsFilled = computed(
+  () => missingPassportFields.value.length === 0,
+)
+
+// 카드 표시 여부: 해외 행사 있음 && 승인 완료 아님
+const showPassportCard = computed(
+  () => hasOverseasConvention.value && !isPassportVerified.value,
+)
+
+// 상태별 메시지
+const passportStatus = computed(() => {
+  if (!allPassportFieldsFilled.value) {
+    const total = passportFieldChecks.value.length
+    const filled = total - missingPassportFields.value.length
+    if (filled === 0) {
+      return {
+        label: '미등록',
+        message: '여권 정보가 등록되지 않았습니다. 등록해 주세요.',
+        badgeClass: 'bg-red-50 text-red-600',
+        borderClass: 'border-l-4 border-red-400',
+      }
+    }
+    return {
+      label: '입력 필요',
+      message: '여권 정보 입력이 필요합니다.',
+      badgeClass: 'bg-amber-50 text-amber-700',
+      borderClass: 'border-l-4 border-amber-400',
+    }
+  }
+  return {
+    label: '승인 대기',
+    message: '여권 정보 승인 대기 중입니다.',
+    badgeClass: 'bg-blue-50 text-blue-600',
+    borderClass: 'border-l-4 border-blue-400',
+  }
+})
+
+const passportStatusLabel = computed(() => passportStatus.value.label)
+const passportStatusMessage = computed(() => passportStatus.value.message)
+const passportStatusBadgeClass = computed(() => passportStatus.value.badgeClass)
+const passportCardBorder = computed(() => passportStatus.value.borderClass)
 
 function getDDay(startDate) {
   if (!startDate) return 0

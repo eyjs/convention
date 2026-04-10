@@ -18,14 +18,12 @@
     <Transition name="popup-fade">
       <div
         v-if="isVisible"
-        class="fixed inset-0 z-50 flex items-center justify-center"
-        @click.self="handleBackdropClick"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        @mousedown="onBackdropMouseDown"
+        @mouseup="onBackdropMouseUp"
+        @touchstart="onBackdropTouchStart"
+        @touchend="onBackdropTouchEnd"
       >
-        <!-- Backdrop -->
-        <div
-          class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
-        ></div>
-
         <!-- Popup Container -->
         <div
           :class="popupClasses"
@@ -130,6 +128,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useBackdropClose } from '@/composables/useBackdropClose'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -225,12 +224,19 @@ const dismissPermanently = () => {
   isVisible.value = false
 }
 
-// Handle backdrop click
+// Handle backdrop click (drag-safe)
 const handleBackdropClick = () => {
   if (config.value.dismissOnBackdrop !== false) {
     handleClose()
   }
 }
+
+const {
+  onBackdropMouseDown,
+  onBackdropMouseUp,
+  onBackdropTouchStart,
+  onBackdropTouchEnd,
+} = useBackdropClose(handleBackdropClick)
 
 // Handle button click
 const handleButtonClick = (button) => {

@@ -582,6 +582,18 @@
             </div>
           </div>
 
+          <!-- 내 자리 보기 버튼 -->
+          <button
+            v-if="selectedSchedule.seatingLayoutId"
+            class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold text-sm shadow hover:shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            @click="goToMySeat(selectedSchedule.seatingLayoutId)"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+            내 자리 보기
+          </button>
+
           <!-- 참여 그룹 & 참석자 보기 (관리자만) - 옵션투어는 제외 -->
           <div
             v-if="
@@ -648,7 +660,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUIStore } from '@/stores/ui'
 import { useConventionStore } from '@/stores/convention'
@@ -916,6 +928,17 @@ function openFullImage(url) {
   fullImageUrl.value = url
 }
 
+const router = useRouter()
+
+function goToMySeat(layoutId) {
+  // 모달 닫고 이동
+  selectedSchedule.value = null
+  const conventionId = route.params.conventionId
+  setTimeout(() => {
+    router.push(`/conventions/${conventionId}/my-seat?layout=${layoutId}`)
+  }, 100)
+}
+
 function openScheduleDetail(schedule) {
   selectedSchedule.value = schedule
 }
@@ -1046,6 +1069,7 @@ onMounted(async () => {
       group: item.courseName || '전체',
       participants: item.participantCount || 0,
       images: item.images || [],
+      seatingLayoutId: item.seatingLayoutId || null,
     }))
 
     // 5. Fetch option tours

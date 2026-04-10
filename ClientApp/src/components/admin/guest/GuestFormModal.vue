@@ -337,12 +337,11 @@
           <input
             v-model="guestForm.password"
             type="password"
-            placeholder="미입력 시 주민등록번호 앞 6자리 자동 설정"
+            placeholder="미입력 시 기본 비밀번호 1111 설정"
             class="w-full px-3 py-2 border rounded-lg"
           />
           <p class="text-xs text-gray-500 mt-1">
-            * 주민등록번호가 없거나 비밀번호를 지정하지 않으면 기본 비밀번호
-            "123456"이 설정됩니다.
+            * 비밀번호를 지정하지 않으면 기본 비밀번호 "1111"이 설정됩니다.
           </p>
         </div>
 

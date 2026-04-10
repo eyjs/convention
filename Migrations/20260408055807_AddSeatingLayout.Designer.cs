@@ -4,6 +4,7 @@ using LocalRAG.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalRAG.Migrations
 {
     [DbContext(typeof(ConventionDbContext))]
-    partial class ConventionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260408055807_AddSeatingLayout")]
+    partial class AddSeatingLayout
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -75,9 +78,6 @@ namespace LocalRAG.Migrations
                     b.Property<int>("ScheduleTemplateId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("SeatingLayoutId")
-                        .HasColumnType("int");
-
                     b.Property<string>("StartTime")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -90,9 +90,6 @@ namespace LocalRAG.Migrations
 
                     b.HasIndex("ScheduleTemplateId")
                         .HasDatabaseName("IX_ScheduleItem_ScheduleTemplateId");
-
-                    b.HasIndex("SeatingLayoutId")
-                        .HasDatabaseName("IX_ScheduleItem_SeatingLayoutId");
 
                     b.ToTable("ScheduleItems");
                 });
@@ -2284,14 +2281,7 @@ namespace LocalRAG.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("LocalRAG.Entities.SeatingLayout", "SeatingLayout")
-                        .WithMany()
-                        .HasForeignKey("SeatingLayoutId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.Navigation("ScheduleTemplate");
-
-                    b.Navigation("SeatingLayout");
                 });
 
             modelBuilder.Entity("LocalRAG.DTOs.ScheduleModels.ScheduleTemplate", b =>

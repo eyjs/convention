@@ -119,39 +119,59 @@
           </div>
         </div>
 
-        <!-- 여행 정보 -->
+        <!-- 여행 정보 (국내/해외 분기) -->
         <div class="border rounded-lg p-4 bg-gray-50 space-y-4">
-          <h3 class="text-sm font-semibold text-gray-700">여행 정보</h3>
+          <h3 class="text-sm font-semibold text-gray-700">
+            {{ form.conventionType === 'OVERSEAS' ? '해외' : '국내' }} 여행 정보
+          </h3>
 
+          <!-- 행사 장소 (공통) -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >행사 장소</label
-            >
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              행사 장소
+              <span
+                v-if="form.conventionType === 'DOMESTIC'"
+                class="text-red-500"
+                >*</span
+              >
+            </label>
             <input
               v-model="form.location"
               type="text"
+              :required="form.conventionType === 'DOMESTIC'"
               class="w-full px-3 py-2 border rounded-lg"
-              placeholder="예: 로마 힐튼호텔"
+              :placeholder="
+                form.conventionType === 'OVERSEAS'
+                  ? '예: 로마 힐튼호텔'
+                  : '예: 제주 신라호텔'
+              "
             />
           </div>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >목적지 국가/도시</label
-            >
+          <!-- 해외 전용: 목적지 국가/도시 -->
+          <div v-if="form.conventionType === 'OVERSEAS'">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              목적지 국가/도시 <span class="text-red-500">*</span>
+            </label>
             <div class="grid grid-cols-2 gap-3">
               <select
                 v-model="selectedCountry"
+                required
                 class="w-full px-3 py-2 border rounded-lg text-sm"
                 @change="onCountryChange"
               >
                 <option value="">국가 선택</option>
-                <option v-for="c in countryList" :key="c.code" :value="c.code">
+                <option
+                  v-for="c in overseasCountryList"
+                  :key="c.code"
+                  :value="c.code"
+                >
                   {{ c.name }}
                 </option>
               </select>
               <select
                 v-model="form.destinationCity"
+                required
                 class="w-full px-3 py-2 border rounded-lg text-sm"
                 :disabled="!selectedCountry"
               >
@@ -488,6 +508,11 @@ const cityData = {
   ],
 }
 
+// 해외 국가 목록 (KR 제외)
+const overseasCountryList = computed(() =>
+  countryList.filter((c) => c.code !== 'KR'),
+)
+
 const filteredCities = computed(() => {
   return cityData[selectedCountry.value] || []
 })
@@ -496,6 +521,25 @@ function onCountryChange() {
   form.value.destinationCountryCode = selectedCountry.value
   form.value.destinationCity = ''
 }
+
+// 행사 유형 변경 시 반대편 필드 클리어
+watch(
+  () => form.value.conventionType,
+  (newType, oldType) => {
+    if (!oldType || newType === oldType) return
+    if (newType === 'DOMESTIC') {
+      // 국내 전환: 국가 강제 KR, 도시 초기화
+      form.value.destinationCountryCode = 'KR'
+      form.value.destinationCity = ''
+      selectedCountry.value = ''
+    } else if (newType === 'OVERSEAS') {
+      // 해외 전환: 국가/도시 초기화 (사용자 재선택)
+      form.value.destinationCountryCode = ''
+      form.value.destinationCity = ''
+      selectedCountry.value = ''
+    }
+  },
+)
 
 function addEmergencyContact() {
   emergencyContacts.value.push({ role: '', name: '', phone: '' })
@@ -553,9 +597,16 @@ watch(
         themePreset: newVal.themePreset || 'default',
         location: newVal.location || '',
         destinationCity: newVal.destinationCity || '',
-        destinationCountryCode: newVal.destinationCountryCode || '',
+        // 국내는 KR 강제, 해외는 기존 값 유지
+        destinationCountryCode:
+          newVal.conventionType === 'DOMESTIC'
+            ? 'KR'
+            : newVal.destinationCountryCode || '',
       }
-      selectedCountry.value = newVal.destinationCountryCode || ''
+      selectedCountry.value =
+        newVal.conventionType === 'OVERSEAS'
+          ? newVal.destinationCountryCode || ''
+          : ''
       // 긴급연락처 파싱
       try {
         const contacts = newVal.emergencyContactsJson
@@ -628,6 +679,30 @@ async function uploadConventionCoverImage() {
 }
 
 const handleSubmit = async () => {
+  // 국내/해외 분기 검증
+  if (form.value.conventionType === 'DOMESTIC') {
+    if (!form.value.location || form.value.location.trim() === '') {
+      alert('국내 행사는 행사 장소를 입력해주세요.')
+      return
+    }
+    // 국내는 KR 강제, 도시 정보 비움
+    form.value.destinationCountryCode = 'KR'
+    form.value.destinationCity = ''
+  } else if (form.value.conventionType === 'OVERSEAS') {
+    if (!form.value.destinationCountryCode) {
+      alert('해외 행사는 목적지 국가를 선택해주세요.')
+      return
+    }
+    if (form.value.destinationCountryCode === 'KR') {
+      alert('해외 행사에 대한민국을 선택할 수 없습니다. 국내 행사로 변경해주세요.')
+      return
+    }
+    if (!form.value.destinationCity) {
+      alert('해외 행사는 목적지 도시를 선택해주세요.')
+      return
+    }
+  }
+
   saving.value = true
   try {
     if (coverImageFile.value) {

@@ -528,13 +528,13 @@ public class AdminUserService : IAdminUserService
         }, 200);
     }
 
+    private const string DefaultGuestPassword = "1111";
+
     private static string ResolveGuestPassword(UserDto dto)
     {
         if (!string.IsNullOrWhiteSpace(dto.Password))
             return dto.Password;
-        if (!string.IsNullOrWhiteSpace(dto.ResidentNumber) && dto.ResidentNumber.Length >= 6)
-            return dto.ResidentNumber[..6];
-        return "123456";
+        return DefaultGuestPassword;
     }
 
     private static string GenerateAccessToken()

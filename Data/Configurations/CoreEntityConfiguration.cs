@@ -151,6 +151,13 @@ public class ScheduleItemConfiguration : IEntityTypeConfiguration<ScheduleItem>
               .WithMany(st => st.ScheduleItems)
               .HasForeignKey(si => si.ScheduleTemplateId)
               .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasOne(si => si.SeatingLayout)
+              .WithMany()
+              .HasForeignKey(si => si.SeatingLayoutId)
+              .OnDelete(DeleteBehavior.NoAction);
+
+        entity.HasIndex(e => e.SeatingLayoutId).HasDatabaseName("IX_ScheduleItem_SeatingLayoutId");
     }
 }
 
@@ -300,6 +307,28 @@ public class FileAttachmentConfiguration : IEntityTypeConfiguration<FileAttachme
         entity.Property(e => e.UploadedAt).HasDefaultValueSql("getdate()");
         entity.HasIndex(e => e.NoticeId).HasDatabaseName("IX_FileAttachment_NoticeId");
         entity.HasIndex(e => e.Category).HasDatabaseName("IX_FileAttachment_Category");
+    }
+}
+
+public class SeatingLayoutConfiguration : IEntityTypeConfiguration<SeatingLayout>
+{
+    public void Configure(EntityTypeBuilder<SeatingLayout> entity)
+    {
+        entity.HasKey(e => e.Id);
+        entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+        entity.Property(e => e.Description).HasMaxLength(1000);
+        entity.Property(e => e.BackgroundImageUrl).HasMaxLength(500);
+        entity.Property(e => e.LayoutJson).IsRequired();
+        entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+        entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+        entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_SeatingLayout_ConventionId");
+        entity.HasIndex(e => e.IsDeleted).HasDatabaseName("IX_SeatingLayout_IsDeleted");
+
+        entity.HasOne(e => e.Convention)
+              .WithMany()
+              .HasForeignKey(e => e.ConventionId)
+              .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

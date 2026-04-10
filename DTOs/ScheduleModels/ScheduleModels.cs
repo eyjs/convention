@@ -88,9 +88,15 @@ namespace LocalRAG.DTOs.ScheduleModels
         public int OrderNum { get; set; }
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
+
+        /// <summary>
+        /// 연결된 좌석 배치도 ID (선택)
+        /// </summary>
+        public int? SeatingLayoutId { get; set; }
+
         // Navigation
         public ScheduleTemplate? ScheduleTemplate { get; set; }
+        public LocalRAG.Entities.SeatingLayout? SeatingLayout { get; set; }
         public ICollection<LocalRAG.Entities.ScheduleImage> Images { get; set; } = new List<LocalRAG.Entities.ScheduleImage>();
     }
     

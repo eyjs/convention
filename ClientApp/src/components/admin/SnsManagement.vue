@@ -505,7 +505,8 @@
           <div
             v-for="sms in smsHistory"
             :key="sms.id"
-            class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+            class="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+            @click="viewSmsDetail(sms)"
           >
             <div class="flex-1 min-w-0 mr-4">
               <div class="flex justify-between mb-1">
@@ -519,7 +520,7 @@
               </p>
             </div>
             <span
-              class="px-2 py-0.5 text-xs rounded-full font-medium"
+              class="px-2 py-0.5 text-xs rounded-full font-medium flex-shrink-0"
               :class="
                 sms.externalId
                   ? 'bg-green-100 text-green-700'
@@ -532,6 +533,52 @@
         </div>
       </div>
     </div>
+
+    <!-- 발송 전문 상세 모달 -->
+    <SlideUpModal
+      :is-open="!!viewingSms"
+      @close="viewingSms = null"
+    >
+      <template #header-title>발송 전문</template>
+      <template #body>
+        <div v-if="viewingSms" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <span class="text-gray-500">수신자</span>
+              <p class="font-medium">{{ viewingSms.receiverName }}</p>
+            </div>
+            <div>
+              <span class="text-gray-500">전화번호</span>
+              <p class="font-medium">{{ viewingSms.receiverPhone }}</p>
+            </div>
+            <div>
+              <span class="text-gray-500">발송 시각</span>
+              <p class="font-medium">{{ viewingSms.sentAt }}</p>
+            </div>
+            <div>
+              <span class="text-gray-500">상태</span>
+              <p>
+                <span
+                  class="px-2 py-0.5 text-xs rounded-full font-medium"
+                  :class="viewingSms.externalId ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                >
+                  {{ viewingSms.externalId ? '성공' : '대기' }}
+                </span>
+              </p>
+            </div>
+          </div>
+          <div>
+            <span class="text-sm text-gray-500">전문 내용</span>
+            <div class="mt-1 p-4 bg-gray-50 rounded-lg text-sm text-gray-800 whitespace-pre-wrap leading-relaxed border">
+              {{ viewingSms.message }}
+            </div>
+          </div>
+          <div v-if="viewingSms.externalId" class="text-xs text-gray-400">
+            외부 ID: {{ viewingSms.externalId }}
+          </div>
+        </div>
+      </template>
+    </SlideUpModal>
   </div>
 </template>
 
@@ -539,6 +586,7 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import apiClient from '@/services/api'
 import { useRoute } from 'vue-router'
+import SlideUpModal from '@/components/common/SlideUpModal.vue'
 
 const route = useRoute()
 const conventionId = route.params.id
@@ -549,6 +597,11 @@ const tabs = [
   { key: 'logs', label: '발송 이력' },
 ]
 const activeTab = ref('sms')
+const viewingSms = ref(null)
+
+function viewSmsDetail(sms) {
+  viewingSms.value = sms
+}
 
 // --- 알림톡 탭용 공통: 참석자 목록 ---
 const guests = ref([])
@@ -754,16 +807,35 @@ function selectAll() {
 async function downloadSample() {
   try {
     const XLSX = await import('xlsx')
-    const header = ['번호', '이름', '전화번호', '#{방번호}', '#{식사}', '#{조}']
-    const rows = [
-      header,
-      [1, '홍길동', '01012345678', '301', '한식', 'A조'],
-      [2, '김철수', '01087654321', '302', '양식', 'B조'],
-    ]
+
+    // 행사 참석자 목록 기반으로 샘플 생성
+    let guestRows = []
+    try {
+      const res = await apiClient.get(`/admin/conventions/${conventionId}/guests`)
+      const guests = Array.isArray(res.data) ? res.data : []
+      guestRows = guests.map((g, i) => [
+        i + 1,
+        g.name || '',
+        (g.phone || '').replace(/-/g, ''),
+        '',
+        '',
+        g.groupName || '',
+      ])
+    } catch {
+      // 참석자 조회 실패 시 예시 데이터
+      guestRows = [
+        [1, '홍길동', '01012345678', '', '', 'A조'],
+        [2, '김철수', '01087654321', '', '', 'B조'],
+      ]
+    }
+
+    const header = ['번호', '이름', '전화번호', '#{변수1}', '#{변수2}', '#{조}']
+    const rows = [header, ...guestRows]
     const ws = XLSX.utils.aoa_to_sheet(rows)
+    ws['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }]
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, '수신자')
-    XLSX.writeFile(wb, '문자발송_샘플.xlsx')
+    XLSX.writeFile(wb, '문자발송_수신자.xlsx')
   } catch (e) {
     console.error('샘플 다운로드 실패:', e)
   }

@@ -25,7 +25,6 @@ public class UploadController : ControllerBase
     private readonly IScheduleTemplateUploadService _scheduleTemplateUploadService;
     private readonly IAttributeUploadService _attributeUploadService;
     private readonly IGroupScheduleMappingService _groupScheduleMappingService;
-    private readonly INameTagUploadService _nameTagUploadService;
     private readonly IOptionTourUploadService _optionTourUploadService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UploadController> _logger;
@@ -35,7 +34,6 @@ public class UploadController : ControllerBase
         IScheduleTemplateUploadService scheduleTemplateUploadService,
         IAttributeUploadService attributeUploadService,
         IGroupScheduleMappingService groupScheduleMappingService,
-        INameTagUploadService nameTagUploadService,
         IOptionTourUploadService optionTourUploadService,
         IUnitOfWork unitOfWork,
         ILogger<UploadController> logger)
@@ -44,7 +42,6 @@ public class UploadController : ControllerBase
         _scheduleTemplateUploadService = scheduleTemplateUploadService;
         _attributeUploadService = attributeUploadService;
         _groupScheduleMappingService = groupScheduleMappingService;
-        _nameTagUploadService = nameTagUploadService;
         _optionTourUploadService = optionTourUploadService;
         _unitOfWork = unitOfWork;
         _logger = logger;
@@ -275,47 +272,6 @@ public class UploadController : ControllerBase
     }
 
     /// <summary>
-    /// 명찰 인쇄용 데이터 업로드
-    /// Excel 형식: [번호|테이블명(Group)|이름1|직책1|이름2|직책2|...]
-    /// 이 엔드포인트는 데이터를 DB에 저장하지 않고, 파싱된 결과를 바로 반환하여 인쇄 미리보기 생성에 사용됩니다.
-    /// </summary>
-    [HttpPost("conventions/{conventionId}/name-tags")]
-    [ProducesResponseType(typeof(NameTagUploadResult), 200)]
-    public async Task<IActionResult> UploadNameTagsForPrinting(int conventionId, IFormFile file)
-    {
-        if (file == null || file.Length == 0)
-        {
-            return BadRequest(new { error = "파일이 비어있습니다." });
-        }
-
-        if (!file.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
-        {
-            return BadRequest(new { error = "Excel 파일(.xlsx)만 업로드 가능합니다." });
-        }
-
-        _logger.LogInformation("Uploading name tags for printing for convention {ConventionId}, file: {FileName}",
-            conventionId, file.FileName);
-
-        try
-        {
-            using var stream = file.OpenReadStream();
-            var result = await _nameTagUploadService.UploadNameTagsAsync(stream);
-
-            if (!result.Success)
-            {
-                return BadRequest(result);
-            }
-
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to upload name tags for printing");
-            return StatusCode(500, new { error = "서버 오류가 발생했습니다." });
-        }
-    }
-
-    /// <summary>
     /// 옵션투어 업로드
     /// JSON 형식: { options: [...], participantMappings: [...] }
     /// 프론트엔드에서 엑셀을 파싱하여 JSON으로 전송
@@ -372,32 +328,65 @@ public class UploadController : ControllerBase
             .ToListAsync();
 
         using var package = new ExcelPackage();
-        var sheet = package.Workbook.Worksheets.Add("참석자");
 
-        // 헤더 (업로드 형식과 동일)
-        sheet.Cells[1, 1].Value = "소속";
-        sheet.Cells[1, 2].Value = "부서";
-        sheet.Cells[1, 3].Value = "이름";
-        sheet.Cells[1, 4].Value = "주민번호";
-        sheet.Cells[1, 5].Value = "전화번호";
-        sheet.Cells[1, 6].Value = "그룹";
-        sheet.Cells[1, 7].Value = "비고";
+        // ===== 시트1: 참석자 (업로드 파서와 동일한 컬럼) =====
+        var sheet1 = package.Workbook.Worksheets.Add("참석자");
+        sheet1.Cells[1, 1].Value = "번호";
+        sheet1.Cells[1, 2].Value = "소속/부서";
+        sheet1.Cells[1, 3].Value = "이름";
+        sheet1.Cells[1, 4].Value = "주민등록번호";
+        sheet1.Cells[1, 5].Value = "전화번호";
+        sheet1.Cells[1, 6].Value = "그룹명";
+        sheet1.Cells[1, 7].Value = "비고";
 
         var row = 2;
+        var seq = 1;
         foreach (var uc in guests)
         {
             var u = uc.User;
-            sheet.Cells[row, 1].Value = u.Affiliation;
-            sheet.Cells[row, 2].Value = u.CorpPart;
-            sheet.Cells[row, 3].Value = u.Name;
-            sheet.Cells[row, 4].Value = u.ResidentNumber;
-            sheet.Cells[row, 5].Value = u.Phone;
-            sheet.Cells[row, 6].Value = uc.GroupName;
-            sheet.Cells[row, 7].Value = u.Remarks;
+            sheet1.Cells[row, 1].Value = seq++;
+            sheet1.Cells[row, 2].Value = u.CorpPart ?? u.Affiliation;
+            sheet1.Cells[row, 3].Value = u.Name;
+            sheet1.Cells[row, 4].Value = u.ResidentNumber;
+            sheet1.Cells[row, 5].Value = u.Phone;
+            sheet1.Cells[row, 6].Value = uc.GroupName;
+            sheet1.Cells[row, 7].Value = u.Remarks;
             row++;
         }
+        sheet1.Cells[sheet1.Dimension?.Address ?? "A1"].AutoFitColumns();
 
-        sheet.Cells[sheet.Dimension?.Address ?? "A1"].AutoFitColumns();
+        // ===== 시트2: 그룹-일정매핑 =====
+        var sheet2 = package.Workbook.Worksheets.Add("그룹-일정매핑");
+        sheet2.Cells[1, 1].Value = "그룹명";
+        sheet2.Cells[1, 2].Value = "일정코스명";
+
+        // 현재 행사의 그룹별 코스 배정 조회
+        var groupCourseMappings = await _unitOfWork.UserConventions.Query
+            .Where(uc => uc.ConventionId == conventionId && uc.GroupName != null)
+            .Include(uc => uc.User)
+                .ThenInclude(u => u.GuestScheduleTemplates)
+                    .ThenInclude(gst => gst.ScheduleTemplate)
+            .SelectMany(uc => uc.User.GuestScheduleTemplates
+                .Where(gst => gst.ScheduleTemplate != null
+                              && gst.ScheduleTemplate.ConventionId == conventionId)
+                .Select(gst => new
+                {
+                    GroupName = uc.GroupName!,
+                    CourseName = gst.ScheduleTemplate!.CourseName
+                }))
+            .Distinct()
+            .OrderBy(x => x.GroupName).ThenBy(x => x.CourseName)
+            .ToListAsync();
+
+        var row2 = 2;
+        foreach (var m in groupCourseMappings)
+        {
+            sheet2.Cells[row2, 1].Value = m.GroupName;
+            sheet2.Cells[row2, 2].Value = m.CourseName;
+            row2++;
+        }
+        sheet2.Cells[sheet2.Dimension?.Address ?? "A1"].AutoFitColumns();
+
         var bytes = package.GetAsByteArray();
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"참석자_{DateTime.UtcNow:yyyyMMdd}.xlsx");

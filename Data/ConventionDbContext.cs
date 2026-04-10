@@ -30,6 +30,7 @@ public class ConventionDbContext : DbContext
     public DbSet<AttributeTemplate> AttributeTemplates { get; set; }
     public DbSet<Notice> Notices { get; set; }
     public DbSet<NoticeCategory> NoticeCategories { get; set; }
+    public DbSet<SeatingLayout> SeatingLayouts { get; set; }
     public DbSet<Comment> Comments { get; set; }
     
     // Action Management

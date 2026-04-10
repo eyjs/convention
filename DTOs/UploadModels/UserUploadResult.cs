@@ -9,6 +9,7 @@ public class UserUploadResult
     public int UsersCreated { get; set; }
     public int UsersUpdated { get; set; }
     public int TotalProcessed { get; set; }
+    public int RemovedUserConventions { get; set; }
     public List<string> Errors { get; set; } = new();
     public List<string> Warnings { get; set; } = new();
 

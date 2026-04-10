@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen flex flex-col justify-center items-center font-sans text-white bg-black bg-cover bg-center relative overflow-hidden"
+    class="min-h-screen flex flex-col justify-center items-center font-sans text-white bg-cover bg-center relative overflow-hidden login-splash-bg"
   >
     <video
       ref="videoPlayer"
@@ -9,7 +9,11 @@
       loop
       muted
       playsinline
-      class="absolute top-0 left-0 w-full h-full object-cover"
+      preload="auto"
+      class="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-700"
+      :class="videoReady ? 'opacity-100' : 'opacity-0'"
+      @loadeddata="videoReady = true"
+      @canplay="videoReady = true"
     ></video>
     <div class="absolute inset-0 bg-black/50"></div>
 
@@ -22,9 +26,11 @@
     </header>
 
     <!-- Hero Section -->
-    <section class="relative z-10 text-center space-y-4 animate-fade-in">
+    <section
+      class="relative z-10 text-center space-y-4 animate-fade-in px-6 w-full max-w-md mx-auto"
+    >
       <h1 class="text-4xl md:text-5xl font-bold drop-shadow-lg">StarTour</h1>
-      <p class="text-sm text-white/70 max-w-md mx-auto">
+      <p class="text-sm text-white/70 max-w-md mx-auto px-2">
         당신의 여행이 시작됩니다. 감동과 여유가 있는 순간을 지금 만나보세요.
       </p>
 
@@ -42,7 +48,10 @@
         v-if="isModalOpen"
         class="fixed inset-0 bg-black/60 flex justify-center items-end md:items-center z-50"
         onclick=""
-        @click.self="closeLoginModal"
+        @mousedown="onLoginModalMouseDown"
+        @mouseup="onLoginModalMouseUp"
+        @touchstart="onLoginModalTouchStart"
+        @touchend="onLoginModalTouchEnd"
       >
         <div
           class="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-w-md text-center relative max-h-[90vh] md:max-h-[80vh] overflow-y-auto"
@@ -447,6 +456,7 @@ import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue'
 import PrivacyPolicyModal from '@/components/common/PrivacyPolicyModal.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useBackdropClose } from '@/composables/useBackdropClose'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -471,6 +481,7 @@ const registerForm = ref({
 })
 
 const videoPlayer = ref(null)
+const videoReady = ref(false)
 onMounted(() => {
   if (videoPlayer.value) {
     videoPlayer.value.play().catch((error) => {
@@ -630,6 +641,13 @@ const closeLoginModal = () => {
   }
 }
 
+const {
+  onBackdropMouseDown: onLoginModalMouseDown,
+  onBackdropMouseUp: onLoginModalMouseUp,
+  onBackdropTouchStart: onLoginModalTouchStart,
+  onBackdropTouchEnd: onLoginModalTouchEnd,
+} = useBackdropClose(closeLoginModal)
+
 // 뒤로가기 시 모달 닫기
 function handlePopState() {
   if (isModalOpen.value) {
@@ -658,6 +676,12 @@ async function handleLogin() {
     loginForm.value.password,
   )
   if (result.success) {
+    // 기본 비밀번호 1111 사용 감지 → App.vue에서 모달 표시
+    if (loginForm.value.password === '1111') {
+      sessionStorage.setItem('defaultPasswordLogin', '1')
+    } else {
+      sessionStorage.removeItem('defaultPasswordLogin')
+    }
     router.push('/')
   } else {
     errorMessage.value = result.error
@@ -707,6 +731,17 @@ async function handleRegister() {
 </script>
 
 <style>
+/* 영상 로드 전 즉시 렌더링되는 그라디언트 배경 (검은 화면 방지) */
+.login-splash-bg {
+  background: radial-gradient(
+      ellipse at center,
+      #1e3a5f 0%,
+      #0f1f3a 50%,
+      #050d1c 100%
+    ),
+    linear-gradient(180deg, #1a2540 0%, #050d1c 100%);
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;

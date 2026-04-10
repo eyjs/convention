@@ -4,13 +4,6 @@
       title="행사 관리"
       :description="`전체 ${conventions.length}개 행사`"
     >
-      <AdminButton
-        variant="secondary"
-        :icon="Printer"
-        @click="$router.push('/admin/name-tag-printing')"
-      >
-        명찰 일괄 인쇄
-      </AdminButton>
       <AdminButton :icon="Plus" @click="showCreateModal = true">
         새 행사 만들기
       </AdminButton>
@@ -117,7 +110,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/services/api'
-import { Plus, Printer, Calendar, Users } from 'lucide-vue-next'
+import { Plus, Calendar, Users } from 'lucide-vue-next'
 import ConventionFormModal from '@/components/admin/ConventionFormModal.vue'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import AdminButton from '@/components/admin/ui/AdminButton.vue'

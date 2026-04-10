@@ -15,6 +15,7 @@ import {
   Bus,
   BookOpen,
   MessageSquare,
+  LayoutGrid,
 } from 'lucide-vue-next'
 
 const rootNavItems = [
@@ -132,6 +133,13 @@ const conventionNavItems = [
     icon: MessageSquare,
     path: 'sns',
     routeName: 'AdminSns',
+  },
+  {
+    key: 'seating',
+    label: '좌석 배치도',
+    icon: LayoutGrid,
+    path: 'seating',
+    routeName: 'AdminSeatingList',
   },
 ]
 

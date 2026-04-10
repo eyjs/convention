@@ -54,6 +54,7 @@ public class ConventionCrudService : IConventionCrudService
                 c.DeleteYn,
                 c.CompleteYn,
                 c.RegDtm,
+                c.DestinationCountryCode,
                 GuestCount = guestCount,
                 ScheduleCount = scheduleCount
             });
@@ -90,6 +91,8 @@ public class ConventionCrudService : IConventionCrudService
                 c.EndDate,
                 c.BrandColor,
                 c.CompleteYn,
+                c.ConventionImg,
+                c.DestinationCountryCode,
                 GuestCount = guestCount,
                 ScheduleCount = scheduleCount
             });
@@ -150,8 +153,9 @@ public class ConventionCrudService : IConventionCrudService
             ThemePreset = request.ThemePreset ?? "default",
             ConventionImg = request.ConventionImg,
             Location = request.Location,
-            DestinationCity = request.DestinationCity,
-            DestinationCountryCode = request.DestinationCountryCode,
+            // 국내 행사는 KR 강제, 도시 없음
+            DestinationCity = request.ConventionType == "DOMESTIC" ? null : request.DestinationCity,
+            DestinationCountryCode = request.ConventionType == "DOMESTIC" ? "KR" : request.DestinationCountryCode,
             EmergencyContactsJson = request.EmergencyContactsJson,
             MeetingPointInfo = request.MeetingPointInfo,
             RegDtm = DateTime.Now,
@@ -204,8 +208,17 @@ public class ConventionCrudService : IConventionCrudService
         convention.ThemePreset = request.ThemePreset ?? convention.ThemePreset;
         convention.ConventionImg = request.ConventionImg ?? convention.ConventionImg;
         convention.Location = request.Location ?? convention.Location;
-        convention.DestinationCity = request.DestinationCity ?? convention.DestinationCity;
-        convention.DestinationCountryCode = request.DestinationCountryCode ?? convention.DestinationCountryCode;
+        // 국내 행사는 KR 강제, 도시 없음
+        if (request.ConventionType == "DOMESTIC")
+        {
+            convention.DestinationCountryCode = "KR";
+            convention.DestinationCity = null;
+        }
+        else
+        {
+            convention.DestinationCity = request.DestinationCity ?? convention.DestinationCity;
+            convention.DestinationCountryCode = request.DestinationCountryCode ?? convention.DestinationCountryCode;
+        }
         convention.EmergencyContactsJson = request.EmergencyContactsJson ?? convention.EmergencyContactsJson;
         convention.MeetingPointInfo = request.MeetingPointInfo ?? convention.MeetingPointInfo;
 

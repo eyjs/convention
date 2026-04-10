@@ -145,6 +145,12 @@ const routes = [
         meta: { title: '여행 가이드', showNav: true },
       },
       {
+        path: 'my-seat',
+        name: 'MySeat',
+        component: () => import('@/views/MySeatView.vue'),
+        meta: { title: '내 자리', showNav: false },
+      },
+      {
         path: 'checklist',
         name: 'Checklist',
         component: () => import('@/views/feature/ChecklistView.vue'),
@@ -419,6 +425,18 @@ const routes = [
             component: () => import('@/components/admin/SnsManagement.vue'),
             meta: { title: 'SNS 발송' },
           },
+          {
+            path: 'seating',
+            name: 'AdminSeatingList',
+            component: () => import('@/views/admin/SeatingLayoutListView.vue'),
+            meta: { title: '좌석 배치도' },
+          },
+          {
+            path: 'seating/:layoutId',
+            name: 'AdminSeatingEditor',
+            component: () => import('@/views/admin/SeatingLayoutEditorView.vue'),
+            meta: { title: '좌석 배치도 편집', adminFullScreen: true },
+          },
         ],
       },
       {
@@ -438,15 +456,6 @@ const routes = [
           title: '폼 편집',
           hideAdminHeader: true,
           adminFullScreen: true,
-        },
-      },
-      {
-        path: 'name-tag-printing',
-        name: 'NameTagPrinting',
-        component: () => import('@/views/admin/NameTagPrintingView.vue'),
-        meta: {
-          title: '명찰 인쇄',
-          adminTitle: '명찰 일괄 인쇄',
         },
       },
     ],
