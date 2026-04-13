@@ -1,135 +1,168 @@
-# 요구사항: 좌석 배치도 — "이미지 + 마커 배정" 시스템으로 전환
+# 요구사항: 통합 알림 시스템 (Convention Notification)
 
-## 핵심 컨셉
-도식도는 외부 도구(피그마/파워포인트/디자인업체)에서 제작 → 이미지로 업로드
-우리 시스템은 이미지 위에 **좌석 마커(핀)를 찍고 참석자 배정**만 담당
+## 배경
+현재 시스템에 인앱 알림 기능이 없음. 관리자가 참석자들에게 실시간으로 다양한 유형의 알림을 보내고, 읽음/미읽음 추적이 필요함.
 
-## 관리자 에디터
+## 알림 유형 (범용)
 
-### UI 레이아웃
-```
-┌──────────────────────────────────────────────┐
-│ ←  레이아웃명        저장상태    PNG   인쇄   │
-├──────────┬───────────────────────┬────────────┤
-│          │                       │            │
-│ 도구     │   배경 이미지          │ 속성       │
-│          │   + 좌석 마커 레이어   │            │
-│ 📷 배경  │                       │ 선택한 핀  │
-│ 📌 핀찍기│   ●1 ●2    ●3        │ 이름: 홍길동│
-│          │      ●4 ●5           │ [변경][해제]│
-│ 그룹     │                       │            │
-│ T1 (8석) │   ●6 ●7 ●8           │ ──────────│
-│ T2 (6석) │                       │ 미배정 268명│
-│ T3 (4석) │                       │ 🔍 검색    │
-│          │                       │ • 강민호   │
-│          │                       │ • 김서연   │
-├──────────┴───────────────────────┴────────────┤
-│ 줌: 100%  |  배정: 32/300명                    │
-└──────────────────────────────────────────────┘
-```
+| 유형 | 예시 | 딥링크 |
+|---|---|---|
+| `TEXT` | "로비에서 10분 뒤 출발합니다" | 없음 |
+| `NOTICE` | "공지사항을 확인하세요" | `/conventions/:id/board/:noticeId` |
+| `SURVEY` | "설문조사를 4/15까지 완료해주세요" | `/conventions/:id/surveys/:surveyId` |
+| `SCHEDULE` | "2일차 저녁 일정이 변경되었습니다" | `/conventions/:id/schedule` |
+| `SEAT` | "만찬 좌석이 배정되었습니다" | `/conventions/:id/my-seat?layout=:id` |
+| `LINK` | 관리자 지정 URL | 커스텀 URL |
 
-### 동작
-1. **배경 이미지 업로드** (PNG/JPG/SVG, 2000px+ 권장)
-2. **핀 찍기 모드**: 클릭한 위치에 좌석 마커(●) 생성
-3. **핀 이동**: 드래그로 위치 조정
-4. **핀 그룹핑**: 여러 핀을 선택 → "테이블 그룹" 생성 (라벨: "1번 테이블")
-5. **참석자 배정**: 핀 클릭 → 우측 패널에서 참석자 선택
-6. **일괄 배정**: 테이블 그룹 선택 → 참석자 여러 명 드래그 또는 순서대로 배정
-7. **줌/팬**: 마우스 휠 + Space 드래그
+## 데이터 모델
 
-### 핀 시각
-- 미배정: 회색 원 (●) + 번호
-- 배정됨: 파란 원 (●) + 이름 2글자
-- 선택됨: 빨간 테두리
-- 그룹 표시: 같은 그룹 핀끼리 연결선 또는 같은 색상
-
-### 데이터 구조 (LayoutJson 단순화)
-```json
+### Notification (알림 발송 건)
+```csharp
+public class Notification
 {
-  "pins": [
-    { "id": "p1", "x": 240, "y": 180, "group": "T1", "userId": 123, "userName": "홍길동" },
-    { "id": "p2", "x": 270, "y": 180, "group": "T1", "userId": null, "userName": null },
-    ...
-  ],
-  "groups": [
-    { "id": "T1", "label": "1번 테이블", "color": "#3b82f6" },
-    { "id": "T2", "label": "2번 테이블", "color": "#10b981" },
-    ...
-  ]
+    public int Id { get; set; }
+    public int ConventionId { get; set; }
+    public string Type { get; set; }        // TEXT, NOTICE, SURVEY, SCHEDULE, SEAT, LINK
+    public string Title { get; set; }       // "일정 변경 안내"
+    public string Body { get; set; }        // 상세 내용
+    public string? LinkUrl { get; set; }    // 딥링크 (nullable)
+    public int? ReferenceId { get; set; }   // 관련 엔티티 ID (Notice.Id, Survey.Id 등)
+    public string TargetScope { get; set; } // ALL, GROUP, INDIVIDUAL
+    public string? TargetGroupName { get; set; } // 특정 그룹만
+    public int SentByUserId { get; set; }   // 발송 관리자
+    public DateTime CreatedAt { get; set; }
+
+    public Convention Convention { get; set; }
+    public User SentByUser { get; set; }
+    public ICollection<UserNotification> UserNotifications { get; set; }
+}
+
+// 수신자별 읽음 상태
+public class UserNotification
+{
+    public int Id { get; set; }
+    public int NotificationId { get; set; }
+    public int UserId { get; set; }
+    public bool IsRead { get; set; } = false;
+    public DateTime? ReadAt { get; set; }
+
+    public Notification Notification { get; set; }
+    public User User { get; set; }
 }
 ```
 
-### 제거하는 것들
-- 벽/길/구분선 도구
-- 테이블/장식/계단/문/바/뷔페 등 모든 도형
-- 선 그리기 모드 (wall/path)
-- seatingTypes.js 전체
-- 복잡한 좌석 위치 계산 로직
+## API 설계
 
-## 사용자 뷰 (100% 모바일)
+### 관리자
+| Method | Endpoint | 설명 |
+|---|---|---|
+| GET | `/api/admin/conventions/{id}/notifications` | 발송 이력 목록 |
+| POST | `/api/admin/conventions/{id}/notifications` | 알림 발송 |
+| GET | `/api/admin/notifications/{id}/stats` | 읽음 통계 (읽음/미읽음/전체) |
 
+### 사용자
+| Method | Endpoint | 설명 |
+|---|---|---|
+| GET | `/api/notifications/my?conventionId={id}` | 내 알림 목록 |
+| GET | `/api/notifications/my/unread-count?conventionId={id}` | 미읽음 개수 |
+| PUT | `/api/notifications/{id}/read` | 읽음 처리 |
+| PUT | `/api/notifications/read-all?conventionId={id}` | 전체 읽음 |
+
+## 관리자 UI
+
+### 알림 발송 페이지 (`/admin/conventions/:id/notifications`)
 ```
-┌───────────────────┐
-│ ←  내 자리         │
-├───────────────────┤
-│ [환영만찬] [송별식] │
-├───────────────────┤
-│                   │
-│  배경 이미지       │
-│  + 마커 레이어     │
-│                   │
-│  ●  ●  🔴 ← 나   │
-│  ●  ●  ●         │
-│                   │
-│  핀치줌/터치팬     │
-├───────────────────┤
-│ 📍 1번 테이블      │
-│    3번 좌석        │
-│    같은 테이블:     │
-│    홍길동, 김영희   │
-└───────────────────┘
+┌─────────────────────────────────────┐
+│ 알림 발송                            │
+├─────────────────────────────────────┤
+│ 유형: [텍스트 ▼]                     │
+│       텍스트 | 공지 | 설문 | 일정 | 좌석│
+│                                     │
+│ 제목: [_______________________]      │
+│ 내용: [_______________________]      │
+│       [_______________________]      │
+│                                     │
+│ 대상: ○ 전체  ○ 그룹별  ○ 개별       │
+│       [A조 ▼]                        │
+│                                     │
+│ [공지 선택] ← 유형=NOTICE 시 표시     │
+│ [설문 선택] ← 유형=SURVEY 시 표시     │
+│                                     │
+│ 미리보기: ┌───────────────┐          │
+│          │ 📢 일정 변경 안내 │        │
+│          │ 2일차 저녁...   │          │
+│          │ [자세히 보기]   │          │
+│          └───────────────┘          │
+│                                     │
+│ [발송] (300명에게 전달됩니다)          │
+├─────────────────────────────────────┤
+│ 발송 이력                            │
+│ ┌─────────────────────────────────┐ │
+│ │ 📢 일정 변경      읽음 245/300  │ │
+│ │ 📋 설문 독촉      읽음 180/300  │ │
+│ │ 💬 텍스트 안내    읽음 290/300  │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
 ```
 
-- 진입 시 본인 핀 위치로 **자동 줌인**
-- 본인 핀 **빨간 펄스** 애니메이션
-- 핀치줌/터치팬
-- 핀 탭 → 해당 사람 이름 표시
-- 하단 플로팅 내 자리 정보 + 같은 테이블 사람들
+## 사용자 UI
 
-## 기술 구현
+### 알림 벨 아이콘 (상단 헤더)
+- 행사 상세 페이지 헤더에 🔔 아이콘
+- 미읽음 개수 뱃지 (빨간 원)
+- 탭 → 알림 목록 SlideUpModal
 
-### Fabric.js 유지하되 단순화
-- `fabric.Canvas` — 줌/팬/선택
-- `fabric.Image` — 배경 이미지
-- `fabric.Circle` + `fabric.Text` — 핀 마커 (Group)
-- `fabric.Line` — 그룹 연결선 (선택)
-
-### useFabricCanvas.js 전면 간소화
-- 700줄 → **200줄** 이하
-- addTable/addDecor/addLine/addRoom 전부 제거
-- `addPin(x, y)` / `removePin(id)` / `assignUser(pinId, user)` 만 남김
-
-### 파일 구조 간소화
+### 알림 목록
 ```
-components/admin/seating/
-├── usePinCanvas.js          ← 핵심 (핀 배치 + 줌/팬)
-├── PinEditorToolbar.vue     ← 상단 (배경업로드 + 핀모드 + 줌)
-├── PinPropertyPanel.vue     ← 우측 (선택 핀 속성 + 미배정 목록)
-└── AssignAttendeeModal.vue  ← 유지
+┌───────────────────────┐
+│ 🔔 알림 (3건 미읽음)    │
+├───────────────────────┤
+│ ● 📢 일정 변경 안내     │  ← 미읽음 = 굵게
+│   2일차 저녁이 변경...   │
+│   방금 전               │
+│                        │
+│ ● 📋 설문 독촉          │
+│   4/15까지 완료해주세요  │
+│   1시간 전              │
+│                        │
+│ ○ 💬 로비 10분 뒤 출발   │  ← 읽음 = 연하게
+│   2시간 전              │
+└───────────────────────┘
 ```
+
+- 알림 탭 → `IsRead = true` 자동 처리
+- 딥링크 있으면 탭 시 해당 페이지 이동
 
 ## 영향 범위
-- 삭제: `useFabricCanvas.js`, `EditorToolbar.vue`, `ObjectLibrary.vue`, `PropertyPanel.vue`, `StatusBar.vue`, `seatingTypes.js`
-- 신규: `usePinCanvas.js`, `PinEditorToolbar.vue`, `PinPropertyPanel.vue`
-- 수정: `SeatingLayoutEditorView.vue`, `MySeatView.vue`
-- 백엔드: 변경 없음 (LayoutJson 구조만 변경, 컬럼은 그대로)
+
+### 백엔드 (신규)
+- `Entities/Notification.cs`, `Entities/UserNotification.cs`
+- DB 마이그레이션
+- `Services/Convention/NotificationService.cs`
+- `Controllers/Admin/AdminNotificationController.cs`
+- `Controllers/Convention/UserNotificationController.cs`
+
+### 프론트엔드 (신규)
+- `components/admin/NotificationSender.vue` (관리자 발송 페이지)
+- `components/common/NotificationBell.vue` (헤더 벨 아이콘 + 뱃지)
+- `components/common/NotificationList.vue` (알림 목록 모달)
+- 라우터: `/admin/conventions/:id/notifications`
+- `useAdminNav.js`에 메뉴 추가
+
+### 수정
+- `ConventionHome.vue` 또는 헤더에 벨 아이콘 삽입
+- 폴링 또는 진입 시 미읽음 카운트 조회
 
 ## 완료 기준
-- [ ] 배경 이미지 업로드 후 표시
-- [ ] 클릭으로 핀 생성, 드래그로 이동
-- [ ] 핀에 참석자 배정/해제
-- [ ] 핀 그룹핑 (테이블 라벨)
-- [ ] 300명 핀 성능 문제 없음
-- [ ] 사용자 뷰: 배경 + 핀 + 본인 강조 + 핀치줌
-- [ ] 자동 저장 + Undo/Redo
-- [ ] `npm run build` 통과
+- [ ] 관리자가 6가지 유형 알림 발송 가능
+- [ ] 대상 선택 (전체/그룹/개별)
+- [ ] 사용자 알림 목록 + 미읽음 뱃지
+- [ ] 읽음/미읽음 추적 + 통계
+- [ ] 딥링크 → 해당 페이지 이동
+- [ ] `dotnet build` + `npm run build` 통과
+- [ ] DB 마이그레이션
+
+## 스코프 아웃
+- Push 알림 (PWA/FCM) — 이번엔 인앱만
+- 실시간 WebSocket — 폴링으로 대체
+- 알림 예약 발송 — 향후

@@ -80,9 +80,10 @@
           </div>
         </div>
 
-        <!-- +/- 버튼 (캔버스 위 고정) -->
+        <!-- 줌 버튼 (캔버스 위 고정) -->
         <div class="absolute top-3 right-3 flex flex-col gap-1.5 z-30">
           <button class="w-10 h-10 bg-white rounded-full shadow-lg text-xl font-bold active:bg-gray-100" @click="zoomIn">+</button>
+          <button class="w-10 h-10 bg-white rounded-full shadow-lg text-sm font-bold active:bg-gray-100" @click="zoomFit">맞춤</button>
           <button class="w-10 h-10 bg-white rounded-full shadow-lg text-xl font-bold active:bg-gray-100" @click="zoomOut">−</button>
         </div>
       </div>
@@ -194,8 +195,15 @@ const sameGroupPins = computed(() => {
 
 function showPinInfo(pin) { tappedPin.value = pin }
 
+const fitZoom = ref(1) // 초기 화면 맞춤 줌 저장
+
 function zoomIn() { viewZoom.value = Math.min(5, +(viewZoom.value + 0.3).toFixed(1)) }
 function zoomOut() { viewZoom.value = Math.max(0.2, +(viewZoom.value - 0.3).toFixed(1)) }
+function zoomFit() {
+  viewZoom.value = fitZoom.value
+  // 초기 상태로 스크롤 리셋
+  if (viewerRef.value) viewerRef.value.scrollTo({ left: 0, top: 0, behavior: 'smooth' })
+}
 
 function scrollToMyPin() {
   if (!mySeatInfo.value || !viewerRef.value) return
@@ -236,11 +244,13 @@ async function loadDetail(id) {
 function onImageLoad(e) {
   imgNaturalW.value = e.target.naturalWidth || 1200
   imgNaturalH.value = e.target.naturalHeight || 800
-  // 화면에 맞추기
+  // 화면에 맞추기 + 초기 줌 저장
   if (viewerRef.value) {
     const fitW = viewerRef.value.clientWidth / editorW.value
     const fitH = viewerRef.value.clientHeight / editorH.value
-    viewZoom.value = +Math.min(fitW, fitH, 1).toFixed(2)
+    const z = +Math.min(fitW, fitH, 1).toFixed(2)
+    viewZoom.value = z
+    fitZoom.value = z
   }
   setTimeout(scrollToMyPin, 500)
 }

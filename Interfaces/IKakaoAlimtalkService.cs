@@ -43,4 +43,12 @@ public class AlimtalkReceiver
     public string ReceiverName { get; set; } = string.Empty;
     public string? Content { get; set; }
     public string? AltContent { get; set; }
+    public List<AlimtalkButton>? Buttons { get; set; }
+}
+
+public class AlimtalkButton
+{
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = "WL"; // WL=웹링크, AL=앱링크, DS=배송조회, BK=봇키워드, MD=메시지전달
+    public string Url { get; set; } = string.Empty;
 }

@@ -19,6 +19,12 @@ const routes = [
     meta: { title: '로그인', requiresAuth: false },
   },
   {
+    path: '/auto-login',
+    name: 'AutoLogin',
+    component: () => import('@/views/AutoLoginView.vue'),
+    meta: { title: '자동 로그인', requiresAuth: false },
+  },
+  {
     path: '/find-id',
     name: 'FindId',
     component: () => import('@/views/FindId.vue'),

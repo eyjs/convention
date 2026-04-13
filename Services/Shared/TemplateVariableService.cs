@@ -38,6 +38,7 @@ public class TemplateVariableService : ITemplateVariableService
             case "end_date": return context.EndDate;
             case "pre_end_date": return context.PreEndDate;
             case "url": return context.Url;
+            case "seat_link": return context.SeatLink;
         }
 
         // 2. 동적 속성 (GuestAttributes) 검색

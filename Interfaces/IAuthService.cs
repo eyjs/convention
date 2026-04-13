@@ -18,6 +18,7 @@ public interface IAuthService
     Task<AuthResult<LoginResponse>> LoginAsync(LoginRequest request);
     Task<AuthResult<GuestLoginResponse>> GuestLoginAsync(GuestLoginRequest request);
     Task<AuthResult<RefreshTokenResponse>> RefreshTokenAsync(RefreshTokenRequest request);
+    Task<AuthResult<LoginResponse>> TokenLoginAsync(string accessToken);
     Task LogoutAsync(int userId);
     Task<AuthResult<CurrentUserResponse>> GetCurrentUserAsync(int userId);
     Task<IEnumerable<AvailableConventionInfo>> GetAvailableConventionsAsync(int userId);

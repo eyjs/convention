@@ -943,7 +943,10 @@ async function loadPopbillTemplates() {
   popbillError.value = ''
   try {
     const res = await apiClient.get('/admin/alimtalk/templates')
-    popbillTemplates.value = res.data
+    // [스타투어] 접두어 템플릿만 필터링
+    popbillTemplates.value = (res.data || []).filter(
+      (t) => t.templateName?.startsWith('[스타투어]') || t.templateCode?.startsWith('026'),
+    )
   } catch (e) {
     popbillError.value = e.response?.data?.message || '팝빌 연동 실패'
     popbillTemplates.value = []

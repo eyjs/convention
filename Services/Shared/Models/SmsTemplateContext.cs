@@ -24,4 +24,10 @@ public class SmsTemplateContext
 
     // --- 시스템 생성 정보 ---
     public string Url { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 좌석 배치도 딥링크 (내 자리 보기)
+    /// 알림톡에서 #{seat_link} 변수로 사용
+    /// </summary>
+    public string SeatLink { get; set; } = string.Empty;
 }

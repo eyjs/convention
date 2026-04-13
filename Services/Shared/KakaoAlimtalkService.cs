@@ -143,12 +143,27 @@ public class KakaoAlimtalkService : IKakaoAlimtalkService
 
             _logger.LogInformation("알림톡 대량 발송 — Template: {Template}, Count: {Count}", templateCode, receivers.Count);
 
-            var kakaoReceivers = receivers.Select(r => new KakaoReceiver
+            var kakaoReceivers = receivers.Select(r =>
             {
-                rcv = r.ReceiverNum,
-                rcvnm = r.ReceiverName,
-                msg = r.Content,
-                altmsg = r.AltContent
+                var kr = new KakaoReceiver
+                {
+                    rcv = r.ReceiverNum,
+                    rcvnm = r.ReceiverName,
+                    msg = r.Content,
+                    altmsg = r.AltContent,
+                };
+                // 수신자별 버튼 (딥링크 등)
+                if (r.Buttons != null && r.Buttons.Count > 0)
+                {
+                    kr.btns = r.Buttons.Select(b => new KakaoButton
+                    {
+                        n = b.Name,
+                        t = b.Type, // "WL" = 웹링크
+                        u1 = b.Url,
+                        u2 = b.Url,
+                    }).ToList();
+                }
+                return kr;
             }).ToList();
 
             var receiptNum = _kakaoService.SendATS(

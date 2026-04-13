@@ -182,6 +182,36 @@ public class AuthService : IAuthService
         });
     }
 
+    public async Task<AuthResult<LoginResponse>> TokenLoginAsync(string accessToken)
+    {
+        var uc = await _unitOfWork.UserConventions.GetByAccessTokenAsync(accessToken);
+        if (uc == null)
+            return AuthResult<LoginResponse>.Fail("유효하지 않은 토큰입니다.", AuthErrorType.Unauthorized);
+
+        var user = await _unitOfWork.Users.GetByIdAsync(uc.UserId);
+        if (user == null)
+            return AuthResult<LoginResponse>.Fail("사용자를 찾을 수 없습니다.", AuthErrorType.Unauthorized);
+
+        var jwtToken = GenerateAccessToken(user);
+        var refreshToken = GenerateRefreshToken();
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(14);
+        await _unitOfWork.SaveChangesAsync();
+
+        return AuthResult<LoginResponse>.Success(new LoginResponse
+        {
+            AccessToken = jwtToken,
+            RefreshToken = refreshToken,
+            User = new LoginUserInfo
+            {
+                Id = user.Id,
+                LoginId = user.LoginId,
+                Name = user.Name ?? string.Empty,
+                Role = user.Role
+            }
+        });
+    }
+
     public async Task<AuthResult<LoginResponse>> LoginAsync(LoginRequest request)
     {
         var loginId = request.LoginId?.Trim() ?? string.Empty;

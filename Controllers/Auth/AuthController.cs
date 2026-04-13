@@ -56,6 +56,29 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// AccessToken 기반 자동 로그인 (알림톡 딥링크용)
+    /// </summary>
+    [HttpPost("token-login")]
+    public async Task<IActionResult> TokenLogin([FromBody] TokenLoginRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.AccessToken))
+                return BadRequest(new { message = "토큰이 없습니다." });
+
+            var result = await _authService.TokenLoginAsync(request.AccessToken);
+            if (!result.IsSuccess) return Unauthorized(new { message = result.ErrorMessage });
+
+            return Ok(result.Data);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Token login error");
+            return StatusCode(500, new { message = "로그인 중 오류가 발생했습니다." });
+        }
+    }
+
     [HttpPost("guest-login")]
     public async Task<IActionResult> GuestLogin([FromBody] GuestLoginRequest request)
     {
