@@ -93,9 +93,46 @@
               <div class="h-full bg-blue-500 rounded-full" :style="{ width: totalGuests ? `${(assignedCount / totalGuests) * 100}%` : '0%' }"></div>
             </div>
           </div>
+
+          <!-- 미배정 참석자 (웹 배정) -->
+          <div class="border-t pt-3">
+            <h4 class="text-sm font-medium text-gray-700 mb-2">미배정 ({{ unassignedGuests.length }}명)</h4>
+            <input v-model="guestSearch" type="text" placeholder="이름 검색..." class="w-full border rounded px-2 py-1.5 text-sm mb-2" />
+            <div class="max-h-48 overflow-y-auto space-y-0.5">
+              <div
+                v-for="g in filteredUnassigned"
+                :key="g.id"
+                class="flex items-center justify-between py-1.5 px-2 rounded text-sm hover:bg-blue-50 cursor-pointer"
+                @click="startWebAssign(g)"
+              >
+                <span class="font-medium truncate">{{ g.name }}</span>
+                <span class="text-xs text-gray-400">{{ g.corpPart || g.groupName || '' }}</span>
+              </div>
+              <div v-if="filteredUnassigned.length === 0" class="text-xs text-gray-400 text-center py-3">
+                {{ guestSearch ? '검색 결과 없음' : '모두 배정 완료' }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- 웹 배정 모달 (사람 → 테이블 선택) -->
+    <SlideUpModal :is-open="!!assigningGuest" @close="assigningGuest = null">
+      <template #header-title>{{ assigningGuest?.name }} → 어느 테이블?</template>
+      <template #body>
+        <div class="space-y-1">
+          <button
+            v-for="t in allTables" :key="t.id"
+            class="w-full text-left py-3 px-4 rounded-lg hover:bg-blue-50 flex items-center justify-between"
+            @click="doWebAssign(t.number)"
+          >
+            <span class="font-medium">{{ t.number }}번 테이블</span>
+            <span class="text-sm text-gray-500">{{ t.members?.length || 0 }}명</span>
+          </button>
+        </div>
+      </template>
+    </SlideUpModal>
 
     <!-- 멤버 이동 모달 -->
     <SlideUpModal :is-open="!!movingMember" @close="movingMember = null">
@@ -136,6 +173,8 @@ const containerRef = ref(null)
 const guests = ref([])
 const selectedTable = ref(null)
 const movingMember = ref(null)
+const assigningGuest = ref(null)
+const guestSearch = ref('')
 const isDirty = ref(false)
 
 const tc = useTableCanvas(canvasEl, containerRef, {
@@ -146,6 +185,19 @@ const tc = useTableCanvas(canvasEl, containerRef, {
 const allTables = computed(() => tc.toLayoutJSON().tables || [])
 const assignedCount = computed(() => allTables.value.reduce((s, t) => s + (t.members?.length || 0), 0))
 const totalGuests = computed(() => guests.value.length)
+
+const assignedUserIds = computed(() => {
+  const set = new Set()
+  allTables.value.forEach(t => t.members?.forEach(m => set.add(m.userId)))
+  return set
+})
+const unassignedGuests = computed(() => guests.value.filter(g => !assignedUserIds.value.has(g.id)))
+const filteredUnassigned = computed(() => {
+  const q = guestSearch.value.trim().toLowerCase()
+  const list = unassignedGuests.value
+  if (!q) return list.slice(0, 100)
+  return list.filter(g => g.name?.toLowerCase().includes(q) || g.corpPart?.toLowerCase().includes(q)).slice(0, 100)
+})
 
 // 자동 저장
 const autoSave = useAutoSave(async () => {
@@ -200,6 +252,15 @@ async function uploadMembers(e) {
     alert(err.response?.data?.message || '업로드 실패')
   }
   e.target.value = ''
+}
+
+// 웹 배정 (미배정 → 테이블 선택)
+function startWebAssign(guest) { assigningGuest.value = guest }
+function doWebAssign(tableNum) {
+  if (!assigningGuest.value) return
+  tc.addMemberToTable(tableNum, assigningGuest.value)
+  assigningGuest.value = null
+  markDirty()
 }
 
 // 멤버 이동
