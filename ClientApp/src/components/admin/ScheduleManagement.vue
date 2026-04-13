@@ -41,11 +41,11 @@
       </AdminPageHeader>
 
       <!-- 템플릿 필터 버튼 -->
-      <div class="mb-4 overflow-x-auto scrollbar-hide">
-        <div class="flex gap-2 min-w-max pb-2">
+      <div class="mb-4 overflow-x-auto scrollbar-hide -mx-1 px-1">
+        <div class="flex gap-2 pb-2">
           <button
             :class="[
-              'flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all',
+              'flex-shrink-0 px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap',
               selectedTemplateId === 'all'
                 ? 'bg-primary-600 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100 border',
@@ -58,7 +58,7 @@
             v-for="template in templates"
             :key="template.id"
             :class="[
-              'flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all',
+              'flex-shrink-0 px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap',
               selectedTemplateId === template.id
                 ? 'bg-primary-600 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100 border',
@@ -115,7 +115,7 @@
               <div
                 v-for="item in template.scheduleItems"
                 :key="item.id"
-                class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                class="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 p-3 bg-gray-50 rounded-lg"
               >
                 <div class="flex-shrink-0 w-20 sm:w-28 text-sm">
                   <div class="font-medium text-gray-600">
@@ -156,7 +156,7 @@
                 </div>
                 <div class="flex gap-1">
                   <button
-                    class="p-1.5 hover:bg-gray-200 rounded"
+                    class="p-2 hover:bg-gray-200 rounded min-w-[36px] min-h-[36px] flex items-center justify-center"
                     title="수정"
                     @click="editScheduleItem(template, item)"
                   >
