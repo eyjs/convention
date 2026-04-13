@@ -8,6 +8,7 @@ export function useTableCanvas(canvasElRef, containerRef, options = {}) {
 
   let canvas = null
   const zoom = ref(100)
+  const layoutState = ref({ tables: [] }) // Vue reactive 데이터 (SSOT)
   let _spaceHeld = false, _isPanning = false, _panLast = null
 
   function init() {
@@ -83,15 +84,15 @@ export function useTableCanvas(canvasElRef, containerRef, options = {}) {
   function addTable(shape = 'circle') {
     const id = 't_' + Date.now()
     const num = String((_getMaxNumber() + 1))
-    const data = { id, number: num, label: num + '번', shape, x: 200, y: 200, width: 80, height: 80, color: COLORS[parseInt(num) % COLORS.length], members: [] }
-    _buildTableMarker(data)
-    canvas.requestRenderAll()
+    const data = { id, number: num, label: num + '번', shape, x: 200, y: 200, width: 80, height: 80, color: '#3b82f6', members: [] }
+    layoutState.value.tables.push(data)
+    if (canvas) { _buildTableMarker(data); canvas.requestRenderAll() }
     onModified()
   }
 
   function _getMaxNumber() {
     let max = 0
-    if (canvas) canvas.getObjects().forEach(o => { if (o._tableData) { const n = parseInt(o._tableData.number); if (!isNaN(n) && n > max) max = n } })
+    layoutState.value.tables.forEach(t => { const n = parseInt(t.number); if (!isNaN(n) && n > max) max = n })
     return max
   }
 
@@ -146,8 +147,10 @@ export function useTableCanvas(canvasElRef, containerRef, options = {}) {
 
   function deleteSelected() {
     if (!canvas) return
-    canvas.getActiveObjects().forEach(o => { if (o._tableData) canvas.remove(o) })
-    canvas.discardActiveObject(); canvas.requestRenderAll(); _syncAll(); onModified()
+    const ids = new Set()
+    canvas.getActiveObjects().forEach(o => { if (o._tableData) { ids.add(o._tableData.id); canvas.remove(o) } })
+    layoutState.value.tables = layoutState.value.tables.filter(t => !ids.has(t.id))
+    canvas.discardActiveObject(); canvas.requestRenderAll(); onModified()
   }
 
   // 배경
@@ -162,22 +165,28 @@ export function useTableCanvas(canvasElRef, containerRef, options = {}) {
     }, { crossOrigin: 'anonymous' })
   }
 
-  // 직렬화
+  // 직렬화 — layoutState가 SSOT
   function toLayoutJSON() {
-    if (!canvas) return { tables: [] }
-    const tables = []
-    canvas.getObjects().forEach(o => {
-      if (!o._tableData) return
-      _syncObj(o)
-      tables.push({ ...o._tableData })
-    })
-    return { tables }
+    // 캔버스가 있으면 위치 동기화
+    if (canvas) {
+      canvas.getObjects().forEach(o => {
+        if (!o._tableData) return
+        _syncObj(o)
+        const idx = layoutState.value.tables.findIndex(t => t.id === o._tableData.id)
+        if (idx >= 0) {
+          layoutState.value.tables[idx].x = o._tableData.x
+          layoutState.value.tables[idx].y = o._tableData.y
+        }
+      })
+    }
+    return { tables: layoutState.value.tables }
   }
 
   function loadLayoutJSON(data) {
+    layoutState.value = { tables: JSON.parse(JSON.stringify(data.tables || [])) }
     if (!canvas) return
     canvas.getObjects().filter(o => o._tableData).forEach(o => canvas.remove(o))
-    for (const t of data.tables || []) _buildTableMarker(t)
+    for (const t of layoutState.value.tables) _buildTableMarker(t)
     if (readonly) canvas.forEachObject(o => { o.selectable = false; o.evented = !readonly || !!o._tableData })
     canvas.requestRenderAll()
   }
@@ -194,38 +203,42 @@ export function useTableCanvas(canvasElRef, containerRef, options = {}) {
 
   // 멤버 이동
   function moveMember(userId, fromTableNum, toTableNum) {
-    const data = toLayoutJSON()
-    const from = data.tables.find(t => t.number === fromTableNum)
-    const to = data.tables.find(t => t.number === toTableNum)
+    const from = layoutState.value.tables.find(t => t.number === fromTableNum)
+    const to = layoutState.value.tables.find(t => t.number === toTableNum)
     if (!from || !to) return false
     const idx = from.members.findIndex(m => m.userId === userId)
     if (idx < 0) return false
     const member = from.members.splice(idx, 1)[0]
     to.members.push(member)
-    loadLayoutJSON(data)
+    _refreshCanvas()
     onModified()
     return true
   }
 
   function addMemberToTable(tableNum, user) {
-    const data = toLayoutJSON()
-    const table = data.tables.find(t => t.number === tableNum)
+    const table = layoutState.value.tables.find(t => t.number === tableNum)
     if (!table) return false
     if (table.members.some(m => m.userId === user.id)) return false
     table.members.push({ userId: user.id, name: user.name })
-    loadLayoutJSON(data)
+    _refreshCanvas()
     onModified()
     return true
   }
 
   function removeMember(tableNum, userId) {
-    const data = toLayoutJSON()
-    const table = data.tables.find(t => t.number === tableNum)
+    const table = layoutState.value.tables.find(t => t.number === tableNum)
     if (!table) return false
     table.members = table.members.filter(m => m.userId !== userId)
-    loadLayoutJSON(data)
+    _refreshCanvas()
     onModified()
     return true
+  }
+
+  function _refreshCanvas() {
+    if (!canvas) return
+    canvas.getObjects().filter(o => o._tableData).forEach(o => canvas.remove(o))
+    for (const t of layoutState.value.tables) _buildTableMarker(t)
+    canvas.requestRenderAll()
   }
 
   // 키보드
@@ -261,7 +274,7 @@ export function useTableCanvas(canvasElRef, containerRef, options = {}) {
   }
 
   return {
-    init, dispose, canvas: () => canvas, zoom, setZoom, zoomToFit,
+    init, dispose, canvas: () => canvas, zoom, layoutState, setZoom, zoomToFit,
     addTable, deleteSelected, setBackground, downloadPNG,
     toLayoutJSON, loadLayoutJSON,
     moveMember, addMemberToTable, removeMember,

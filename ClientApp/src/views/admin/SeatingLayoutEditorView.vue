@@ -234,7 +234,7 @@ const tc = useTableCanvas(canvasEl, containerRef, {
   onTableSelect: (t) => { selectedTable.value = t },
 })
 
-const allTables = computed(() => tc.toLayoutJSON().tables || [])
+const allTables = computed(() => tc.layoutState.value.tables || [])
 const assignedCount = computed(() => allTables.value.reduce((s, t) => s + (t.members?.length || 0), 0))
 const totalGuests = computed(() => guests.value.length)
 
