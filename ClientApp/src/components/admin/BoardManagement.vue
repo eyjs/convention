@@ -58,7 +58,7 @@
         />
       </div>
 
-      <!-- 게시글 목록 테이블 -->
+      <!-- 게시글 목록 -->
       <div class="bg-white rounded-lg shadow overflow-hidden">
         <div v-if="loading" class="p-8 text-center">로딩 중...</div>
         <div
@@ -67,7 +67,29 @@
         >
           등록된 게시글이 없습니다
         </div>
-        <div v-else class="overflow-x-auto">
+
+        <!-- 모바일 카드 -->
+        <div v-else class="md:hidden divide-y divide-gray-100">
+          <div
+            v-for="notice in notices"
+            :key="'m-' + notice.id"
+            class="p-3 flex items-center gap-3 active:bg-gray-50"
+            @click="viewNotice(notice)"
+          >
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span v-if="notice.isPinned" class="px-1.5 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded">필독</span>
+                <span v-if="notice.categoryName" class="text-xs text-gray-500">{{ notice.categoryName }}</span>
+              </div>
+              <p class="font-medium text-gray-900 truncate">{{ notice.title }}</p>
+              <p class="text-xs text-gray-400 mt-0.5">{{ notice.authorName }} · {{ formatDate(notice.createdAt) }} · 조회 {{ notice.viewCount }}</p>
+            </div>
+            <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+          </div>
+        </div>
+
+        <!-- PC 테이블 -->
+        <div v-if="notices.length > 0" class="hidden md:block overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>

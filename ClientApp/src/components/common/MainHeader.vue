@@ -91,6 +91,8 @@ import NotificationBell from './NotificationBell.vue'
 const route = useRoute()
 const authStore = useAuthStore()
 const conventionId = computed(() => {
+  // 관리자 페이지에서는 알림벨 숨김
+  if (route.path.startsWith('/admin')) return null
   const id = route.params.conventionId || route.params.id
   return id && authStore.user ? Number(id) : null
 })

@@ -21,7 +21,7 @@
       </AdminPageHeader>
 
       <!-- 요약 통계 -->
-      <div class="mt-4 grid grid-cols-3 gap-4">
+      <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div
           class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3"
         >
@@ -123,8 +123,27 @@
             >새 설문 생성</AdminButton
           >
         </AdminEmptyState>
+        <!-- 모바일 카드 -->
+        <div v-else class="md:hidden space-y-2">
+          <div
+            v-for="survey in filteredSurveys"
+            :key="'m-' + survey.id"
+            class="bg-white rounded-lg shadow-sm p-3 active:bg-gray-50"
+            @click="showEditView(survey)"
+          >
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-semibold text-gray-900 truncate">{{ survey.title }}</span>
+              <AdminBadge :variant="getSurveyStatusVariant(survey)" class="flex-shrink-0 ml-2">{{ getSurveyStatusLabel(survey) }}</AdminBadge>
+            </div>
+            <p class="text-xs text-gray-500">응답 {{ survey.responseCount ?? 0 }}명 · {{ survey.questionCount ?? 0 }}문항</p>
+            <p v-if="survey.startDate || survey.endDate" class="text-xs text-gray-400 mt-0.5">{{ survey.startDate?.split('T')[0] || '' }} ~ {{ survey.endDate?.split('T')[0] || '' }}</p>
+          </div>
+        </div>
+
+        <!-- PC 테이블 -->
         <AdminTable
-          v-else
+          v-if="filteredSurveys.length > 0"
+          class="hidden md:block"
           :columns="tableColumns"
           :loading="loading"
           :empty="filteredSurveys.length === 0"

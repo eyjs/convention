@@ -18,10 +18,25 @@
         <button v-if="unreadCount > 0" class="text-xs text-blue-600 hover:underline" @click="markAllRead">전체 읽음</button>
       </template>
       <template #body>
-        <div v-if="notifications.length === 0" class="text-center text-gray-400 py-12">알림이 없습니다</div>
-        <div v-else class="space-y-2">
+        <!-- 탭 필터 -->
+        <div class="flex gap-1 mb-3 sticky top-0 bg-white z-10 pb-2 border-b">
+          <button
+            v-for="tab in filterTabs" :key="tab.value"
+            class="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
+            :class="activeFilter === tab.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'"
+            @click="activeFilter = tab.value"
+          >
+            {{ tab.label }}
+            <span v-if="tab.count > 0" class="ml-1 text-xs">{{ tab.count }}</span>
+          </button>
+        </div>
+
+        <div v-if="filteredNotifications.length === 0" class="text-center text-gray-400 py-12">
+          {{ activeFilter === 'unread' ? '미읽음 알림이 없습니다' : activeFilter === 'read' ? '읽음 알림이 없습니다' : '알림이 없습니다' }}
+        </div>
+        <div v-else class="space-y-2 max-h-[60vh] overflow-y-auto">
           <div
-            v-for="n in notifications" :key="n.id"
+            v-for="n in filteredNotifications" :key="n.id"
             class="p-3 rounded-lg cursor-pointer transition-colors"
             :class="n.isRead ? 'bg-white hover:bg-gray-50' : 'bg-blue-50 hover:bg-blue-100'"
             @click="onTap(n)"
@@ -46,7 +61,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/services/api'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
@@ -60,6 +75,19 @@ const router = useRouter()
 const isOpen = ref(false)
 const notifications = ref([])
 const unreadCount = ref(0)
+const activeFilter = ref('unread') // 기본: 미읽음
+
+const filterTabs = computed(() => [
+  { value: 'unread', label: '미읽음', count: notifications.value.filter((n) => !n.isRead).length },
+  { value: 'read', label: '읽음', count: notifications.value.filter((n) => n.isRead).length },
+  { value: 'all', label: '전체', count: notifications.value.length },
+])
+
+const filteredNotifications = computed(() => {
+  if (activeFilter.value === 'unread') return notifications.value.filter((n) => !n.isRead)
+  if (activeFilter.value === 'read') return notifications.value.filter((n) => n.isRead)
+  return notifications.value
+})
 let pollTimer = null
 
 const typeIcons = { TEXT: '💬', NOTICE: '📢', SURVEY: '📋', SCHEDULE: '📅', SEAT: '💺', LINK: '🔗' }

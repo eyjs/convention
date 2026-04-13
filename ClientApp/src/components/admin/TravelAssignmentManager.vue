@@ -157,8 +157,40 @@
         </button>
       </div>
 
-      <!-- 테이블 -->
-      <div class="overflow-x-auto border border-gray-200 rounded-lg">
+      <!-- 모바일 카드 편집 -->
+      <div class="md:hidden space-y-2">
+        <div
+          v-for="(user, idx) in filteredUsers"
+          :key="'m-' + user.userId"
+          class="bg-white rounded-lg border p-3 space-y-2"
+        >
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-gray-900 text-sm">{{ user.userName }}</span>
+            <span class="text-xs text-gray-400">{{ user.groupName || '' }}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-gray-500">호차</label>
+              <input :value="getDayValue(user, 'bus')" type="text" class="w-full px-2 py-1.5 border rounded text-sm" :placeholder="getAboveValue(idx, 'bus') || ''" @focus="onFocusEmpty($event, idx, 'bus')" @blur="updateField(user, 'bus', $event.target.value)" />
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-500">호텔</label>
+              <input :value="getDayValue(user, 'hotel')" type="text" class="w-full px-2 py-1.5 border rounded text-sm" :placeholder="getAboveValue(idx, 'hotel') || ''" @focus="onFocusEmpty($event, idx, 'hotel')" @blur="updateField(user, 'hotel', $event.target.value)" />
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-500">방번호</label>
+              <input :value="getDayValue(user, 'room')" type="text" class="w-full px-2 py-1.5 border rounded text-sm" placeholder="미배정" @blur="updateField(user, 'room', $event.target.value)" />
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-500">메모</label>
+              <input :value="getDayValue(user, 'memo')" type="text" class="w-full px-2 py-1.5 border rounded text-sm" @blur="updateField(user, 'memo', $event.target.value)" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PC 테이블 -->
+      <div class="hidden md:block overflow-x-auto border border-gray-200 rounded-lg">
         <table class="w-full text-sm">
           <thead class="bg-gray-50">
             <tr>
