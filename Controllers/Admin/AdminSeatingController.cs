@@ -80,6 +80,31 @@ public class AdminSeatingController : ControllerBase
         return updated == null ? NotFound() : Ok(updated);
     }
 
+    /// <summary>
+    /// 좌석 배정용 참석자 엑셀 다운로드 (이름/전화/테이블번호)
+    /// </summary>
+    [Authorize(Roles = Roles.Admin)]
+    [HttpGet("seating-layouts/{id:int}/members/download")]
+    public async Task<IActionResult> DownloadMembers(int id)
+    {
+        var result = await _service.DownloadMembersExcelAsync(id);
+        if (result == null) return NotFound();
+        return File(result.Value.bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", result.Value.filename);
+    }
+
+    /// <summary>
+    /// 좌석 배정 엑셀 업로드 (테이블번호 매핑)
+    /// </summary>
+    [Authorize(Roles = Roles.Admin)]
+    [HttpPost("seating-layouts/{id:int}/members/upload")]
+    public async Task<IActionResult> UploadMembers(int id, IFormFile file)
+    {
+        if (file == null || file.Length == 0) return BadRequest(new { message = "파일을 선택해주세요." });
+        using var stream = file.OpenReadStream();
+        var result = await _service.UploadMembersExcelAsync(id, stream);
+        return Ok(result);
+    }
+
     // ===== 일반 사용자 =====
     [Authorize]
     [HttpGet("seating-layouts/my/{conventionId:int}")]

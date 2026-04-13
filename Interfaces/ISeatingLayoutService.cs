@@ -12,4 +12,6 @@ public interface ISeatingLayoutService
     Task<SeatingLayoutDto?> SetBackgroundAsync(int id, string url);
     Task<SeatingLayoutDto?> DuplicateAsync(int id);
     Task<List<SeatingLayoutListItemDto>> GetMyLayoutsAsync(int conventionId, int userId);
+    Task<(byte[] bytes, string filename)?> DownloadMembersExcelAsync(int layoutId);
+    Task<object> UploadMembersExcelAsync(int layoutId, Stream stream);
 }

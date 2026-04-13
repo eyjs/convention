@@ -30,4 +30,5 @@ public class SmsTemplateContext
     /// 알림톡에서 #{seat_link} 변수로 사용
     /// </summary>
     public string SeatLink { get; set; } = string.Empty;
+    public string TableNumber { get; set; } = string.Empty;
 }

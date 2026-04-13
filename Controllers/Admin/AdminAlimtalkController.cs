@@ -116,10 +116,38 @@ public class AdminAlimtalkController : ControllerBase
         {
             if (string.IsNullOrWhiteSpace(user.Phone)) continue;
 
-            // 해당 사용자의 AccessToken 조회 (자동 로그인용)
+            // 해당 사용자의 AccessToken + 테이블번호 조회
             var userConvention = await _unitOfWork.UserConventions
                 .GetByUserAndConventionAsync(user.Id, conventionId);
             var context = _contextFactory.Create(user, convention, seatLayout?.Id, userConvention?.AccessToken);
+
+            // 테이블번호 조회 (좌석 배치도 JSON에서)
+            if (seatLayout != null)
+            {
+                try
+                {
+                    using var layoutDoc = global::System.Text.Json.JsonDocument.Parse(seatLayout.LayoutJson ?? "{}");
+                    if (layoutDoc.RootElement.TryGetProperty("tables", out var tables))
+                    {
+                        foreach (var t in tables.EnumerateArray())
+                        {
+                            if (t.TryGetProperty("members", out var members))
+                            {
+                                foreach (var m in members.EnumerateArray())
+                                {
+                                    if (m.TryGetProperty("userId", out var uid) && uid.ValueKind == global::System.Text.Json.JsonValueKind.Number && uid.GetInt32() == user.Id)
+                                    {
+                                        context.TableNumber = t.TryGetProperty("number", out var num) ? num.GetString() ?? "" : "";
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(context.TableNumber)) break;
+                        }
+                    }
+                }
+                catch { }
+            }
             string message = _templateService.ReplaceVariables(dto.Content, context);
             string? altMessage = dto.AltContent != null
                 ? _templateService.ReplaceVariables(dto.AltContent, context)

@@ -1,26 +1,37 @@
 <template>
   <div class="h-screen h-dvh flex flex-col bg-gray-100 overflow-hidden">
-    <PinEditorToolbar
-      :name="layout?.name || ''"
-      :mode="pc.mode.value"
-      :zoom="pc.zoom.value"
-      :can-undo="history.canUndo.value"
-      :can-redo="history.canRedo.value"
-      :save-status="saveStatus"
-      :is-dirty="_isDirty"
-      :has-bg="!!layout?.backgroundImageUrl"
-      :bg-locked="pc.bgLocked.value"
-      @save-now="saveNow"
-      @toggle-bg-lock="pc.toggleBgLock"
-      @update:name="(v) => { if (layout) { layout.name = v; markDirty() } }"
-      @mode="pc.setMode"
-      @upload-bg="uploadBg"
-      @undo="undo"
-      @redo="redo"
-      @zoom="pc.setZoom"
-      @zoom-fit="pc.zoomToFit"
-      @export-png="pc.downloadPNG"
-    />
+    <!-- 상단 바 -->
+    <div class="bg-white border-b px-3 py-1.5 flex items-center gap-2 text-sm print:hidden flex-shrink-0">
+      <button class="p-1.5 hover:bg-gray-100 rounded" @click="$router.back()">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+      </button>
+      <input v-if="layout" v-model="layout.name" class="font-bold text-base border-b border-transparent focus:border-gray-300 outline-none w-32 sm:w-48" @input="markDirty" />
+
+      <!-- 도구 -->
+      <div class="flex items-center gap-1 ml-2">
+        <button class="px-2 py-1.5 rounded text-xs font-medium bg-blue-600 text-white" @click="tc.addTable('circle')">⊕ 원형</button>
+        <button class="px-2 py-1.5 rounded text-xs font-medium bg-blue-600 text-white" @click="tc.addTable('rect')">⊞ 사각</button>
+      </div>
+
+      <div class="flex-1"></div>
+
+      <!-- 엑셀 -->
+      <button class="px-2 py-1.5 border rounded text-xs hover:bg-gray-50" @click="downloadMembers">📥 다운로드</button>
+      <label class="px-2 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer">
+        📤 업로드
+        <input type="file" accept=".xlsx" class="hidden" @change="uploadMembers" />
+      </label>
+
+      <!-- 배경 -->
+      <label class="px-2 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer">
+        📷
+        <input type="file" accept="image/*" class="hidden" @change="uploadBg" />
+      </label>
+
+      <!-- 저장 -->
+      <button class="px-2 py-1.5 rounded text-xs font-medium" :class="isDirty ? 'bg-blue-600 text-white' : 'border text-gray-400'" @click="saveNow">💾</button>
+      <span class="text-xs text-gray-400 hidden sm:inline">{{ saveStatus }}</span>
+    </div>
 
     <div v-if="!layout" class="flex-1 flex items-center justify-center text-gray-400">로딩 중...</div>
 
@@ -31,50 +42,89 @@
       </div>
 
       <!-- 우측 패널 -->
-      <div class="w-80 flex-shrink-0 print:hidden">
-        <PinPropertyPanel
-          :selected-pin="selectedPin"
-          :guests="guests"
-          :assigned-user-ids="assignedUserIds"
-          @assign="openAssign"
-          @clear-user="(id) => { pc.clearUser(id); markDirty() }"
-          @set-group="({ pinId, group }) => { pc.setGroup(pinId, group); markDirty() }"
-          @delete="() => { pc.deleteSelected(); markDirty() }"
-          @quick-assign="quickAssign"
-          @create-pin-for="createPinFor"
-        />
+      <div class="w-72 sm:w-80 flex-shrink-0 print:hidden bg-white border-l overflow-y-auto">
+        <div class="p-3 space-y-3">
+          <!-- 선택된 테이블 -->
+          <div v-if="selectedTable">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-bold text-gray-900">{{ selectedTable.number }}번 테이블</h3>
+              <button class="text-xs text-red-500 hover:underline" @click="tc.deleteSelected(); markDirty()">삭제</button>
+            </div>
+            <div class="mb-2">
+              <label class="text-xs text-gray-500">번호</label>
+              <input v-model="selectedTable.number" type="text" class="w-full border rounded px-2 py-1.5 text-sm" @input="markDirty" />
+            </div>
+
+            <!-- 멤버 -->
+            <div class="border-t pt-2">
+              <h4 class="text-sm font-medium text-gray-700 mb-1">멤버 ({{ selectedTable.members?.length || 0 }}명)</h4>
+              <div class="space-y-1 max-h-48 overflow-y-auto">
+                <div v-for="m in selectedTable.members || []" :key="m.userId" class="flex items-center justify-between py-1 px-2 bg-gray-50 rounded text-sm">
+                  <span>{{ m.name }}</span>
+                  <div class="flex gap-1">
+                    <button class="text-xs text-blue-500" @click="startMove(m)">이동</button>
+                    <button class="text-xs text-red-400" @click="tc.removeMember(selectedTable.number, m.userId); markDirty()">×</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="text-gray-400 text-center text-sm py-8">테이블을 선택하세요</div>
+
+          <!-- 전체 테이블 목록 -->
+          <div class="border-t pt-3">
+            <h4 class="text-sm font-medium text-gray-700 mb-2">전체 테이블</h4>
+            <div class="space-y-1 max-h-60 overflow-y-auto">
+              <div v-for="t in allTables" :key="t.id" class="flex items-center justify-between py-1.5 px-2 rounded text-sm hover:bg-gray-50 cursor-pointer" @click="selectTableByNumber(t.number)">
+                <span class="font-medium">{{ t.number }}번</span>
+                <span class="text-xs text-gray-500">{{ t.members?.length || 0 }}명</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 배정 현황 -->
+          <div class="border-t pt-3">
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600">배정</span>
+              <span class="font-bold">{{ assignedCount }}/{{ totalGuests }}명</span>
+            </div>
+            <div class="h-2 bg-gray-100 rounded-full mt-1 overflow-hidden">
+              <div class="h-full bg-blue-500 rounded-full" :style="{ width: totalGuests ? `${(assignedCount / totalGuests) * 100}%` : '0%' }"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- 하단 상태바 -->
-    <div class="bg-white border-t px-4 py-1 flex items-center gap-4 text-xs text-gray-500 print:hidden">
-      <span>줌: {{ pc.zoom.value }}%</span>
-      <span class="text-gray-300">|</span>
-      <span>핀: {{ pinCount }}개</span>
-      <span class="text-gray-300">|</span>
-      <span>배정: {{ assignedCount }}/{{ guests.length }}명</span>
-    </div>
-
-    <AssignAttendeeModal
-      :is-open="assignModal.open"
-      :guests="guests"
-      :assigned-user-ids="assignedUserIds"
-      @close="assignModal.open = false"
-      @select="onAssignSelect"
-    />
+    <!-- 멤버 이동 모달 -->
+    <SlideUpModal :is-open="!!movingMember" @close="movingMember = null">
+      <template #header-title>{{ movingMember?.name }} → 어디로?</template>
+      <template #body>
+        <div class="space-y-1">
+          <button
+            v-for="t in allTables" :key="t.id"
+            class="w-full text-left py-3 px-4 rounded-lg hover:bg-blue-50 flex items-center justify-between"
+            :class="t.number === selectedTable?.number ? 'bg-gray-100 text-gray-400' : ''"
+            :disabled="t.number === selectedTable?.number"
+            @click="doMove(t.number)"
+          >
+            <span class="font-medium">{{ t.number }}번 테이블</span>
+            <span class="text-sm text-gray-500">{{ t.members?.length || 0 }}명</span>
+          </button>
+        </div>
+      </template>
+    </SlideUpModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, reactive, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRoute, onBeforeRouteLeave } from 'vue-router'
 import apiClient from '@/services/api'
 import { useAutoSave } from '@/composables/useAutoSave'
-import { useHistory } from '@/composables/useHistory'
-import { usePinCanvas } from '@/components/admin/seating/usePinCanvas'
-import PinEditorToolbar from '@/components/admin/seating/PinEditorToolbar.vue'
-import PinPropertyPanel from '@/components/admin/seating/PinPropertyPanel.vue'
-import AssignAttendeeModal from '@/components/admin/seating/AssignAttendeeModal.vue'
+import { useTableCanvas } from '@/components/admin/seating/useTableCanvas'
+import SlideUpModal from '@/components/common/SlideUpModal.vue'
 
 const route = useRoute()
 const layoutId = Number(route.params.layoutId)
@@ -84,33 +134,24 @@ const layout = ref(null)
 const canvasEl = ref(null)
 const containerRef = ref(null)
 const guests = ref([])
-const selectedPin = ref(null)
-const assignModal = reactive({ open: false, pinId: null })
-const history = useHistory(50)
+const selectedTable = ref(null)
+const movingMember = ref(null)
+const isDirty = ref(false)
 
-const pc = usePinCanvas(canvasEl, containerRef, {
+const tc = useTableCanvas(canvasEl, containerRef, {
   onModified: markDirty,
-  onPinSelect: (pin) => { selectedPin.value = pin },
+  onTableSelect: (t) => { selectedTable.value = t },
 })
 
-const dirtyCounter = ref(0) // 변경 시마다 증가 → computed 재평가 트리거
-const assignedUserIds = computed(() => {
-  dirtyCounter.value // 의존성 등록
-  const set = new Set()
-  const data = pc.toLayoutJSON()
-  data.pins.forEach((p) => { if (p.userId) set.add(p.userId) })
-  return set
-})
-const assignedCount = computed(() => { dirtyCounter.value; return assignedUserIds.value.size })
-const pinCount = computed(() => { dirtyCounter.value; return pc.toLayoutJSON().pins.length })
+const allTables = computed(() => tc.toLayoutJSON().tables || [])
+const assignedCount = computed(() => allTables.value.reduce((s, t) => s + (t.members?.length || 0), 0))
+const totalGuests = computed(() => guests.value.length)
 
 // 자동 저장
 const autoSave = useAutoSave(async () => {
-  const json = pc.toLayoutJSON()
-  await apiClient.put(`/admin/seating-layouts/${layoutId}`, {
-    name: layout.value.name,
-    layoutJson: JSON.stringify(json),
-  })
+  const json = tc.toLayoutJSON()
+  await apiClient.put(`/admin/seating-layouts/${layoutId}`, { name: layout.value.name, layoutJson: JSON.stringify(json) })
+  isDirty.value = false
 }, { delay: 1500 })
 
 const saveStatus = computed(() => {
@@ -119,180 +160,91 @@ const saveStatus = computed(() => {
   return ''
 })
 
-let historyTimer = null
-let _isDirty = false
+function markDirty() { isDirty.value = true; autoSave.trigger() }
 
-function markDirty() {
-  _isDirty = true
-  dirtyCounter.value++
-  autoSave.trigger()
-  if (historyTimer) clearTimeout(historyTimer)
-  historyTimer = setTimeout(() => history.push(pc.toLayoutJSON()), 500)
-}
-
-// 즉시 저장 (페이지 이탈 시 사용)
 async function saveNow() {
   if (!layout.value) return
-  try {
-    const json = pc.toLayoutJSON()
-    // 핀이 없고 배경도 없으면 저장 스킵 (데이터 유실 방지)
-    if (json.pins.length === 0 && !layout.value.backgroundImageUrl) {
-      console.warn('Empty layout, skip save')
-      return
-    }
-    await apiClient.put(`/admin/seating-layouts/${layoutId}`, {
-      name: layout.value.name,
-      layoutJson: JSON.stringify(json),
-    })
-    _isDirty = false
-    console.log('Saved:', json.pins.length, 'pins')
-  } catch (e) {
-    console.error('Save failed:', e)
-  }
-}
-
-function undo() {
-  const snap = history.undo()
-  if (snap) { pc.loadLayoutJSON(snap); autoSave.trigger() }
-}
-function redo() {
-  const snap = history.redo()
-  if (snap) { pc.loadLayoutJSON(snap); autoSave.trigger() }
+  const json = tc.toLayoutJSON()
+  await apiClient.put(`/admin/seating-layouts/${layoutId}`, { name: layout.value.name, layoutJson: JSON.stringify(json) })
+  isDirty.value = false
 }
 
 // 배경
 async function uploadBg(e) {
-  const file = e.target.files[0]
-  if (!file) return
-  const fd = new FormData()
-  fd.append('file', file)
+  const file = e.target.files[0]; if (!file) return
+  const fd = new FormData(); fd.append('file', file)
   const res = await apiClient.post(`/admin/seating-layouts/${layoutId}/background`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
   layout.value.backgroundImageUrl = res.data.backgroundImageUrl
-  pc.setBackground(res.data.backgroundImageUrl)
+  tc.setBackground(res.data.backgroundImageUrl)
   e.target.value = ''
 }
 
-// 좌석 배정
-function openAssign(pin) {
-  assignModal.pinId = pin.id
-  assignModal.open = true
+// 엑셀
+async function downloadMembers() {
+  const res = await apiClient.get(`/admin/seating-layouts/${layoutId}/members/download`, { responseType: 'blob' })
+  const url = URL.createObjectURL(new Blob([res.data]))
+  const a = document.createElement('a'); a.href = url; a.download = `좌석배정.xlsx`; a.click(); URL.revokeObjectURL(url)
 }
 
-function onAssignSelect(guest) {
-  if (!assignModal.pinId) return
-  pc.assignUser(assignModal.pinId, guest)
-  assignModal.open = false
-  selectedPin.value = null
-  markDirty()
-}
-
-function quickAssign(guest) {
-  if (selectedPin.value && !selectedPin.value.userId) {
-    pc.assignUser(selectedPin.value.id, guest)
-    selectedPin.value = null
-    markDirty()
+async function uploadMembers(e) {
+  const file = e.target.files[0]; if (!file) return
+  const fd = new FormData(); fd.append('file', file)
+  try {
+    const res = await apiClient.post(`/admin/seating-layouts/${layoutId}/members/upload`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    alert(`${res.data.tableCount}개 테이블에 ${res.data.matched}명 배정 완료` + (res.data.unmatched > 0 ? ` (${res.data.unmatched}명 매칭 실패)` : ''))
+    // 데이터 리로드
+    const layoutRes = await apiClient.get(`/admin/seating-layouts/${layoutId}`)
+    layout.value = layoutRes.data
+    tc.loadLayoutJSON(JSON.parse(layout.value.layoutJson || '{"tables":[]}'))
+  } catch (err) {
+    alert(err.response?.data?.message || '업로드 실패')
   }
+  e.target.value = ''
 }
 
-function createPinFor(guest) {
-  const cvs = pc.canvas()
-  if (!cvs) return
-  const vpt = cvs.viewportTransform
-  const z = cvs.getZoom()
-  const centerX = Math.round((-vpt[4] + cvs.width / 2) / z)
-  const centerY = Math.round((-vpt[5] + cvs.height / 2) / z)
-
-  // 직접 핀 추가 (loadLayoutJSON 없이)
-  pc.addPinWithUser(centerX, centerY, guest)
+// 멤버 이동
+function startMove(member) { movingMember.value = member }
+function doMove(toNum) {
+  if (!movingMember.value || !selectedTable.value) return
+  tc.moveMember(movingMember.value.userId, selectedTable.value.number, toNum)
+  movingMember.value = null
   markDirty()
-  pc.setMode('select')
+}
+
+function selectTableByNumber(num) {
+  // 캔버스에서 해당 테이블 선택
+  const cvs = tc.canvas()
+  if (!cvs) return
+  const obj = cvs.getObjects().find(o => o._tableData?.number === num)
+  if (obj) { cvs.setActiveObject(obj); cvs.requestRenderAll() }
 }
 
 // 키보드
 function onKeyDown(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
-  pc.handleKeyDown(e)
-  if (e.key === 'Delete' || e.key === 'Backspace') { pc.deleteSelected(); markDirty() }
-  else if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
-  else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) { e.preventDefault(); redo() }
-  else if (e.key === 'v' && !e.ctrlKey) pc.setMode('select')
-  else if (e.key === 'p' && !e.ctrlKey) pc.setMode('pin')
-  else if (e.key === 'h' && !e.ctrlKey) pc.setMode('pan')
+  tc.handleKeyDown(e)
+  if (e.key === 'Delete') { tc.deleteSelected(); markDirty() }
   else if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveNow() }
-  else if (e.key === 'Escape') pc.setMode('select')
 }
+function onKeyUp(e) { tc.handleKeyUp(e) }
 
-function onKeyUp(e) { pc.handleKeyUp(e) }
+onBeforeRouteLeave(async (to, from, next) => { if (isDirty.value) await saveNow(); next() })
 
 onMounted(async () => {
   const res = await apiClient.get(`/admin/seating-layouts/${layoutId}`)
   layout.value = res.data
+  try { const r2 = await apiClient.get(`/admin/conventions/${conventionId}/guests`); guests.value = Array.isArray(r2.data) ? r2.data : [] } catch { guests.value = [] }
 
+  await nextTick(); await new Promise(r => setTimeout(r, 100))
+  tc.init()
+  if (layout.value.backgroundImageUrl) tc.setBackground(layout.value.backgroundImageUrl)
   try {
-    const r2 = await apiClient.get(`/admin/conventions/${conventionId}/guests`)
-    guests.value = Array.isArray(r2.data) ? r2.data : []
-  } catch { guests.value = [] }
-
-  await nextTick()
-  await new Promise((r) => setTimeout(r, 100))
-  pc.init()
-
-  if (layout.value.backgroundImageUrl) {
-    pc.setBackground(layout.value.backgroundImageUrl)
-  }
-
-  // 데이터 로드
-  try {
-    const parsed = JSON.parse(layout.value.layoutJson || '{}')
-    // 새 구조 (pins) 또는 레거시 (tables)
-    if (parsed.pins) {
-      pc.loadLayoutJSON(parsed)
-    } else if (parsed.tables) {
-      const converted = pc.loadLegacyLayout(parsed)
-      pc.loadLayoutJSON(converted)
-    }
-    history.push(pc.toLayoutJSON())
+    const parsed = JSON.parse(layout.value.layoutJson || '{"tables":[]}')
+    tc.loadLayoutJSON(parsed.tables ? parsed : { tables: [] })
   } catch {}
 
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
-  window.addEventListener('beforeunload', onBeforeUnload)
 })
-
-// 페이지 이탈 시 저장 보장
-function onBeforeUnload(e) {
-  if (_isDirty) {
-    // sendBeacon으로 비동기 저장 (페이지 닫혀도 전송 보장)
-    const json = pc.toLayoutJSON()
-    if (json.pins.length > 0) {
-      const blob = new Blob([JSON.stringify({
-        name: layout.value?.name,
-        layoutJson: JSON.stringify(json),
-      })], { type: 'application/json' })
-      navigator.sendBeacon(`/api/admin/seating-layouts/${layoutId}`, blob)
-    }
-    e.preventDefault()
-    e.returnValue = ''
-  }
-}
-
-// Vue 라우트 이동 시 확인
-import { onBeforeRouteLeave } from 'vue-router'
-onBeforeRouteLeave(async (to, from, next) => {
-  if (_isDirty) {
-    await saveNow()
-  }
-  next()
-})
-
-onUnmounted(() => {
-  pc.dispose()
-  window.removeEventListener('keydown', onKeyDown)
-  window.removeEventListener('keyup', onKeyUp)
-  window.removeEventListener('beforeunload', onBeforeUnload)
-})
+onUnmounted(() => { tc.dispose(); window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp) })
 </script>
-
-<style>
-@media print { body * { visibility: hidden !important; } .canvas-container, .canvas-container * { visibility: visible !important; } .canvas-container { position: absolute !important; left: 0 !important; top: 0 !important; } }
-</style>
