@@ -111,7 +111,7 @@ const autoSave = useAutoSave(async () => {
     name: layout.value.name,
     layoutJson: JSON.stringify(json),
   })
-}, { delay: 3000 })
+}, { delay: 1500 })
 
 const saveStatus = computed(() => {
   if (autoSave.saving.value) return '저장 중...'
@@ -259,11 +259,33 @@ onMounted(async () => {
   window.addEventListener('beforeunload', onBeforeUnload)
 })
 
-// 페이지 이탈 시 즉시 저장
-function onBeforeUnload() { saveNow() }
+// 페이지 이탈 시 저장 보장
+function onBeforeUnload(e) {
+  if (_isDirty) {
+    // sendBeacon으로 비동기 저장 (페이지 닫혀도 전송 보장)
+    const json = pc.toLayoutJSON()
+    if (json.pins.length > 0) {
+      const blob = new Blob([JSON.stringify({
+        name: layout.value?.name,
+        layoutJson: JSON.stringify(json),
+      })], { type: 'application/json' })
+      navigator.sendBeacon(`/api/admin/seating-layouts/${layoutId}`, blob)
+    }
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
+// Vue 라우트 이동 시 확인
+import { onBeforeRouteLeave } from 'vue-router'
+onBeforeRouteLeave(async (to, from, next) => {
+  if (_isDirty) {
+    await saveNow()
+  }
+  next()
+})
 
 onUnmounted(() => {
-  saveNow() // Vue 라우트 이동 시
   pc.dispose()
   window.removeEventListener('keydown', onKeyDown)
   window.removeEventListener('keyup', onKeyUp)

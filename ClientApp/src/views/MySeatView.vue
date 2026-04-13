@@ -21,8 +21,8 @@
       <div class="flex-1 relative overflow-hidden bg-gray-200">
         <div
           ref="viewerRef"
-          class="absolute inset-0 overflow-auto"
-          style="-webkit-overflow-scrolling: touch;"
+          class="absolute inset-0 overflow-auto overscroll-contain"
+          style="-webkit-overflow-scrolling: touch; touch-action: pan-x pan-y;"
         >
           <div
             :style="{
@@ -255,7 +255,41 @@ function onImageLoad(e) {
   setTimeout(scrollToMyPin, 500)
 }
 
-onMounted(load)
+// 핀치줌 지원
+function setupPinchZoom() {
+  const el = viewerRef.value
+  if (!el) return
+  let lastDist = 0
+  let lastZoom = 1
+
+  el.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault()
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      lastDist = Math.hypot(dx, dy)
+      lastZoom = viewZoom.value
+    }
+  }, { passive: false })
+
+  el.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && lastDist > 0) {
+      e.preventDefault()
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      const dist = Math.hypot(dx, dy)
+      viewZoom.value = Math.min(5, Math.max(0.2, +(lastZoom * (dist / lastDist)).toFixed(2)))
+    }
+  }, { passive: false })
+
+  el.addEventListener('touchend', () => { lastDist = 0 }, { passive: true })
+}
+
+onMounted(() => {
+  load()
+  // 핀치줌은 DOM 렌더 후
+  setTimeout(() => setupPinchZoom(), 1000)
+})
 </script>
 
 <style scoped>
