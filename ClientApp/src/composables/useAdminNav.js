@@ -135,6 +135,13 @@ const conventionNavItems = [
     routeName: 'AdminSns',
   },
   {
+    key: 'notifications',
+    label: '알림 발송',
+    icon: MessageSquare,
+    path: 'notifications',
+    routeName: 'AdminNotifications',
+  },
+  {
     key: 'seating',
     label: '좌석 배치도',
     icon: LayoutGrid,

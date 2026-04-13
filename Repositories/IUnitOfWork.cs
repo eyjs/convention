@@ -44,6 +44,10 @@ public interface IUnitOfWork : IDisposable
     // Seating
     IRepository<SeatingLayout> SeatingLayouts { get; }
 
+    // Notifications
+    IRepository<Notification> Notifications { get; }
+    IRepository<UserNotification> UserNotifications { get; }
+
     // Attributes
     IRepository<AttributeDefinition> AttributeDefinitions { get; }
     IRepository<AttributeTemplate> AttributeTemplates { get; }

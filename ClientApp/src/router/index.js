@@ -432,6 +432,12 @@ const routes = [
             meta: { title: 'SNS 발송' },
           },
           {
+            path: 'notifications',
+            name: 'AdminNotifications',
+            component: () => import('@/components/admin/NotificationSender.vue'),
+            meta: { title: '알림 발송' },
+          },
+          {
             path: 'seating',
             name: 'AdminSeatingList',
             component: () => import('@/views/admin/SeatingLayoutListView.vue'),

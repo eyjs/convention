@@ -31,6 +31,8 @@ public class ConventionDbContext : DbContext
     public DbSet<Notice> Notices { get; set; }
     public DbSet<NoticeCategory> NoticeCategories { get; set; }
     public DbSet<SeatingLayout> SeatingLayouts { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<UserNotification> UserNotifications { get; set; }
     public DbSet<Comment> Comments { get; set; }
     
     // Action Management

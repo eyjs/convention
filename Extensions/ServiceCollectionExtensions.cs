@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IScheduleService, ScheduleService>();
         services.AddScoped<ITravelAssignmentService, LocalRAG.Services.Convention.TravelAssignmentService>();
         services.AddScoped<ISeatingLayoutService, LocalRAG.Services.Convention.SeatingLayoutService>();
+        services.AddScoped<LocalRAG.Services.Convention.NotificationSendService>();
 
         return services;
     }

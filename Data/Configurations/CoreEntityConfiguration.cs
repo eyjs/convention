@@ -310,6 +310,35 @@ public class FileAttachmentConfiguration : IEntityTypeConfiguration<FileAttachme
     }
 }
 
+public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
+{
+    public void Configure(EntityTypeBuilder<Notification> entity)
+    {
+        entity.HasKey(e => e.Id);
+        entity.Property(e => e.Title).IsRequired().HasMaxLength(500);
+        entity.Property(e => e.Body).HasMaxLength(4000);
+        entity.Property(e => e.Type).IsRequired().HasMaxLength(20);
+        entity.Property(e => e.TargetScope).IsRequired().HasMaxLength(20);
+        entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
+        entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_Notification_ConventionId");
+        entity.HasOne(e => e.Convention).WithMany().HasForeignKey(e => e.ConventionId).OnDelete(DeleteBehavior.Cascade);
+        entity.HasOne(e => e.SentByUser).WithMany().HasForeignKey(e => e.SentByUserId).OnDelete(DeleteBehavior.NoAction);
+    }
+}
+
+public class UserNotificationConfiguration : IEntityTypeConfiguration<UserNotification>
+{
+    public void Configure(EntityTypeBuilder<UserNotification> entity)
+    {
+        entity.HasKey(e => e.Id);
+        entity.Property(e => e.IsRead).HasDefaultValue(false);
+        entity.HasIndex(e => new { e.UserId, e.NotificationId }).IsUnique().HasDatabaseName("IX_UserNotification_User_Notification");
+        entity.HasIndex(e => e.UserId).HasDatabaseName("IX_UserNotification_UserId");
+        entity.HasOne(e => e.Notification).WithMany(n => n.UserNotifications).HasForeignKey(e => e.NotificationId).OnDelete(DeleteBehavior.Cascade);
+        entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.NoAction);
+    }
+}
+
 public class SeatingLayoutConfiguration : IEntityTypeConfiguration<SeatingLayout>
 {
     public void Configure(EntityTypeBuilder<SeatingLayout> entity)
