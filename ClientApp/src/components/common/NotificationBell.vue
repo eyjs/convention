@@ -9,13 +9,13 @@
       </span>
     </button>
 
-    <!-- 알림 목록 -->
+    <!-- 알림 목록 (화면 중앙 모달) -->
     <SlideUpModal :is-open="isOpen" @close="isOpen = false">
       <template #header-title>
-        알림 <span v-if="unreadCount > 0" class="text-red-500">({{ unreadCount }})</span>
+        알림 <span v-if="unreadCount > 0" class="text-red-500 text-sm">({{ unreadCount }})</span>
       </template>
       <template #header-left>
-        <button v-if="unreadCount > 0" class="text-xs text-blue-600" @click="markAllRead">전체 읽음</button>
+        <button v-if="unreadCount > 0" class="text-xs text-blue-600 hover:underline" @click="markAllRead">전체 읽음</button>
       </template>
       <template #body>
         <div v-if="notifications.length === 0" class="text-center text-gray-400 py-12">알림이 없습니다</div>
@@ -23,17 +23,20 @@
           <div
             v-for="n in notifications" :key="n.id"
             class="p-3 rounded-lg cursor-pointer transition-colors"
-            :class="n.isRead ? 'bg-white' : 'bg-blue-50'"
+            :class="n.isRead ? 'bg-white hover:bg-gray-50' : 'bg-blue-50 hover:bg-blue-100'"
             @click="onTap(n)"
           >
-            <div class="flex items-start gap-2">
-              <span class="text-lg flex-shrink-0">{{ typeIcon(n.type) }}</span>
+            <div class="flex items-start gap-3">
+              <span class="text-xl flex-shrink-0 mt-0.5">{{ typeIcon(n.type) }}</span>
               <div class="flex-1 min-w-0">
-                <p class="font-semibold text-gray-900 text-sm" :class="{ 'font-bold': !n.isRead }">{{ n.title }}</p>
-                <p class="text-xs text-gray-600 line-clamp-2 mt-0.5">{{ n.body }}</p>
-                <p class="text-[10px] text-gray-400 mt-1">{{ timeAgo(n.createdAt) }}</p>
+                <p class="text-sm" :class="n.isRead ? 'text-gray-700' : 'font-bold text-gray-900'">{{ n.title }}</p>
+                <p class="text-sm text-gray-600 mt-1">{{ n.body }}</p>
+                <div class="flex items-center gap-2 mt-1.5">
+                  <p class="text-xs text-gray-400">{{ timeAgo(n.createdAt) }}</p>
+                  <span v-if="n.linkUrl" class="text-xs text-blue-500">자세히 보기 →</span>
+                </div>
               </div>
-              <span v-if="!n.isRead" class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5"></span>
+              <span v-if="!n.isRead" class="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0 mt-2"></span>
             </div>
           </div>
         </div>

@@ -164,7 +164,7 @@
             class="w-full px-3 py-2 border rounded-lg text-sm mb-2"
           />
           <div
-            class="max-h-[400px] overflow-y-auto space-y-1 border rounded-lg p-2"
+            class="max-h-[200px] sm:max-h-[400px] overflow-y-auto space-y-1 border rounded-lg p-2"
           >
             <label
               v-for="r in filteredRecipients"
@@ -300,7 +300,7 @@
                 새로고침
               </button>
             </div>
-            <div class="p-4 space-y-2 max-h-[400px] overflow-y-auto">
+            <div class="p-4 space-y-2 max-h-[200px] sm:max-h-[400px] overflow-y-auto">
               <div
                 v-if="popbillTemplatesLoading"
                 class="text-center py-8 text-gray-400 text-sm"
@@ -491,19 +491,46 @@
 
     <!-- 발송 이력 탭 -->
     <div v-if="activeTab === 'logs'" class="bg-white rounded-lg shadow">
-      <div class="p-4 border-b">
+      <div class="p-4 border-b space-y-3">
         <h3 class="font-semibold text-gray-900">발송 이력</h3>
+        <!-- 검색 + 필터 -->
+        <div class="flex gap-2">
+          <input
+            v-model="logSearch"
+            type="text"
+            placeholder="이름/내용 검색..."
+            class="flex-1 border rounded-lg px-3 py-2 text-sm"
+          />
+          <div class="flex gap-1">
+            <button
+              class="px-3 py-1.5 rounded-lg text-xs font-medium"
+              :class="logFilter === '' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'"
+              @click="logFilter = ''"
+            >전체</button>
+            <button
+              class="px-3 py-1.5 rounded-lg text-xs font-medium"
+              :class="logFilter === 'sms' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'"
+              @click="logFilter = 'sms'"
+            >문자</button>
+            <button
+              class="px-3 py-1.5 rounded-lg text-xs font-medium"
+              :class="logFilter === 'alimtalk' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'"
+              @click="logFilter = 'alimtalk'"
+            >알림톡</button>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400">{{ filteredHistory.length }}건</p>
       </div>
       <div class="p-4">
         <div
-          v-if="smsHistory.length === 0"
+          v-if="filteredHistory.length === 0"
           class="text-center py-12 text-gray-400"
         >
-          발송 이력이 없습니다
+          {{ logSearch || logFilter ? '검색 결과 없음' : '발송 이력이 없습니다' }}
         </div>
         <div v-else class="space-y-2 max-h-[600px] overflow-y-auto">
           <div
-            v-for="sms in smsHistory"
+            v-for="sms in filteredHistory"
             :key="sms.id"
             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
             @click="viewSmsDetail(sms)"
@@ -542,7 +569,7 @@
       <template #header-title>발송 전문</template>
       <template #body>
         <div v-if="viewingSms" class="space-y-4">
-          <div class="grid grid-cols-2 gap-3 text-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div>
               <span class="text-gray-500">수신자</span>
               <p class="font-medium">{{ viewingSms.receiverName }}</p>
@@ -598,6 +625,26 @@ const tabs = [
 ]
 const activeTab = ref('sms')
 const viewingSms = ref(null)
+const logSearch = ref('')
+const logFilter = ref('')
+
+const filteredHistory = computed(() => {
+  let list = smsHistory.value
+  if (logFilter.value === 'sms') {
+    list = list.filter((s) => s.snsType === 'SMS' || (!s.snsType && !s.templateCode))
+  } else if (logFilter.value === 'alimtalk') {
+    list = list.filter((s) => s.snsType === 'ALIMTALK' || s.snsType === 'KakaoAlimTalk' || !!s.templateCode)
+  }
+  const q = logSearch.value.trim().toLowerCase()
+  if (q) {
+    list = list.filter((s) =>
+      s.receiverName?.toLowerCase().includes(q) ||
+      s.message?.toLowerCase().includes(q) ||
+      s.receiverPhone?.includes(q)
+    )
+  }
+  return list
+})
 
 function viewSmsDetail(sms) {
   viewingSms.value = sms

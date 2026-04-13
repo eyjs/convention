@@ -117,7 +117,7 @@
                 :key="item.id"
                 class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
               >
-                <div class="flex-shrink-0 w-28 text-sm">
+                <div class="flex-shrink-0 w-20 sm:w-28 text-sm">
                   <div class="font-medium text-gray-600">
                     {{ formatDate(item.scheduleDate) }}
                   </div>
@@ -271,7 +271,7 @@
               />
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block text-sm font-medium mb-1"
                   >시작 시간 *</label
@@ -348,7 +348,7 @@
               >
               <div
                 v-if="itemImages.length > 0 || pendingFiles.length > 0"
-                class="grid grid-cols-3 gap-2 mb-2"
+                class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2"
               >
                 <!-- 저장된 이미지 -->
                 <div

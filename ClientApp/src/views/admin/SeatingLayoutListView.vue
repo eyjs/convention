@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <MainHeader title="좌석 배치도" :show-back="true" />
+    <MainHeader title="좌석 배치도" :show-back="true" :show-menu="false" />
     <div class="max-w-6xl mx-auto p-4">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-bold text-gray-800">레이아웃 목록</h2>

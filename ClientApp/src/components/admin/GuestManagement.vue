@@ -57,7 +57,7 @@
         v-model="searchTerm"
         type="text"
         placeholder="이름, 전화번호, 부서, 소속으로 검색..."
-        class="flex-1 min-w-[200px] px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        class="flex-1 min-w-0 px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       />
       <select
         v-model="passportFilter"
@@ -261,14 +261,14 @@
               </td>
               <td class="px-3 py-1.5 whitespace-nowrap text-right" @click.stop>
                 <button
-                  class="text-gray-400 hover:text-primary-600 p-1"
+                  class="text-gray-400 hover:text-primary-600 p-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center"
                   title="수정"
                   @click="editGuest(guest)"
                 >
                   <Pencil :size="14" />
                 </button>
                 <button
-                  class="text-gray-400 hover:text-red-600 p-1"
+                  class="text-gray-400 hover:text-red-600 p-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center"
                   title="삭제"
                   @click="deleteGuest(guest.id)"
                 >

@@ -38,9 +38,16 @@
           </h1>
         </div>
 
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-1">
           <!-- Slot for additional action buttons -->
           <slot name="actions"></slot>
+
+          <!-- 알림 벨 (행사 컨텍스트가 있을 때만) -->
+          <NotificationBell
+            v-if="conventionId"
+            :convention-id="conventionId"
+            :text-class="transparent ? 'text-white' : 'text-gray-600'"
+          />
 
           <div v-if="showMenu" class="relative">
             <button
@@ -75,8 +82,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import SidebarMenu from './SidebarMenu.vue'
+import NotificationBell from './NotificationBell.vue'
+
+const route = useRoute()
+const authStore = useAuthStore()
+const conventionId = computed(() => {
+  const id = route.params.conventionId || route.params.id
+  return id && authStore.user ? Number(id) : null
+})
 
 defineProps({
   title: {

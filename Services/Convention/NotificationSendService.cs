@@ -40,6 +40,7 @@ public class NotificationSendService
                 "NOTICE" when req.ReferenceId.HasValue => $"/conventions/{conventionId}/board/{req.ReferenceId}",
                 "SURVEY" when req.ReferenceId.HasValue => $"/conventions/{conventionId}/surveys/{req.ReferenceId}",
                 "SCHEDULE" => $"/conventions/{conventionId}/schedule",
+                "SEAT" when req.ReferenceId.HasValue => $"/conventions/{conventionId}/my-seat?layout={req.ReferenceId}",
                 "SEAT" => $"/conventions/{conventionId}/my-seat",
                 _ => null,
             };

@@ -77,37 +77,37 @@
                   <GripHorizontal class="w-4 h-4" />
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   상태
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   카테고리
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   제목
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   작성자
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   작성일
                 </th>
                 <th
-                  class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"
                 >
                   조회
                 </th>
                 <th
-                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
                 >
                   작업
                 </th>
@@ -130,13 +130,13 @@
                       />
                     </div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
+                  <td class="px-3 md:px-6 py-4 whitespace-nowrap">
                     <AdminBadge v-if="notice.isPinned" variant="danger"
                       >필독</AdminBadge
                     >
                     <AdminBadge v-else variant="neutral">일반</AdminBadge>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
+                  <td class="px-3 md:px-6 py-4 whitespace-nowrap">
                     <span
                       v-if="notice.categoryName"
                       class="px-2 py-1 rounded text-xs font-medium"
@@ -149,7 +149,7 @@
                     </span>
                     <span v-else class="text-gray-400 text-xs">미분류</span>
                   </td>
-                  <td class="px-6 py-4">
+                  <td class="px-3 md:px-6 py-4">
                     <button
                       class="font-medium text-gray-900 hover:text-primary-600 text-left"
                       @click="viewNotice(notice)"
@@ -157,19 +157,19 @@
                       {{ notice.title }}
                     </button>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {{ notice.authorName }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {{ formatDate(notice.createdAt) }}
                   </td>
                   <td
-                    class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500"
+                    class="px-3 md:px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500"
                   >
                     {{ notice.viewCount }}
                   </td>
                   <td
-                    class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                    class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                   >
                     <button
                       class="text-yellow-600 hover:text-yellow-900 mr-3"
@@ -220,27 +220,27 @@
             <thead class="bg-gray-50">
               <tr>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   카테고리명
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   설명
                 </th>
                 <th
-                  class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"
                 >
                   게시글 수
                 </th>
                 <th
-                  class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"
                 >
                   표시 순서
                 </th>
                 <th
-                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
+                  class="px-3 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
                 >
                   작업
                 </th>
@@ -253,25 +253,25 @@
                 class="hover:bg-gray-50"
               >
                 <td
-                  class="px-6 py-4 whitespace-nowrap font-medium text-gray-900"
+                  class="px-3 md:px-6 py-4 whitespace-nowrap font-medium text-gray-900"
                 >
                   {{ category.name }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-500">
+                <td class="px-3 md:px-6 py-4 text-sm text-gray-500">
                   {{ category.description || '-' }}
                 </td>
                 <td
-                  class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500"
+                  class="px-3 md:px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500"
                 >
                   {{ category.noticeCount }}
                 </td>
                 <td
-                  class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500"
+                  class="px-3 md:px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500"
                 >
                   {{ category.displayOrder }}
                 </td>
                 <td
-                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                  class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                 >
                   <button
                     class="text-primary-600 hover:text-primary-900 mr-3"

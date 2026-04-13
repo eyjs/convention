@@ -37,14 +37,7 @@
 
       <!-- 공통 헤더 사용 (오버레이) -->
       <div class="absolute top-0 left-0 right-0 z-20">
-        <MainHeader title="" :transparent="true">
-          <template #actions>
-            <NotificationBell
-              v-if="conventionStore.currentConvention?.id"
-              :convention-id="conventionStore.currentConvention.id"
-            />
-          </template>
-        </MainHeader>
+        <MainHeader title="" :transparent="true" />
       </div>
 
       <div class="relative h-full flex flex-col justify-center px-6 text-white">
@@ -843,7 +836,6 @@ import DeadlineCountdown from '@/components/common/DeadlineCountdown.vue'
 import ChecklistProgress from '@/components/common/ChecklistProgress.vue'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 import MainHeader from '@/components/common/MainHeader.vue'
-import NotificationBell from '@/components/common/NotificationBell.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 
 const router = useRouter()
