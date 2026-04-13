@@ -102,7 +102,41 @@
       title="검색 결과가 없습니다"
       :description="`전체 ${guests.length}명 중 조건에 맞는 참석자가 없습니다`"
     />
-    <div v-else class="bg-white rounded-lg shadow overflow-hidden">
+    <div v-else>
+      <!-- 모바일 카드 뷰 -->
+      <div class="md:hidden space-y-2">
+        <div
+          v-for="guest in filteredGuests"
+          :key="'m-' + guest.id"
+          class="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3 active:bg-gray-50"
+          @click="openDetailModal(guest.id)"
+        >
+          <input
+            v-model="selectedGuests"
+            type="checkbox"
+            :value="guest.id"
+            class="rounded flex-shrink-0"
+            @click.stop
+          />
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="font-semibold text-gray-900">{{ guest.guestName }}</span>
+              <span v-if="guest.groupName" class="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded">{{ guest.groupName }}</span>
+            </div>
+            <div class="text-xs text-gray-500 mt-0.5 flex flex-wrap gap-x-2">
+              <span v-if="guest.phone">{{ guest.phone }}</span>
+              <span v-if="guest.corpPart">{{ guest.corpPart }}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <span v-if="guest.passportVerified" class="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-[10px]">✓</span>
+            <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- PC 테이블 뷰 -->
+      <div class="hidden md:block bg-white rounded-lg shadow overflow-hidden">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 text-sm">
           <thead class="bg-gray-50">
@@ -278,6 +312,7 @@
             </tr>
           </tbody>
         </table>
+      </div>
       </div>
     </div>
 
