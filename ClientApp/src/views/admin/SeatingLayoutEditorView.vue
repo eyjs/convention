@@ -7,42 +7,94 @@
       </button>
       <input v-if="layout" v-model="layout.name" class="font-bold text-base border-b border-transparent focus:border-gray-300 outline-none w-32 sm:w-48" @input="markDirty" />
 
-      <!-- 도구 -->
-      <div class="flex items-center gap-1 ml-2">
-        <button class="px-2 py-1.5 rounded text-xs font-medium bg-blue-600 text-white" @click="tc.addTable('circle')">⊕ 원형</button>
-        <button class="px-2 py-1.5 rounded text-xs font-medium bg-blue-600 text-white" @click="tc.addTable('rect')">⊞ 사각</button>
+      <!-- 테이블 추가 (PC만) -->
+      <div class="hidden md:flex items-center gap-1 ml-2">
+        <button class="px-2.5 py-1.5 rounded text-xs font-medium bg-blue-600 text-white hover:bg-blue-700" @click="tc.addTable('circle')">○ 원형 추가</button>
+        <button class="px-2.5 py-1.5 rounded text-xs font-medium bg-blue-600 text-white hover:bg-blue-700" @click="tc.addTable('rect')">□ 사각 추가</button>
       </div>
 
       <div class="flex-1"></div>
 
-      <!-- 엑셀 -->
-      <button class="px-2 py-1.5 border rounded text-xs hover:bg-gray-50" @click="downloadMembers">📥 다운로드</button>
-      <label class="px-2 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer">
-        📤 업로드
+      <!-- 액션 버튼 (통일 스타일) -->
+      <button class="px-2.5 py-1.5 border rounded text-xs hover:bg-gray-50 flex items-center gap-1" @click="downloadMembers">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+        <span class="hidden sm:inline">다운로드</span>
+      </button>
+      <label class="px-2.5 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+        <span class="hidden sm:inline">업로드</span>
         <input type="file" accept=".xlsx" class="hidden" @change="uploadMembers" />
       </label>
-
-      <!-- 배경 -->
-      <label class="px-2 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer">
-        📷
+      <label class="px-2.5 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        <span class="hidden sm:inline">배경</span>
         <input type="file" accept="image/*" class="hidden" @change="uploadBg" />
       </label>
-
-      <!-- 저장 -->
-      <button class="px-2 py-1.5 rounded text-xs font-medium" :class="isDirty ? 'bg-blue-600 text-white' : 'border text-gray-400'" @click="saveNow">💾</button>
-      <span class="text-xs text-gray-400 hidden sm:inline">{{ saveStatus }}</span>
+      <button class="px-2.5 py-1.5 rounded text-xs font-medium flex items-center gap-1" :class="isDirty ? 'bg-blue-600 text-white' : 'border text-gray-400'" @click="saveNow">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+        <span class="hidden sm:inline">저장</span>
+      </button>
+      <span class="text-xs text-gray-400 hidden lg:inline">{{ saveStatus }}</span>
     </div>
 
     <div v-if="!layout" class="flex-1 flex items-center justify-center text-gray-400">로딩 중...</div>
 
     <div v-else class="flex-1 flex overflow-hidden">
-      <!-- 캔버스 -->
-      <div ref="containerRef" class="flex-1 overflow-hidden relative">
+      <!-- ===== 모바일: 카드 리스트 ===== -->
+      <div class="md:hidden flex-1 overflow-y-auto p-3 space-y-3">
+        <!-- 배정 현황 -->
+        <div class="bg-white rounded-lg p-3 shadow-sm">
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-600">배정 현황</span>
+            <span class="font-bold">{{ assignedCount }}/{{ totalGuests }}명</span>
+          </div>
+          <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full bg-blue-500 rounded-full" :style="{ width: totalGuests ? `${(assignedCount / totalGuests) * 100}%` : '0%' }"></div>
+          </div>
+        </div>
+
+        <!-- 테이블 카드 -->
+        <div
+          v-for="t in allTables" :key="'mc-' + t.id"
+          class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+        >
+          <div class="px-4 py-3 flex items-center justify-between border-b border-gray-50">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-800 text-sm">{{ t.number }}</span>
+              <span class="font-semibold text-gray-900">{{ t.number }}번 테이블</span>
+            </div>
+            <span class="text-xs text-gray-500">{{ t.members?.length || 0 }}명</span>
+          </div>
+          <div class="px-4 py-2">
+            <div v-if="!t.members?.length" class="text-xs text-gray-400 py-2">배정된 사람 없음</div>
+            <div v-for="m in t.members || []" :key="m.userId" class="flex items-center justify-between py-1.5">
+              <span class="text-sm text-gray-800">{{ m.name }}</span>
+              <div class="flex gap-2">
+                <button class="text-xs text-blue-500 min-h-[32px] px-2" @click="startMoveFromCard(t, m)">이동</button>
+                <button class="text-xs text-red-400 min-h-[32px] px-2" @click="removeMemberFromCard(t.number, m.userId)">삭제</button>
+              </div>
+            </div>
+          </div>
+          <button class="w-full py-2 text-xs text-blue-600 border-t border-gray-50 hover:bg-blue-50" @click="addMemberToCard(t)">+ 사람 추가</button>
+        </div>
+
+        <!-- 미배정 -->
+        <div v-if="unassignedGuests.length > 0" class="bg-amber-50 rounded-xl p-3">
+          <h4 class="text-sm font-semibold text-amber-800 mb-2">미배정 ({{ unassignedGuests.length }}명)</h4>
+          <div class="flex flex-wrap gap-1">
+            <span v-for="g in unassignedGuests.slice(0, 20)" :key="g.id" class="px-2 py-1 bg-white rounded text-xs text-gray-700 shadow-sm">{{ g.name }}</span>
+            <span v-if="unassignedGuests.length > 20" class="px-2 py-1 text-xs text-amber-600">+{{ unassignedGuests.length - 20 }}명</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PC: 캔버스 + 우측 패널 ===== -->
+      <div ref="containerRef" class="hidden md:block flex-1 overflow-hidden relative">
         <canvas ref="canvasEl"></canvas>
       </div>
 
-      <!-- 우측 패널 -->
-      <div class="w-72 sm:w-80 flex-shrink-0 print:hidden bg-white border-l overflow-y-auto">
+      <!-- 우측 패널 (PC만) -->
+      <div class="hidden md:block w-72 sm:w-80 flex-shrink-0 print:hidden bg-white border-l overflow-y-auto">
         <div class="p-3 space-y-3">
           <!-- 선택된 테이블 -->
           <div v-if="selectedTable">
@@ -254,13 +306,45 @@ async function uploadMembers(e) {
   e.target.value = ''
 }
 
-// 웹 배정 (미배정 → 테이블 선택)
-function startWebAssign(guest) { assigningGuest.value = guest }
+// 웹 배정
+function startWebAssign(guest) {
+  // 테이블 선택된 상태면 바로 배정
+  if (selectedTable.value) {
+    tc.addMemberToTable(selectedTable.value.number, guest)
+    markDirty()
+    return
+  }
+  // 테이블 미선택이면 모달
+  assigningGuest.value = guest
+}
 function doWebAssign(tableNum) {
-  if (!assigningGuest.value) return
-  tc.addMemberToTable(tableNum, assigningGuest.value)
+  const guest = assigningGuest.value || (cardEditTable.value ? {} : null)
+  if (assigningGuest.value?.id) {
+    tc.addMemberToTable(tableNum, assigningGuest.value)
+  }
   assigningGuest.value = null
+  cardEditTable.value = null
   markDirty()
+}
+
+// 모바일 카드 전용
+const cardEditTable = ref(null)
+
+function startMoveFromCard(table, member) {
+  cardEditTable.value = table
+  selectedTable.value = table
+  movingMember.value = member
+}
+
+function removeMemberFromCard(tableNum, userId) {
+  tc.removeMember(tableNum, userId)
+  markDirty()
+}
+
+function addMemberToCard(table) {
+  cardEditTable.value = table
+  selectedTable.value = table
+  assigningGuest.value = {} // 트리거만 (모달에서 선택)
 }
 
 // 멤버 이동

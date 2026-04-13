@@ -29,14 +29,15 @@
               @click="showTableMembers(t)"
             >
               <div
-                class="w-full h-full flex items-center justify-center shadow-lg border-2 border-white"
+                class="w-full h-full flex flex-col items-center justify-center"
                 :class="[
-                  t.shape === 'rect' ? 'rounded-lg' : 'rounded-full',
-                  t.number === myTableNumber ? 'animate-bounce' : '',
+                  t.shape === 'rect' ? 'rounded-xl' : 'rounded-full',
+                  t.number === myTableNumber ? 'animate-bounce border-red-400 bg-red-50 shadow-lg shadow-red-200/50' : 'border-gray-200 bg-white shadow-md',
                 ]"
-                :style="{ backgroundColor: t.number === myTableNumber ? '#ef4444' : (t.color || '#3b82f6'), opacity: 0.9 }"
+                style="border-width: 2px;"
               >
-                <span class="text-white font-bold drop-shadow" :style="{ fontSize: Math.max(12, 20 * viewZoom) + 'px' }">{{ t.number }}</span>
+                <span class="font-bold" :class="t.number === myTableNumber ? 'text-red-600' : 'text-gray-800'" :style="{ fontSize: Math.max(11, 18 * viewZoom) + 'px' }">{{ t.number }}</span>
+                <span class="text-gray-400" :style="{ fontSize: Math.max(7, 9 * viewZoom) + 'px' }">{{ t.members?.length || 0 }}명</span>
               </div>
             </div>
           </div>

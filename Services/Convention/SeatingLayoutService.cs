@@ -153,14 +153,20 @@ public class SeatingLayoutService : ISeatingLayoutService
                 return (pins, assigned);
             }
 
-            // 레거시: tables.seats
+            // tables 구조 (새: members / 레거시: seats)
             if (root.TryGetProperty("tables", out var tablesArr) && tablesArr.ValueKind == JsonValueKind.Array)
             {
+                pins = tablesArr.GetArrayLength(); // 테이블 수
                 foreach (var t in tablesArr.EnumerateArray())
                 {
-                    if (t.TryGetProperty("seats", out var seats) && seats.ValueKind == JsonValueKind.Array)
+                    // members (새 구조)
+                    if (t.TryGetProperty("members", out var members) && members.ValueKind == JsonValueKind.Array)
                     {
-                        pins += seats.GetArrayLength();
+                        assigned += members.GetArrayLength();
+                    }
+                    // seats (레거시)
+                    else if (t.TryGetProperty("seats", out var seats) && seats.ValueKind == JsonValueKind.Array)
+                    {
                         foreach (var s in seats.EnumerateArray())
                         {
                             if (s.TryGetProperty("userId", out var uid) && uid.ValueKind != JsonValueKind.Null)

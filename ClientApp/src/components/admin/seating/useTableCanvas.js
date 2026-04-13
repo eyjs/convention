@@ -97,18 +97,39 @@ export function useTableCanvas(canvasElRef, containerRef, options = {}) {
 
   function _buildTableMarker(data) {
     const isHighlighted = highlightTableNumber && data.number === highlightTableNumber
-    const fill = isHighlighted ? '#ef4444' : (data.color || '#3b82f6')
     const w = data.width || 80, h = data.height || 80
 
     let shape
     if (data.shape === 'rect') {
-      shape = new fabric.Rect({ width: w, height: h, fill, opacity: 0.85, stroke: '#fff', strokeWidth: 2, rx: 8, ry: 8, originX: 'center', originY: 'center' })
+      shape = new fabric.Rect({
+        width: w, height: h,
+        fill: isHighlighted ? '#fef2f2' : '#ffffff',
+        stroke: isHighlighted ? '#ef4444' : '#e5e7eb',
+        strokeWidth: isHighlighted ? 3 : 1.5,
+        rx: 10, ry: 10,
+        originX: 'center', originY: 'center',
+        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.08)', blur: 8, offsetX: 0, offsetY: 2 }),
+      })
     } else {
-      shape = new fabric.Circle({ radius: w / 2, fill, opacity: 0.85, stroke: '#fff', strokeWidth: 2, originX: 'center', originY: 'center' })
+      shape = new fabric.Circle({
+        radius: w / 2,
+        fill: isHighlighted ? '#fef2f2' : '#ffffff',
+        stroke: isHighlighted ? '#ef4444' : '#e5e7eb',
+        strokeWidth: isHighlighted ? 3 : 1.5,
+        originX: 'center', originY: 'center',
+        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.08)', blur: 8, offsetX: 0, offsetY: 2 }),
+      })
     }
 
-    const label = new fabric.Text(data.number, { fontSize: 22, fontWeight: 'bold', fill: '#ffffff', originX: 'center', originY: 'center', shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.3)', blur: 2 }) })
-    const count = new fabric.Text(data.members?.length ? `${data.members.length}명` : '', { fontSize: 10, fill: '#ffffffcc', originX: 'center', originY: 'center', top: 18 })
+    const label = new fabric.Text(data.number, {
+      fontSize: 20, fontWeight: '700',
+      fill: isHighlighted ? '#dc2626' : '#1f2937',
+      originX: 'center', originY: 'center', top: -6,
+    })
+    const count = new fabric.Text(data.members?.length ? `${data.members.length}명` : '', {
+      fontSize: 10, fill: '#9ca3af',
+      originX: 'center', originY: 'center', top: 14,
+    })
 
     const group = new fabric.Group([shape, label, count], {
       left: data.x || 200, top: data.y || 200,
