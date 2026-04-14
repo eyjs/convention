@@ -215,7 +215,13 @@ public class FileController : ControllerBase
             string lowerExtension = extension.Replace(".", "").ToLower();
 
             using global::System.Drawing.Image origin = ExifRotate(global::System.Drawing.Image.FromFile(filePath));
-            using global::System.Drawing.Image image = ResizeImageCommon(origin, resize);
+            // 너무 큰 이미지는 자동 리사이즈 (브라우저 한계 ~4000px)
+            var autoResize = resize;
+            if (string.IsNullOrEmpty(autoResize) && (origin.Width > 4000 || origin.Height > 4000))
+            {
+                autoResize = "4000";
+            }
+            using global::System.Drawing.Image image = ResizeImageCommon(origin, autoResize);
             
             var stream = new MemoryStream();
             image.Save(stream, GetImageFormat(lowerExtension));
@@ -225,9 +231,18 @@ public class FileController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to process image {FilePath}", filePath);
-            // Return a placeholder or error image? For now, just return a server error.
-            return StatusCode(500, "Failed to process image.");
+            _logger.LogWarning(ex, "Image processing failed, returning raw file: {FilePath}", filePath);
+            // 이미지 처리 실패 시 원본 파일 그대로 반환
+            try
+            {
+                var ext = Path.GetExtension(filePath).TrimStart('.').ToLower();
+                var mime = ext == "png" ? "image/png" : ext == "jpg" || ext == "jpeg" ? "image/jpeg" : ext == "gif" ? "image/gif" : "application/octet-stream";
+                return PhysicalFile(filePath, mime);
+            }
+            catch
+            {
+                return StatusCode(500, "Failed to process image.");
+            }
         }
     }
 

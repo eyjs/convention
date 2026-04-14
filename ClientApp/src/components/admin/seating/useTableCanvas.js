@@ -23,6 +23,34 @@ export function useTableCanvas(canvasElRef, containerRef, options = {}) {
     canvas.on('mouse:down', _onDown)
     canvas.on('mouse:up', _onUp)
     canvas.on('object:modified', () => { _syncAll(); onModified() })
+
+    // 번호를 네이티브 Canvas2D로 렌더 (Fabric Text 사용하지 않음)
+    canvas.on('after:render', () => {
+      const ctx = canvas.getContext('2d')
+      const vpt = canvas.viewportTransform
+      const z = canvas.getZoom()
+      ctx.save()
+      canvas.getObjects().forEach(o => {
+        if (!o._tableData) return
+        const d = o._tableData
+        const cx = o.left * z + vpt[4]
+        const cy = o.top * z + vpt[5]
+        const isHl = highlightTableNumber && d.number === highlightTableNumber
+        // 번호
+        ctx.font = `bold ${Math.max(12, 18 * z)}px -apple-system, sans-serif`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillStyle = isHl ? '#dc2626' : '#1f2937'
+        ctx.fillText(d.number, cx, cy - 6 * z)
+        // 인원
+        if (d.members?.length) {
+          ctx.font = `${Math.max(8, 10 * z)}px -apple-system, sans-serif`
+          ctx.fillStyle = '#9ca3af'
+          ctx.fillText(d.members.length + '명', cx, cy + 12 * z)
+        }
+      })
+      ctx.restore()
+    })
     canvas.on('selection:created', (e) => _selectTable(e.selected))
     canvas.on('selection:updated', (e) => _selectTable(e.selected))
     canvas.on('selection:cleared', () => onTableSelect(null))
@@ -122,17 +150,9 @@ export function useTableCanvas(canvasElRef, containerRef, options = {}) {
       })
     }
 
-    const label = new fabric.Text(data.number, {
-      fontSize: 20, fontWeight: '700',
-      fill: isHighlighted ? '#dc2626' : '#1f2937',
-      originX: 'center', originY: 'center', top: -6,
-    })
-    const count = new fabric.Text(data.members?.length ? `${data.members.length}명` : '', {
-      fontSize: 10, fill: '#9ca3af',
-      originX: 'center', originY: 'center', top: 14,
-    })
-
-    const group = new fabric.Group([shape, label, count], {
+    // Text 제거 — Fabric v5 + Chrome alphabetical 에러 방지
+    // 번호는 캔버스 afterRender에서 직접 그림
+    const group = new fabric.Group([shape], {
       left: data.x || 200, top: data.y || 200,
       selectable: !readonly, hasControls: !readonly, lockRotation: true,
       _tableData: data,
@@ -162,7 +182,7 @@ export function useTableCanvas(canvasElRef, containerRef, options = {}) {
       const scale = maxDim > 4000 ? 4000 / maxDim : 1
       img.set({ scaleX: scale, scaleY: scale, opacity: readonly ? 1 : 0.85 })
       canvas.setBackgroundImage(img, () => { zoomToFit(); canvas.requestRenderAll() })
-    }, { crossOrigin: 'anonymous' })
+    }, {})
   }
 
   // 직렬화 — layoutState가 SSOT
