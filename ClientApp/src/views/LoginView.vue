@@ -54,7 +54,7 @@
         @touchend="onLoginModalTouchEnd"
       >
         <div
-          class="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-w-md text-center relative max-h-[90vh] md:max-h-[80vh] overflow-y-auto"
+          class="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-w-md text-center relative max-h-[90vh] md:max-h-[80vh] overflow-y-auto pb-safe"
         >
           <div class="pt-8 pb-8 px-8">
             <button
@@ -754,6 +754,11 @@ async function handleRegister() {
 }
 .animate-fade-in {
   animation: fade-in 1.2s ease-out forwards;
+}
+
+/* Capacitor safe area bottom padding */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
 }
 
 /* New Responsive Modal Animation */

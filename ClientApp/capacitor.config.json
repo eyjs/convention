@@ -3,9 +3,17 @@
   "appName": "StarTour",
   "webDir": "dist",
   "server": {
+    "url": "https://event.ifa.co.kr",
     "allowNavigation": ["event.ifa.co.kr"]
   },
   "android": {
     "allowMixedContent": false
+  },
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "DARK",
+      "backgroundColor": "#FFFFFF"
+    }
   }
 }

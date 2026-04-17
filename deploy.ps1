@@ -96,7 +96,7 @@ if (-not $SkipPublish) {
         Write-Ok "publish 완료 -> $PublishDir"
 
         # APK 복사 (있으면)
-        $apkSource = Join-Path $ProjectRoot 'ClientApp\android\app\build\intermediates\apk\debug\app-debug.apk'
+        $apkSource = Join-Path $ProjectRoot 'ClientApp\android\app\build\outputs\apk\debug\app-debug.apk'
         $apkDest = Join-Path $PublishDir 'wwwroot\downloads'
         if (Test-Path $apkSource) {
             if (-not (Test-Path $apkDest)) { New-Item -ItemType Directory -Path $apkDest -Force | Out-Null }
