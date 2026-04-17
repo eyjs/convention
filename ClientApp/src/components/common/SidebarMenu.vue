@@ -95,6 +95,15 @@
             </router-link>
 
             <router-link
+              to="/app-download"
+              class="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              @click="close"
+            >
+              <Smartphone :size="18" class="text-gray-400" />
+              <span>앱 다운로드</span>
+            </router-link>
+
+            <router-link
               v-if="authStore.isAdmin"
               to="/admin"
               class="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
@@ -126,7 +135,14 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import { useRouter } from 'vue-router'
-import { Home, User as UserIcon, Settings, LogOut, X } from 'lucide-vue-next'
+import {
+  Home,
+  User as UserIcon,
+  Settings,
+  LogOut,
+  X,
+  Smartphone,
+} from 'lucide-vue-next'
 import apiClient from '@/services/api'
 
 const props = defineProps({
