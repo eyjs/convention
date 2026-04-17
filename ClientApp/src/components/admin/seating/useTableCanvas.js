@@ -33,20 +33,30 @@ export function useTableCanvas(canvasElRef, containerRef, options = {}) {
       canvas.getObjects().forEach(o => {
         if (!o._tableData) return
         const d = o._tableData
-        const cx = o.left * z + vpt[4]
-        const cy = o.top * z + vpt[5]
+        // aCoords: 뷰포트 변환 전 절대 좌표 → 화면 좌표로 변환
+        const ac = o.aCoords
+        if (!ac) return
+        const tlx = ac.tl.x * z + vpt[4], tly = ac.tl.y * z + vpt[5]
+        const brx = ac.br.x * z + vpt[4], bry = ac.br.y * z + vpt[5]
+        const cx = (tlx + brx) / 2
+        const cy = (tly + bry) / 2
+        const w = Math.abs(brx - tlx)
+        const h = Math.abs(bry - tly)
+        const sz = Math.min(w, h)
         const isHl = highlightTableNumber && d.number === highlightTableNumber
         // 번호
-        ctx.font = `bold ${Math.max(12, 18 * z)}px -apple-system, sans-serif`
+        const numSize = Math.max(10, Math.min(sz * 0.35, 28))
+        ctx.font = `bold ${numSize}px -apple-system, sans-serif`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillStyle = isHl ? '#dc2626' : '#1f2937'
-        ctx.fillText(d.number, cx, cy - 6 * z)
+        ctx.fillText(d.number, cx, d.members?.length ? cy - sz * 0.08 : cy)
         // 인원
         if (d.members?.length) {
-          ctx.font = `${Math.max(8, 10 * z)}px -apple-system, sans-serif`
+          const cntSize = Math.max(7, Math.min(sz * 0.18, 14))
+          ctx.font = `${cntSize}px -apple-system, sans-serif`
           ctx.fillStyle = '#9ca3af'
-          ctx.fillText(d.members.length + '명', cx, cy + 12 * z)
+          ctx.fillText(d.members.length + '명', cx, cy + sz * 0.18)
         }
       })
       ctx.restore()

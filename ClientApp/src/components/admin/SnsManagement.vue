@@ -866,17 +866,16 @@ async function downloadSample() {
         (g.phone || '').replace(/-/g, ''),
         '',
         '',
-        g.groupName || '',
+        '',
       ])
     } catch {
-      // 참석자 조회 실패 시 예시 데이터
       guestRows = [
-        [1, '홍길동', '01012345678', '', '', 'A조'],
-        [2, '김철수', '01087654321', '', '', 'B조'],
+        [1, '홍길동', '01012345678', '', '', ''],
+        [2, '김철수', '01087654321', '', '', ''],
       ]
     }
 
-    const header = ['번호', '이름', '전화번호', '#{변수1}', '#{변수2}', '#{조}']
+    const header = ['번호', '이름', '전화번호', '#{변수1}', '#{변수2}', '#{변수3}']
     const rows = [header, ...guestRows]
     const ws = XLSX.utils.aoa_to_sheet(rows)
     ws['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }]

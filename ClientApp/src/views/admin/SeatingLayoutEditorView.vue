@@ -104,7 +104,27 @@
             </div>
             <div class="mb-2">
               <label class="text-xs text-gray-500">번호</label>
-              <input v-model="selectedTable.number" type="text" class="w-full border rounded px-2 py-1.5 text-sm" @input="markDirty" />
+              <input v-model="selectedTable.number" type="text" class="w-full border rounded px-2 py-1.5 text-sm" @input="updateTableOnCanvas" />
+            </div>
+
+            <!-- 위치/크기 -->
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <div>
+                <label class="text-xs text-gray-500">X</label>
+                <input v-model.number="selectedTable.x" type="number" class="w-full border rounded px-2 py-1.5 text-sm" @input="updateTableOnCanvas" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">Y</label>
+                <input v-model.number="selectedTable.y" type="number" class="w-full border rounded px-2 py-1.5 text-sm" @input="updateTableOnCanvas" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">너비</label>
+                <input v-model.number="selectedTable.width" type="number" min="30" class="w-full border rounded px-2 py-1.5 text-sm" @input="updateTableOnCanvas" />
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">높이</label>
+                <input v-model.number="selectedTable.height" type="number" min="30" class="w-full border rounded px-2 py-1.5 text-sm" @input="updateTableOnCanvas" />
+              </div>
             </div>
 
             <!-- 멤버 -->
@@ -327,6 +347,51 @@ function doWebAssign(tableNum) {
   markDirty()
 }
 
+// 패널에서 수정 → 캔버스 반영
+function updateTableOnCanvas() {
+  if (!selectedTable.value) return
+  const cvs = tc.canvas()
+  if (cvs) {
+    const obj = cvs.getObjects().find(o => o._tableData?.id === selectedTable.value.id)
+    if (obj) {
+      obj.set({ left: selectedTable.value.x, top: selectedTable.value.y })
+      obj._tableData = selectedTable.value
+      cvs.requestRenderAll()
+    }
+  }
+  markDirty()
+}
+
+// 복사/붙여넣기
+const clipboardTable = ref(null)
+
+function copySelected() {
+  if (selectedTable.value) {
+    clipboardTable.value = JSON.parse(JSON.stringify(selectedTable.value))
+  }
+}
+
+function pasteTable() {
+  if (!clipboardTable.value) return
+  const newNum = String(Math.max(...allTables.value.map(t => parseInt(t.number) || 0), 0) + 1)
+  const newTable = {
+    ...clipboardTable.value,
+    id: 't_' + Date.now(),
+    number: newNum,
+    label: newNum + '번',
+    x: (clipboardTable.value.x || 200) + 30,
+    y: (clipboardTable.value.y || 200) + 30,
+    members: [], // 멤버는 복사 안 함
+  }
+  tc.layoutState.value.tables.push(newTable)
+  // 캔버스에도 반영
+  const cvs = tc.canvas()
+  if (cvs) {
+    tc.loadLayoutJSON(tc.layoutState.value)
+  }
+  markDirty()
+}
+
 // 모바일 카드 전용
 const cardEditTable = ref(null)
 
@@ -369,7 +434,9 @@ function onKeyDown(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
   tc.handleKeyDown(e)
   if (e.key === 'Delete') { tc.deleteSelected(); markDirty() }
-  else if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveNow() }
+  else if ((e.ctrlKey || e.metaKey) && e.key === 'c') { e.preventDefault(); copySelected() }
+  else if ((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); pasteTable() }
+  else if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveNow() }
 }
 function onKeyUp(e) { tc.handleKeyUp(e) }
 

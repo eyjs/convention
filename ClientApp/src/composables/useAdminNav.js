@@ -16,6 +16,7 @@ import {
   BookOpen,
   MessageSquare,
   LayoutGrid,
+  Image,
 } from 'lucide-vue-next'
 
 const rootNavItems = [
@@ -39,6 +40,13 @@ const rootNavItems = [
     icon: BarChart3,
     routeName: 'AdminStatistics',
     path: '/admin/statistics',
+  },
+  {
+    key: 'home-banners',
+    label: '홈 배너 관리',
+    icon: Image,
+    routeName: 'AdminHomeBanners',
+    path: '/admin/home-banners',
   },
   {
     key: 'guide',

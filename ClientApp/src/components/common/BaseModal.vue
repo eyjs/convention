@@ -9,7 +9,7 @@
       @touchend="onBackdropTouchEnd"
     >
       <div
-        class="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-h-[90vh] flex flex-col overflow-hidden modal-content"
+        class="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-h-[90vh] flex flex-col overflow-hidden modal-content pb-safe md:pb-0"
         :class="maxWidthClass"
       >
         <!-- Header -->
@@ -189,6 +189,11 @@ onUnmounted(() => {
   .modal-fade-enter-from .modal-content,
   .modal-fade-leave-to .modal-content {
     transform: translateY(100%);
+  }
+
+  /* 하단 네비/safe-area 겹침 방지 */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
   }
 }
 </style>

@@ -527,7 +527,9 @@ public class UserProfileService : IUserProfileService
                 startDate = uc.Convention.StartDate,
                 endDate = uc.Convention.EndDate,
                 conventionType = uc.Convention.ConventionType,
-                conventionImg = uc.Convention.ConventionImg
+                conventionImg = uc.Convention.ConventionImg,
+                brandColor = uc.Convention.BrandColor,
+                completeYn = uc.Convention.CompleteYn
             })
             .OrderByDescending(c => c.startDate)
             .ToListAsync();

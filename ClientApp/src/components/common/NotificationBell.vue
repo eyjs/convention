@@ -10,16 +10,18 @@
     </button>
 
     <!-- 알림 목록 (화면 중앙 모달) -->
-    <SlideUpModal :is-open="isOpen" @close="isOpen = false">
-      <template #header-title>
-        알림 <span v-if="unreadCount > 0" class="text-red-500 text-sm">({{ unreadCount }})</span>
-      </template>
-      <template #header-left>
-        <button v-if="unreadCount > 0" class="text-xs text-blue-600 hover:underline" @click="markAllRead">전체 읽음</button>
+    <BaseModal :is-open="isOpen" max-width="md" @close="isOpen = false">
+      <template #header>
+        <div class="flex items-center justify-between w-full pr-8">
+          <h3 class="text-lg font-bold">
+            알림 <span v-if="unreadCount > 0" class="text-red-500 text-sm">({{ unreadCount }})</span>
+          </h3>
+          <button v-if="unreadCount > 0" class="text-xs text-blue-600 hover:underline" @click="markAllRead">전체 읽음</button>
+        </div>
       </template>
       <template #body>
-        <!-- 탭 필터 -->
-        <div class="flex gap-1 mb-3 sticky top-0 bg-white z-10 pb-2 border-b">
+        <!-- 탭: 전체 / 미읽음 / 읽음 (기본 미읽음) -->
+        <div class="flex gap-1 mb-3">
           <button
             v-for="tab in filterTabs" :key="tab.value"
             class="px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
@@ -27,18 +29,18 @@
             @click="activeFilter = tab.value"
           >
             {{ tab.label }}
-            <span v-if="tab.count > 0" class="ml-1 text-xs">{{ tab.count }}</span>
+            <span v-if="tab.count > 0" class="ml-1 text-xs opacity-75">{{ tab.count }}</span>
           </button>
         </div>
 
-        <div v-if="filteredNotifications.length === 0" class="text-center text-gray-400 py-12">
+        <div v-if="filteredNotifications.length === 0" class="text-center text-gray-400 py-8">
           {{ activeFilter === 'unread' ? '미읽음 알림이 없습니다' : activeFilter === 'read' ? '읽음 알림이 없습니다' : '알림이 없습니다' }}
         </div>
-        <div v-else class="space-y-2 max-h-[60vh] overflow-y-auto">
+        <div v-else class="space-y-2">
           <div
             v-for="n in filteredNotifications" :key="n.id"
             class="p-3 rounded-lg cursor-pointer transition-colors"
-            :class="n.isRead ? 'bg-white hover:bg-gray-50' : 'bg-blue-50 hover:bg-blue-100'"
+            :class="n.isRead ? 'bg-white hover:bg-gray-50 border' : 'bg-blue-50 hover:bg-blue-100 border border-blue-200'"
             @click="onTap(n)"
           >
             <div class="flex items-start gap-3">
@@ -56,7 +58,7 @@
           </div>
         </div>
       </template>
-    </SlideUpModal>
+    </BaseModal>
   </div>
 </template>
 
@@ -64,7 +66,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/services/api'
-import SlideUpModal from '@/components/common/SlideUpModal.vue'
+import BaseModal from '@/components/common/BaseModal.vue'
 
 const props = defineProps({
   conventionId: { type: Number, required: true },

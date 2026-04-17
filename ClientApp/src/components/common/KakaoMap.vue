@@ -4,6 +4,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { useKakaoMapLoader } from '@/composables/useKakaoMapLoader'
 
 const props = defineProps({
   latitude: {
@@ -16,14 +17,16 @@ const props = defineProps({
   },
 })
 
+const { load: loadKakaoMap } = useKakaoMapLoader()
 const mapContainer = ref(null)
 let map = null
 
-onMounted(() => {
-  if (window.kakao && window.kakao.maps) {
+onMounted(async () => {
+  try {
+    await loadKakaoMap()
     initMap()
-  } else {
-    console.error('Kakao Maps API is not loaded.')
+  } catch (err) {
+    console.error('카카오맵 로드 실패:', err)
   }
 })
 

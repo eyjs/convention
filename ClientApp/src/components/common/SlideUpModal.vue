@@ -10,7 +10,7 @@
       @touchend="onBackdropTouchEnd"
     >
       <div
-        class="bg-white rounded-t-2xl shadow-2xl w-full max-h-[90vh] flex flex-col"
+        class="bg-white rounded-t-2xl shadow-2xl w-full max-h-[90vh] flex flex-col pb-safe md:pb-0"
       >
         <!-- Header -->
         <header
@@ -138,5 +138,12 @@ onUnmounted(() => {
 .slide-up-leave-from {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* 하단 네비/safe-area 겹침 방지 */
+@media (max-width: 767px) {
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+  }
 }
 </style>

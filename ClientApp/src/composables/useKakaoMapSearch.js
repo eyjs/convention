@@ -1,6 +1,8 @@
 import { ref, watch, nextTick } from 'vue'
+import { useKakaoMapLoader } from '@/composables/useKakaoMapLoader'
 
 export function useKakaoMapSearch() {
+  const { load: loadKakaoMap } = useKakaoMapLoader()
   const mapContainer = ref(null)
   const searchTerm = ref('')
   const searchResults = ref([])
@@ -13,13 +15,14 @@ export function useKakaoMapSearch() {
   let searchTimeout = null
 
   // Initialize map and services
-  function initMap() {
-    if (!window.kakao || !window.kakao.maps || !mapContainer.value) {
-      console.error(
-        'Kakao Maps API is not available or map container is not ready.',
-      )
+  async function initMap() {
+    try {
+      await loadKakaoMap()
+    } catch (err) {
+      console.error('카카오맵 SDK 로드 실패:', err)
       return
     }
+    if (!mapContainer.value) return
     const options = {
       center: new window.kakao.maps.LatLng(33.450701, 126.570667), // Default to Jeju
       level: 3,
