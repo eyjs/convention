@@ -80,6 +80,9 @@ public interface IUnitOfWork : IDisposable
     // Schedule Images
     IRepository<ScheduleImage> ScheduleImages { get; }
 
+    // Home Banners
+    IRepository<HomeBanner> HomeBanners { get; }
+
     // Personal Trip
     IRepository<Entities.PersonalTrip.PersonalTrip> PersonalTrips { get; }
     IRepository<Flight> Flights { get; }

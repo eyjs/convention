@@ -39,27 +39,8 @@
       <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
 
       <div class="max-w-2xl mx-auto px-4 py-4">
-        <!-- Hero: 인사말 -->
-        <div
-          class="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 rounded-2xl shadow-xl p-6 mb-4 text-white"
-        >
-          <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div
-              class="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-pink-200/15 to-violet-200/15 rounded-full blur-3xl"
-            ></div>
-          </div>
-          <div
-            class="absolute top-0 right-0 w-28 h-28 bg-white/10 rounded-full -mr-14 -mt-14"
-          ></div>
-          <div
-            class="absolute bottom-0 right-8 w-20 h-20 bg-white/10 rounded-full -mb-10"
-          ></div>
-
-          <div class="relative z-10">
-            <h2 class="text-2xl font-bold mb-1">안녕하세요 {{ userName }}님</h2>
-            <p class="text-sm text-white/80">iFA STARTOUR</p>
-          </div>
-        </div>
+        <!-- 캐러셀 배너 -->
+        <HomeCarousel v-if="banners.length > 0" :banners="banners" class="mb-4" />
 
         <!-- 여권 정보 카드 (해외 행사만, 승인 완료 시 숨김) -->
         <div
@@ -97,7 +78,7 @@
         </div>
 
         <!-- 진행중인 스타투어 -->
-        <div class="mb-6">
+        <div v-if="!isLoading" class="mb-6">
           <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">
             진행중인 스타투어
           </h3>
@@ -127,7 +108,8 @@
                   ></div>
                   <div
                     v-else
-                    class="absolute inset-0 bg-gradient-to-br from-rose-500 via-orange-500 to-amber-500"
+                    class="absolute inset-0"
+                    :style="getGradientStyle(convention.brandColor)"
                   ></div>
                   <div
                     v-if="getDDay(convention.startDate) > 0"
@@ -244,6 +226,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import SidebarMenu from '@/components/common/SidebarMenu.vue'
+import HomeCarousel from '@/components/common/HomeCarousel.vue'
 import apiClient from '@/services/api'
 
 const router = useRouter()
@@ -253,7 +236,9 @@ const userName = computed(() => authStore.user?.name || '사용자')
 
 const conventions = ref([])
 const dashboard = ref({})
+const banners = ref([])
 const isSidebarOpen = ref(false)
+const isLoading = ref(true)
 
 // 국내/해외 판정 — conventionType SSOT
 function isConventionOverseas(c) {
@@ -355,6 +340,17 @@ const passportStatusMessage = computed(() => passportStatus.value.message)
 const passportStatusBadgeClass = computed(() => passportStatus.value.badgeClass)
 const passportCardBorder = computed(() => passportStatus.value.borderClass)
 
+function getGradientStyle(color) {
+  const c = color || '#6366f1'
+  const r = parseInt(c.slice(1, 3), 16)
+  const g = parseInt(c.slice(3, 5), 16)
+  const b = parseInt(c.slice(5, 7), 16)
+  const dr = Math.floor(r * 0.7)
+  const dg = Math.floor(g * 0.7)
+  const db = Math.floor(b * 0.7)
+  return { background: `linear-gradient(135deg, rgb(${r},${g},${b}), rgb(${dr},${dg},${db}))` }
+}
+
 function getDDay(startDate) {
   if (!startDate) return 0
   const today = new Date()
@@ -379,8 +375,26 @@ async function loadConventions() {
   try {
     const res = await apiClient.get('/users/conventions')
     conventions.value = res.data
+
+    // 진행중 행사가 1개뿐이면 바로 이동
+    const active = conventions.value.filter((c) => !isConventionEnded(c))
+    if (active.length === 1) {
+      router.replace(`/conventions/${active[0].id}`)
+      return
+    }
   } catch {
     conventions.value = []
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function loadBanners() {
+  try {
+    const res = await apiClient.get('/home-banners')
+    banners.value = res.data || []
+  } catch {
+    banners.value = []
   }
 }
 
@@ -400,6 +414,7 @@ function goToConvention(convention) {
 
 onMounted(() => {
   loadConventions()
+  loadBanners()
   loadDashboard()
 })
 </script>

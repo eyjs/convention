@@ -79,6 +79,9 @@ public class ConventionDbContext : DbContext
     public DbSet<SmsLog> SmsLogs { get; set; }
     public DbSet<SmsTemplate> SmsTemplates { get; set; }
 
+    // Home Banners
+    public DbSet<HomeBanner> HomeBanners { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

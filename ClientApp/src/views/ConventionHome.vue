@@ -20,20 +20,10 @@
         class="absolute inset-0 bg-cover bg-center"
         :style="{ backgroundImage: `url(${convention.conventionImg})` }"
       ></div>
-      <!-- 어두운 오버레이 (배경 이미지가 있을 때 텍스트 가독성 확보) -->
       <div
         v-if="convention.conventionImg"
-        class="absolute inset-0 bg-black/40"
+        class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10"
       ></div>
-      <!-- 배경 패턴 (배경 이미지가 없을 때만) -->
-      <div v-else class="absolute inset-0 opacity-10">
-        <div
-          class="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-32 -translate-y-32"
-        ></div>
-        <div
-          class="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-48 translate-y-48"
-        ></div>
-      </div>
 
       <!-- 공통 헤더 사용 (오버레이) -->
       <div class="absolute top-0 left-0 right-0 z-20">

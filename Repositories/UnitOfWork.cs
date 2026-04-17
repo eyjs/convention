@@ -66,6 +66,7 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<ChecklistItem>? _checklistItems;
     private IRepository<CompanionRelation>? _companionRelations;
     private IRepository<ScheduleImage>? _scheduleImages;
+    private IRepository<HomeBanner>? _homeBanners;
     private IRepository<IncheonFlightData>? _incheonFlightDatas;
 
     public UnitOfWork(ConventionDbContext context)
@@ -206,6 +207,10 @@ public class UnitOfWork : IUnitOfWork
     // Schedule Images
     public IRepository<ScheduleImage> ScheduleImages =>
         _scheduleImages ??= new Repository<ScheduleImage>(_context);
+
+    // Home Banners
+    public IRepository<HomeBanner> HomeBanners =>
+        _homeBanners ??= new Repository<HomeBanner>(_context);
 
     // Personal Trip
     public IRepository<Entities.PersonalTrip.PersonalTrip> PersonalTrips =>

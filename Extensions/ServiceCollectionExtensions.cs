@@ -41,6 +41,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITravelAssignmentService, LocalRAG.Services.Convention.TravelAssignmentService>();
         services.AddScoped<ISeatingLayoutService, LocalRAG.Services.Convention.SeatingLayoutService>();
         services.AddScoped<LocalRAG.Services.Convention.NotificationSendService>();
+        services.AddScoped<IHomeBannerService, LocalRAG.Services.Convention.HomeBannerService>();
 
         return services;
     }
