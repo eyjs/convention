@@ -21,6 +21,40 @@
 }
 
 /* ========================================
+   Capacitor 앱 safe area (노치 상하단)
+   ======================================== */
+.capacitor-app .safe-area-container {
+  padding-top: 8px;
+}
+
+.capacitor-app .fixed.bottom-0 {
+  padding-bottom: 16px;
+}
+
+.capacitor-app .pb-safe {
+  padding-bottom: 24px !important;
+}
+
+/* 모달이 하단 네비바에 가리지 않도록 */
+.capacitor-app .items-end .modal-content {
+  margin-bottom: 80px;
+  max-height: 75vh !important;
+  border-radius: 1rem !important;
+}
+
+/* 사이드바/오버레이 패널 상단 노치 여백 */
+.capacitor-app .fixed.inset-0 .absolute.right-0.h-full,
+.capacitor-app .fixed.inset-0 .absolute.left-0.h-full {
+  padding-top: 12px;
+  padding-bottom: 16px;
+}
+
+/* sticky 헤더 상단 노치 여백 (AdminHeader 등) */
+.capacitor-app .sticky.top-0 {
+  padding-top: 8px;
+}
+
+/* ========================================
    타이포그래피 시스템 (전역 베이스)
    ======================================== */
 @layer base {

@@ -93,7 +93,13 @@ onMounted(async () => {
       fileInfo.value = {
         size: size ? `${(size / 1024 / 1024).toFixed(1)}MB` : '',
         date: lastModified
-          ? new Date(lastModified).toLocaleDateString('ko-KR')
+          ? new Date(lastModified).toLocaleString('ko-KR', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
           : '',
       }
     }

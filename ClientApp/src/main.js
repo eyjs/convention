@@ -38,3 +38,28 @@ const authStore = useAuthStore()
 authStore.initAuth()
 
 app.mount('#app')
+
+// Capacitor 네이티브 플랫폼 처리 (뒤로가기 + 상태바)
+import { Capacitor } from '@capacitor/core'
+import { useUIStore } from './stores/ui'
+if (Capacitor.isNativePlatform()) {
+  document.body.classList.add('capacitor-app')
+  import('@capacitor/app').then(({ App }) => {
+    const uiStore = useUIStore()
+    App.addListener('backButton', ({ canGoBack }) => {
+      if (uiStore.hasOpenModal()) {
+        uiStore.closeTopModal()
+      } else if (canGoBack) {
+        window.history.back()
+      } else {
+        App.exitApp()
+      }
+    })
+  })
+
+  import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
+    StatusBar.setOverlaysWebView({ overlay: false })
+    StatusBar.setStyle({ style: Style.Light })
+    StatusBar.setBackgroundColor({ color: '#FFFFFF' })
+  }).catch(() => {})
+}
