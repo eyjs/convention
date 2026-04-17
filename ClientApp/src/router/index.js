@@ -37,12 +37,28 @@ const routes = [
     meta: { title: '비밀번호 찾기', requiresAuth: false },
   },
 
+  // === App Download ===
+  {
+    path: '/app-download',
+    name: 'AppDownload',
+    component: () => import('@/views/AppDownloadView.vue'),
+    meta: { title: '앱 다운로드', requiresAuth: true },
+  },
+
   // === Main Home (행사 목록) ===
   {
     path: '/',
     name: 'MainHome',
     component: () => import('@/views/MainHome.vue'),
     meta: { title: '홈', requiresAuth: true },
+  },
+
+  // === Banner Detail ===
+  {
+    path: '/banners/:id',
+    name: 'BannerDetail',
+    component: () => import('@/views/BannerDetailView.vue'),
+    meta: { title: '배너 상세', requiresAuth: true },
   },
 
   // === User Profile ===
@@ -337,6 +353,13 @@ const routes = [
         name: 'AdminGuide',
         component: () => import('@/views/admin/AdminGuideView.vue'),
         meta: { title: '사용 가이드', adminTitle: '관리자' },
+      },
+      {
+        path: 'home-banners',
+        name: 'AdminHomeBanners',
+        component: () =>
+          import('@/views/admin/HomeBannerManagementView.vue'),
+        meta: { title: '홈 배너 관리', adminTitle: '관리자' },
       },
       {
         path: 'conventions/:id',

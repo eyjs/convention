@@ -15,6 +15,24 @@
     <!-- 2x2 그리드 -->
     <div v-else class="px-4 py-5">
       <div class="grid grid-cols-2 gap-3">
+        <!-- 앱 다운로드 고정 메뉴 -->
+        <div
+          class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 cursor-pointer hover:shadow-md hover:border-blue-200 active:scale-[0.97] transition-all duration-150 flex flex-col items-center text-center gap-2"
+          role="button"
+          tabindex="0"
+          @click="goToAppDownload"
+          @keydown.enter="goToAppDownload"
+        >
+          <div
+            class="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600"
+          >
+            <Smartphone class="w-6 h-6" />
+          </div>
+          <span class="text-sm font-semibold text-gray-800 leading-tight">
+            앱 다운로드
+          </span>
+        </div>
+
         <!-- 설문조사 고정 메뉴 (발행된 설문이 있을 때만 노출) -->
         <div
           v-if="hasSurveys"
@@ -78,7 +96,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ClipboardList, FileText, LayoutGrid, Zap } from 'lucide-vue-next'
+import {
+  ClipboardList,
+  FileText,
+  LayoutGrid,
+  Zap,
+  Smartphone,
+} from 'lucide-vue-next'
 // LayoutGrid은 아이콘 맵에서 사용 중
 import apiClient from '@/services/api'
 import MainHeader from '@/components/common/MainHeader.vue'
@@ -130,6 +154,10 @@ function handleAction(item) {
     return
   }
   executeAction(item)
+}
+
+function goToAppDownload() {
+  router.push({ name: 'AppDownload' })
 }
 
 function goToSurveys() {

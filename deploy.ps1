@@ -94,6 +94,18 @@ if (-not $SkipPublish) {
         dotnet publish -c Release -o $PublishDir
         if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed (exit $LASTEXITCODE)" }
         Write-Ok "publish 완료 -> $PublishDir"
+
+        # APK 복사 (있으면)
+        $apkSource = Join-Path $ProjectRoot 'ClientApp\android\app\build\intermediates\apk\debug\app-debug.apk'
+        $apkDest = Join-Path $PublishDir 'wwwroot\downloads'
+        if (Test-Path $apkSource) {
+            if (-not (Test-Path $apkDest)) { New-Item -ItemType Directory -Path $apkDest -Force | Out-Null }
+            Copy-Item $apkSource (Join-Path $apkDest 'StarTour.apk') -Force
+            Write-Ok "APK 복사됨 -> wwwroot/downloads/StarTour.apk"
+        } else {
+            Write-Warn "APK 파일 없음 — Android 빌드 후 배포하세요"
+        }
+
         Add-Report "[1/5] Publish: SUCCESS"
     } finally {
         Pop-Location

@@ -62,6 +62,10 @@ builder.Services.AddCors(options =>
             if (allowedOrigins.Contains(origin))
                 return true;
 
+            // Capacitor 앱 (Android/iOS 웹뷰)
+            if (origin == "capacitor://localhost" || origin == "http://localhost")
+                return true;
+
             return false;
         })
         .AllowAnyMethod()

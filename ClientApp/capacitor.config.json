@@ -1,0 +1,11 @@
+{
+  "appId": "kr.co.ifa.event",
+  "appName": "StarTour",
+  "webDir": "dist",
+  "server": {
+    "allowNavigation": ["event.ifa.co.kr"]
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
