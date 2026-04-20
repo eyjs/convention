@@ -12,7 +12,7 @@
   <div v-else class="min-h-screen min-h-dvh bg-gray-50">
 
     <!-- 카테고리 탭 -->
-    <div class="sticky top-[72px] z-30 bg-white">
+    <div class="sticky top-0 z-30 bg-white">
       <div class="relative border-t">
         <div
           ref="categoryContainer"

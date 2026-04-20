@@ -57,20 +57,20 @@
           <!-- 세로 연결선 (날짜 그룹 전체 관통) -->
           <div
             class="absolute w-[1.5px] bg-black/[0.07]"
-            :style="{ left: '41.75px', top: '18px', bottom: '18px' }"
+            :style="{ left: '45.25px', top: '0', bottom: '0' }"
           ></div>
           <div
             v-for="(schedule, idx) in dateGroup.schedules"
             :key="schedule.id"
             :ref="(el) => { if (currentSchedule?.id === schedule.id) currentScheduleRef = el }"
-            class="flex cursor-pointer relative"
+            class="flex items-center cursor-pointer relative"
             :class="[isPastSchedule(schedule) ? 'opacity-[0.32]' : '']"
             @click="emit('schedule-click', schedule)"
           >
-            <!-- 좌측: 시간 + 불릿 -->
-            <div class="flex flex-shrink-0">
+            <!-- 좌측: 시간 + 불릿 (카드 세로 가운데 정렬) -->
+            <div class="flex items-center flex-shrink-0">
               <!-- 시간 -->
-              <div class="w-[38px] pt-2.5">
+              <div class="w-[38px] text-center">
                 <span
                   class="text-[11px]"
                   :class="currentSchedule?.id === schedule.id ? 'font-medium' : 'text-gray-400'"
@@ -78,7 +78,7 @@
                 >{{ schedule.startTime }}</span>
               </div>
               <!-- 불릿 (z-10으로 세로선 위에) -->
-              <div class="w-[16px] flex justify-center pt-2.5">
+              <div class="w-[16px] flex justify-center">
                 <div
                   class="rounded-full z-10"
                   :class="currentSchedule?.id === schedule.id ? 'w-[10px] h-[10px]' : 'w-[8px] h-[8px]'"
@@ -91,7 +91,7 @@
             </div>
             <!-- 우측: 콘텐츠 카드 -->
             <div
-              class="flex-1 min-w-0 ml-[5px] mb-1.5 rounded-xl px-3 py-2.5 active:brightness-[0.96]"
+              class="flex-1 min-w-0 ml-[5px] mb-1.5 min-h-[100px] rounded-xl px-3.5 py-3 active:brightness-[0.96] flex flex-col justify-center"
               :class="currentSchedule?.id === schedule.id ? 'bg-[#f3fbf7]' : 'bg-white border border-black/[0.07]'"
             >
               <div class="flex items-start justify-between gap-1">
