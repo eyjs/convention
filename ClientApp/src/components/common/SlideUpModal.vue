@@ -14,18 +14,26 @@
       >
         <!-- Header -->
         <header
-          class="relative bg-white px-4 py-4 md:px-6 md:py-4 border-b flex items-center justify-between flex-shrink-0"
+          class="relative bg-white px-4 py-4 md:px-6 md:py-4 border-b flex items-center flex-shrink-0"
+          :class="alignLeft ? 'justify-between' : 'justify-between'"
         >
-          <div class="w-8 md:w-10">
-            <slot name="header-left"></slot>
-          </div>
-          <h2
-            class="absolute left-1/2 -translate-x-1/2 text-lg md:text-xl font-bold text-gray-900 text-center truncate px-8"
-          >
-            <slot name="header-title"></slot>
-          </h2>
+          <template v-if="alignLeft">
+            <div class="flex-1 min-w-0 pr-2">
+              <slot name="header-title"></slot>
+            </div>
+          </template>
+          <template v-else>
+            <div class="w-8 md:w-10">
+              <slot name="header-left"></slot>
+            </div>
+            <h2
+              class="absolute left-1/2 -translate-x-1/2 text-lg md:text-xl font-bold text-gray-900 text-center truncate px-8"
+            >
+              <slot name="header-title"></slot>
+            </h2>
+          </template>
           <button
-            class="p-2.5 md:p-2 -mr-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg z-10 text-gray-500 transition-colors"
+            class="p-2.5 md:p-2 -mr-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg z-10 text-gray-500 transition-colors flex-shrink-0"
             @click="close"
           >
             <svg
@@ -73,6 +81,10 @@ const props = defineProps({
   zIndexClass: {
     type: String,
     default: 'z-50',
+  },
+  alignLeft: {
+    type: Boolean,
+    default: false,
   },
 })
 
@@ -140,10 +152,10 @@ onUnmounted(() => {
   transform: translateY(0);
 }
 
-/* 하단 네비/safe-area 겹침 방지 */
+/* 하단 safe-area */
 @media (max-width: 767px) {
   .pb-safe {
-    padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+    padding-bottom: var(--safe-area-bottom, env(safe-area-inset-bottom, 8px));
   }
 }
 </style>

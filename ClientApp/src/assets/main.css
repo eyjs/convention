@@ -303,10 +303,7 @@ body.keyboard-visible .floating-action {
   bottom: calc(var(--keyboard-height, 0px) + 20px);
 }
 
-/* 애니메이션: 부드러운 스크롤 */
-html {
-  scroll-behavior: smooth;
-}
+/* 페이지 내 앵커 이동 시에만 부드러운 스크롤 (라우트 전환 시 instant) */
 
 /* 입력창 포커스 시 배경 강조 */
 .input-focused-bg {

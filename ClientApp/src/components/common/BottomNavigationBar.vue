@@ -2,7 +2,7 @@
   <Transition name="slide-up">
     <nav
       v-if="show"
-      class="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0_-4px_6px_-1px_rgb(0_0_0_/_0.1),_0_-2px_4px_-2px_rgb(0_0_0_/_0.1)] py-2"
+      class="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0_-4px_6px_-1px_rgb(0_0_0_/_0.1),_0_-2px_4px_-2px_rgb(0_0_0_/_0.1)] pt-2 nav-safe-bottom"
     >
       <div class="max-w-xl mx-auto flex justify-around items-center h-full">
         <router-link :to="homeUrl" class="nav-link">
@@ -98,5 +98,10 @@ const transportationUrl = computed(() => createUrl('/transportation'))
 .slide-up-enter-from,
 .slide-up-leave-to {
   transform: translateY(100%);
+}
+
+/* Android: --safe-area-bottom(JS 주입), 웹/iOS: env() */
+.nav-safe-bottom {
+  padding-bottom: var(--safe-area-bottom, env(safe-area-inset-bottom, 0px));
 }
 </style>

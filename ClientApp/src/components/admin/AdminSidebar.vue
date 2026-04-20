@@ -11,7 +11,7 @@
   <!-- Sidebar -->
   <aside
     :class="[
-      'fixed top-0 bottom-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-200 pt-16',
+      'fixed left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-200 sidebar-safe',
       open ? 'translate-x-0' : '-translate-x-full',
       'md:translate-x-0',
     ]"
@@ -65,5 +65,17 @@ const { navItems, activeKey, getPath } = useAdminNav()
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* safe area 안에서만 사이드바 표시 */
+.sidebar-safe {
+  top: env(safe-area-inset-top, 0px);
+  bottom: env(safe-area-inset-bottom, 0px);
+  padding-top: 4rem; /* AdminHeader 높이 */
+}
+
+:global(.capacitor-app) .sidebar-safe {
+  top: max(env(safe-area-inset-top, 0px), 2rem);
+  bottom: max(env(safe-area-inset-bottom, 0px), 3rem);
 }
 </style>

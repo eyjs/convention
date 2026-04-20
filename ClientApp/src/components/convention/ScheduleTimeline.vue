@@ -49,90 +49,107 @@
         <p class="text-gray-500 font-medium">등록된 일정이 없습니다</p>
       </div>
 
-      <div v-for="dateGroup in groupedSchedules" :key="dateGroup.date" class="mb-2">
-        <!-- 날짜 구분선 -->
-        <div class="mx-3 mt-2 mb-1.5 text-[12px] font-medium text-gray-400 px-0.5">{{ formatDateHeader(dateGroup.date) }}</div>
-        <!-- 타임라인: 시간(좌) | 불릿+점선(중) | 카드(우) -->
-        <div class="mx-3">
+      <div v-for="dateGroup in groupedSchedules" :key="dateGroup.date" class="mb-1.5">
+        <!-- 날짜 구분선: 0.875rem (14px) -->
+        <div class="mx-3 mt-3 mb-1.5 text-sm font-medium text-gray-400 px-0.5">{{ formatDateHeader(dateGroup.date) }}</div>
+        <!-- 타임라인: 날짜별 그룹 카드 -->
+        <div class="mx-3 bg-white rounded-xl border border-black/[0.07] overflow-hidden">
           <div
             v-for="(schedule, idx) in dateGroup.schedules"
             :key="schedule.id"
             :ref="(el) => { if (currentSchedule?.id === schedule.id) currentScheduleRef = el }"
-            class="flex gap-3 cursor-pointer"
-            :class="[isPastSchedule(schedule) ? 'opacity-[0.32]' : '']"
+            class="relative flex items-stretch cursor-pointer active:brightness-[0.96]"
+            :class="[
+              isPastSchedule(schedule) ? 'opacity-[0.32]' : '',
+              currentSchedule?.id === schedule.id ? 'bg-[#f3fbf7]' : '',
+              idx < dateGroup.schedules.length - 1 ? 'border-b border-black/[0.05]' : '',
+            ]"
+            style="padding: 0.75rem 0.875rem; min-height: 100px;"
             @click="emit('schedule-click', schedule)"
           >
-            <!-- 시간 -->
-            <div class="w-[36px] flex-shrink-0 pt-[38px] text-right">
-              <span
-                class="text-[11px]"
+            <!-- 세로선 위쪽: 행 상단 → 불릿까지 (첫 아이템 제외) -->
+            <!-- prettier-ignore -->
+            <div
+              v-if="idx > 0"
+              class="absolute"
+              :style="{
+                left: 'calc(0.875rem + 2.75rem + 0.625rem)',
+                top: '0px',
+                height: 'calc(0.75rem + 0.1875rem + 0.25rem)',
+                width: '1.5px',
+                backgroundColor: isPastSchedule(dateGroup.schedules[idx - 1]) ? '#b8dac8' : 'rgba(0,0,0,0.07)',
+                zIndex: 0,
+              }"
+            ></div>
+            <!-- 세로선 아래쪽: 불릿 → 행 하단 (마지막 아이템 제외) -->
+            <!-- prettier-ignore -->
+            <div
+              v-if="idx < dateGroup.schedules.length - 1"
+              class="absolute"
+              :style="{
+                left: 'calc(0.875rem + 2.75rem + 0.625rem)',
+                top: 'calc(0.75rem + 0.1875rem + 0.25rem + 0.5rem)',
+                bottom: '0px',
+                width: '1.5px',
+                backgroundColor: isPastSchedule(schedule) ? '#b8dac8' : 'rgba(0,0,0,0.07)',
+                zIndex: 0,
+              }"
+            ></div>
+            <!-- 시간: 0.8125rem (13px) -->
+            <div class="w-[2.75rem] flex-shrink-0 pt-[0.1875rem] relative z-[1]">
+              <div
+                class="text-[0.8125rem] leading-normal"
                 :class="currentSchedule?.id === schedule.id ? 'font-medium' : 'text-gray-400'"
                 :style="currentSchedule?.id === schedule.id ? { color: '#0F6E56' } : {}"
-              >{{ schedule.startTime }}</span>
+              >{{ schedule.startTime }}</div>
             </div>
-            <!-- 불릿 + 점선 -->
-            <div class="relative flex-shrink-0 w-3 flex flex-col items-center">
-              <!-- 위쪽 점선 (첫 아이템 제외) -->
+            <!-- 불릿 -->
+            <div class="w-5 flex-shrink-0 flex flex-col items-center pt-[0.1875rem] relative z-[1]">
               <div
-                v-if="idx > 0"
-                class="absolute top-0 left-1/2 -translate-x-1/2 h-[38px]"
-                :style="{ width: '0px', borderRight: isPastSchedule(schedule) ? '1px dashed rgba(184,218,200,0.8)' : '1px dashed rgba(23,177,133,0.4)' }"
-              ></div>
-              <!-- 불릿 -->
-              <div
-                class="relative z-10 rounded-full flex-shrink-0 mt-[34px]"
-                :class="currentSchedule?.id === schedule.id ? 'w-3 h-3' : 'w-2.5 h-2.5'"
+                class="rounded-full flex-shrink-0 mt-[0.25rem]"
+                :class="currentSchedule?.id === schedule.id ? 'w-[0.625rem] h-[0.625rem]' : 'w-2 h-2'"
                 :style="{
-                  backgroundColor: currentSchedule?.id === schedule.id ? '#17B185'
-                    : isPastSchedule(schedule) ? '#b8dac8' : '#17B185'
+                  backgroundColor: currentSchedule?.id === schedule.id ? '#1D9E75'
+                    : isPastSchedule(schedule) ? '#b8dac8' : '#d4d2ca'
                 }"
               ></div>
-              <!-- 아래쪽 점선 (마지막 아이템 제외) -->
-              <div
-                v-if="idx < dateGroup.schedules.length - 1"
-                class="absolute top-[48px] bottom-0 left-1/2 -translate-x-1/2"
-                :style="{ width: '0px', borderRight: isPastSchedule(schedule) ? '1px dashed rgba(184,218,200,0.8)' : '1px dashed rgba(23,177,133,0.4)' }"
-              ></div>
             </div>
-            <!-- 콘텐츠 카드 -->
-            <div
-              class="flex-1 min-w-0 mb-2 min-h-[80px] rounded-xl px-3.5 py-3 active:brightness-[0.96] flex flex-col justify-center"
-              :class="currentSchedule?.id === schedule.id ? 'bg-[#f3fbf7] border border-emerald-200' : 'bg-white border border-black/[0.07]'"
-            >
+            <!-- 콘텐츠 -->
+            <div class="flex-1 min-w-0 pl-1.5">
               <div class="flex items-start justify-between gap-1">
                 <div class="flex-1 min-w-0">
-                  <!-- 제목 -->
+                  <!-- 일정명: 1.0625rem (17px) -->
                   <div
-                    class="text-[13px] font-medium leading-tight"
+                    class="text-[1.0625rem] font-medium leading-snug"
                     :class="currentSchedule?.id === schedule.id ? '' : 'text-[#1a1a1a]'"
                     :style="currentSchedule?.id === schedule.id ? { color: '#085041' } : {}"
                   >{{ schedule.title }}</div>
-                  <!-- 장소 (초록 강조) -->
-                  <div v-if="schedule.location" class="text-[11px] mt-[2px]">
-                    <span class="text-[#1D9E75]">{{ schedule.location }}</span>
+                  <!-- 장소: 0.8125rem (13px) -->
+                  <div class="text-[0.8125rem] mt-0.5">
+                    <span :class="schedule.location ? 'text-[#1D9E75]' : 'text-gray-300'">{{ schedule.location || '장소 미정' }}</span>
                   </div>
                   <!-- 배정 뱃지 -->
-                  <div v-if="getScheduleBadges(schedule).length > 0" class="flex flex-wrap gap-[3px] mt-1.5">
+                  <div v-if="getScheduleBadges(schedule).length > 0" class="flex flex-wrap gap-1 mt-2">
                     <div
                       v-for="(badge, bi) in getScheduleBadges(schedule)"
                       :key="badge.key"
-                      class="inline-flex items-center gap-[2px] rounded-[7px] px-[6px] py-[2px]"
+                      class="inline-flex items-center gap-0.5 rounded-lg px-2 py-0.5"
                       :style="{ backgroundColor: badgePalette(bi).bg }"
                     >
-                      <span class="text-[9px] opacity-75" :style="{ color: badgePalette(bi).text }">{{ badge.key }}</span>
-                      <span class="text-[10px] font-medium" :style="{ color: badgePalette(bi).text }">{{ badge.value }}</span>
+                      <span class="text-[0.6875rem] opacity-75" :style="{ color: badgePalette(bi).text }">{{ badge.key }}</span>
+                      <span class="text-xs font-medium" :style="{ color: badgePalette(bi).text }">{{ badge.value }}</span>
                     </div>
                   </div>
                 </div>
                 <!-- 우측: 옵션투어 뱃지 + 화살표 -->
-                <div class="flex items-center gap-1 flex-shrink-0">
+                <div class="flex items-center gap-1 flex-shrink-0 ml-auto pl-1">
                   <span
                     v-if="schedule.isOptionTour"
-                    class="px-1.5 py-0.5 rounded text-[10px] font-medium text-white"
+                    class="px-1.5 py-0.5 rounded text-[0.6875rem] font-medium text-white"
                     :style="{ backgroundColor: props.brandColor }"
                   >옵션투어</span>
                   <div class="opacity-20">
-                    <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg width="12" height="12" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </div>
                 </div>
               </div>

@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-screen relative bg-gray-50">
+  <div class="app-frame">
+    <div class="safe-top bg-gray-50"></div>
+    <div class="safe-content relative bg-gray-50">
     <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
       <div
         class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-sky-200/15 to-blue-200/15 rounded-full blur-3xl"
@@ -218,6 +220,8 @@
         </div>
       </div>
     </div>
+    </div>
+    <div class="safe-bottom bg-gray-50"></div>
   </div>
 </template>
 
@@ -427,4 +431,17 @@ onMounted(() => {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+.app-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+.safe-top { flex-shrink: 0; height: env(safe-area-inset-top, 0px); }
+.safe-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.safe-bottom { height: env(safe-area-inset-bottom, 0px); flex-shrink: 0; }
+:global(.capacitor-app) .safe-top { height: max(env(safe-area-inset-top, 0px), 2rem); }
+:global(.capacitor-app) .safe-bottom { height: max(env(safe-area-inset-bottom, 0px), 3rem); }
 </style>

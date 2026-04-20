@@ -1,44 +1,48 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
-    event.ifa.co.kr 원클릭 배포 스크립트
+    전체 배포 (백엔드 + DB 마이그레이션 + 프론트엔드)
 
 .DESCRIPTION
-    1) dotnet publish (로컬)
-    2) 원격 IIS 앱풀 중지
-    3) robocopy 전송
-    4) 원격 IIS 앱풀 시작
+    1) dotnet publish
+    2) DB 마이그레이션 (선택)
+    3) 앱풀 중지 → 백엔드 dll 복사 → 앱풀 시작
+    4) 프론트엔드(wwwroot) 복사 (무중단)
     5) 헬스체크
 
 .EXAMPLE
-    .\deploy.ps1
-    .\deploy.ps1 -SkipPublish   # publish 건너뛰기
-    .\deploy.ps1 -DryRun        # robocopy /L 만 실행
+    .\deploy.ps1                          # 전체 배포
+    .\deploy.ps1 -SkipPublish             # publish 건너뛰기
+    .\deploy.ps1 -SkipMigration           # DB 마이그레이션 건너뛰기
+    .\deploy.ps1 -DryRun                  # 시뮬레이션
+
+    # 개별 배포
+    .\deploy-frontend.ps1                 # 프론트엔드만 (무중단)
+    .\deploy-backend.ps1                  # 백엔드+DB만 (앱풀 중지 필요)
 #>
 
 param(
     [switch]$SkipPublish,
-    [switch]$DryRun,
-    # 기본 true: 앱풀 원격 제어 건너뜀 (IIS에서 수동으로 내린 후 실행)
-    [switch]$ManualAppPool = $true
+    [switch]$SkipMigration,
+    [switch]$DryRun
 )
 
 $ErrorActionPreference = 'Stop'
 
 # ============ 설정 ============
 $ProjectRoot  = 'C:\Users\USER\dev\startour\convention'
+$ClientApp    = Join-Path $ProjectRoot 'ClientApp'
 $PublishDir   = 'C:\deploy\event'
 $RemoteDrive  = 'W:'
 $RemoteShare  = '\\172.25.0.21\webapp'
 $RemoteUser   = '172.25.0.21\wnstn1342'
 $RemotePass   = 'vmffpdl2@'
-$ServerHost   = '172.25.0.21'
-$AppPoolName  = 'event.ifa.co.kr'
 $HealthUrl    = 'https://event.ifa.co.kr/health'
 $LogFile      = 'C:\deploy\deploy.log'
 $HistoryDir   = 'C:\deploy\history'
+$ProdConnStr  = 'Server=172.25.1.21;Database=STARTOUR;User Id=startour;Password=ifaelql!@#$;TrustServerCertificate=true;Encrypt=false;'
 
-$ExcludeDirs  = @('logs', 'App_Data', 'wwwroot\uploads')
+$ExcludeDirs  = @('wwwroot', 'logs', 'App_Data')
 $ExcludeFiles = @('appsettings.Production.json', 'web.config')
 # =============================
 
@@ -49,31 +53,16 @@ function Write-Err($msg)  { Write-Host "  XX $msg" -ForegroundColor Red }
 
 $startTime = Get-Date
 $timestamp = $startTime.ToString('yyyyMMdd_HHmmss')
-$reportFile = Join-Path $HistoryDir "deploy_$timestamp.txt"
+if (-not (Test-Path (Split-Path $PublishDir))) { New-Item -ItemType Directory -Path (Split-Path $PublishDir) -Force | Out-Null }
+if (-not (Test-Path $HistoryDir)) { New-Item -ItemType Directory -Path $HistoryDir -Force | Out-Null }
+
 $script:reportLines = @()
-
-function Add-Report($line) {
-    $script:reportLines += $line
-}
-
-# deploy 폴더 생성
-if (-not (Test-Path (Split-Path $PublishDir))) {
-    New-Item -ItemType Directory -Path (Split-Path $PublishDir) -Force | Out-Null
-}
-if (-not (Test-Path $HistoryDir)) {
-    New-Item -ItemType Directory -Path $HistoryDir -Force | Out-Null
-}
+function Add-Report($line) { $script:reportLines += $line }
 
 Add-Report "============================================"
-Add-Report " Deploy Report"
+Add-Report " Full Deploy Report"
 Add-Report "============================================"
 Add-Report "Started    : $($startTime.ToString('yyyy-MM-dd HH:mm:ss'))"
-Add-Report "Target     : $ServerHost ($AppPoolName)"
-Add-Report "Source     : $ProjectRoot"
-Add-Report "Publish    : $PublishDir"
-Add-Report "Remote     : $RemoteShare"
-Add-Report "DryRun     : $DryRun"
-Add-Report "SkipPublish: $SkipPublish"
 Add-Report ""
 
 # ─── 1. Publish ───────────────────────────────────────────
@@ -81,19 +70,14 @@ if (-not $SkipPublish) {
     Write-Step "1/7 dotnet publish"
     Push-Location $ProjectRoot
     try {
-        # git 정보 수집
         $gitBranch = (git rev-parse --abbrev-ref HEAD 2>$null)
         $gitCommit = (git rev-parse --short HEAD 2>$null)
         $gitMsg    = (git log -1 --pretty=format:"%s" 2>$null)
-        Add-Report "[Git]"
-        Add-Report "  branch : $gitBranch"
-        Add-Report "  commit : $gitCommit"
-        Add-Report "  message: $gitMsg"
-        Add-Report ""
+        Add-Report "Git: $gitBranch @ $gitCommit ($gitMsg)"
 
-        dotnet publish -c Release -o $PublishDir
+        & dotnet publish -c Release -o $PublishDir
         if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed (exit $LASTEXITCODE)" }
-        Write-Ok "publish 완료 -> $PublishDir"
+        Write-Ok "publish 완료"
 
         # APK 복사 (있으면)
         $apkSource = Join-Path $ProjectRoot 'ClientApp\android\app\build\outputs\apk\debug\app-debug.apk'
@@ -101,171 +85,142 @@ if (-not $SkipPublish) {
         if (Test-Path $apkSource) {
             if (-not (Test-Path $apkDest)) { New-Item -ItemType Directory -Path $apkDest -Force | Out-Null }
             Copy-Item $apkSource (Join-Path $apkDest 'StarTour.apk') -Force
-            Write-Ok "APK 복사됨 -> wwwroot/downloads/StarTour.apk"
-        } else {
-            Write-Warn "APK 파일 없음 — Android 빌드 후 배포하세요"
+            Write-Ok "APK 복사됨"
         }
 
-        Add-Report "[1/5] Publish: SUCCESS"
-    } finally {
-        Pop-Location
-    }
+        Add-Report "[1] Publish: OK"
+    } finally { Pop-Location }
 } else {
-    Write-Step "1/7 publish 건너뜀 (-SkipPublish)"
-    Add-Report "[1/5] Publish: SKIPPED"
+    Write-Step "1/7 publish 건너뜀"
+    Add-Report "[1] Publish: SKIPPED"
 }
 
-# ─── 2. 드라이브 매핑 확인 ────────────────────────────────
-Write-Step "2/7 원격 공유 매핑 확인"
+# ─── 2. DB 마이그레이션 ───────────────────────────────────
+if (-not $SkipMigration) {
+    Write-Step "2/7 DB 마이그레이션 (운영 DB)"
+    Write-Host "  대상: 172.25.1.21/STARTOUR" -ForegroundColor Gray
+
+    if ($DryRun) {
+        Write-Warn "DryRun — 마이그레이션 건너뜀"
+        Add-Report "[2] Migration: DryRun SKIPPED"
+    } else {
+        Write-Host "  마이그레이션을 적용하시겠습니까? (Y/N): " -ForegroundColor Yellow -NoNewline
+        $confirm = Read-Host
+        if ($confirm -eq 'Y' -or $confirm -eq 'y') {
+            Push-Location $ProjectRoot
+            try {
+                & dotnet ef database update --connection $ProdConnStr
+                if ($LASTEXITCODE -ne 0) { throw "DB 마이그레이션 실패 (exit $LASTEXITCODE)" }
+                Write-Ok "마이그레이션 완료"
+                Add-Report "[2] Migration: OK"
+            } finally { Pop-Location }
+        } else {
+            Write-Warn "마이그레이션 건너뜀"
+            Add-Report "[2] Migration: USER SKIPPED"
+        }
+    }
+} else {
+    Write-Step "2/7 마이그레이션 건너뜀"
+    Add-Report "[2] Migration: SKIPPED"
+}
+
+# ─── 3. 드라이브 매핑 ─────────────────────────────────────
+Write-Step "3/7 원격 공유 확인"
 $driveLetter = $RemoteDrive.TrimEnd(':')
-$mapped = Get-PSDrive -Name $driveLetter -ErrorAction SilentlyContinue
-if (-not $mapped) {
-    Write-Warn "$RemoteDrive 미연결 — net use 실행"
+if (-not (Get-PSDrive -Name $driveLetter -ErrorAction SilentlyContinue)) {
     & net use $RemoteDrive $RemoteShare /user:$RemoteUser $RemotePass | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "net use 실패" }
-    Write-Ok "$RemoteDrive -> $RemoteShare 매핑됨"
-} else {
-    Write-Ok "$RemoteDrive 이미 매핑됨"
-}
-
+    Write-Ok "$RemoteDrive 매핑됨"
+} else { Write-Ok "$RemoteDrive 이미 매핑됨" }
 if (-not (Test-Path "$RemoteDrive\")) { throw "$RemoteDrive 접근 불가" }
 
-# 원격 세션 생성 — ManualAppPool 모드에서는 건너뜀
-$session = $null
-if (-not $DryRun -and -not $ManualAppPool) {
-    try {
-        $securePass = ConvertTo-SecureString $RemotePass -AsPlainText -Force
-        $cred = New-Object System.Management.Automation.PSCredential($RemoteUser, $securePass)
-        $session = New-PSSession -ComputerName $ServerHost -Credential $cred -ErrorAction Stop
-    } catch {
-        Write-Err "PSRemoting 연결 실패: $_"
-        Write-Warn "수동 앱풀 제어로 전환합니다."
-    }
-}
-
-# ─── 3. (앱풀 제어는 백엔드 변경 감지 후 필요 시에만 수행) ───
-
-# ─── 4. 백엔드 변경 감지 + 스마트 배포 ─────────────────────
-# 먼저 백엔드 dll이 변경되었는지 확인 (robocopy /L 드라이런)
+# ─── 4. 백엔드 변경 감지 ──────────────────────────────────
 Write-Step "4/7 백엔드 변경 감지"
-
 $checkArgs = @(
     $PublishDir, "$RemoteDrive\",
     '/E', '/XO', '/L', '/NP', '/NFL', '/NDL', '/NJH',
     '/XD', 'wwwroot', 'logs', 'App_Data',
     '/XF', 'appsettings.Production.json', 'web.config'
 )
-$checkOutput = & robocopy @checkArgs 2>&1 | Out-String
-$checkExit = $LASTEXITCODE
-
-# exit 0 = 동일, 1+ = 변경 있음 (1=복사할 파일 있음, 2=추가 파일)
-$backendChanged = $checkExit -gt 0 -and $checkExit -lt 8
+$null = & robocopy @checkArgs 2>&1
+$backendChanged = $LASTEXITCODE -gt 0 -and $LASTEXITCODE -lt 8
 
 if ($backendChanged) {
-    Write-Warn "백엔드 파일 변경 감지 — 앱풀 중지 필요 (Phase 1)"
-    Add-Report "[4/7] Backend: CHANGED (exit=$checkExit)"
+    Write-Warn "백엔드 변경 감지 — 앱풀 중지 필요"
+    Add-Report "[4] Backend: CHANGED"
 
     # ─── 4a. 앱풀 중지 ─────────────────────────────────
     if (-not $DryRun) {
-        if ($ManualAppPool -or -not $session) {
-            Write-Warn "서버 IIS에서 앱풀을 중지하세요."
-            Write-Host "  앱풀 중지 후 Enter, 취소 Ctrl+C" -ForegroundColor Yellow
-            Read-Host
-        } else {
-            Invoke-Command -Session $session -ScriptBlock {
-                param($pool)
-                Import-Module WebAdministration
-                if ((Get-WebAppPoolState -Name $pool).Value -eq 'Started') {
-                    Stop-WebAppPool -Name $pool
-                    $t = 0
-                    while ((Get-WebAppPoolState -Name $pool).Value -ne 'Stopped' -and $t -lt 15) {
-                        Start-Sleep -Seconds 1; $t++
-                    }
-                }
-            } -ArgumentList $AppPoolName
-            Write-Ok "앱풀 중지됨"
-            Start-Sleep -Seconds 2
-        }
+        Write-Warn "서버 IIS에서 앱풀을 중지하세요."
+        Write-Host "  앱풀 중지 후 Enter, 취소 Ctrl+C" -ForegroundColor Yellow
+        Read-Host
     }
 
-    # ─── 4b. Phase 1: 백엔드 복사 ──────────────────────
-    Write-Step "4b/7 Phase 1 — 백엔드 파일 복사"
-    $phase1Start = Get-Date
-    $phase1Args = @(
+    # ─── 4b. 백엔드 복사 ──────────────────────────────
+    Write-Step "4b/7 백엔드 dll 복사"
+    $p1Start = Get-Date
+    $p1Args = @(
         $PublishDir, "$RemoteDrive\",
         '/E', '/XO', '/R:1', '/W:1', '/NP',
         "/LOG:$LogFile", '/TEE',
         '/XD', 'wwwroot', 'logs', 'App_Data',
         '/XF', 'appsettings.Production.json', 'web.config'
     )
-    if ($DryRun) { $phase1Args += '/L' }
+    if ($DryRun) { $p1Args += '/L' }
 
-    & robocopy @phase1Args
-    $phase1Exit = $LASTEXITCODE
-    $phase1Elapsed = ((Get-Date) - $phase1Start).TotalSeconds
+    & robocopy @p1Args
+    $p1Exit = $LASTEXITCODE
+    $p1Elapsed = ((Get-Date) - $p1Start).TotalSeconds
 
-    Add-Report "[4b/7] Robocopy Phase 1 (backend): exit=$phase1Exit, elapsed=$([math]::Round($phase1Elapsed, 1))s"
-
-    if ($phase1Exit -ge 8) {
-        Write-Err "Phase 1 실패 (exit $phase1Exit)"
-        Add-Report "[RESULT] FAILED at robocopy phase 1"
-        $script:reportLines | Out-File -FilePath $reportFile -Encoding UTF8
+    if ($p1Exit -ge 8) {
+        Write-Err "백엔드 복사 실패 (exit $p1Exit)"
+        Add-Report "[4b] Backend copy: FAILED"
         throw "배포 중단"
     }
-    Write-Ok "Phase 1 완료 ($([math]::Round($phase1Elapsed, 1))초)"
+    Write-Ok "백엔드 복사 완료 ($([math]::Round($p1Elapsed,1))초)"
+    Add-Report "[4b] Backend copy: OK ($([math]::Round($p1Elapsed,1))s)"
 
-    # ─── 4c. 앱풀 시작 ─────────────────────────────────
-    Write-Step "5/7 앱풀 시작 (downtime 종료)"
+    # ─── 5. 앱풀 시작 ─────────────────────────────────
+    Write-Step "5/7 앱풀 시작"
     if (-not $DryRun) {
-        if ($ManualAppPool -or -not $session) {
-            Write-Warn "서버 IIS에서 앱풀을 **지금 바로** 시작하세요."
-            Write-Host "  앱풀 시작 후 Enter" -ForegroundColor Yellow
-            Read-Host
-        } else {
-            Invoke-Command -Session $session -ScriptBlock {
-                param($pool)
-                Import-Module WebAdministration
-                Start-WebAppPool -Name $pool
-            } -ArgumentList $AppPoolName
-            Write-Ok "앱풀 시작됨"
-            if ($session) { Remove-PSSession $session }
-        }
+        Write-Warn "서버 IIS에서 앱풀을 시작하세요."
+        Write-Host "  앱풀 시작 후 Enter" -ForegroundColor Yellow
+        Read-Host
     }
 } else {
-    Write-Ok "백엔드 변경 없음 — 앱풀 중지 불필요 (프론트만 배포)"
-    Add-Report "[4/7] Backend: NO CHANGES — frontend-only deploy"
+    Write-Ok "백엔드 변경 없음 — 앱풀 중지 불필요"
+    Add-Report "[4] Backend: NO CHANGES"
 }
 
-# ─── 6. Phase 2: 프론트엔드(wwwroot) 복사 — 사이트 가동 중 ──
-Write-Step "6/7 robocopy Phase 2 — wwwroot 프론트엔드 (무중단)"
-$phase2Start = Get-Date
-$phase2Args = @(
+# ─── 6. 프론트엔드(wwwroot) 복사 — 무중단 ─────────────────
+Write-Step "6/7 wwwroot 프론트엔드 복사 (무중단)"
+$p2Start = Get-Date
+$p2Args = @(
     "$PublishDir\wwwroot", "$RemoteDrive\wwwroot",
     '/E', '/XO', '/R:2', '/W:3', '/NP',
     "/LOG+:$LogFile", '/TEE',
     '/XD', 'uploads'
 )
-if ($DryRun) { $phase2Args += '/L' }
+if ($DryRun) { $p2Args += '/L' }
 
-& robocopy @phase2Args
-$phase2Exit = $LASTEXITCODE
-$phase2Elapsed = ((Get-Date) - $phase2Start).TotalSeconds
+& robocopy @p2Args
+$p2Exit = $LASTEXITCODE
+$p2Elapsed = ((Get-Date) - $p2Start).TotalSeconds
 
-Add-Report "[6/7] Robocopy Phase 2 (wwwroot): exit=$phase2Exit, elapsed=$([math]::Round($phase2Elapsed, 1))s"
-
-if ($phase2Exit -ge 8) {
-    Write-Err "Phase 2 robocopy 실패 (exit $phase2Exit) — 백엔드는 이미 배포됨. 프론트 수동 확인 필요"
-    Add-Report "[RESULT] PARTIAL — backend deployed, frontend failed"
+if ($p2Exit -ge 8) {
+    Write-Err "프론트엔드 복사 실패 (exit $p2Exit)"
+    Add-Report "[6] Frontend: FAILED"
 } else {
-    Write-Ok "Phase 2 완료 ($([math]::Round($phase2Elapsed, 1))초)"
+    Write-Ok "프론트엔드 복사 완료 ($([math]::Round($p2Elapsed,1))초)"
+    Add-Report "[6] Frontend: OK ($([math]::Round($p2Elapsed,1))s)"
 }
 
-# ─── 7. 헬스체크 ─────────────────────────────────────────
+# ─── 7. 헬스체크 ──────────────────────────────────────────
 Write-Step "7/7 헬스체크"
 if ($DryRun) {
     Write-Warn "DryRun — 헬스체크 건너뜀"
 } else {
-    Write-Host "  헬스체크 대기..." -NoNewline
+    Write-Host "  대기..." -NoNewline
     $healthy = $false
     for ($i = 0; $i -lt 15; $i++) {
         try {
@@ -276,26 +231,18 @@ if ($DryRun) {
         Write-Host "." -NoNewline
     }
     Write-Host ""
-    if ($healthy) {
-        Write-Ok "헬스체크 통과 ($HealthUrl)"
-    } else {
-        Write-Warn "헬스체크 실패 — 서버 로그 확인 필요"
-    }
+    if ($healthy) { Write-Ok "헬스체크 통과" }
+    else { Write-Warn "헬스체크 실패 — 서버 로그 확인" }
 }
 
 $elapsed = (Get-Date) - $startTime
 Write-Host ""
 Write-Host "=========================================" -ForegroundColor Green
-Write-Host " 배포 완료 — 소요시간: $([int]$elapsed.TotalSeconds)초" -ForegroundColor Green
+Write-Host " 전체 배포 완료 — $([int]$elapsed.TotalSeconds)초" -ForegroundColor Green
 Write-Host "=========================================" -ForegroundColor Green
 
-# 리포트 파일 저장
-Add-Report "[RESULT] SUCCESS"
 Add-Report ""
-Add-Report "Finished   : $((Get-Date).ToString('yyyy-MM-dd HH:mm:ss'))"
-Add-Report "Elapsed    : $([int]$elapsed.TotalSeconds)s"
-Add-Report "============================================"
-
+Add-Report "Total: $([int]$elapsed.TotalSeconds)s — SUCCESS"
+$reportFile = Join-Path $HistoryDir "deploy_$timestamp.txt"
 $script:reportLines | Out-File -FilePath $reportFile -Encoding UTF8
-Write-Host ""
-Write-Host "리포트 저장: $reportFile" -ForegroundColor Gray
+Write-Host "리포트: $reportFile" -ForegroundColor Gray

@@ -1,12 +1,16 @@
 <template>
-  <div class="min-h-screen min-h-dvh bg-gray-50 safe-area-container">
-    <main :class="{ 'pb-20': showNav }">
-      <slot />
-    </main>
+  <div class="app-frame">
+    <div class="safe-top bg-gray-50"></div>
+
+    <div class="safe-content bg-gray-50">
+      <main>
+        <slot />
+      </main>
+    </div>
 
     <nav
       v-if="showNav"
-      class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40"
+      class="safe-nav bg-white border-t border-gray-200 shadow-lg z-40"
     >
       <div
         class="flex items-center justify-around h-16 max-w-screen-xl mx-auto"
@@ -48,7 +52,10 @@
           </span>
         </button>
       </div>
+      <div class="safe-bottom-spacer"></div>
     </nav>
+
+    <div v-if="!showNav" class="safe-bottom bg-gray-50"></div>
   </div>
 </template>
 
@@ -135,19 +142,44 @@ function navigateTo(path) {
   }
 }
 
-/* Safe area support for mobile devices with notches */
-@supports (padding: env(safe-area-inset-bottom)) {
-  nav {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+/* flex 프레임: 노치/네비바 영역 물리적 차단 */
+.app-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
-@supports (padding-top: env(safe-area-inset-top)) {
-  .safe-area-container {
-    padding-top: env(safe-area-inset-top);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
+.safe-top {
+  flex-shrink: 0;
+  height: env(safe-area-inset-top, 0px);
+}
+
+.safe-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.safe-nav {
+  flex-shrink: 0;
+}
+
+.safe-bottom-spacer,
+.safe-bottom {
+  height: env(safe-area-inset-bottom, 0px);
+  flex-shrink: 0;
+}
+
+/* Capacitor 앱: env()가 0 반환 시 고정값 */
+:global(.capacitor-app) .safe-top {
+  height: max(env(safe-area-inset-top, 0px), 2rem);
+}
+
+:global(.capacitor-app) .safe-bottom-spacer,
+:global(.capacitor-app) .safe-bottom {
+  height: max(env(safe-area-inset-bottom, 0px), 3rem);
 }
 
 button:active {

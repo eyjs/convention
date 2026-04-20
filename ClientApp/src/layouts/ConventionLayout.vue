@@ -1,22 +1,29 @@
 <template>
-  <div class="min-h-screen min-h-dvh bg-gray-50 safe-area-container">
-    <!-- 공통 헤더 (brandColor 기반) -->
-    <ConventionHeader
-      v-if="convention"
-      :convention="convention"
-      :convention-id="conventionId"
-      :d-day="dDay"
-      @menu-click="isSidebarOpen = true"
-    />
-    <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
+  <div class="app-frame">
+    <!-- 상단 안전영역 (노치/카메라 차단) -->
+    <div class="safe-top bg-gray-50"></div>
 
-    <main :class="{ 'pb-20': showNav }">
-      <router-view />
-    </main>
+    <!-- 스크롤 가능한 콘텐츠 영역 -->
+    <div class="safe-content bg-gray-50">
+      <!-- 공통 헤더 (brandColor 기반) -->
+      <ConventionHeader
+        v-if="convention"
+        :convention="convention"
+        :convention-id="conventionId"
+        :d-day="dDay"
+        @menu-click="isSidebarOpen = true"
+      />
+      <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
 
+      <main :class="{ 'pb-nav': showNav }">
+        <router-view />
+      </main>
+    </div>
+
+    <!-- 하단 네비게이션 (안전영역 포함) -->
     <nav
       v-if="showNav"
-      class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40"
+      class="safe-nav bg-white border-t border-gray-200 shadow-lg z-40"
     >
       <div
         class="flex items-center justify-around h-16 max-w-screen-xl mx-auto"
@@ -58,7 +65,12 @@
           </span>
         </button>
       </div>
+      <!-- 하단 안전영역 (시스템 네비바 차단) -->
+      <div class="safe-bottom-spacer"></div>
     </nav>
+
+    <!-- nav 없을 때도 하단 안전영역 확보 -->
+    <div v-if="!showNav" class="safe-bottom bg-gray-50"></div>
   </div>
 </template>
 
@@ -161,18 +173,57 @@ function navigateTo(item) {
   }
 }
 
-@supports (padding: env(safe-area-inset-bottom)) {
-  nav {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+/* 전체 화면을 flex 컬럼으로 잡아서 상단/하단 안전영역 물리적 차단 */
+.app-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
-@supports (padding-top: env(safe-area-inset-top)) {
-  .safe-area-container {
-    padding-top: env(safe-area-inset-top);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
+/* 상단 안전영역: 노치/카메라 차단 — 콘텐츠 절대 침범 불가 */
+.safe-top {
+  flex-shrink: 0;
+  height: env(safe-area-inset-top, 0px);
+}
+
+/* 콘텐츠 영역: 남은 공간 전부, 내부 스크롤 */
+.safe-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 하단 네비: fixed 대신 flex 하단 고정 */
+.safe-nav {
+  flex-shrink: 0;
+}
+
+/* 하단 시스템 네비바 차단 스페이서 */
+.safe-bottom-spacer {
+  height: env(safe-area-inset-bottom, 0px);
+  flex-shrink: 0;
+}
+
+.safe-bottom {
+  height: env(safe-area-inset-bottom, 0px);
+  flex-shrink: 0;
+}
+
+/* nav가 flex 하단이므로 main에 하단 여백 불필요 */
+.pb-nav {
+  padding-bottom: 0;
+}
+
+/* 앱(웹뷰): env()가 0 반환 시 고정값 사용 */
+:global(.capacitor-app) .safe-top {
+  height: max(env(safe-area-inset-top, 0px), 2rem);
+}
+
+:global(.capacitor-app) .safe-bottom-spacer,
+:global(.capacitor-app) .safe-bottom {
+  height: max(env(safe-area-inset-bottom, 0px), 3rem);
 }
 
 button:active {

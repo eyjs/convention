@@ -59,29 +59,40 @@ dotnet publish                # 프론트엔드 자동 빌드 포함 (dist → w
 - **배포 경로**: `D:\WebServer\event.ifa.co.kr`
 - **SMB 공유**: `\\172.25.0.21\webapp` → 로컬 `W:` 드라이브 매핑
 
-### 배포 방법 — `deploy.ps1`
+### 배포 스크립트 (3종)
 
-PowerShell에서 실행:
+| 스크립트 | 용도 | 앱풀 중지 | 다운타임 |
+|----------|------|-----------|----------|
+| `deploy-frontend.ps1` | 프론트엔드(wwwroot)만 | 불필요 | 없음 (무중단) |
+| `deploy-backend.ps1` | 백엔드 dll + DB 마이그레이션 | 필요 | 있음 |
+| `deploy.ps1` | 전체 (백엔드+프론트+DB) | 자동 감지 | 백엔드 변경 시만 |
+
 ```powershell
 cd C:\Users\USER\dev\startour\convention
+
+# 프론트엔드만 (무중단) — CSS/JS 변경 시
+.\deploy-frontend.ps1
+.\deploy-frontend.ps1 -SkipBuild      # 빌드 건너뛰고 복사만
+
+# 백엔드만 (앱풀 중지 필요) — C# 변경 시
+.\deploy-backend.ps1
+.\deploy-backend.ps1 -SkipMigration   # DB 마이그레이션 건너뛰기
+
+# 전체 배포
 .\deploy.ps1
+.\deploy.ps1 -SkipMigration           # DB 마이그레이션 제외
+.\deploy.ps1 -SkipPublish             # publish 건너뛰기
+.\deploy.ps1 -DryRun                  # 시뮬레이션
 ```
 
-#### 배포 흐름 (2단계 robocopy)
+#### 배포 흐름 (`deploy.ps1` 전체)
 1. `dotnet publish -c Release` (로컬)
 2. `W:` 드라이브 매핑 확인
-3. **앱풀 중지** → Enter (수동 모드: 서버 IIS에서 앱풀 중지 후)
-4. **Phase 1**: 백엔드 dll만 복사 (wwwroot 제외, ~1-3초) — **downtime 구간**
-5. **앱풀 시작** → Enter (서버 IIS에서 앱풀 시작 후) — **downtime 종료**
+3. DB 마이그레이션 (선택, Y/N 확인)
+4. 백엔드 변경 감지 → 변경 시만 앱풀 중지/시작
+5. **Phase 1**: 백엔드 dll 복사 (wwwroot 제외, ~1-3초) — **downtime 구간**
 6. **Phase 2**: wwwroot 프론트엔드 복사 (무중단, ~60초)
 7. 헬스체크 (`/health`)
-
-#### 옵션
-```powershell
-.\deploy.ps1                    # 전체 (publish + 배포)
-.\deploy.ps1 -SkipPublish       # publish 생략, 기존 빌드로 복사만
-.\deploy.ps1 -DryRun            # 시뮬레이션 (실제 복사 없음)
-```
 
 #### 배포 기록
 - 매 배포 시 `C:\deploy\history\deploy_YYYYMMDD_HHMMSS.txt` 리포트 자동 생성
@@ -125,6 +136,39 @@ dotnet ef database update --connection "Server=172.25.1.21;Database=STARTOUR;Use
 - **`dotnet ef database update`는 VPN 연결 상태에서만 가능** (172.25.1.21 접근 필요)
 - **롤백**: `dotnet ef database update <이전MigrationName>` (단, 데이터 손실 가능)
 - 비밀번호의 `!@#$` 특수문자 — bash에서 `\$`로 이스케이프 필요
+
+### Android 앱 (Capacitor)
+
+- **프레임워크**: Capacitor 8 (WebView 기반)
+- **패키지**: `kr.co.ifa.event` / 앱명: `StarTour`
+- **동작 방식**: 원격 URL (`https://event.ifa.co.kr`) 로드 — 앱은 WebView 셸
+- **APK 경로**: `ClientApp/android/app/build/outputs/apk/debug/app-debug.apk`
+- **배포 위치**: `https://event.ifa.co.kr/downloads/StarTour.apk`
+
+#### APK 빌드
+```bash
+cd ClientApp
+npm run build                                           # 프론트엔드 빌드
+npx cap sync android                                    # Capacitor 설정 동기화
+cd android
+JAVA_HOME="C:/Program Files/Android/Android Studio/jbr" ./gradlew assembleDebug
+```
+
+#### 앱 환경 Safe Area (중요)
+- Android WebView에서 `env(safe-area-inset-*)` CSS는 **`0px` 반환** — 사용 불가
+- `main.js`에서 `Capacitor.isNativePlatform()` 감지 → `document.body.classList.add('capacitor-app')`
+- **레이아웃 아키텍처**: flex 컬럼 프레임으로 노치/네비바 영역 물리적 차단
+  ```
+  ┌─ safe-top (고정, 2rem) ──────┐  ← 노치/카메라 영역 차단
+  │  header                      │
+  │  content (overflow-y: auto)  │  ← 이 안에서만 스크롤
+  │  ...                         │
+  ├─ nav + safe-bottom (고정, 3rem)┤  ← 시스템 네비바 차단
+  └──────────────────────────────┘
+  ```
+- `.capacitor-app .safe-top` = `max(env(...), 2rem)`, `.safe-bottom` = `max(env(...), 3rem)`
+- **ConventionLayout.vue**: flex 프레임 구조 적용 완료
+- **DefaultLayout.vue, FeatureLayout.vue**: 동일 구조 적용 필요 시 같은 패턴 사용
 
 ## 프로젝트 구조
 

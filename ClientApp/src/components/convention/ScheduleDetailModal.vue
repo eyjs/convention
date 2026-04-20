@@ -1,36 +1,44 @@
 <template>
-  <SlideUpModal :is-open="!!props.schedule" @close="emit('close')">
+  <SlideUpModal :is-open="!!props.schedule" align-left @close="emit('close')">
     <template #header-title>
       <div v-if="props.schedule">
-        <div class="text-xs font-medium text-[#0F6E56] mb-0.5">
+        <!-- 시간 뱃지 -->
+        <span class="inline-block bg-[#E1F5EE] text-[#0F6E56] text-[0.8125rem] font-medium px-2.5 py-1 rounded-lg mb-1.5">
           {{ props.schedule.startTime }}
           <template v-if="props.schedule.endTime && props.schedule.endTime !== props.schedule.startTime"> – {{ props.schedule.endTime }}</template>
-        </div>
-        <div class="text-base font-medium text-[#1a1a1a]">{{ props.schedule.title }}</div>
+        </span>
+        <!-- 제목: 1.125rem (18px) 왼쪽 정렬 -->
+        <div class="text-[1.125rem] font-medium text-[#1a1a1a] leading-snug">{{ props.schedule.title }}</div>
       </div>
     </template>
 
     <template #body>
       <div v-if="props.schedule" class="space-y-0">
         <!-- 장소 -->
-        <div v-if="props.schedule.location" class="flex gap-2 py-2 border-b border-black/[0.05]">
-          <span class="text-[11px] text-gray-400 w-7 flex-shrink-0 pt-0.5">장소</span>
-          <div class="text-[13px] text-[#1a1a1a]">
-            <a
-              v-if="props.schedule.mapUrl"
-              :href="props.schedule.mapUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-[#1D9E75] no-underline"
-            >{{ props.schedule.location }} →</a>
-            <span v-else>{{ props.schedule.location }}</span>
+        <div class="flex gap-2.5 py-2.5 border-b border-black/[0.05]">
+          <!-- 라벨: 0.75rem (12px) -->
+          <span class="text-xs text-gray-400 w-8 flex-shrink-0 pt-0.5">장소</span>
+          <!-- 값: 0.875rem (14px) -->
+          <div class="text-sm">
+            <template v-if="props.schedule.location">
+              <a
+                v-if="props.schedule.mapUrl"
+                :href="props.schedule.mapUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-[#1D9E75] no-underline"
+              >{{ props.schedule.location }} →</a>
+              <span v-else class="text-[#1a1a1a]">{{ props.schedule.location }}</span>
+            </template>
+            <span v-else class="text-gray-300">장소 미정</span>
           </div>
         </div>
 
         <!-- 안내 (설명) -->
-        <div v-if="props.schedule.description" class="flex gap-2 py-2 border-b border-black/[0.05]">
-          <span class="text-[11px] text-gray-400 w-7 flex-shrink-0 pt-0.5">안내</span>
-          <div class="text-[13px] text-[#1a1a1a] leading-[1.6]">
+        <div v-if="props.schedule.description" class="flex gap-2.5 py-2.5 border-b border-black/[0.05]">
+          <span class="text-xs text-gray-400 w-8 flex-shrink-0 pt-0.5">안내</span>
+          <!-- 본문: 0.875rem (14px) -->
+          <div class="text-sm text-[#1a1a1a] leading-relaxed">
             <QuillViewer :content="props.schedule.description" @image-clicked="openFullImage" />
           </div>
         </div>
@@ -49,39 +57,41 @@
           </div>
         </div>
 
-        <!-- 내 자리 보기 버튼 -->
-        <button
-          v-if="props.schedule.seatingLayoutId"
-          class="w-full py-3 mt-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold text-sm shadow hover:shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          @click="emit('go-to-seat', props.schedule.seatingLayoutId)"
-        >
-          내 자리 보기
-        </button>
-
-        <!-- 내 배정 정보 (목업: .m-my 보라 카드) -->
-        <div v-if="scheduleBadges.length > 0" class="mt-3 bg-[#f3f1fb] rounded-[10px] p-3">
-          <div class="text-[10px] font-medium text-[#534AB7] mb-2 tracking-wide">내 배정 정보</div>
-          <div class="grid grid-cols-2 gap-1.5">
+        <!-- 내 배정 정보 -->
+        <div v-if="scheduleBadges.length > 0" class="mt-3 bg-[#f3f1fb] rounded-[0.625rem] p-3.5">
+          <!-- 섹션 제목: 0.6875rem (11px) -->
+          <div class="text-[0.6875rem] font-medium text-[#534AB7] mb-2.5 tracking-wide">내 배정 정보</div>
+          <div class="grid grid-cols-2 gap-2">
             <div
               v-for="(badge, bi) in scheduleBadges"
               :key="badge.key"
-              class="bg-white rounded-lg px-2.5 py-2 border border-[rgba(83,74,183,0.13)]"
+              class="bg-white rounded-lg px-3 py-2.5 border border-[rgba(83,74,183,0.13)]"
               :class="bi === scheduleBadges.length - 1 && scheduleBadges.length % 2 !== 0 ? 'col-span-2' : ''"
             >
-              <div class="text-[10px] text-[#7F77DD] mb-0.5">{{ badge.key }}</div>
-              <div class="text-sm font-medium text-[#3C3489]">{{ badge.value }}</div>
+              <!-- 라벨: 0.6875rem (11px) -->
+              <div class="text-[0.6875rem] text-[#7F77DD] mb-0.5">{{ badge.key }}</div>
+              <!-- 값: 0.9375rem (15px) -->
+              <div class="text-[0.9375rem] font-medium text-[#3C3489]">{{ badge.value }}</div>
             </div>
           </div>
         </div>
 
-        <!-- 참석자 보기 (관리자만) -->
-        <div v-if="props.isAdmin && props.schedule.group && !props.schedule.isOptionTour" class="mt-3">
+        <!-- 액션 버튼 영역 -->
+        <div v-if="props.schedule.seatingLayoutId || (props.isAdmin && props.schedule.group && !props.schedule.isOptionTour)" class="mt-4 pt-3 border-t border-black/[0.05] space-y-2.5">
           <button
-            class="w-full px-4 py-2.5 rounded-lg text-white font-medium transition-all hover:opacity-90 flex items-center justify-center space-x-2"
+            v-if="props.schedule.seatingLayoutId"
+            class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold text-[0.9375rem] shadow hover:shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            @click="emit('go-to-seat', props.schedule.seatingLayoutId)"
+          >
+            내 자리 보기
+          </button>
+          <button
+            v-if="props.isAdmin && props.schedule.group && !props.schedule.isOptionTour"
+            class="w-full py-3.5 rounded-xl text-white text-[0.9375rem] font-medium transition-all hover:opacity-90 flex items-center justify-center"
             :style="{ backgroundColor: props.brandColor }"
             @click="loadParticipants(props.schedule.scheduleTemplateId, props.schedule.group)"
           >
-            <span>참석자 보기 ({{ props.schedule.participants }}명)</span>
+            참석자 보기 ({{ props.schedule.participants }}명)
           </button>
         </div>
       </div>
