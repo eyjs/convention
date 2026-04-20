@@ -177,6 +177,7 @@
                   class="space-y-2"
                 >
                   <img
+                    loading="lazy"
                     :src="`${API_BASE}${existingFileUrls[field.key]}`"
                     :alt="field.label"
                     class="max-w-full h-auto max-h-64 rounded-lg border border-gray-300 cursor-pointer hover:opacity-90 transition-opacity"
@@ -321,6 +322,7 @@
           @click="closeImageViewer"
         >
           <img
+            loading="lazy"
             :src="`${API_BASE}${imageViewerUrl}`"
             alt="Image Viewer"
             class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"

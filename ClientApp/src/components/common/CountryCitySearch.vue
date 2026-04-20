@@ -181,9 +181,9 @@ function performSearch() {
 
   // 디바운스: 150ms 후 검색
   clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => {
+  debounceTimer = setTimeout(async () => {
     try {
-      searchResults.value = searchCities(searchTerm.value, 8)
+      searchResults.value = await searchCities(searchTerm.value, 8)
     } catch (error) {
       console.error('City search error:', error)
       searchResults.value = []

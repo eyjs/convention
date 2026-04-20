@@ -10,6 +10,7 @@
       <swiper-slide v-for="banner in banners" :key="banner.id">
         <div class="relative cursor-pointer" @click="onBannerClick(banner)">
           <img
+            loading="lazy"
             :src="banner.imageUrl"
             :alt="banner.title || '배너'"
             class="w-full h-44 object-cover"

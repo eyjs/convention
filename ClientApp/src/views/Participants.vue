@@ -84,6 +84,7 @@
         <div class="flex flex-col items-center text-center">
           <template v-if="participant.profileImageUrl">
             <img
+              loading="lazy"
               :src="participant.profileImageUrl"
               :alt="participant.name"
               class="w-20 h-20 rounded-full object-cover mb-4"

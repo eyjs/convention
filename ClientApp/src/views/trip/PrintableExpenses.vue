@@ -175,9 +175,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import dayjs from 'dayjs'
-import VueApexCharts from 'vue3-apexcharts'
+
+const VueApexCharts = defineAsyncComponent(() => import('vue3-apexcharts'))
 
 const props = defineProps({
   trip: { type: Object, required: true },

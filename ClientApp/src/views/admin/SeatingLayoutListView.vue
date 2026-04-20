@@ -24,7 +24,7 @@
           @click="goEditor(l.id)"
         >
           <div class="h-32 bg-gray-100 flex items-center justify-center">
-            <img v-if="l.backgroundImageUrl" :src="l.backgroundImageUrl" class="object-cover w-full h-full" />
+            <img v-if="l.backgroundImageUrl" loading="lazy" :src="l.backgroundImageUrl" class="object-cover w-full h-full" />
             <span v-else class="text-gray-300">미리보기 없음</span>
           </div>
           <div class="p-3">

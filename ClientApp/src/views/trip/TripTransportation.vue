@@ -110,6 +110,7 @@
                       class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-0"
                     >
                       <img
+                        loading="lazy"
                         src="/images/logo_w.png"
                         alt="Airline Logo"
                         class="w-64 h-64 text-indigo-900 opacity-5 transform -rotate-12"

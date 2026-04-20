@@ -1,4 +1,15 @@
-import { Country, City } from 'country-state-city'
+// country-state-city 동적 import (7.8MB 라이브러리를 필요 시에만 로드)
+let _Country = null
+let _City = null
+
+async function getCountryModule() {
+  if (!_Country) {
+    const mod = await import('country-state-city')
+    _Country = mod.Country
+    _City = mod.City
+  }
+  return { Country: _Country, City: _City }
+}
 
 // 한국어 국가명 매핑
 const countryNameKr = {
@@ -617,10 +628,12 @@ const popularCitiesByCountry = {
  * @param {number} limit - 최대 결과 수
  * @returns {Array} 검색 결과
  */
-export function searchCities(keyword, limit = 10) {
+export async function searchCities(keyword, limit = 10) {
   if (!keyword || keyword.trim().length < 1) {
     return []
   }
+
+  const { Country, City } = await getCountryModule()
 
   const query = keyword.trim()
   const queryLower = query.toLowerCase()
@@ -800,7 +813,8 @@ function formatCityResult(city, country) {
 /**
  * 국가 목록 가져오기
  */
-export function getAllCountries() {
+export async function getAllCountries() {
+  const { Country } = await getCountryModule()
   return Country.getAllCountries().map((country) => ({
     code: country.isoCode,
     name: countryNameKr[country.isoCode] || country.name,
@@ -811,7 +825,8 @@ export function getAllCountries() {
 /**
  * 특정 국가의 인기 도시 가져오기
  */
-export function getPopularCities(countryCode) {
+export async function getPopularCities(countryCode) {
+  const { Country, City } = await getCountryModule()
   const popularCities = popularCitiesByCountry[countryCode] || []
   const country = Country.getCountryByCode(countryCode)
   if (!country) return []

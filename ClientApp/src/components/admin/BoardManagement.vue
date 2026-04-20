@@ -237,7 +237,38 @@
         >
           등록된 카테고리가 없습니다
         </div>
-        <div v-else class="overflow-x-auto">
+        <!-- 모바일 카드 -->
+        <div v-else class="md:hidden divide-y divide-gray-100">
+          <div
+            v-for="category in categories"
+            :key="'cm-' + category.id"
+            class="p-3 flex items-center gap-3"
+          >
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-gray-900">{{ category.name }}</p>
+              <p class="text-xs text-gray-400 mt-0.5">
+                {{ category.description || '설명 없음' }} · 게시글 {{ category.noticeCount }}개 · 순서 {{ category.displayOrder }}
+              </p>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <button
+                class="text-xs text-primary-600 hover:text-primary-900 px-2 py-1 border border-primary-200 rounded"
+                @click="editCategory(category)"
+              >
+                수정
+              </button>
+              <button
+                class="text-xs text-red-600 hover:text-red-900 px-2 py-1 border border-red-200 rounded"
+                @click="deleteCategory(category.id, category.noticeCount)"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PC 테이블 -->
+        <div v-if="categories.length > 0" class="hidden md:block overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>

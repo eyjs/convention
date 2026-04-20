@@ -52,35 +52,37 @@
     </AdminPageHeader>
 
     <!-- 검색 + 필터 -->
-    <div class="mt-6 mb-4 flex flex-wrap items-center gap-2">
+    <div class="mt-6 mb-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
       <input
         v-model="searchTerm"
         type="text"
         placeholder="이름, 전화번호, 부서, 소속으로 검색..."
-        class="flex-1 min-w-0 px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        class="w-full sm:flex-1 sm:min-w-0 px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       />
-      <select
-        v-model="passportFilter"
-        class="px-3 py-1.5 border rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-primary-500"
-      >
-        <option value="">여권 전체</option>
-        <option value="noNumber">번호 미입력</option>
-        <option value="noExpiry">만료일 미입력</option>
-        <option value="expired">만료됨</option>
-        <option value="expiring">6개월 내 만료</option>
-        <option value="noImage">사본 미등록</option>
-        <option value="unverified">미검증</option>
-        <option value="complete">여권 완비</option>
-      </select>
-      <select
-        v-model="companionFilter"
-        class="px-3 py-1.5 border rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-primary-500"
-      >
-        <option value="">동반자 전체</option>
-        <option value="hasCompanion">동반자 있음</option>
-        <option value="isCompanion">동반자로 등록됨</option>
-        <option value="noCompanion">동반자 없음</option>
-      </select>
+      <div class="flex flex-wrap items-center gap-2">
+        <select
+          v-model="passportFilter"
+          class="flex-1 sm:flex-none px-3 py-1.5 border rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">여권 전체</option>
+          <option value="noNumber">번호 미입력</option>
+          <option value="noExpiry">만료일 미입력</option>
+          <option value="expired">만료됨</option>
+          <option value="expiring">6개월 내 만료</option>
+          <option value="noImage">사본 미등록</option>
+          <option value="unverified">미검증</option>
+          <option value="complete">여권 완비</option>
+        </select>
+        <select
+          v-model="companionFilter"
+          class="flex-1 sm:flex-none px-3 py-1.5 border rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">동반자 전체</option>
+          <option value="hasCompanion">동반자 있음</option>
+          <option value="isCompanion">동반자로 등록됨</option>
+          <option value="noCompanion">동반자 없음</option>
+        </select>
+      </div>
     </div>
 
     <div v-if="loading" class="text-center py-8">로딩 중...</div>

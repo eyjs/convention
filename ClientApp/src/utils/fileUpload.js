@@ -5,6 +5,55 @@ import apiClient from '@/services/api'
  * 이미지, 첨부파일 등 모든 파일 업로드에 사용
  */
 
+/**
+ * 이미지 압축 (Canvas API 기반 리사이징 + JPEG 변환)
+ * - 1MB 이하이거나 이미지가 아닌 파일은 원본 반환
+ * - maxWidth/maxHeight 초과 시에만 리사이징
+ * @param {File} file - 원본 파일
+ * @param {Object} options
+ * @param {number} options.maxWidth - 최대 너비 (기본 1920)
+ * @param {number} options.maxHeight - 최대 높이 (기본 1920)
+ * @param {number} options.quality - JPEG 품질 0~1 (기본 0.8)
+ * @returns {Promise<File>} 압축된 파일 또는 원본
+ */
+export async function compressImage(file, { maxWidth = 1920, maxHeight = 1920, quality = 0.8 } = {}) {
+  if (file.size <= 1024 * 1024) return file // 1MB 이하 스킵
+  if (!file.type.startsWith('image/')) return file
+
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      let { width, height } = img
+      if (width <= maxWidth && height <= maxHeight) {
+        resolve(file)
+        return
+      }
+      const ratio = Math.min(maxWidth / width, maxHeight / height)
+      width = Math.round(width * ratio)
+      height = Math.round(height * ratio)
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file)
+            return
+          }
+          resolve(new File([blob], file.name, { type: 'image/jpeg' }))
+        },
+        'image/jpeg',
+        quality,
+      )
+    }
+    img.onerror = () => resolve(file) // 로드 실패 시 원본 반환
+    img.src = URL.createObjectURL(file)
+  })
+}
+
 // 허용된 이미지 확장자
 const ALLOWED_IMAGE_EXTENSIONS = [
   '.jpg',
@@ -100,8 +149,11 @@ export const uploadFile = async (
     throw new Error('지원하지 않는 파일 형식입니다.')
   }
 
+  // 이미지인 경우 업로드 전 압축
+  const uploadTarget = file.type.startsWith('image/') ? await compressImage(file) : file
+
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('file', uploadTarget)
   formData.append('category', category)
 
   try {

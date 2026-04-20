@@ -38,7 +38,7 @@
       </button>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-6">
       <!-- 왼쪽: 필드 팔레트 -->
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <h3 class="font-bold text-gray-900 mb-4">필드 추가</h3>

@@ -14,7 +14,7 @@
       <div class="flex-1 relative overflow-hidden bg-gray-200">
         <div ref="viewerRef" class="absolute inset-0 overflow-auto overscroll-contain" style="-webkit-overflow-scrolling: touch;">
           <div :style="{ width: (imgW * viewZoom) + 'px', height: (imgH * viewZoom) + 'px', position: 'relative' }">
-            <img v-if="activeLayout.backgroundImageUrl" :src="activeLayout.backgroundImageUrl" :style="{ width: (imgW * viewZoom) + 'px', height: (imgH * viewZoom) + 'px', display: 'block' }" @load="onImageLoad" />
+            <img v-if="activeLayout.backgroundImageUrl" loading="lazy" :src="activeLayout.backgroundImageUrl" :style="{ width: (imgW * viewZoom) + 'px', height: (imgH * viewZoom) + 'px', display: 'block' }" @load="onImageLoad" />
 
             <!-- 테이블 마커 -->
             <div

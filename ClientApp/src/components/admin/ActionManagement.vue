@@ -7,21 +7,23 @@
       <AdminButton :icon="Plus" @click="openCreateModal">액션 추가</AdminButton>
     </AdminPageHeader>
 
-    <!-- BehaviorType 필터 버튼 -->
-    <div class="mb-6 flex flex-wrap gap-2">
-      <button
-        v-for="filter in behaviorFilters"
-        :key="filter.value"
-        :class="[
-          'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-          selectedBehaviorType === filter.value
-            ? 'bg-primary-600 text-white'
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
-        ]"
-        @click="selectedBehaviorType = filter.value"
-      >
-        {{ filter.label }}
-      </button>
+    <!-- BehaviorType 필터 -->
+    <div class="mt-4 mb-5 bg-gray-100 rounded-xl p-1.5 overflow-x-auto scrollbar-hide">
+      <div class="flex gap-1 min-w-max">
+        <button
+          v-for="filter in behaviorFilters"
+          :key="filter.value"
+          :class="[
+            'px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
+            selectedBehaviorType === filter.value
+              ? 'bg-white text-primary-700 shadow-sm'
+              : 'text-gray-500 active:bg-white/50',
+          ]"
+          @click="selectedBehaviorType = filter.value"
+        >
+          {{ filter.label }}
+        </button>
+      </div>
     </div>
 
     <!-- 로딩 -->
@@ -439,12 +441,13 @@
                 class="mt-2 p-2 border border-gray-200 rounded-lg"
               >
                 <img
+                  loading="lazy"
                   :src="formData[field.key]"
                   class="max-h-32 rounded object-contain"
                   :alt="field.label"
                 />
                 <div class="flex items-center justify-between mt-1">
-                  <span class="text-xs text-gray-400 truncate max-w-[250px]">{{
+                  <span class="text-xs text-gray-400 line-clamp-2 w-full">{{
                     formData[field.key]
                   }}</span>
                   <button
@@ -622,7 +625,7 @@
                 <div class="font-semibold text-sm">
                   {{ category.displayName }}
                 </div>
-                <div class="text-xs text-gray-600 mt-1">
+                <div class="text-xs text-gray-600 mt-1 line-clamp-2">
                   {{ category.description }}
                 </div>
               </div>
@@ -874,6 +877,7 @@ import {
   Trash2,
 } from 'lucide-vue-next'
 import apiClient from '@/services/api'
+import { compressImage } from '@/utils/fileUpload'
 import formBuilderService from '@/services/formBuilderService'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import AdminButton from '@/components/admin/ui/AdminButton.vue'
@@ -922,7 +926,7 @@ async function handleImageUpload(event, fieldKey) {
 
   try {
     const fd = new FormData()
-    fd.append('file', file)
+    fd.append('file', await compressImage(file))
     const response = await apiClient.post('/file/upload/image', fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })

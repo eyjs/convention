@@ -13,6 +13,7 @@
       <div class="sticky top-0 z-40 bg-white shadow-sm">
         <div class="px-4 py-3 flex items-center justify-between">
           <img
+            loading="lazy"
             src="https://www.ifa.co.kr/Images/logo.png"
             alt="iFA"
             class="h-8 object-contain"

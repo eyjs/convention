@@ -2,6 +2,7 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import Quill from 'quill'
 import 'quill/dist/quill.snow.css'
 import apiClient from '@/services/api'
+import { compressImage } from '@/utils/fileUpload'
 
 /**
  * Quill 에디터 Composable
@@ -84,7 +85,7 @@ export function useQuillEditor(options = {}) {
       try {
         // FormData 생성 - 파일을 서버로 전송하기 위한 형식
         const formData = new FormData()
-        formData.append('file', file)
+        formData.append('file', await compressImage(file))
 
         // 서버로 파일 업로드
         const response = await apiClient.post(

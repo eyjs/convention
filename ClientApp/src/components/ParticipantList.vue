@@ -23,6 +23,7 @@
           <div class="w-12 h-12 rounded-full flex-shrink-0">
             <template v-if="participant.profileImageUrl">
               <img
+                loading="lazy"
                 :src="participant.profileImageUrl"
                 :alt="participant.name"
                 class="w-full h-full rounded-full object-cover"

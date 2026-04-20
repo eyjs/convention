@@ -270,7 +270,7 @@
 
               <div
                 v-else
-                class="max-h-48 overflow-y-auto space-y-1 border rounded-lg p-2"
+                class="max-h-[50vh] overflow-y-auto space-y-1 border rounded-lg p-2"
               >
                 <label
                   v-for="user in guests"

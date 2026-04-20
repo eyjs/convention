@@ -35,7 +35,7 @@
           <div class="flex flex-col sm:flex-row sm:items-stretch">
             <!-- 썸네일 + 드래그 핸들 -->
             <div class="relative flex-shrink-0">
-              <img :src="element.imageUrl" class="w-full h-32 sm:w-32 sm:h-20 object-cover" alt="" />
+              <img loading="lazy" :src="element.imageUrl" class="w-full h-32 sm:w-32 sm:h-20 object-cover" alt="" />
               <div class="drag-handle absolute top-2 left-2 p-1 bg-black/40 rounded cursor-grab active:cursor-grabbing text-white/80">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 6h2v2H8zm6 0h2v2h-2zM8 11h2v2H8zm6 0h2v2h-2zM8 16h2v2H8zm6 0h2v2h-2z" />
@@ -97,7 +97,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">배너 이미지</label>
             <div v-if="form.imageUrl" class="mb-2">
               <div class="relative inline-block w-full">
-                <img :src="form.imageUrl" class="w-full h-40 object-cover rounded-lg" alt="" />
+                <img loading="lazy" :src="form.imageUrl" class="w-full h-40 object-cover rounded-lg" alt="" />
                 <button
                   class="absolute top-2 right-2 w-7 h-7 flex items-center justify-center bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"
                   @click="form.imageUrl = ''"
@@ -145,7 +145,7 @@
                         <path d="M8 6h2v2H8zm6 0h2v2h-2zM8 11h2v2H8zm6 0h2v2h-2zM8 16h2v2H8zm6 0h2v2h-2z" />
                       </svg>
                     </div>
-                    <img :src="element" class="w-16 h-10 object-cover rounded" alt="" />
+                    <img loading="lazy" :src="element" class="w-16 h-10 object-cover rounded" alt="" />
                     <span class="flex-1 text-xs text-gray-500 truncate">{{ index + 1 }}번</span>
                     <button class="p-1 text-gray-400 hover:text-red-500" @click="removeDetailImage(index)">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,6 +241,7 @@ import { ref, onMounted } from 'vue'
 import draggable from 'vuedraggable'
 import BaseModal from '@/components/common/BaseModal.vue'
 import apiClient from '@/services/api'
+import { compressImage } from '@/utils/fileUpload'
 
 const banners = ref([])
 const loading = ref(true)
@@ -297,7 +298,7 @@ async function onFileSelect(e) {
   if (!file) return
   try {
     const fd = new FormData()
-    fd.append('file', file)
+    fd.append('file', await compressImage(file))
     const res = await apiClient.post('/file/upload/image?dateFolder=banners', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
     form.value.imageUrl = res.data.url
   } catch (err) {
@@ -311,7 +312,7 @@ async function onDetailFileSelect(e) {
   for (const file of files) {
     try {
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('file', await compressImage(file))
       const res = await apiClient.post('/file/upload/image?dateFolder=banners', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       form.value.detailImages.push(res.data.url)
     } catch (err) {

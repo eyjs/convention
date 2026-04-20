@@ -42,6 +42,7 @@ export function useBackdropClose(onClose) {
       startPos.value = null
       return
     }
+    if (!e.touches || e.touches.length === 0) return
     const touch = e.touches[0]
     startPos.value = { x: touch.clientX, y: touch.clientY }
   }
@@ -49,6 +50,10 @@ export function useBackdropClose(onClose) {
   const onBackdropTouchEnd = (e) => {
     if (!startPos.value) return
     if (e.target !== e.currentTarget) {
+      startPos.value = null
+      return
+    }
+    if (!e.changedTouches || e.changedTouches.length === 0) {
       startPos.value = null
       return
     }

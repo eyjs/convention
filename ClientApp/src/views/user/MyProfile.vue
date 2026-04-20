@@ -16,6 +16,7 @@
         <div class="px-4 py-6 flex flex-col items-center">
           <div class="relative">
             <img
+              loading="lazy"
               v-if="profile.profileImageUrl"
               :src="profile.profileImageUrl"
               alt="프로필 사진"
@@ -260,6 +261,7 @@ import MainHeader from '@/components/common/MainHeader.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import EditFieldPopup from '@/components/common/EditFieldPopup.vue'
 import apiClient, { userAPI } from '@/services/api'
+import { compressImage } from '@/utils/fileUpload'
 
 const loading = ref(true)
 const profile = ref({})
@@ -455,7 +457,7 @@ async function handleFileChange(event) {
   if (!file) return
 
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('file', await compressImage(file))
 
   try {
     const response = await apiClient.post('/users/profile/photo', formData, {

@@ -59,6 +59,7 @@
             class="w-full overflow-hidden rounded-t-2xl"
           >
             <img
+              loading="lazy"
               :src="config.imageUrl"
               :alt="feature.title"
               class="w-full h-48 object-cover"

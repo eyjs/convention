@@ -174,7 +174,7 @@ async function checkTravelGuide() {
     if (!id) return
     const res = await apiClient.get(`/conventions/${id}/travel-guide`)
     const d = res.data
-    hasTravelGuide.value = !!(d.emergencyContacts || d.meetingPointInfo || d.location)
+    hasTravelGuide.value = !!(d.emergencyContacts || d.meetingPointInfo)
   } catch {
     hasTravelGuide.value = false
   }

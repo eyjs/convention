@@ -40,6 +40,7 @@
             </p>
             <div v-if="tour.images?.length" class="flex gap-1 mt-1">
               <img
+                loading="lazy"
                 v-for="img in tour.images.slice(0, 3)"
                 :key="img.id"
                 :src="img.imageUrl"
@@ -56,7 +57,8 @@
               참석자: {{ tour.participantCount || 0 }}명
             </p>
           </div>
-          <div class="flex gap-2 ml-4 flex-shrink-0">
+          <!-- PC: 가로 버튼 -->
+          <div class="hidden sm:flex gap-2 ml-4 flex-shrink-0">
             <button
               class="px-3 py-1.5 text-sm bg-primary-50 text-primary-600 rounded hover:bg-primary-100"
               @click="viewParticipants(tour)"
@@ -78,6 +80,27 @@
               삭제
             </AdminButton>
           </div>
+        </div>
+        <!-- 모바일: 풀 너비 버튼 -->
+        <div class="flex gap-2 px-4 pb-4 sm:hidden">
+          <button
+            class="flex-1 py-2.5 text-sm bg-primary-50 text-primary-600 rounded-lg active:bg-primary-100 font-medium"
+            @click="viewParticipants(tour)"
+          >
+            참석자
+          </button>
+          <button
+            class="flex-1 py-2.5 text-sm bg-white border rounded-lg active:bg-gray-50 font-medium"
+            @click="openEditModal(tour)"
+          >
+            수정
+          </button>
+          <button
+            class="flex-1 py-2.5 text-sm bg-red-50 text-red-600 rounded-lg active:bg-red-100 font-medium"
+            @click="deleteTour(tour.id)"
+          >
+            삭제
+          </button>
         </div>
       </div>
 
@@ -165,6 +188,7 @@
                 class="relative group"
               >
                 <img
+                  loading="lazy"
                   :src="img.imageUrl"
                   class="w-full h-24 object-cover rounded-lg"
                 />
@@ -346,6 +370,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { Plus } from 'lucide-vue-next'
 import apiClient from '@/services/api'
+import { compressImage } from '@/utils/fileUpload'
 import BaseModal from '@/components/common/BaseModal.vue'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
@@ -594,7 +619,7 @@ const uploadTourImages = async (event) => {
   for (const file of files) {
     try {
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', await compressImage(file))
       const uploadRes = await apiClient.post('/file/upload/image', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })

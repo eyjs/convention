@@ -193,7 +193,7 @@
 
     <!-- 전체 이미지 보기 -->
     <div v-if="fullImageUrl" class="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center" @click="fullImageUrl = null">
-      <img :src="fullImageUrl" class="max-w-full max-h-full object-contain" @click.stop />
+      <img loading="lazy" :src="fullImageUrl" class="max-w-full max-h-full object-contain" @click.stop />
       <button class="absolute top-4 right-4 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center text-xl hover:bg-white/30" @click="fullImageUrl = null">&times;</button>
     </div>
   </div>

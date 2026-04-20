@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4"
   >
     <div>
       <h2 class="text-xl font-semibold text-gray-900">{{ title }}</h2>

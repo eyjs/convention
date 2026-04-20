@@ -19,6 +19,7 @@
 
     <header class="flex justify-center py-8 relative z-10">
       <img
+        loading="lazy"
         src="/images/logo_w.png"
         alt="iFA Logo"
         class="w-28 drop-shadow-lg"

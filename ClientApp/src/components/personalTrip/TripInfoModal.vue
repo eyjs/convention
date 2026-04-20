@@ -59,6 +59,7 @@
               class="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100"
             >
               <img
+                loading="lazy"
                 :src="coverImagePreview"
                 alt="커버 이미지 미리보기"
                 class="w-full h-full object-cover"
@@ -159,6 +160,7 @@ import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import DateRangePicker from '@/components/common/DateRangePicker.vue'
 import CountryCitySearch from '@/components/common/CountryCitySearch.vue'
 import apiClient from '@/services/api'
+import { compressImage } from '@/utils/fileUpload'
 import dayjs from 'dayjs'
 
 const props = defineProps({
@@ -280,7 +282,7 @@ async function uploadCoverImage() {
   if (!coverImageFile.value) return null
 
   const formData = new FormData()
-  formData.append('file', coverImageFile.value)
+  formData.append('file', await compressImage(coverImageFile.value))
 
   try {
     isUploadingImage.value = true

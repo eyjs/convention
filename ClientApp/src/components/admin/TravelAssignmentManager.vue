@@ -123,19 +123,19 @@
         <div class="w-px h-6 bg-gray-300"></div>
 
         <!-- 일괄 입력 -->
-        <div class="flex items-center gap-1.5">
+        <div class="flex flex-wrap items-center gap-x-1.5 gap-y-2">
           <span class="text-xs text-gray-500">일괄:</span>
           <input
             v-model="bulkBus"
             type="text"
             placeholder="호차"
-            class="px-2 py-1.5 border border-gray-300 rounded text-sm w-20"
+            class="px-2 py-1.5 border border-gray-300 rounded text-sm w-full sm:w-20"
           />
           <input
             v-model="bulkHotel"
             type="text"
             placeholder="호텔"
-            class="px-2 py-1.5 border border-gray-300 rounded text-sm w-28"
+            class="px-2 py-1.5 border border-gray-300 rounded text-sm w-full sm:w-28"
           />
           <!-- prettier-ignore -->
           <button

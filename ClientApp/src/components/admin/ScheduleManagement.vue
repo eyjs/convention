@@ -40,15 +40,15 @@
         >
       </AdminPageHeader>
 
-      <!-- 템플릿 필터 버튼 -->
-      <div class="mb-4 overflow-x-auto scrollbar-hide -mx-1 px-1">
-        <div class="flex gap-2 pb-2">
+      <!-- 코스 필터 -->
+      <div class="mt-4 mb-5 bg-gray-100 rounded-xl p-1.5 overflow-x-auto scrollbar-hide">
+        <div class="flex gap-1 min-w-max">
           <button
             :class="[
-              'flex-shrink-0 px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap',
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
               selectedTemplateId === 'all'
-                ? 'bg-primary-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border',
+                ? 'bg-white text-primary-700 shadow-sm'
+                : 'text-gray-500 active:bg-white/50',
             ]"
             @click="selectedTemplateId = 'all'"
           >
@@ -58,10 +58,10 @@
             v-for="template in templates"
             :key="template.id"
             :class="[
-              'flex-shrink-0 px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap',
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
               selectedTemplateId === template.id
-                ? 'bg-primary-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border',
+                ? 'bg-white text-primary-700 shadow-sm'
+                : 'text-gray-500 active:bg-white/50',
             ]"
             @click="selectedTemplateId = template.id"
           >
@@ -77,32 +77,54 @@
           :key="template.id"
           class="bg-white rounded-lg shadow overflow-hidden"
         >
-          <div
-            class="p-4 sm:p-6 border-b bg-gray-50 flex items-center justify-between"
-          >
-            <div class="flex-1">
-              <h3 class="font-semibold text-lg">{{ template.courseName }}</h3>
-              <p class="text-sm text-gray-600">{{ template.description }}</p>
-              <p class="text-xs text-gray-500 mt-1">
-                할당된 참석자: {{ template.guestCount || 0 }}명 | 일정 항목:
-                {{ template.scheduleItems?.length || 0 }}개
-              </p>
+          <div class="p-4 sm:p-6 border-b bg-gray-50">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-lg">{{ template.courseName }}</h3>
+                <p class="text-sm text-gray-600">{{ template.description }}</p>
+                <p class="text-xs text-gray-500 mt-1">
+                  참석자 {{ template.guestCount || 0 }}명 · 일정
+                  {{ template.scheduleItems?.length || 0 }}개
+                </p>
+              </div>
+              <!-- PC: 가로 버튼 -->
+              <div class="hidden sm:flex gap-2 flex-shrink-0">
+                <button
+                  class="px-3 py-1.5 text-sm bg-primary-50 text-primary-600 rounded hover:bg-primary-100"
+                  @click="viewAssignedGuests(template)"
+                >
+                  참석자 보기
+                </button>
+                <button
+                  class="px-3 py-1.5 text-sm bg-white border rounded hover:bg-gray-50"
+                  @click="editTemplate(template)"
+                >
+                  수정
+                </button>
+                <button
+                  class="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100"
+                  @click="deleteTemplate(template.id)"
+                >
+                  삭제
+                </button>
+              </div>
             </div>
-            <div class="flex gap-2">
+            <!-- 모바일: 풀 너비 버튼 -->
+            <div class="flex gap-2 mt-3 sm:hidden">
               <button
-                class="px-3 py-1.5 text-sm bg-primary-50 text-primary-600 rounded hover:bg-primary-100"
+                class="flex-1 py-2 text-sm bg-primary-50 text-primary-600 rounded-lg active:bg-primary-100 font-medium"
                 @click="viewAssignedGuests(template)"
               >
-                참석자 보기
+                참석자
               </button>
               <button
-                class="px-3 py-1.5 text-sm bg-white border rounded hover:bg-gray-50"
+                class="flex-1 py-2 text-sm bg-white border rounded-lg active:bg-gray-50 font-medium"
                 @click="editTemplate(template)"
               >
                 수정
               </button>
               <button
-                class="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100"
+                class="flex-1 py-2 text-sm bg-red-50 text-red-600 rounded-lg active:bg-red-100 font-medium"
                 @click="deleteTemplate(template.id)"
               >
                 삭제
@@ -141,6 +163,7 @@
                   </p>
                   <div v-if="item.images?.length" class="flex gap-1 mt-1">
                     <img
+                      loading="lazy"
                       v-for="img in item.images.slice(0, 3)"
                       :key="img.id"
                       :src="img.imageUrl"
@@ -154,16 +177,16 @@
                     </span>
                   </div>
                 </div>
-                <div class="flex gap-1">
+                <div class="flex gap-1 flex-shrink-0">
                   <button
-                    class="p-2 hover:bg-gray-200 rounded min-w-[36px] min-h-[36px] flex items-center justify-center"
+                    class="p-2.5 hover:bg-gray-200 active:bg-gray-300 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
                     title="수정"
                     @click="editScheduleItem(template, item)"
                   >
                     <Pencil class="w-4 h-4" />
                   </button>
                   <button
-                    class="p-1.5 hover:bg-red-100 text-red-600 rounded"
+                    class="p-2.5 hover:bg-red-100 active:bg-red-200 text-red-600 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
                     title="삭제"
                     @click="deleteScheduleItem(item.id)"
                   >
@@ -357,6 +380,7 @@
                   class="relative group"
                 >
                   <img
+                    loading="lazy"
                     :src="img.imageUrl"
                     class="w-full h-24 object-cover rounded-lg"
                   />
@@ -374,6 +398,7 @@
                   class="relative group"
                 >
                   <img
+                    loading="lazy"
                     :src="pf.preview"
                     class="w-full h-24 object-cover rounded-lg opacity-70"
                   />
@@ -580,6 +605,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { Pencil, Trash2, Copy, Plus } from 'lucide-vue-next'
 import apiClient from '@/services/api'
+import { compressImage } from '@/utils/fileUpload'
 import BaseModal from '@/components/common/BaseModal.vue'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
@@ -952,7 +978,7 @@ const handleImageSelect = async (event) => {
     for (const file of files) {
       try {
         const formData = new FormData()
-        formData.append('file', file)
+        formData.append('file', await compressImage(file))
         const uploadRes = await apiClient.post('/file/upload/image', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         })
@@ -989,7 +1015,7 @@ const uploadPendingImages = async (itemId) => {
   for (const pf of pendingFiles.value) {
     try {
       const formData = new FormData()
-      formData.append('file', pf.file)
+      formData.append('file', await compressImage(pf.file))
       const uploadRes = await apiClient.post('/file/upload/image', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })

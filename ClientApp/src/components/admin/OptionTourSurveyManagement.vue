@@ -65,60 +65,110 @@
             >새 옵션투어 설문</AdminButton
           >
         </AdminEmptyState>
-        <AdminTable
-          v-else
-          :columns="tableColumns"
-          :loading="loading"
-          :empty="filteredSurveys.length === 0"
-        >
-          <tr
-            v-for="survey in filteredSurveys"
-            :key="survey.id"
-            class="hover:bg-gray-50"
-          >
-            <td
-              class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+        <!-- 목록 (모바일 카드 + 데스크탑 테이블) -->
+        <div v-else>
+          <!-- 모바일 카드 뷰 (sm 미만) -->
+          <div class="sm:hidden space-y-3">
+            <div
+              v-for="survey in filteredSurveys"
+              :key="survey.id"
+              class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
             >
-              {{ survey.title }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <AdminBadge :variant="getSurveyStatusVariant(survey)">
-                {{ getSurveyStatusLabel(survey) }}
-              </AdminBadge>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ survey.responseCount ?? 0 }}명
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ formatDateRange(survey) }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ formatDate(survey.createdAt) }}
-            </td>
-            <td
-              class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3"
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <span class="font-medium text-gray-900 text-sm leading-snug">{{
+                  survey.title
+                }}</span>
+                <AdminBadge
+                  :variant="getSurveyStatusVariant(survey)"
+                  class="shrink-0"
+                >
+                  {{ getSurveyStatusLabel(survey) }}
+                </AdminBadge>
+              </div>
+              <div class="text-xs text-gray-500 space-y-1 mb-3">
+                <p>{{ formatDateRange(survey) }}</p>
+                <p>참석자 {{ survey.responseCount ?? 0 }}명</p>
+              </div>
+              <div class="flex gap-3 text-sm font-medium">
+                <button
+                  class="text-primary-600 hover:text-primary-900"
+                  @click="showEditView(survey.id)"
+                >
+                  수정
+                </button>
+                <button
+                  class="text-green-600 hover:text-green-900"
+                  @click="showStatsView(survey.id)"
+                >
+                  통계
+                </button>
+                <button
+                  class="text-red-600 hover:text-red-900"
+                  @click="confirmDeleteSurvey(survey)"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 데스크탑 테이블 뷰 (sm 이상) -->
+          <div class="hidden sm:block">
+            <AdminTable
+              :columns="tableColumns"
+              :loading="loading"
+              :empty="filteredSurveys.length === 0"
             >
-              <button
-                class="text-primary-600 hover:text-primary-900"
-                @click="showEditView(survey.id)"
+              <tr
+                v-for="survey in filteredSurveys"
+                :key="survey.id"
+                class="hover:bg-gray-50"
               >
-                수정
-              </button>
-              <button
-                class="text-green-600 hover:text-green-900"
-                @click="showStatsView(survey.id)"
-              >
-                통계
-              </button>
-              <button
-                class="text-red-600 hover:text-red-900"
-                @click="confirmDeleteSurvey(survey)"
-              >
-                삭제
-              </button>
-            </td>
-          </tr>
-        </AdminTable>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                >
+                  {{ survey.title }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <AdminBadge :variant="getSurveyStatusVariant(survey)">
+                    {{ getSurveyStatusLabel(survey) }}
+                  </AdminBadge>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ survey.responseCount ?? 0 }}명
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ formatDateRange(survey) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ formatDate(survey.createdAt) }}
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3"
+                >
+                  <button
+                    class="text-primary-600 hover:text-primary-900"
+                    @click="showEditView(survey.id)"
+                  >
+                    수정
+                  </button>
+                  <button
+                    class="text-green-600 hover:text-green-900"
+                    @click="showStatsView(survey.id)"
+                  >
+                    통계
+                  </button>
+                  <button
+                    class="text-red-600 hover:text-red-900"
+                    @click="confirmDeleteSurvey(survey)"
+                  >
+                    삭제
+                  </button>
+                </td>
+              </tr>
+            </AdminTable>
+          </div>
+        </div>
       </div>
     </div>
 

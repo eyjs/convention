@@ -19,6 +19,7 @@
       class="w-full h-48 overflow-hidden rounded-t-lg"
     >
       <img
+        loading="lazy"
         :src="config.imageUrl"
         :alt="feature.title"
         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
