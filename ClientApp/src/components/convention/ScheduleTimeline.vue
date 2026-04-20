@@ -389,6 +389,8 @@ async function loadSchedules() {
     participants: item.participantCount || 0,
     images: item.images || [],
     seatingLayoutId: item.seatingLayoutId || null,
+    visibleAttributes: item.visibleAttributes || null,
+    mapUrl: item.mapUrl || null,
   }))
   const toursRes = await apiClient.get(`/user-schedules/${userId}/${props.conventionId}/option-tours`)
   allOptionTours.value = toursRes.data || []
