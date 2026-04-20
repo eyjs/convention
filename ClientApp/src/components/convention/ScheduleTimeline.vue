@@ -50,48 +50,77 @@
         <p class="text-gray-400 text-sm mt-2">새로운 일정이 추가되면 여기에 표시됩니다</p>
       </div>
 
-      <div v-for="dateGroup in groupedSchedules" :key="dateGroup.date" class="space-y-3">
-        <div class="flex items-center justify-between px-2">
-          <h2 class="text-sm font-bold text-gray-900">{{ formatDateHeader(dateGroup.date) }}</h2>
-          <span class="text-xs text-gray-500">{{ dateGroup.schedules.length }}개 일정</span>
-        </div>
-        <div class="relative">
-          <div class="absolute top-0 bottom-0 w-px bg-gray-200" style="left: 5px"></div>
+      <div v-for="dateGroup in groupedSchedules" :key="dateGroup.date">
+        <!-- 날짜 구분선 -->
+        <div class="text-xs font-medium text-gray-400 mb-1.5 px-0.5">{{ formatDateHeader(dateGroup.date) }}</div>
+        <!-- 카드 래퍼 -->
+        <div class="bg-white rounded-xl border border-black/[0.07] overflow-hidden mb-3">
           <div
             v-for="(schedule, idx) in dateGroup.schedules"
             :key="schedule.id"
             :ref="(el) => { if (currentSchedule?.id === schedule.id) currentScheduleRef = el }"
-            class="flex items-center gap-3 cursor-pointer"
-            :class="[idx < dateGroup.schedules.length - 1 ? 'mb-3' : '', isPastSchedule(schedule) ? 'opacity-40' : '']"
+            class="flex items-stretch cursor-pointer transition-colors active:brightness-[0.96]"
+            :class="[
+              idx < dateGroup.schedules.length - 1 ? 'border-b border-black/[0.05]' : '',
+              isPastSchedule(schedule) ? 'opacity-30' : '',
+              currentSchedule?.id === schedule.id ? 'bg-emerald-50/50' : '',
+            ]"
             @click="emit('schedule-click', schedule)"
           >
-            <!-- bullet -->
-            <div class="w-2.5 h-2.5 rounded-full border-2 flex-shrink-0 z-10" :style="{ borderColor: props.brandColor, backgroundColor: currentSchedule?.id === schedule.id ? props.brandColor : '#fff' }"></div>
-            <!-- 카드 -->
-            <div
-              class="flex-1 min-w-0 rounded-xl transition-all overflow-hidden"
-              :class="currentSchedule?.id === schedule.id ? 'shadow-md ring-1' : 'bg-white shadow-sm hover:shadow-md'"
-              :style="currentSchedule?.id === schedule.id ? { backgroundColor: props.brandColor + '08', '--tw-ring-color': props.brandColor + '30' } : {}"
-            >
-              <div class="p-3.5">
-                <div class="flex items-center gap-1 mb-1.5">
-                  <span class="text-xs font-bold" :style="{ color: props.brandColor }">{{ schedule.startTime }}</span>
-                  <span v-if="schedule.endTime" class="text-xs text-gray-400"> — {{ schedule.endTime }}</span>
-                </div>
-                <div class="flex items-center justify-between gap-2 mb-1">
-                  <h3 class="font-bold text-gray-900 text-sm truncate flex-1">{{ schedule.title }}</h3>
-                  <span v-if="schedule.isOptionTour" class="px-2 py-0.5 rounded-md text-xs font-medium text-white flex-shrink-0" :style="{ backgroundColor: props.brandColor }">옵션투어</span>
-                </div>
-                <p v-if="schedule.description" class="text-xs text-gray-500 line-clamp-2 leading-relaxed whitespace-pre-line">{{ stripHtml(schedule.description) }}</p>
-                <div v-if="schedule.location" class="flex items-center gap-1 text-xs text-gray-400 mt-1.5">
-                  <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  <span>{{ schedule.location }}</span>
-                </div>
+            <!-- 시간 컬럼 -->
+            <div class="w-[42px] flex-shrink-0 pt-2.5 pl-3">
+              <span
+                class="text-[11px]"
+                :class="currentSchedule?.id === schedule.id ? 'font-medium' : 'text-gray-400'"
+                :style="currentSchedule?.id === schedule.id ? { color: '#0F6E56' } : {}"
+              >{{ schedule.startTime }}</span>
+            </div>
+            <!-- 도트 + 세로라인 -->
+            <div class="w-4 flex-shrink-0 flex flex-col items-center pt-1">
+              <div
+                class="w-2 h-2 rounded-full flex-shrink-0 mt-1.5"
+                :class="[
+                  currentSchedule?.id === schedule.id ? '' : isPastSchedule(schedule) ? '' : '',
+                ]"
+                :style="{
+                  backgroundColor: currentSchedule?.id === schedule.id ? '#1D9E75'
+                    : isPastSchedule(schedule) ? '#b8dac8' : '#d4d2ca'
+                }"
+              ></div>
+              <div
+                v-if="idx < dateGroup.schedules.length - 1"
+                class="w-[1.5px] flex-1 mt-1"
+                :style="{
+                  backgroundColor: isPastSchedule(schedule) ? '#b8dac8' : 'rgba(0,0,0,0.07)'
+                }"
+              ></div>
+            </div>
+            <!-- 콘텐츠 -->
+            <div class="flex-1 py-2.5 pr-3 min-w-0">
+              <div
+                class="text-[13px] font-medium leading-tight"
+                :class="currentSchedule?.id === schedule.id ? '' : 'text-gray-900'"
+                :style="currentSchedule?.id === schedule.id ? { color: '#085041' } : {}"
+              >{{ schedule.title }}</div>
+              <div v-if="schedule.location" class="text-[11px] text-gray-400 mt-0.5">
+                <span class="text-emerald-600">{{ schedule.location }}</span>
               </div>
-              <div v-if="schedule.images?.length" class="px-3.5 pb-3 pt-2.5 mt-1 border-t border-gray-100 grid grid-cols-3 gap-1.5">
-                <!-- prettier-ignore -->
-                <img v-for="img in schedule.images.slice(0, 3)" :key="img.id" :src="img.imageUrl" class="w-full h-16 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity" @click.stop="openFullImage(img.imageUrl)" />
-              </div>
+              <!-- 배정 뱃지 -->
+              <AssignmentBadges
+                v-if="getScheduleBadges(schedule).length > 0"
+                :attributes="getScheduleBadges(schedule)"
+                class="mt-1"
+              />
+              <!-- 옵션투어 뱃지 -->
+              <span
+                v-if="schedule.isOptionTour"
+                class="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-white"
+                :style="{ backgroundColor: props.brandColor }"
+              >옵션투어</span>
+            </div>
+            <!-- 화살표 -->
+            <div class="flex items-center pr-3 opacity-20 flex-shrink-0">
+              <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
           </div>
         </div>
@@ -143,6 +172,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
 import apiClient from '@/services/api'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
+import AssignmentBadges from '@/components/convention/AssignmentBadges.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
@@ -297,6 +327,12 @@ function stripHtml(html) {
 }
 
 function openFullImage(url) { fullImageUrl.value = url }
+
+function getScheduleBadges(schedule) {
+  if (!schedule.visibleAttributes || !props.attributes?.length) return []
+  const keys = schedule.visibleAttributes.split(',').map((k) => k.trim()).filter(Boolean)
+  return props.attributes.filter((a) => keys.includes(a.key))
+}
 function selectCalendarDay(day) { selectedDate.value = day.date; showCalendarView.value = false }
 
 function changeMonth(direction) {

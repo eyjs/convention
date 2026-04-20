@@ -27,10 +27,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-gray-900 truncate">
-                {{ myInfo.name || '-' }}
+                {{ myInfo.profile?.name || '-' }}
               </div>
-              <div v-if="myInfo.role" class="text-xs text-gray-400">
-                {{ myInfo.role }}
+              <div v-if="myInfo.profile?.corpName || myInfo.profile?.affiliation" class="text-xs text-gray-400">
+                {{ myInfo.profile?.corpName || myInfo.profile?.affiliation }}
               </div>
             </div>
           </div>
@@ -126,34 +126,39 @@
       </section>
 
       <!-- 섹션 2: 내 배정 정보 -->
-      <section v-if="hasAttributes" class="mx-3">
+      <section class="mx-3">
         <p class="text-xs font-medium text-gray-400 mb-2 px-1">내 배정 정보</p>
         <div
           class="bg-white rounded-xl border border-black/[0.07] overflow-hidden shadow-sm"
         >
-          <div class="grid grid-cols-2">
-            <div
-              v-for="(attr, index) in myInfo.attributes"
-              :key="attr.key"
-              class="px-4 py-3 border-b border-black/[0.05]"
-              :class="[
-                index % 2 === 0 ? 'border-r border-black/[0.05]' : '',
-              ]"
-            >
+          <template v-if="hasAttributes">
+            <div class="grid grid-cols-2">
               <div
-                class="text-[11px] mb-1"
-                :style="{ color: palette(index).text }"
+                v-for="(attr, index) in myInfo.attributes"
+                :key="attr.key"
+                class="px-4 py-3 border-b border-black/[0.05]"
+                :class="[
+                  index % 2 === 0 ? 'border-r border-black/[0.05]' : '',
+                ]"
               >
-                {{ attr.key }}
+                <div
+                  class="text-[11px] mb-1"
+                  :style="{ color: palette(index).text }"
+                >
+                  {{ attr.key }}
+                </div>
+                <div
+                  v-if="attr.value"
+                  class="text-sm font-semibold text-gray-900"
+                >
+                  {{ attr.value }}
+                </div>
+                <div v-else class="text-sm text-gray-400">미배정</div>
               </div>
-              <div
-                v-if="attr.value"
-                class="text-sm font-semibold text-gray-900"
-              >
-                {{ attr.value }}
-              </div>
-              <div v-else class="text-sm text-gray-400">미배정</div>
             </div>
+          </template>
+          <div v-else class="px-4 py-6 text-center text-sm text-gray-400">
+            등록된 배정 정보가 없습니다
           </div>
         </div>
       </section>
