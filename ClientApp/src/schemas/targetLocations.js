@@ -37,10 +37,9 @@ export const TARGET_LOCATIONS = [
   },
   {
     key: 'SCHEDULE_CONTENT_TOP',
-    displayName: 'My Schedule: Below Date Filter',
-    description:
-      '"나의 일정" 페이지의 가로 날짜 선택기 아래에 기능이 추가됩니다.',
-    page: 'MySchedule.vue',
+    displayName: 'Home: Below Date Filter (Timeline)',
+    description: '홈 화면의 타임라인 날짜 선택기 아래에 기능이 추가됩니다.',
+    page: 'ConventionHome.vue (ScheduleTimeline)',
     allowedCategories: ['BUTTON', 'BANNER', 'CARD'],
   },
   {

@@ -95,9 +95,9 @@ const routes = [
       },
       {
         path: 'schedule',
-        name: 'MySchedule',
-        component: () => import('@/views/MySchedule.vue'),
-        meta: { title: '나의일정', showNav: true },
+        redirect: (to) => ({
+          path: `/conventions/${to.params.conventionId}`,
+        }),
       },
       {
         path: 'notices',
