@@ -52,47 +52,52 @@
       <div v-for="dateGroup in groupedSchedules" :key="dateGroup.date" class="mb-2">
         <!-- 날짜 구분선 -->
         <div class="mx-3 mt-2 mb-1.5 text-[12px] font-medium text-gray-400 px-0.5">{{ formatDateHeader(dateGroup.date) }}</div>
-        <!-- 타임라인: 시간+불릿(좌) | 카드(우) -->
-        <div class="mx-3 relative">
-          <!-- 세로 연결선 (날짜 그룹 전체 관통) -->
-          <div
-            class="absolute w-[1.5px] bg-black/[0.07]"
-            :style="{ left: '45.25px', top: '0', bottom: '0' }"
-          ></div>
+        <!-- 타임라인: 시간(좌) | 불릿+점선(중) | 카드(우) -->
+        <div class="mx-3">
           <div
             v-for="(schedule, idx) in dateGroup.schedules"
             :key="schedule.id"
             :ref="(el) => { if (currentSchedule?.id === schedule.id) currentScheduleRef = el }"
-            class="flex items-center cursor-pointer relative"
+            class="flex gap-3 cursor-pointer"
             :class="[isPastSchedule(schedule) ? 'opacity-[0.32]' : '']"
             @click="emit('schedule-click', schedule)"
           >
-            <!-- 좌측: 시간 + 불릿 (카드 세로 가운데 정렬) -->
-            <div class="flex items-center flex-shrink-0">
-              <!-- 시간 -->
-              <div class="w-[38px] text-center">
-                <span
-                  class="text-[11px]"
-                  :class="currentSchedule?.id === schedule.id ? 'font-medium' : 'text-gray-400'"
-                  :style="currentSchedule?.id === schedule.id ? { color: '#0F6E56' } : {}"
-                >{{ schedule.startTime }}</span>
-              </div>
-              <!-- 불릿 (z-10으로 세로선 위에) -->
-              <div class="w-[16px] flex justify-center">
-                <div
-                  class="rounded-full z-10"
-                  :class="currentSchedule?.id === schedule.id ? 'w-[10px] h-[10px]' : 'w-[8px] h-[8px]'"
-                  :style="{
-                    backgroundColor: currentSchedule?.id === schedule.id ? '#1D9E75'
-                      : isPastSchedule(schedule) ? '#b8dac8' : '#d4d2ca'
-                  }"
-                ></div>
-              </div>
+            <!-- 시간 -->
+            <div class="w-[36px] flex-shrink-0 pt-[38px] text-right">
+              <span
+                class="text-[11px]"
+                :class="currentSchedule?.id === schedule.id ? 'font-medium' : 'text-gray-400'"
+                :style="currentSchedule?.id === schedule.id ? { color: '#0F6E56' } : {}"
+              >{{ schedule.startTime }}</span>
             </div>
-            <!-- 우측: 콘텐츠 카드 -->
+            <!-- 불릿 + 점선 -->
+            <div class="relative flex-shrink-0 w-3 flex flex-col items-center">
+              <!-- 위쪽 점선 (첫 아이템 제외) -->
+              <div
+                v-if="idx > 0"
+                class="absolute top-0 left-1/2 -translate-x-1/2 h-[38px]"
+                :style="{ width: '0px', borderRight: isPastSchedule(schedule) ? '1px dashed rgba(184,218,200,0.8)' : '1px dashed rgba(23,177,133,0.4)' }"
+              ></div>
+              <!-- 불릿 -->
+              <div
+                class="relative z-10 rounded-full flex-shrink-0 mt-[34px]"
+                :class="currentSchedule?.id === schedule.id ? 'w-3 h-3' : 'w-2.5 h-2.5'"
+                :style="{
+                  backgroundColor: currentSchedule?.id === schedule.id ? '#17B185'
+                    : isPastSchedule(schedule) ? '#b8dac8' : '#17B185'
+                }"
+              ></div>
+              <!-- 아래쪽 점선 (마지막 아이템 제외) -->
+              <div
+                v-if="idx < dateGroup.schedules.length - 1"
+                class="absolute top-[48px] bottom-0 left-1/2 -translate-x-1/2"
+                :style="{ width: '0px', borderRight: isPastSchedule(schedule) ? '1px dashed rgba(184,218,200,0.8)' : '1px dashed rgba(23,177,133,0.4)' }"
+              ></div>
+            </div>
+            <!-- 콘텐츠 카드 -->
             <div
-              class="flex-1 min-w-0 ml-[5px] mb-1.5 min-h-[100px] rounded-xl px-3.5 py-3 active:brightness-[0.96] flex flex-col justify-center"
-              :class="currentSchedule?.id === schedule.id ? 'bg-[#f3fbf7]' : 'bg-white border border-black/[0.07]'"
+              class="flex-1 min-w-0 mb-2 min-h-[80px] rounded-xl px-3.5 py-3 active:brightness-[0.96] flex flex-col justify-center"
+              :class="currentSchedule?.id === schedule.id ? 'bg-[#f3fbf7] border border-emerald-200' : 'bg-white border border-black/[0.07]'"
             >
               <div class="flex items-start justify-between gap-1">
                 <div class="flex-1 min-w-0">
