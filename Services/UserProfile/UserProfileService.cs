@@ -591,8 +591,14 @@ public class UserProfileService : IUserProfileService
             })
             .ToList();
 
-        // 게스트 속성은 관리자 전용 메타데이터 — 일반 사용자 응답에서 제외
-        var attributes = new List<object>();
+        // 게스트 속성 — 사용자 배정 정보 표시용 (더보기 화면 + 타임라인 뱃지)
+        var attributes = user.GuestAttributes
+            .Select(ga => new
+            {
+                key = ga.AttributeKey,
+                value = ga.AttributeValue
+            })
+            .ToList();
 
         // 설문조사 상태 — 기간 내 + 활성 상태만 (KST 기준)
         var kstNow = TimeZoneInfo.ConvertTimeFromUtc(

@@ -156,7 +156,7 @@ public class UploadController : ControllerBase
     }
 
     /// <summary>
-    /// 미리보기 확인 후 일정 템플릿 최종 저장
+    /// 미리보기 확인 후 단일 시트 최종 저장 (기존 호환)
     /// </summary>
     [HttpPost("conventions/{conventionId}/schedule-templates/confirm")]
     [ProducesResponseType(typeof(ScheduleTemplateUploadResult), 200)]
@@ -171,6 +171,26 @@ public class UploadController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to confirm schedule templates");
+            return StatusCode(500, new { error = "저장 중 오류가 발생했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 멀티시트 미리보기 확인 후 전체 시트 일괄 저장
+    /// </summary>
+    [HttpPost("conventions/{conventionId}/schedule-templates/confirm-multi")]
+    [ProducesResponseType(typeof(ScheduleTemplateUploadResult), 200)]
+    public async Task<IActionResult> ConfirmMultiSheetSchedules(int conventionId, [FromBody] DTOs.UploadModels.MultiSheetConfirmRequest request)
+    {
+        try
+        {
+            var result = await _scheduleTemplateUploadService.ConfirmMultiSheetAsync(conventionId, request);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to confirm multi-sheet schedule templates");
             return StatusCode(500, new { error = "저장 중 오류가 발생했습니다." });
         }
     }
@@ -315,6 +335,8 @@ public class UploadController : ControllerBase
 
     /// <summary>
     /// 현재 참석자 목록 다운로드 (업로드 형식과 동일)
+    /// 시트1: 참석자 (고정 7컬럼 + 가변 속성 컬럼)
+    /// 시트2: 그룹-일정매핑
     /// </summary>
     [HttpGet("conventions/{conventionId}/guests/download")]
     public async Task<IActionResult> DownloadGuests(int conventionId)
@@ -324,12 +346,20 @@ public class UploadController : ControllerBase
         var guests = await _unitOfWork.UserConventions.Query
             .Where(uc => uc.ConventionId == conventionId)
             .Include(uc => uc.User)
+                .ThenInclude(u => u.GuestAttributes)
             .OrderBy(uc => uc.GroupName).ThenBy(uc => uc.User.Name)
             .ToListAsync();
 
+        // 이 행사 참석자들의 모든 속성 키 수집 (정렬)
+        var allAttributeKeys = guests
+            .SelectMany(uc => uc.User.GuestAttributes.Select(a => a.AttributeKey))
+            .Distinct()
+            .OrderBy(k => k)
+            .ToList();
+
         using var package = new ExcelPackage();
 
-        // ===== 시트1: 참석자 (업로드 파서와 동일한 컬럼) =====
+        // ===== 시트1: 참석자 (고정 7컬럼 + 가변 속성 컬럼) =====
         var sheet1 = package.Workbook.Worksheets.Add("참석자");
         sheet1.Cells[1, 1].Value = "번호";
         sheet1.Cells[1, 2].Value = "소속/부서";
@@ -338,6 +368,12 @@ public class UploadController : ControllerBase
         sheet1.Cells[1, 5].Value = "전화번호";
         sheet1.Cells[1, 6].Value = "그룹명";
         sheet1.Cells[1, 7].Value = "비고";
+
+        // 가변 속성 헤더 (8번째 컬럼~)
+        for (int i = 0; i < allAttributeKeys.Count; i++)
+        {
+            sheet1.Cells[1, 8 + i].Value = allAttributeKeys[i];
+        }
 
         var row = 2;
         var seq = 1;
@@ -351,6 +387,15 @@ public class UploadController : ControllerBase
             sheet1.Cells[row, 5].Value = u.Phone;
             sheet1.Cells[row, 6].Value = uc.GroupName;
             sheet1.Cells[row, 7].Value = u.Remarks;
+
+            // 가변 속성 값
+            var attrDict = u.GuestAttributes.ToDictionary(a => a.AttributeKey, a => a.AttributeValue);
+            for (int i = 0; i < allAttributeKeys.Count; i++)
+            {
+                attrDict.TryGetValue(allAttributeKeys[i], out var attrVal);
+                sheet1.Cells[row, 8 + i].Value = attrVal;
+            }
+
             row++;
         }
         sheet1.Cells[sheet1.Dimension?.Address ?? "A1"].AutoFitColumns();
@@ -359,6 +404,7 @@ public class UploadController : ControllerBase
         var sheet2 = package.Workbook.Worksheets.Add("그룹-일정매핑");
         sheet2.Cells[1, 1].Value = "그룹명";
         sheet2.Cells[1, 2].Value = "일정코스명";
+        sheet2.Cells[1, 3].Value = "코스설명";
 
         // 현재 행사의 그룹별 코스 배정 조회
         var groupCourseMappings = await _unitOfWork.UserConventions.Query
@@ -372,7 +418,8 @@ public class UploadController : ControllerBase
                 .Select(gst => new
                 {
                     GroupName = uc.GroupName!,
-                    CourseName = gst.ScheduleTemplate!.CourseName
+                    CourseName = gst.ScheduleTemplate!.CourseName,
+                    Description = gst.ScheduleTemplate!.Description
                 }))
             .Distinct()
             .OrderBy(x => x.GroupName).ThenBy(x => x.CourseName)
@@ -383,6 +430,7 @@ public class UploadController : ControllerBase
         {
             sheet2.Cells[row2, 1].Value = m.GroupName;
             sheet2.Cells[row2, 2].Value = m.CourseName;
+            sheet2.Cells[row2, 3].Value = m.Description;
             row2++;
         }
         sheet2.Cells[sheet2.Dimension?.Address ?? "A1"].AutoFitColumns();
@@ -419,8 +467,10 @@ public class UploadController : ControllerBase
             sheet.Cells[1, 2].Value = "시작시간";
             sheet.Cells[1, 3].Value = "종료시간";
             sheet.Cells[1, 4].Value = "장소";
-            sheet.Cells[1, 5].Value = "일정명";
-            sheet.Cells[1, 6].Value = "메모";
+            sheet.Cells[1, 5].Value = "지도링크";
+            sheet.Cells[1, 6].Value = "일정명";
+            sheet.Cells[1, 7].Value = "내용";
+            sheet.Cells[1, 8].Value = "노출_개인정보";
 
             var row = 2;
             foreach (var item in template.ScheduleItems.OrderBy(i => i.ScheduleDate).ThenBy(i => i.OrderNum))
@@ -429,8 +479,10 @@ public class UploadController : ControllerBase
                 sheet.Cells[row, 2].Value = item.StartTime;
                 sheet.Cells[row, 3].Value = item.EndTime;
                 sheet.Cells[row, 4].Value = item.Location;
-                sheet.Cells[row, 5].Value = item.Title;
-                sheet.Cells[row, 6].Value = item.Content;
+                sheet.Cells[row, 5].Value = null; // 지도링크 (엔티티 미지원)
+                sheet.Cells[row, 6].Value = item.Title;
+                sheet.Cells[row, 7].Value = item.Content;
+                sheet.Cells[row, 8].Value = item.VisibleAttributes;
                 row++;
             }
 

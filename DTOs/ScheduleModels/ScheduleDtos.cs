@@ -21,6 +21,7 @@ public class ScheduleItemDto
     public int ParticipantCount { get; set; }
     public List<ScheduleImageDto>? Images { get; set; }
     public int? SeatingLayoutId { get; set; }
+    public string? VisibleAttributes { get; set; }
 }
 
 public class ScheduleImageDto

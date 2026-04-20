@@ -12,9 +12,11 @@ namespace LocalRAG.Services.Upload;
 
 /// <summary>
 /// 사용자 업로드 서비스
-/// 시트1: 참석자 [소속|부서|이름|주민번호|전화번호|그룹|비고]
-/// 시트2: 그룹-일정 매핑 [그룹명|일정코스명] (선택)
-/// 시트3: 속성 [속성1|속성2|...] — 시트1과 같은 행 = 같은 사람 (선택)
+/// 시트1: 참석자 [번호|소속|이름|주민번호|전화번호|그룹명|비고|속성1|속성2|...] (가변 컬럼)
+///   - 1~7열: 고정 컬럼 (번호, 소속, 이름, 주민번호, 전화번호, 그룹명, 비고)
+///   - 8열~: 가변 속성 컬럼 (헤더=AttributeKey, 값=AttributeValue)
+///   - 첫 번째 셀이 '※'로 시작하는 행은 안내 행으로 스킵
+/// 시트2: 그룹-일정 매핑 [그룹명|일정코스명|코스설명] (선택)
 /// </summary>
 public class UserUploadService : IUserUploadService
 {
@@ -60,8 +62,21 @@ public class UserUploadService : IUserUploadService
             }
 
             var rowCount = sheet.Dimension.Rows;
+            var colCount = sheet.Dimension.Columns;
 
-            _logger.LogInformation("Processing {RowCount} rows from Excel", rowCount);
+            // 가변 속성 컬럼 헤더 파싱 (8번째 컬럼부터)
+            var attributeHeaders = new List<string>();
+            for (int col = 8; col <= colCount; col++)
+            {
+                var header = sheet.Cells[1, col].Text?.Trim();
+                if (!string.IsNullOrEmpty(header))
+                {
+                    attributeHeaders.Add(header);
+                }
+            }
+
+            _logger.LogInformation("Processing {RowCount} rows from Excel, {AttrCount} attribute columns",
+                rowCount, attributeHeaders.Count);
 
             // ===== 교체 모드: 기존 convention 종속 데이터 삭제 =====
             // User 레코드와 GuestAttribute는 유지 (User 단위 개인 정보)
@@ -113,11 +128,21 @@ public class UserUploadService : IUserUploadService
             // 시트1 처리 후 행별 UserId 매핑 (시트2/3에서 사용)
             var rowUserMap = new Dictionary<int, int>(); // excelRow -> userId
             var rowNewUserMap = new Dictionary<int, User>(); // excelRow -> 신규 User 객체 (SaveChanges 후 Id 할당)
+            // 가변 속성 컬럼 임시 저장 (row -> (key, value) 목록)
+            var rowAttributesMap = new Dictionary<int, List<(string Key, string Value)>>();
 
             try
             {
                 for (int row = 2; row <= rowCount; row++)
                 {
+                    // 첫 번째 셀이 '※'로 시작하면 안내 행 스킵
+                    var firstCell = sheet.Cells[row, 1].Text?.Trim() ?? string.Empty;
+                    if (firstCell.StartsWith("※"))
+                    {
+                        _logger.LogDebug("Skipping notice row {Row}: {Content}", row, firstCell);
+                        continue;
+                    }
+
                     var corpPart = sheet.Cells[row, 2].Text?.Trim();
                     var userName = sheet.Cells[row, 3].Text?.Trim();
                     var residentNumber = sheet.Cells[row, 4].Text?.Trim();
@@ -261,6 +286,24 @@ public class UserUploadService : IUserUploadService
 
                         _logger.LogDebug("Created user: {UserName} with LoginId: {LoginId} (Row {Row})", userName, loginId, row);
                     }
+
+                    // 가변 속성 컬럼 수집 (8번째 컬럼부터)
+                    if (attributeHeaders.Count > 0)
+                    {
+                        var attrs = new List<(string Key, string Value)>();
+                        for (int col = 8; col <= colCount && (col - 8) < attributeHeaders.Count; col++)
+                        {
+                            var attrValue = sheet.Cells[row, col].Text?.Trim();
+                            if (!string.IsNullOrEmpty(attrValue))
+                            {
+                                attrs.Add((attributeHeaders[col - 8], attrValue));
+                            }
+                        }
+                        if (attrs.Count > 0)
+                        {
+                            rowAttributesMap[row] = attrs;
+                        }
+                    }
                 }
 
                 await _unitOfWork.SaveChangesAsync();
@@ -271,9 +314,16 @@ public class UserUploadService : IUserUploadService
                     rowUserMap[row] = newUser.Id;
                 }
 
+                // 가변 속성 컬럼 저장 (userId 확정 후)
+                if (rowAttributesMap.Count > 0)
+                {
+                    await ProcessInlineAttributesAsync(rowAttributesMap, rowUserMap, result);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+
                 result.Success = true;
-                _logger.LogInformation("User upload completed: {Created} created, {Updated} updated",
-                    result.UsersCreated, result.UsersUpdated);
+                _logger.LogInformation("User upload completed: {Created} created, {Updated} updated, {AttrCreated} attrs created, {AttrUpdated} attrs updated",
+                    result.UsersCreated, result.UsersUpdated, result.AttributesCreated, result.AttributesUpdated);
             }
             catch (Exception ex)
             {
@@ -318,7 +368,7 @@ public class UserUploadService : IUserUploadService
 
     /// <summary>
     /// 시트2: 그룹-일정코스 매핑
-    /// 형식: A열=그룹명, B열=일정코스명
+    /// 형식: A열=그룹명, B열=일정코스명, C열=코스설명 (선택)
     /// </summary>
     private async Task ProcessScheduleMappingSheet(int conventionId, ExcelWorksheet sheet, UserUploadResult result)
     {
@@ -536,6 +586,59 @@ public class UserUploadService : IUserUploadService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Attribute processing failed");
+            result.AttributeWarnings.Add($"속성 처리 중 오류: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 시트1의 가변 속성 컬럼(8번째~)에서 수집된 속성을 GuestAttribute로 저장
+    /// SaveChanges 전 호출 — 호출 측에서 SaveChangesAsync 수행
+    /// </summary>
+    private async Task ProcessInlineAttributesAsync(
+        Dictionary<int, List<(string Key, string Value)>> rowAttributesMap,
+        Dictionary<int, int> rowUserMap,
+        UserUploadResult result)
+    {
+        try
+        {
+            foreach (var (row, attrs) in rowAttributesMap)
+            {
+                if (!rowUserMap.TryGetValue(row, out var userId))
+                    continue;
+
+                foreach (var (key, value) in attrs)
+                {
+                    var existing = await _unitOfWork.GuestAttributes
+                        .GetAttributeByKeyAsync(userId, key);
+
+                    if (existing != null)
+                    {
+                        existing.AttributeValue = value;
+                        _unitOfWork.GuestAttributes.Update(existing);
+                        result.AttributesUpdated++;
+                    }
+                    else
+                    {
+                        await _unitOfWork.GuestAttributes.AddAsync(new GuestAttribute
+                        {
+                            UserId = userId,
+                            AttributeKey = key,
+                            AttributeValue = value
+                        });
+                        result.AttributesCreated++;
+                    }
+                }
+
+                result.AttributeUsersProcessed++;
+            }
+
+            _logger.LogInformation(
+                "Inline attribute processing: {Users} users, {Created} created, {Updated} updated",
+                result.AttributeUsersProcessed, result.AttributesCreated, result.AttributesUpdated);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Inline attribute processing failed");
             result.AttributeWarnings.Add($"속성 처리 중 오류: {ex.Message}");
         }
     }
