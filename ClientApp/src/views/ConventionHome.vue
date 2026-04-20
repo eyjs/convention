@@ -116,11 +116,19 @@ const brandColor = computed(() => convention.value?.brandColor || '#10b981')
 const isAdmin = computed(() => authStore.user?.role === 'Admin')
 
 const dDay = computed(() => {
-  if (!convention.value?.startDate) return 0
+  if (!convention.value?.startDate) return null
   const today = new Date()
+  today.setHours(0, 0, 0, 0)
   const start = new Date(convention.value.startDate)
-  const diff = Math.ceil((start - today) / (1000 * 60 * 60 * 24))
-  return diff > 0 ? diff : 0
+  start.setHours(0, 0, 0, 0)
+  const end = convention.value.endDate ? new Date(convention.value.endDate) : start
+  end.setHours(23, 59, 59, 999)
+  // 행사 종료 후 → null (표시 안 함)
+  if (today > end) return null
+  // 행사 진행 중 → 0 (D-Day)
+  if (today >= start && today <= end) return 0
+  // 행사 전 → D-n
+  return Math.ceil((start - today) / (1000 * 60 * 60 * 24))
 })
 
 const myAttributes = computed(() => myInfo.value?.attributes || [])
