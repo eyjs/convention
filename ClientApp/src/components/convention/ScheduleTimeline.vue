@@ -53,16 +53,21 @@
         <!-- 날짜 구분선 -->
         <div class="mx-3 mt-2 mb-1.5 text-[12px] font-medium text-gray-400 px-0.5">{{ formatDateHeader(dateGroup.date) }}</div>
         <!-- 타임라인: 시간+불릿(좌) | 카드(우) -->
-        <div class="mx-3">
+        <div class="mx-3 relative">
+          <!-- 세로 연결선 (날짜 그룹 전체 관통) -->
+          <div
+            class="absolute w-[1.5px] bg-black/[0.07]"
+            :style="{ left: '41.75px', top: '18px', bottom: '18px' }"
+          ></div>
           <div
             v-for="(schedule, idx) in dateGroup.schedules"
             :key="schedule.id"
             :ref="(el) => { if (currentSchedule?.id === schedule.id) currentScheduleRef = el }"
-            class="flex cursor-pointer"
+            class="flex cursor-pointer relative"
             :class="[isPastSchedule(schedule) ? 'opacity-[0.32]' : '']"
             @click="emit('schedule-click', schedule)"
           >
-            <!-- 좌측: 시간 + 불릿 + 세로라인 -->
+            <!-- 좌측: 시간 + 불릿 -->
             <div class="flex flex-shrink-0">
               <!-- 시간 -->
               <div class="w-[38px] pt-2.5">
@@ -72,23 +77,14 @@
                   :style="currentSchedule?.id === schedule.id ? { color: '#0F6E56' } : {}"
                 >{{ schedule.startTime }}</span>
               </div>
-              <!-- 불릿 + 세로라인 -->
-              <div class="w-[16px] flex flex-col items-center">
-                <div class="pt-2.5">
-                  <div
-                    class="rounded-full"
-                    :class="currentSchedule?.id === schedule.id ? 'w-[10px] h-[10px]' : 'w-[8px] h-[8px]'"
-                    :style="{
-                      backgroundColor: currentSchedule?.id === schedule.id ? '#1D9E75'
-                        : isPastSchedule(schedule) ? '#b8dac8' : '#d4d2ca'
-                    }"
-                  ></div>
-                </div>
+              <!-- 불릿 (z-10으로 세로선 위에) -->
+              <div class="w-[16px] flex justify-center pt-2.5">
                 <div
-                  v-if="idx < dateGroup.schedules.length - 1"
-                  class="w-[1.5px] flex-1 mt-[3px]"
+                  class="rounded-full z-10"
+                  :class="currentSchedule?.id === schedule.id ? 'w-[10px] h-[10px]' : 'w-[8px] h-[8px]'"
                   :style="{
-                    backgroundColor: isPastSchedule(schedule) ? '#b8dac8' : 'rgba(0,0,0,0.07)'
+                    backgroundColor: currentSchedule?.id === schedule.id ? '#1D9E75'
+                      : isPastSchedule(schedule) ? '#b8dac8' : '#d4d2ca'
                   }"
                 ></div>
               </div>
