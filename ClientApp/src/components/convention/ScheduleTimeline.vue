@@ -41,86 +41,100 @@
     </div>
 
     <!-- 타임라인 일정 리스트 -->
-    <div v-if="!showCalendarView" class="px-4 py-6 space-y-4">
+    <div v-if="!showCalendarView" class="pb-6 pt-2">
       <div v-if="groupedSchedules.length === 0" class="text-center py-12">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
           <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
         </div>
         <p class="text-gray-500 font-medium">등록된 일정이 없습니다</p>
-        <p class="text-gray-400 text-sm mt-2">새로운 일정이 추가되면 여기에 표시됩니다</p>
       </div>
 
-      <div v-for="dateGroup in groupedSchedules" :key="dateGroup.date">
+      <div v-for="dateGroup in groupedSchedules" :key="dateGroup.date" class="mb-2">
         <!-- 날짜 구분선 -->
-        <div class="text-xs font-medium text-gray-400 mb-1.5 px-0.5">{{ formatDateHeader(dateGroup.date) }}</div>
-        <!-- 카드 래퍼 -->
-        <div class="bg-white rounded-xl border border-black/[0.07] overflow-hidden mb-3">
+        <div class="mx-3 mt-2 mb-1.5 text-[12px] font-medium text-gray-400 px-0.5">{{ formatDateHeader(dateGroup.date) }}</div>
+        <!-- 타임라인: 시간+불릿(좌) | 카드(우) -->
+        <div class="mx-3">
           <div
             v-for="(schedule, idx) in dateGroup.schedules"
             :key="schedule.id"
             :ref="(el) => { if (currentSchedule?.id === schedule.id) currentScheduleRef = el }"
-            class="flex items-stretch cursor-pointer transition-colors active:brightness-[0.96]"
-            :class="[
-              idx < dateGroup.schedules.length - 1 ? 'border-b border-black/[0.05]' : '',
-              isPastSchedule(schedule) ? 'opacity-30' : '',
-              currentSchedule?.id === schedule.id ? 'bg-emerald-50/50' : '',
-            ]"
+            class="flex cursor-pointer"
+            :class="[isPastSchedule(schedule) ? 'opacity-[0.32]' : '']"
             @click="emit('schedule-click', schedule)"
           >
-            <!-- 시간 컬럼 -->
-            <div class="w-[42px] flex-shrink-0 pt-2.5 pl-3">
-              <span
-                class="text-[11px]"
-                :class="currentSchedule?.id === schedule.id ? 'font-medium' : 'text-gray-400'"
-                :style="currentSchedule?.id === schedule.id ? { color: '#0F6E56' } : {}"
-              >{{ schedule.startTime }}</span>
-            </div>
-            <!-- 도트 + 세로라인 -->
-            <div class="w-4 flex-shrink-0 flex flex-col items-center pt-1">
-              <div
-                class="w-2 h-2 rounded-full flex-shrink-0 mt-1.5"
-                :class="[
-                  currentSchedule?.id === schedule.id ? '' : isPastSchedule(schedule) ? '' : '',
-                ]"
-                :style="{
-                  backgroundColor: currentSchedule?.id === schedule.id ? '#1D9E75'
-                    : isPastSchedule(schedule) ? '#b8dac8' : '#d4d2ca'
-                }"
-              ></div>
-              <div
-                v-if="idx < dateGroup.schedules.length - 1"
-                class="w-[1.5px] flex-1 mt-1"
-                :style="{
-                  backgroundColor: isPastSchedule(schedule) ? '#b8dac8' : 'rgba(0,0,0,0.07)'
-                }"
-              ></div>
-            </div>
-            <!-- 콘텐츠 -->
-            <div class="flex-1 py-2.5 pr-3 min-w-0">
-              <div
-                class="text-[13px] font-medium leading-tight"
-                :class="currentSchedule?.id === schedule.id ? '' : 'text-gray-900'"
-                :style="currentSchedule?.id === schedule.id ? { color: '#085041' } : {}"
-              >{{ schedule.title }}</div>
-              <div v-if="schedule.location" class="text-[11px] text-gray-400 mt-0.5">
-                <span class="text-emerald-600">{{ schedule.location }}</span>
+            <!-- 좌측: 시간 + 불릿 + 세로라인 -->
+            <div class="flex flex-shrink-0">
+              <!-- 시간 -->
+              <div class="w-[38px] pt-2.5">
+                <span
+                  class="text-[11px]"
+                  :class="currentSchedule?.id === schedule.id ? 'font-medium' : 'text-gray-400'"
+                  :style="currentSchedule?.id === schedule.id ? { color: '#0F6E56' } : {}"
+                >{{ schedule.startTime }}</span>
               </div>
-              <!-- 배정 뱃지 -->
-              <AssignmentBadges
-                v-if="getScheduleBadges(schedule).length > 0"
-                :attributes="getScheduleBadges(schedule)"
-                class="mt-1"
-              />
-              <!-- 옵션투어 뱃지 -->
-              <span
-                v-if="schedule.isOptionTour"
-                class="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-white"
-                :style="{ backgroundColor: props.brandColor }"
-              >옵션투어</span>
+              <!-- 불릿 + 세로라인 -->
+              <div class="w-[16px] flex flex-col items-center">
+                <div class="pt-2.5">
+                  <div
+                    class="rounded-full"
+                    :class="currentSchedule?.id === schedule.id ? 'w-[10px] h-[10px]' : 'w-[8px] h-[8px]'"
+                    :style="{
+                      backgroundColor: currentSchedule?.id === schedule.id ? '#1D9E75'
+                        : isPastSchedule(schedule) ? '#b8dac8' : '#d4d2ca'
+                    }"
+                  ></div>
+                </div>
+                <div
+                  v-if="idx < dateGroup.schedules.length - 1"
+                  class="w-[1.5px] flex-1 mt-[3px]"
+                  :style="{
+                    backgroundColor: isPastSchedule(schedule) ? '#b8dac8' : 'rgba(0,0,0,0.07)'
+                  }"
+                ></div>
+              </div>
             </div>
-            <!-- 화살표 -->
-            <div class="flex items-center pr-3 opacity-20 flex-shrink-0">
-              <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <!-- 우측: 콘텐츠 카드 -->
+            <div
+              class="flex-1 min-w-0 ml-[5px] mb-1.5 rounded-xl px-3 py-2.5 active:brightness-[0.96]"
+              :class="currentSchedule?.id === schedule.id ? 'bg-[#f3fbf7]' : 'bg-white border border-black/[0.07]'"
+            >
+              <div class="flex items-start justify-between gap-1">
+                <div class="flex-1 min-w-0">
+                  <!-- 제목 -->
+                  <div
+                    class="text-[13px] font-medium leading-tight"
+                    :class="currentSchedule?.id === schedule.id ? '' : 'text-[#1a1a1a]'"
+                    :style="currentSchedule?.id === schedule.id ? { color: '#085041' } : {}"
+                  >{{ schedule.title }}</div>
+                  <!-- 장소 (초록 강조) -->
+                  <div v-if="schedule.location" class="text-[11px] mt-[2px]">
+                    <span class="text-[#1D9E75]">{{ schedule.location }}</span>
+                  </div>
+                  <!-- 배정 뱃지 -->
+                  <div v-if="getScheduleBadges(schedule).length > 0" class="flex flex-wrap gap-[3px] mt-1.5">
+                    <div
+                      v-for="(badge, bi) in getScheduleBadges(schedule)"
+                      :key="badge.key"
+                      class="inline-flex items-center gap-[2px] rounded-[7px] px-[6px] py-[2px]"
+                      :style="{ backgroundColor: badgePalette(bi).bg }"
+                    >
+                      <span class="text-[9px] opacity-75" :style="{ color: badgePalette(bi).text }">{{ badge.key }}</span>
+                      <span class="text-[10px] font-medium" :style="{ color: badgePalette(bi).text }">{{ badge.value }}</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- 우측: 옵션투어 뱃지 + 화살표 -->
+                <div class="flex items-center gap-1 flex-shrink-0">
+                  <span
+                    v-if="schedule.isOptionTour"
+                    class="px-1.5 py-0.5 rounded text-[10px] font-medium text-white"
+                    :style="{ backgroundColor: props.brandColor }"
+                  >옵션투어</span>
+                  <div class="opacity-20">
+                    <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -172,7 +186,6 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
 import apiClient from '@/services/api'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
-import AssignmentBadges from '@/components/convention/AssignmentBadges.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
@@ -327,6 +340,15 @@ function stripHtml(html) {
 }
 
 function openFullImage(url) { fullImageUrl.value = url }
+
+const BADGE_PALETTE = [
+  { bg: '#EEEDFE', text: '#3C3489' },
+  { bg: '#E1F5EE', text: '#085041' },
+  { bg: '#FAEEDA', text: '#633806' },
+  { bg: '#E1F5EE', text: '#0F6E56' },
+  { bg: '#FCEBEB', text: '#A32D2D' },
+]
+function badgePalette(index) { return BADGE_PALETTE[index % BADGE_PALETTE.length] }
 
 function getScheduleBadges(schedule) {
   if (!schedule.visibleAttributes || !props.attributes?.length) return []
