@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iFA Hiking @ 문경</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:#e8e6e0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 20px 48px;font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;}
+h1{font-size:12px;font-weight:500;color:#999;margin-bottom:16px;letter-spacing:.04em;}
+.phone{width:296px;background:#2c2c2a;border-radius:44px;border:7px solid #2c2c2a;overflow:hidden;box-shadow:0 20px 56px rgba(0,0,0,.32);}
+.screen{background:#f5f4f0;position:relative;overflow:hidden;height:600px;display:flex;flex-direction:column;}
+.notch{width:80px;height:21px;background:#2c2c2a;border-radius:0 0 13px 13px;margin:0 auto;flex-shrink:0;}
+.sb{padding:5px 18px 0;display:flex;justify-content:space-between;background:#1a1a1a;flex-shrink:0;}
+.sb-t{font-size:10px;font-weight:500;color:rgba(255,255,255,.6);}
+.sb-d{display:flex;gap:3px;}
+.sd{width:3.5px;height:3.5px;border-radius:50%;background:rgba(255,255,255,.4);}
+.hdr{background:#1a1a1a;padding:9px 14px 13px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.hdr-name{font-size:11.5px;font-weight:500;color:#fff;}
+.hdr-date{font-size:8.5px;color:rgba(255,255,255,.36);margin-top:2px;}
+.bell-wrap{position:relative;cursor:pointer;width:34px;height:34px;display:flex;align-items:center;justify-content:center;}
+.bell-badge{position:absolute;top:2px;right:2px;width:14px;height:14px;background:#E24B4A;border-radius:50%;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:500;color:#fff;}
+.page{display:none;overflow-y:auto;flex:1;}
+.page.on{display:block;}
+.date-divider{margin:8px 9px 4px;font-size:9px;font-weight:500;color:#aaa;padding:0 2px;}
+.tl-wrap{margin:0 9px 6px;background:#fff;border-radius:13px;border:0.5px solid rgba(0,0,0,.07);overflow:hidden;}
+.tr{display:flex;align-items:stretch;padding:9px 13px;border-bottom:0.5px solid rgba(0,0,0,.05);cursor:pointer;}
+.tr:last-child{border-bottom:none;}
+.tr:active{filter:brightness(.96);}
+.tr.done{opacity:.32;}
+.tr.now{background:#f3fbf7;}
+.td.act{background:#1D9E75 !important;width:9.5px !important;height:9.5px !important;}
+.td.dn{background:#b8dac8 !important;}
+.tln.dn{background:#b8dac8 !important;}
+.tt.act{color:#0F6E56 !important;font-weight:500;}
+.tit.act{color:#085041 !important;}
+.tc{width:30px;flex-shrink:0;padding-top:1px;}
+.tt{font-size:8.5px;color:#aaa;}
+.tb{width:16px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:2px 0;}
+.td{width:7.5px;height:7.5px;border-radius:50%;background:#d4d2ca;flex-shrink:0;}
+.tln{width:1.5px;flex:1;background:rgba(0,0,0,.07);margin-top:3px;}
+.tcon{flex:1;padding-left:5px;}
+.tit{font-size:10.5px;font-weight:500;color:#1a1a1a;}
+.tpl{font-size:8.5px;color:#aaa;margin-top:1.5px;}
+.tpl-link{color:#1D9E75;}
+.bgs{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
+.bg{display:inline-flex;align-items:center;gap:2px;border-radius:7px;padding:2px 6px;}
+.bg-l{font-size:7px;opacity:.75;}
+.bg-v{font-size:7.5px;font-weight:500;}
+.chev{margin-left:auto;padding-left:4px;opacity:.2;flex-shrink:0;display:flex;align-items:center;}
+.bd-top{background:#fff;padding:9px 14px 0;border-bottom:0.5px solid rgba(0,0,0,.07);}
+.bd-top-row{display:flex;justify-content:space-between;align-items:center;padding-bottom:9px;}
+.bd-title{font-size:14px;font-weight:500;color:#1a1a1a;}
+.bd-list{padding-bottom:8px;}
+.bd-item{background:#fff;margin:5px 9px 0;border-radius:12px;border:0.5px solid rgba(0,0,0,.07);padding:9px 12px;cursor:pointer;}
+.bd-item:active{background:#f5f4f0;}
+.bd-item-top{display:flex;gap:8px;margin-bottom:4px;}
+.bd-bell{width:26px;height:26px;border-radius:7px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bd-cat{font-size:7.5px;color:#1D9E75;font-weight:500;margin-bottom:1px;}
+.bd-name{font-size:10.5px;font-weight:500;color:#1a1a1a;line-height:1.4;}
+.bd-meta{font-size:8px;color:#ccc;}
+.more-sec{margin:7px 9px 0;}
+.more-sec-t{font-size:9.5px;font-weight:500;color:#bbb;margin-bottom:4px;padding:0 2px;}
+.more-card{background:#fff;border-radius:13px;border:0.5px solid rgba(0,0,0,.07);overflow:hidden;}
+.more-row{display:flex;align-items:center;gap:9px;padding:10px 13px;border-bottom:0.5px solid rgba(0,0,0,.05);}
+.more-row:last-child{border-bottom:none;}
+.more-ico{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.more-ico.pu{background:#EEEDFE;}.more-ico.gr{background:#E1F5EE;}.more-ico.am{background:#FAEEDA;}
+.more-row-lbl{font-size:10.5px;font-weight:500;color:#1a1a1a;flex:1;}
+.more-row-val{font-size:9px;color:#aaa;}
+.assign-card{margin:0 9px;background:#fff;border-radius:13px;border:0.5px solid rgba(0,0,0,.07);overflow:hidden;}
+.assign-grid{display:grid;grid-template-columns:1fr 1fr;}
+.assign-item{padding:9px 13px;border-bottom:0.5px solid rgba(0,0,0,.05);border-right:0.5px solid rgba(0,0,0,.05);}
+.assign-item:nth-child(even){border-right:none;}
+.assign-item.full{grid-column:1/-1;border-right:none;}
+.assign-item-lbl{font-size:8px;color:#7F77DD;margin-bottom:2px;}
+.assign-item-val{font-size:12px;font-weight:500;color:#1a1a1a;}
+.comp-open { transform: rotate(180deg); }
+.tabbar{background:#fff;border-top:0.5px solid rgba(0,0,0,.1);display:flex;padding:7px 0 9px;flex-shrink:0;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;}
+.tab-lbl{font-size:7.5px;color:#aaa;}
+.tab.on .tab-lbl{color:#1D9E75;font-weight:500;}
+.ov{position:absolute;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .18s;}
+.ov.open{opacity:1;pointer-events:all;}
+.modal{background:#fff;border-radius:17px 17px 0 0;width:100%;transform:translateY(14px);transition:transform .18s;max-height:88%;overflow-y:auto;}
+.ov.open .modal{transform:translateY(0);}
+.m-handle{width:30px;height:3px;background:rgba(0,0,0,.1);border-radius:2px;margin:9px auto 0;}
+.m-hdr{padding:10px 14px 9px;border-bottom:0.5px solid rgba(0,0,0,.07);display:flex;justify-content:space-between;align-items:flex-start;}
+.m-time{font-size:9px;color:#0F6E56;font-weight:500;margin-bottom:1px;}
+.m-title{font-size:13px;font-weight:500;color:#1a1a1a;}
+.m-close{width:20px;height:20px;border-radius:50%;background:#f0f0ee;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.m-body{padding:10px 14px 0;}
+.m-row{display:flex;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,.05);}
+.m-row:last-child{border-bottom:none;}
+.m-lbl{font-size:8.5px;color:#aaa;width:28px;flex-shrink:0;padding-top:1px;}
+.m-val{font-size:9.5px;color:#1a1a1a;line-height:1.6;}
+.m-my{margin:9px 14px 0;background:#f3f1fb;border-radius:10px;padding:9px 11px;}
+.m-my-t{font-size:7.5px;font-weight:500;color:#534AB7;margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em;}
+.m-my-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.m-my-item{background:#fff;border-radius:7px;padding:6px 8px;border:0.5px solid rgba(83,74,183,.13);}
+.m-my-item.full{grid-column:1/-1;}
+.m-my-lbl{font-size:7.5px;color:#7F77DD;margin-bottom:2px;}
+.m-my-val{font-size:11px;font-weight:500;color:#3C3489;}
+.m-spacer{height:14px;}
+</style>
+</head>
+<body>
+<h1>iFA Hiking @ 문경 Apr. 2026 — 이준호 (STAFF)</h1>
+<div class="phone"><div class="screen">
+  <div class="notch"></div>
+  <div class="sb"><span class="sb-t" id="clock">--:--</span><div class="sb-d"><div class="sd"></div><div class="sd"></div><div class="sd"></div></div></div>
+  <div class="hdr">
+    <div><div class="hdr-name">iFA Hiking @ 문경</div><div class="hdr-date">2026-04-09 ~ 10 · 문경 페트로 호텔</div></div>
+    <div class="bell-wrap" onclick="st('board')">
+      <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M11 2a5.5 5.5 0 015.5 5.5c0 4.5 2 5.5 2 5.5H3.5s2-1 2-5.5A5.5 5.5 0 0111 2z" stroke="white" stroke-width="1.4" stroke-linejoin="round"/><path d="M9.5 18a1.5 1.5 0 003 0" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <div class="bell-badge" id="bell-badge">2</div>
+    </div>
+  </div>
+
+  <div class="page on" id="p-home">
+    <div style="padding-bottom:8px;"><div class="date-divider">4월 9일</div><div class="tl-wrap"><div class="tr" data-idx="0" data-date="4월 9일" onclick="openModal(0,'4월 9일')">
+  <div class="tc"><div class="tt">11:50</div></div>
+  <div class="tb"><div class="td"></div><div class='tln'></div></div>
+  <div class="tcon">
+    <div class="tit">개별 도착</div>
+    <div class="tpl"><span class='tpl-link'>페트로호텔</span></div>
+    
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div><div class="tr" data-idx="1" data-date="4월 9일" onclick="openModal(1,'4월 9일')">
+  <div class="tc"><div class="tt">12:00</div></div>
+  <div class="tb"><div class="td"></div><div class='tln'></div></div>
+  <div class="tcon">
+    <div class="tit">중식</div>
+    <div class="tpl"><span class='tpl-link'>새재할매집</span></div>
+    
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div><div class="tr" data-idx="2" data-date="4월 9일" onclick="openModal(2,'4월 9일')">
+  <div class="tc"><div class="tt">13:00</div></div>
+  <div class="tb"><div class="td"></div><div class='tln'></div></div>
+  <div class="tcon">
+    <div class="tit">문경새재 도립공원 하이킹</div>
+    <div class="tpl"><span class='tpl-link'>문경새재 도립공원</span></div>
+    
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div><div class="tr" data-idx="3" data-date="4월 9일" onclick="openModal(3,'4월 9일')">
+  <div class="tc"><div class="tt">17:00</div></div>
+  <div class="tb"><div class="td"></div><div class='tln'></div></div>
+  <div class="tcon">
+    <div class="tit">체크인 및 개인정비</div>
+    <div class="tpl"><span class='tpl-link'>페트로 호텔</span></div>
+    <div class='bgs'><div class="bg" style="background:#EEEDFE"><span class="bg-l" style="color:#3C3489">룸번호</span><span class="bg-v" style="color:#3C3489">312</span></div><div class="bg" style="background:#E1F5EE"><span class="bg-l" style="color:#085041">룸메이트</span><span class="bg-v" style="color:#085041">심현목</span></div></div>
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div><div class="tr" data-idx="4" data-date="4월 9일" onclick="openModal(4,'4월 9일')">
+  <div class="tc"><div class="tt">18:00</div></div>
+  <div class="tb"><div class="td"></div><div class='tln'></div></div>
+  <div class="tcon">
+    <div class="tit">외부강사 초청 강연</div>
+    <div class="tpl"><span class='tpl-link'>페트로 호텔 연회장(B2)</span></div>
+    
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div><div class="tr" data-idx="5" data-date="4월 9일" onclick="openModal(5,'4월 9일')">
+  <div class="tc"><div class="tt">19:00</div></div>
+  <div class="tb"><div class="td"></div><div class='tln'></div></div>
+  <div class="tcon">
+    <div class="tit">저녁 만찬</div>
+    <div class="tpl"><span class='tpl-link'>석식당</span></div>
+    
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div><div class="tr" data-idx="6" data-date="4월 9일" onclick="openModal(6,'4월 9일')">
+  <div class="tc"><div class="tt">21:00</div></div>
+  <div class="tb"><div class="td"></div></div>
+  <div class="tcon">
+    <div class="tit">휴식 및 취침</div>
+    <div class="tpl"><span class='tpl-link'>페트로 호텔</span></div>
+    <div class='bgs'><div class="bg" style="background:#EEEDFE"><span class="bg-l" style="color:#3C3489">룸번호</span><span class="bg-v" style="color:#3C3489">312</span></div><div class="bg" style="background:#E1F5EE"><span class="bg-l" style="color:#085041">룸메이트</span><span class="bg-v" style="color:#085041">심현목</span></div></div>
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div></div><div class="date-divider">4월 10일</div><div class="tl-wrap"><div class="tr" data-idx="0" data-date="4월 10일" onclick="openModal(0,'4월 10일')">
+  <div class="tc"><div class="tt">05:00</div></div>
+  <div class="tb"><div class="td"></div><div class='tln'></div></div>
+  <div class="tcon">
+    <div class="tit">체크아웃</div>
+    <div class="tpl"><span class='tpl-link'>페트로 호텔</span></div>
+    
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div><div class="tr" data-idx="1" data-date="4월 10일" onclick="openModal(1,'4월 10일')">
+  <div class="tc"><div class="tt">05:00</div></div>
+  <div class="tb"><div class="td"></div><div class='tln'></div></div>
+  <div class="tcon">
+    <div class="tit">버스 이동</div>
+    <div class="tpl"><span class='tpl-link'>문경GC</span></div>
+    
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div><div class="tr" data-idx="2" data-date="4월 10일" onclick="openModal(2,'4월 10일')">
+  <div class="tc"><div class="tt">05:20</div></div>
+  <div class="tb"><div class="td"></div><div class='tln'></div></div>
+  <div class="tcon">
+    <div class="tit">조식 및 준비</div>
+    <div class="tpl"><span class='tpl-link'>문경GC</span></div>
+    
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div><div class="tr" data-idx="3" data-date="4월 10일" onclick="openModal(3,'4월 10일')">
+  <div class="tc"><div class="tt">06:51</div></div>
+  <div class="tb"><div class="td"></div><div class='tln'></div></div>
+  <div class="tcon">
+    <div class="tit">Tee off</div>
+    <div class="tpl"><span class='tpl-link'>문경GC</span></div>
+    <div class='bgs'><div class="bg" style="background:#EEEDFE"><span class="bg-l" style="color:#3C3489">골프조</span><span class="bg-v" style="color:#3C3489">범이 1조</span></div></div>
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div><div class="tr" data-idx="4" data-date="4월 10일" onclick="openModal(4,'4월 10일')">
+  <div class="tc"><div class="tt">13:00</div></div>
+  <div class="tb"><div class="td"></div><div class='tln'></div></div>
+  <div class="tcon">
+    <div class="tit">중식 및 시상</div>
+    <div class="tpl"><span class='tpl-link'>문경GC</span></div>
+    
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div><div class="tr" data-idx="5" data-date="4월 10일" onclick="openModal(5,'4월 10일')">
+  <div class="tc"><div class="tt">14:00</div></div>
+  <div class="tb"><div class="td"></div></div>
+  <div class="tcon">
+    <div class="tit">해산</div>
+    <div class="tpl"><span class='tpl-link'>문경GC</span></div>
+    
+  </div>
+  <div class="chev"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3 3-3 3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+</div></div></div>
+  </div>
+
+  <div class="page" id="p-board">
+    <div class="bd-top"><div class="bd-top-row"><div class="bd-title">게시판</div></div></div>
+    <div class="bd-list">
+      <div class="bd-item"><div class="bd-item-top"><div class="bd-bell"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2a4 4 0 014 4c0 3 2 4 2 4H2s2-1 2-4a4 4 0 014-4z" stroke="#1D9E75" stroke-width="1.2"/><path d="M7 13.5a1 1 0 002 0" stroke="#1D9E75" stroke-width="1.2"/></svg></div><div><div class="bd-cat">공지 · 4/7</div><div class="bd-name">새재할매집 (단체 중식당) 안내</div></div></div><div class="bd-meta">조회 4</div></div>
+      <div class="bd-item"><div class="bd-item-top"><div class="bd-bell"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2a4 4 0 014 4c0 3 2 4 2 4H2s2-1 2-4a4 4 0 014-4z" stroke="#1D9E75" stroke-width="1.2"/><path d="M7 13.5a1 1 0 002 0" stroke="#1D9E75" stroke-width="1.2"/></svg></div><div><div class="bd-cat">공지 · 4/7</div><div class="bd-name">문경새재 하이킹 준비물 안내</div></div></div><div class="bd-meta">조회 3</div></div>
+    </div>
+  </div>
+
+  <div class="page" id="p-more">
+    <div style="height:8px;"></div>
+    <div class="more-sec">
+      <div class="more-sec-t">내 정보</div>
+      <div class="more-card">
+        <div class="more-row"><div class="more-ico pu"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="2.5" stroke="#7F77DD" stroke-width="1.2"/><path d="M3 13.5c0-2.5 2.2-4 5-4s5 1.5 5 4" stroke="#7F77DD" stroke-width="1.2" stroke-linecap="round"/></svg></div><div><div class="more-row-lbl">이준호</div><div class="more-row-val">STAFF</div></div></div>
+        <div class="more-row"><div class="more-ico gr"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="1.5" stroke="#1D9E75" stroke-width="1.2"/><path d="M5 2v2M11 2v2M2 7h12" stroke="#1D9E75" stroke-width="1.2" stroke-linecap="round"/></svg></div><div><div class="more-row-lbl">코스</div><div class="more-row-val">자차-하이킹-골프</div></div></div>
+        <div class="more-row"><div class="more-ico am"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="8" r="1.2" fill="#BA7517"/><circle cx="8" cy="8" r="1.2" fill="#BA7517"/><circle cx="12" cy="8" r="1.2" fill="#BA7517"/></svg></div><div><div class="more-row-lbl">그룹</div><div class="more-row-val">A조</div></div></div>
+        <div class="more-row" onclick="toggleComp()" style="cursor:pointer;">
+          <div class="more-ico" style="background:#E1F5EE;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="2" stroke="#1D9E75" stroke-width="1.2"/><circle cx="11" cy="5" r="2" stroke="#1D9E75" stroke-width="1.2"/><path d="M2 13c0-2 1.8-3.5 4-3.5s4 1.5 4 3.5" stroke="#1D9E75" stroke-width="1.2" stroke-linecap="round"/><path d="M11 9.5c1.5.3 3 1.5 3 3.5" stroke="#1D9E75" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="more-row-lbl">동반자 보기</div>
+          <div id="comp-chev" style="opacity:.3;transition:transform .2s;">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 4l3 3 3-3" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div id="comp-list" style="display:none;border-top:0.5px solid rgba(0,0,0,.05);">
+          <div style="display:flex;align-items:center;gap:9px;padding:8px 13px;border-bottom:0.5px solid rgba(0,0,0,.05);">
+            <div style="width:28px;height:28px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#3C3489;flex-shrink:0;">심</div>
+            <div><div style="font-size:10px;font-weight:500;color:#1a1a1a;">심현목</div><div style="font-size:8.5px;color:#aaa;">룸메이트 · A조</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="more-sec" style="margin-top:10px;">
+      <div class="more-sec-t">내 배정 정보</div>
+      <div class="assign-card"><div class="assign-grid"><div class="assign-item"><div class="assign-item-lbl" style="color:#3C3489">룸번호</div><div class="assign-item-val">312</div></div><div class="assign-item"><div class="assign-item-lbl" style="color:#085041">룸메이트</div><div class="assign-item-val">심현목</div></div><div class="assign-item"><div class="assign-item-lbl" style="color:#633806">버스호차</div><div class="assign-item-val">2호차</div></div><div class="assign-item"><div class="assign-item-lbl" style="color:#0F6E56">중식 테이블</div><div class="assign-item-val">1</div></div><div class="assign-item"><div class="assign-item-lbl" style="color:#A32D2D">석식 테이블</div><div class="assign-item-val">2</div></div><div class="assign-item"><div class="assign-item-lbl" style="color:#3C3489">골프조</div><div class="assign-item-val">범이 1조</div></div></div></div>
+    </div>
+    <div style="height:8px;"></div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab on" id="tab-home" onclick="st('home')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 7.5L8 2l6 5.5V14a.5.5 0 01-.5.5h-3.5V10H6v4.5H2.5A.5.5 0 012 14V7.5z" stroke="#1D9E75" stroke-width="1.2"/></svg><span class="tab-lbl">홈</span></div>
+    <div class="tab" id="tab-board" onclick="st('board')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="#aaa" stroke-width="1.2"/><path d="M5 6h6M5 9h4" stroke="#aaa" stroke-width="1.2" stroke-linecap="round"/></svg><span class="tab-lbl">게시판</span></div>
+    <div class="tab" id="tab-more" onclick="st('more')"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="8" r="1.2" fill="#aaa"/><circle cx="8" cy="8" r="1.2" fill="#aaa"/><circle cx="12" cy="8" r="1.2" fill="#aaa"/></svg><span class="tab-lbl">더보기</span></div>
+  </div>
+
+  <div class="ov" id="ov" onclick="if(event.target===this)cm()">
+    <div class="modal">
+      <div class="m-handle"></div>
+      <div class="m-hdr">
+        <div><div class="m-time" id="mt"></div><div class="m-title" id="mti"></div></div>
+        <div class="m-close" onclick="cm()"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="#666" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+      </div>
+      <div class="m-body" id="mb"></div>
+      <div id="mmy"></div>
+      <div class="m-spacer"></div>
+    </div>
+  </div>
+</div></div>
+
+<script>
+var SCHED = {"4월 9일": [{"date": "4월 9일", "start": "11:50", "end": "11:50", "place": "페트로호텔", "map": "https://www.google.com/maps/search/%ED%8E%98%ED%8A%B8%EB%A1%9C%ED%98%B8%ED%85%94", "title": "개별 도착", "desc": "• 11:50까지 페트로 호텔로 집결해 주시기 바랍니다<br>• 현장에 대기 중인 요원의 안내에 따라 주차 후 중식당으로 이동해 주시기 바랍니다", "course": "자차-하이킹-골프", "show_fields": []}, {"date": "4월 9일", "start": "12:00", "end": "13:00", "place": "새재할매집", "map": "https://www.google.com/maps/search/%EC%83%88%EC%9E%AC%ED%95%A0%EB%A7%A4%EC%A7%91", "title": "중식", "desc": "• 새재할매집에서 중식을 진행합니다<br>• 윤보선 4대 대통령이 즐겨 찾던 50년 전통 맛집이며, 블로리본에 수록된 바 있습니다", "course": "자차-하이킹-골프", "show_fields": ["식사테이블"]}, {"date": "4월 9일", "start": "13:00", "end": "17:00", "place": "문경새재 도립공원", "map": "https://www.google.com/maps/place/%EB%AC%B8%EA%B2%BD%EC%83%88%EC%9E%AC%EB%8F%84%EB%A6%BD%EA%B3%B5%EC%9B%90/data=!3m2!1e3!4b1!4m6!3m5!1s0x35646739910158df:0x34a026d01dad58de!8m2!3d36.7590374!4d128.0729759!16zL20vMDRocTl4?entry=ttu&g_ep=EgoyMDI2MDQxNC4wIKXMDSoASAFQAw%3D%3D", "title": "문경새재 도립공원 하이킹", "desc": "• 문경새재 도립공원 하이킹을 진행합니다<br>• 문경새재 도립공원은 주흘관(1관문), 조곡관(2관문), 조령관(3관문)을 왕복하는 코스입니다", "course": "자차-하이킹-골프", "show_fields": ["하이킹 조"]}, {"date": "4월 9일", "start": "17:00", "end": "18:00", "place": "페트로 호텔", "map": "https://www.google.com/maps/search/%ED%8E%98%ED%8A%B8%EB%A1%9C%ED%98%B8%ED%85%94", "title": "체크인 및 개인정비", "desc": "• 호텔 라운지에서 객실 키를 수령하여 체크인 해주시기 바랍니다<br>• 개인정비 후 호텔 지하 2층에 위치한 연회장에서 외부강사 초청 강연이 있을 예정입니다.", "course": "자차-하이킹-골프", "show_fields": ["룸번호", "룸메이트"]}, {"date": "4월 9일", "start": "18:00", "end": "19:00", "place": "페트로 호텔 연회장(B2)", "map": "https://www.google.com/maps/search/%ED%8E%98%ED%8A%B8%EB%A1%9C%ED%98%B8%ED%85%94", "title": "외부강사 초청 강연", "desc": "• 18:50까지 개인정비를 마치신 후 지하 2층 연회장에 모여주시기 바랍니다", "course": "자차-하이킹-골프", "show_fields": []}, {"date": "4월 9일", "start": "19:00", "end": "21:00", "place": "석식당", "map": "https://www.google.com/maps/place/%EC%82%B0%EC%A4%91%EC%97%90+%EC%9E%90%EC%97%B0%EB%B0%A5%EC%83%81/data=!3m1!1e3!4m6!3m5!1s0x356467476e0766d3:0x994d61cc335bf38a!8m2!3d36.7620252!4d128.077056!16s%2Fg%2F11bytsx9fr?entry=ttu&g_ep=EgoyMDI2MDQxNC4wIKXMDSoASAFQAw%3D%3D", "title": "저녁 만찬", "desc": "• 저녁 만찬 지정석을 확인하시어 착석해 주시기 바랍니다<br>• 개인 지정석은 [홈페이지 → 행사 정보 → 만찬 좌석 배치도] 에서 확인하실 수 있습니다<br>• 트레킹 후 몸에 쌓인 피로를 풀며 준비된 음식을 즐겨주시기 바랍니다", "course": "자차-하이킹-골프", "show_fields": ["식사테이블"]}, {"date": "4월 9일", "start": "21:00", "end": "05:00", "place": "페트로 호텔", "map": "https://www.google.com/maps/search/%ED%8E%98%ED%8A%B8%EB%A1%9C%ED%98%B8%ED%85%94", "title": "휴식 및 취침", "desc": "• 저녁 만찬 지정석을 확인하시어 착석해 주시기 바랍니다<br>• 개인 지정석은 [홈페이지 → 행사 정보 → 만찬 좌석 배치도] 에서 확인하실 수 있습니다<br>• 트레킹 후 몸에 쌓인 피로를 풀며 준비된 음식을 즐겨주시기 바랍니다", "course": "자차-하이킹-골프", "show_fields": ["룸번호", "룸메이트"]}], "4월 10일": [{"date": "4월 10일", "start": "05:00", "end": "05:00", "place": "페트로 호텔", "map": "https://www.google.com/maps/search/%ED%8E%98%ED%8A%B8%EB%A1%9C%ED%98%B8%ED%85%94", "title": "체크아웃", "desc": "• 로비 진행 요원에게 객실 키를 반납하신 후 문경 GC로 이동해 주시기 바랍니다<br>", "course": "자차-하이킹-골프", "show_fields": []}, {"date": "4월 10일", "start": "05:00", "end": "05:20", "place": "문경GC", "map": "https://www.google.com/maps/place/%EB%AC%B8%EA%B2%BDGC/data=!3m2!1e3!4b1!4m6!3m5!1s0x3564429a2e5afc47:0x8f27bd968d9121a4!8m2!3d36.715215!4d128.161935!16s%2Fg%2F1tmz4syb?entry=ttu&g_ep=EgoyMDI2MDQxNC4wIKXMDSoASAFQAw%3D%3D", "title": "버스 이동", "desc": "• 체크아웃을 완료한 후 문경GC로 이동합니다<br>• 문경 GC까지는 약 20분이 소요됩니다", "course": "자차-하이킹-골프", "show_fields": []}, {"date": "4월 10일", "start": "05:20", "end": "06:51", "place": "문경GC", "map": "https://www.google.com/maps/place/%EB%AC%B8%EA%B2%BDGC/data=!3m2!1e3!4b1!4m6!3m5!1s0x3564429a2e5afc47:0x8f27bd968d9121a4!8m2!3d36.715215!4d128.161935!16s%2Fg%2F1tmz4syb?entry=ttu&g_ep=EgoyMDI2MDQxNC4wIKXMDSoASAFQAw%3D%3D", "title": "조식 및 준비", "desc": "• 조식은 1층 클럽하우스에서 진행합니다<br>• 조식을 드신 후 개별 라운드 준비를 해주시기 바랍니다", "course": "자차-하이킹-골프", "show_fields": []}, {"date": "4월 10일", "start": "06:51", "end": "07:40", "place": "문경GC", "map": "https://www.google.com/maps/place/%EB%AC%B8%EA%B2%BDGC/data=!3m2!1e3!4b1!4m6!3m5!1s0x3564429a2e5afc47:0x8f27bd968d9121a4!8m2!3d36.715215!4d128.161935!16s%2Fg%2F1tmz4syb?entry=ttu&g_ep=EgoyMDI2MDQxNC4wIKXMDSoASAFQAw%3D%3D", "title": "Tee off", "desc": "• 문희 코스: 자연의 평온함을 강조한 코스로 편안한 난이도의 코스입닌다<br>• 경서코스: 역동성을 살린 코스로 전체적으로 긴 거리와 내리막이 특징입니다<br>• 7분 간격으로 Tee off합니다", "course": "자차-하이킹-골프", "show_fields": ["골프조"]}, {"date": "4월 10일", "start": "13:00", "end": "14:00", "place": "문경GC", "map": "https://www.google.com/maps/place/%EB%AC%B8%EA%B2%BDGC/data=!3m2!1e3!4b1!4m6!3m5!1s0x3564429a2e5afc47:0x8f27bd968d9121a4!8m2!3d36.715215!4d128.161935!16s%2Fg%2F1tmz4syb?entry=ttu&g_ep=EgoyMDI2MDQxNC4wIKXMDSoASAFQAw%3D%3D", "title": "중식 및 시상", "desc": "• 즐거운 라운드 되셨기를 바랍니다<br>• 클럽하우스에 준비된 음식을 즐겨주시기 바랍니다", "course": "자차-하이킹-골프", "show_fields": []}, {"date": "4월 10일", "start": "14:00", "end": "14:00", "place": "문경GC", "map": "https://www.google.com/maps/place/%EB%AC%B8%EA%B2%BDGC/data=!3m2!1e3!4b1!4m6!3m5!1s0x3564429a2e5afc47:0x8f27bd968d9121a4!8m2!3d36.715215!4d128.161935!16s%2Fg%2F1tmz4syb?entry=ttu&g_ep=EgoyMDI2MDQxNC4wIKXMDSoASAFQAw%3D%3D", "title": "해산", "desc": "• 이번 iFA Hiking @문경 April. 2026행사가 길이 남을 좋은 추억이 되셨기를 바랍니다<br>• 중식 및 시상을 마치신 후 개별 해산해 주시기 바랍니다", "course": "자차-하이킹-골프", "show_fields": []}]};
+var ASSIGN = {"룸번호": "312", "룸메이트": "심현목", "버스호차": "2호차", "중식 테이블": "1", "석식 테이블": "2", "골프조": "범이 1조"};
+var BC = [["#EEEDFE", "#3C3489"], ["#E1F5EE", "#085041"], ["#FAEEDA", "#633806"], ["#E1F5EE", "#0F6E56"], ["#FCEBEB", "#A32D2D"]];
+
+function updateClock() {
+  var n = new Date();
+  document.getElementById('clock').textContent =
+    ('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2);
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+function st(tab) {
+  ['home','board','more'].forEach(function(t) {
+    document.getElementById('p-'+t).classList.toggle('on', t===tab);
+    document.getElementById('tab-'+t).classList.toggle('on', t===tab);
+  });
+  if (tab==='board') document.getElementById('bell-badge').style.display='none';
+}
+
+function openModal(idx, date) {
+  var items = SCHED[date];
+  if (!items) return;
+  var s = items[idx];
+  document.getElementById('mt').textContent = s.start + (s.end && s.end!==s.start ? ' – '+s.end : '');
+  document.getElementById('mti').textContent = s.title;
+  var rows = '';
+  if (s.place) rows += '<div class="m-row"><div class="m-lbl">장소</div><div class="m-val">'
+    +(s.map?'<a href="'+s.map+'" target="_blank" style="color:#1D9E75;text-decoration:none;">'+s.place+' →</a>':s.place)+'</div></div>';
+  if (s.desc) rows += '<div class="m-row"><div class="m-lbl">안내</div><div class="m-val">'+s.desc+'</div></div>';
+  document.getElementById('mb').innerHTML = rows;
+  var myFields = (s.show_fields||[]).filter(function(f){ return ASSIGN[f]; });
+  var myEl = document.getElementById('mmy');
+  if (myFields.length) {
+    var its = myFields.map(function(f,fi){
+      var isFull = fi===myFields.length-1 && myFields.length%2!==0;
+      return '<div class="m-my-item'+(isFull?' full':'')+'"><div class="m-my-lbl">'+f+'</div><div class="m-my-val">'+ASSIGN[f]+'</div></div>';
+    }).join('');
+    myEl.innerHTML = '<div class="m-my"><div class="m-my-t">내 배정 정보</div><div class="m-my-grid">'+its+'</div></div>';
+  } else { myEl.innerHTML=''; }
+  document.getElementById('ov').classList.add('open');
+}
+
+var MOCK_NOW_DATE = '4월 9일';
+var MOCK_NOW_TIME = '13:00'; // 목업 기준 현재 시각
+
+function timeToMin(t) {
+  if (!t) return 0;
+  var p = t.split(':');
+  return parseInt(p[0])*60 + parseInt(p[1]);
+}
+
+function updateTimeline() {
+  var nowMin = timeToMin(MOCK_NOW_TIME);
+  var foundNow = false;
+
+  document.querySelectorAll('.tl-wrap .tr').forEach(function(row) {
+    var idx = parseInt(row.dataset.idx);
+    var date = row.dataset.date;
+    if (!date || isNaN(idx)) return;
+
+    var items = SCHED[date];
+    if (!items || !items[idx]) return;
+    var s = items[idx];
+    var startMin = timeToMin(s.start);
+    var endMin = timeToMin(s.end) || startMin + 60;
+
+    // 점 요소
+    var dot = row.querySelector('.td');
+    var line = row.querySelector('.tln');
+    var timeEl = row.querySelector('.tt');
+    var titleEl = row.querySelector('.tit');
+
+    row.classList.remove('done','now');
+    if (dot) { dot.classList.remove('act','dn'); }
+    if (line) { line.classList.remove('dn'); }
+    if (timeEl) { timeEl.classList.remove('act'); }
+    if (titleEl) { titleEl.classList.remove('act'); }
+
+    if (date === MOCK_NOW_DATE) {
+      if (!foundNow && nowMin >= startMin && nowMin < endMin) {
+        // 현재 진행 중
+        row.classList.add('now');
+        if (dot) dot.classList.add('act');
+        if (timeEl) timeEl.classList.add('act');
+        if (titleEl) titleEl.classList.add('act');
+        foundNow = true;
+      } else if (!foundNow && nowMin >= endMin) {
+        // 지난 일정
+        row.classList.add('done');
+        if (dot) dot.classList.add('dn');
+        if (line) line.classList.add('dn');
+      }
+    } else if (date !== MOCK_NOW_DATE && date < MOCK_NOW_DATE) {
+      // 이전 날짜 전체
+      row.classList.add('done');
+      if (dot) dot.classList.add('dn');
+      if (line) line.classList.add('dn');
+    }
+  });
+}
+
+updateTimeline();
+
+function cm() { document.getElementById('ov').classList.remove('open'); }
+function toggleComp() {
+  var list = document.getElementById('comp-list');
+  var chev = document.getElementById('comp-chev');
+  var open = list.style.display === 'none';
+  list.style.display = open ? 'block' : 'none';
+  chev.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+</script>
+</body>
+</html>

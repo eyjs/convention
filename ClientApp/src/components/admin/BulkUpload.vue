@@ -43,25 +43,38 @@
           <div class="border-b border-primary-200 pb-2">
             <p class="font-semibold text-primary-800">시트1: 참석자 (필수)</p>
             <p>
-              <strong>컬럼:</strong> 소속 | 부서 | 이름 | 주민번호 | 전화번호 |
-              그룹
+              <strong>1~7열 (고정):</strong> 번호 | 소속 | 이름 | 주민번호 |
+              전화번호 | 그룹명 | 비고
+            </p>
+            <p>
+              <strong>8열~ (가변):</strong> 배정 속성 자유 추가
+              <span class="text-primary-500"
+                >예) 룸번호 | 룸메이트 | 버스좌석 | 식사테이블</span
+              >
+            </p>
+            <p class="text-primary-500 text-xs">
+              ※ 8번째 컬럼부터 헤더명이 속성 키, 값이 속성 값으로 저장됩니다
             </p>
             <p><strong>필수:</strong> 이름 + (전화번호 OR 주민번호)</p>
+            <p class="text-primary-500 text-xs">
+              ※ 첫 번째 셀이 ※로 시작하는 행은 안내 행으로 자동 스킵됩니다
+            </p>
           </div>
           <div class="border-b border-primary-200 pb-2">
             <p class="font-semibold text-primary-800">
               시트2: 그룹-일정 매핑 (선택)
             </p>
             <p>
-              <strong>A열:</strong> 그룹명 | <strong>B열:</strong> 일정코스명
+              <strong>A열:</strong> 그룹명 | <strong>B열:</strong> 일정코스명 |
+              <strong>C열:</strong> 코스설명 (선택)
             </p>
             <p class="text-primary-500 text-xs">
               ※ 일정이 먼저 업로드되어 있어야 합니다
             </p>
           </div>
           <p class="mt-1 text-primary-600">
-            ※ 업로드 시 기존 참석자는 엑셀 기준으로 완전히 교체됩니다
-            (User 계정/메타데이터는 보존)
+            ※ 업로드 시 기존 참석자는 엑셀 기준으로 완전히 교체됩니다 (User
+            계정/메타데이터는 보존)
           </p>
           <div class="mt-2 p-2 bg-primary-100 rounded text-xs text-primary-800">
             <p class="font-semibold mb-0.5">🔐 신규 참석자 자동 계정 생성</p>
@@ -126,17 +139,26 @@
           📋 엑셀 형식 (일정 업로드)
         </h3>
         <div class="text-sm text-purple-700 space-y-1">
-          <p><strong>1행:</strong> 헤더 (생략 가능, 2행부터 데이터 시작)</p>
+          <p><strong>시트명</strong> = 일정 코스명 (예: A조, 관광코스)</p>
+          <p><strong>1행:</strong> 헤더 (2행부터 데이터 시작)</p>
           <div class="mt-2 space-y-1 pl-2">
             <p><strong>A열:</strong> 날짜 (필수) - 예: 2025-11-17</p>
             <p><strong>B열:</strong> 시작시간 (필수) - 예: 09:00</p>
             <p><strong>C열:</strong> 종료시간 (선택) - 예: 11:30</p>
             <p><strong>D열:</strong> 장소 (선택) - 예: 호텔로비</p>
-            <p><strong>E열:</strong> 일정명 (필수) - 예: 개인정비</p>
-            <p><strong>F열:</strong> 메모 (선택) - 상세 설명, 여러 줄 가능</p>
+            <p><strong>E열:</strong> 지도링크 (선택) - URL</p>
+            <p><strong>F열:</strong> 일정명 (필수) - 예: 개인정비</p>
+            <p><strong>G열:</strong> 내용 (선택) - 상세 설명, 여러 줄 가능</p>
+            <p>
+              <strong>H열:</strong> 노출_개인정보 (선택) - 쉼표 구분 속성 키
+              <span class="text-purple-500">예: 룸번호,룸메이트</span>
+            </p>
           </div>
           <p class="mt-3 text-purple-600">
-            ※ 업로드할 때마다 새로운 일정 템플릿 생성
+            ※ 시트별로 일정 코스가 생성됩니다 (멀티시트 지원)
+          </p>
+          <p class="text-purple-600">
+            ※ ※로 시작하는 행은 안내 행으로 스킵됩니다
           </p>
           <p class="text-purple-600">
             ※ 과거 템플릿은 웹에서 확인 후 삭제 가능
@@ -385,6 +407,9 @@ const uploadGuests = async () => {
 
     const d = response.data
     let message = `기존 ${d.removedUserConventions || 0}명 삭제, ${d.usersCreated + d.usersUpdated}명 재등록 완료 (신규 User: ${d.usersCreated}명, 기존 User 재사용: ${d.usersUpdated}명)`
+    if (d.attributesCreated > 0 || d.attributesUpdated > 0) {
+      message += `\n속성: 신규 ${d.attributesCreated}건, 수정 ${d.attributesUpdated}건`
+    }
     if (d.scheduleAssignmentsCreated > 0 || d.scheduleDuplicatesSkipped > 0) {
       message += `\n일정 배정: ${d.scheduleAssignmentsCreated}건`
       if (d.scheduleDuplicatesSkipped > 0)
@@ -513,24 +538,69 @@ function saveWorkbook(wb, filename) {
   window.URL.revokeObjectURL(url)
 }
 
-// 참석자 업로드 샘플 (시트1: 참석자 / 시트2: 그룹-일정매핑)
+// 참석자 업로드 샘플 (시트1: 참석자+가변속성 / 시트2: 그룹-일정매핑)
 function downloadGuestSample() {
   const wb = XLSX.utils.book_new()
 
-  // 시트1: 참석자
+  // 시트1: 참석자 (고정 7컬럼 + 가변 속성 예시 3컬럼)
   const sheet1 = [
-    ['번호', '소속/부서', '이름', '주민등록번호', '전화번호', '그룹명', '비고'],
-    [1, '영업팀', '홍길동', '900101-1234567', '010-1234-5678', 'A조', ''],
-    [2, '개발팀', '김영희', '920202-2345678', '010-2345-6789', 'A조', ''],
-    [3, '마케팅팀', '이철수', '', '010-3456-7890', 'B조', 'VIP'],
+    [
+      '번호',
+      '소속/부서',
+      '이름',
+      '주민등록번호',
+      '전화번호',
+      '그룹명',
+      '비고',
+      '룸번호',
+      '룸메이트',
+      '버스좌석',
+    ],
+    [
+      1,
+      '영업팀',
+      '홍길동',
+      '900101-1234567',
+      '010-1234-5678',
+      'A조',
+      '',
+      '101',
+      '김영희',
+      '3A',
+    ],
+    [
+      2,
+      '개발팀',
+      '김영희',
+      '920202-2345678',
+      '010-2345-6789',
+      'A조',
+      '',
+      '101',
+      '홍길동',
+      '3B',
+    ],
+    [
+      3,
+      '마케팅팀',
+      '이철수',
+      '',
+      '010-3456-7890',
+      'B조',
+      'VIP',
+      '201',
+      '',
+      '5C',
+    ],
+    ['※ 이 행은 안내 행으로 업로드 시 자동 스킵됩니다.'],
   ]
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet1), '참석자')
 
-  // 시트2: 그룹-일정매핑
+  // 시트2: 그룹-일정매핑 (그룹명, 일정코스명, 코스설명)
   const sheet2 = [
-    ['그룹명', '일정코스명'],
-    ['A조', '기본코스'],
-    ['B조', 'VIP코스'],
+    ['그룹명', '일정코스명', '코스설명'],
+    ['A조', '기본코스', '일반 참석자 코스'],
+    ['B조', 'VIP코스', 'VIP 전용 코스'],
   ]
   XLSX.utils.book_append_sheet(
     wb,
@@ -541,18 +611,78 @@ function downloadGuestSample() {
   saveWorkbook(wb, '참석자업로드_샘플.xlsx')
 }
 
-// 일정 업로드 샘플
+// 일정 업로드 샘플 (멀티시트: 시트명 = 코스명)
 function downloadScheduleSample() {
   const wb = XLSX.utils.book_new()
-  const sheet = [
-    ['날짜', '시작시간', '종료시간', '장소', '일정명', '메모'],
-    ['2026-05-01', '09:00', '10:00', '인천공항 T1', '집결', '3층 A카운터'],
-    ['2026-05-01', '11:00', '14:00', '비행', 'KE123 탑승', ''],
-    ['2026-05-01', '16:00', '18:00', '호텔 로비', '체크인', ''],
-    ['2026-05-02', '09:00', '12:00', '콜로세움', '관광', ''],
-    ['2026-05-02', '13:00', '15:00', '현지 레스토랑', '점심', ''],
+  const header = [
+    '날짜',
+    '시작시간',
+    '종료시간',
+    '장소',
+    '지도링크',
+    '일정명',
+    '내용',
+    '노출_개인정보',
   ]
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet), '일정')
+
+  // 시트1: A조 코스
+  const sheet1 = [
+    header,
+    [
+      '2026-05-01',
+      '09:00',
+      '10:00',
+      '인천공항 T1',
+      '',
+      '집결',
+      '3층 A카운터 집합',
+      '',
+    ],
+    ['2026-05-01', '11:00', '14:00', '기내', '', 'KE123 탑승', '', ''],
+    [
+      '2026-05-01',
+      '16:00',
+      '18:00',
+      '호텔 로비',
+      '',
+      '체크인',
+      '',
+      '룸번호,룸메이트',
+    ],
+    [
+      '2026-05-02',
+      '09:00',
+      '12:00',
+      '콜로세움',
+      'https://maps.google.com/?q=콜로세움',
+      '관광',
+      '',
+      '',
+    ],
+    ['2026-05-02', '13:00', '15:00', '현지 레스토랑', '', '점심', '', ''],
+    ['※ 이 행은 안내 행으로 업로드 시 자동 스킵됩니다.'],
+  ]
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet1), 'A조')
+
+  // 시트2: B조 코스 (멀티시트 예시)
+  const sheet2 = [
+    header,
+    [
+      '2026-05-01',
+      '10:00',
+      '11:00',
+      '인천공항 T2',
+      '',
+      '집결',
+      '2층 B카운터 집합',
+      '',
+    ],
+    ['2026-05-01', '14:00', '17:00', '기내', '', 'OZ201 탑승', '', ''],
+    ['2026-05-01', '19:00', '20:00', '호텔 로비', '', '체크인', '', '룸번호'],
+    ['※ 이 행은 안내 행으로 업로드 시 자동 스킵됩니다.'],
+  ]
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet2), 'B조')
+
   saveWorkbook(wb, '일정업로드_샘플.xlsx')
 }
 
@@ -561,8 +691,24 @@ function downloadOptionTourSample() {
   const wb = XLSX.utils.book_new()
   const sheet = [
     ['투어명', '설명', '가격', '날짜', '시작시간', '종료시간', '정원'],
-    ['바티칸 투어', '성 베드로 대성당 + 박물관', 120, '2026-05-03', '09:00', '13:00', 20],
-    ['나이트 투어', '로마 야경 워킹 투어', 50, '2026-05-03', '19:00', '22:00', 15],
+    [
+      '바티칸 투어',
+      '성 베드로 대성당 + 박물관',
+      120,
+      '2026-05-03',
+      '09:00',
+      '13:00',
+      20,
+    ],
+    [
+      '나이트 투어',
+      '로마 야경 워킹 투어',
+      50,
+      '2026-05-03',
+      '19:00',
+      '22:00',
+      15,
+    ],
   ]
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet), '옵션투어')
   saveWorkbook(wb, '옵션투어_업로드_샘플.xlsx')
