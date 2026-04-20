@@ -1,7 +1,5 @@
 <template>
   <div class="min-h-screen min-h-dvh bg-gray-50 pb-8">
-    <MainHeader title="더보기" :show-back="true" />
-
     <!-- 로딩 -->
     <div v-if="isLoading" class="flex items-center justify-center py-12">
       <div class="text-center">
@@ -269,7 +267,6 @@ import {
   Zap as ZapIcon,
 } from 'lucide-vue-next'
 import apiClient from '@/services/api'
-import MainHeader from '@/components/common/MainHeader.vue'
 import { useAction } from '@/composables/useAction'
 
 const route = useRoute()
@@ -395,7 +392,7 @@ onMounted(async () => {
         (c) => statusMap.get(c.id)?.isComplete,
       ).length
       checklistMeta.value = { completed, total: checklistItems.length }
-    } else if (checklistRes.data) {
+    } else if (checklistRes.data && checklistRes.data.total > 0) {
       checklistMeta.value = checklistRes.data
     }
 

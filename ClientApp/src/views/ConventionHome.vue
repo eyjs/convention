@@ -7,13 +7,6 @@
   </div>
 
   <div v-else-if="convention" class="min-h-screen min-h-dvh bg-gray-50">
-    <!-- 컴팩트 헤더 -->
-    <ConventionHeader
-      :convention="convention"
-      :convention-id="conventionId"
-      :d-day="dDay"
-      @menu-click="isSidebarOpen = true"
-    />
 
     <!-- GLOBAL_ROOT_POPUP: 팝업 공지 (화면에 보이지 않고 팝업만 트리거) -->
     <DynamicActionRenderer
@@ -64,8 +57,6 @@
       @close="selectedSchedule = null"
     />
 
-    <!-- 사이드바 메뉴 -->
-    <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
   </div>
 
   <div v-else class="min-h-screen min-h-dvh flex items-center justify-center">
@@ -87,11 +78,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
-import ConventionHeader from '@/components/convention/ConventionHeader.vue'
 import ScheduleTimeline from '@/components/convention/ScheduleTimeline.vue'
 import ScheduleDetailModal from '@/components/convention/ScheduleDetailModal.vue'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
-import SidebarMenu from '@/components/common/SidebarMenu.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -99,7 +88,6 @@ const authStore = useAuthStore()
 const conventionStore = useConventionStore()
 
 const loading = ref(true)
-const isSidebarOpen = ref(false)
 const myInfo = ref(null)
 const allActions = ref([])
 const hasTravelGuide = ref(false)
@@ -114,22 +102,6 @@ const conventionId = computed(() => {
 const brandColor = computed(() => convention.value?.brandColor || '#10b981')
 
 const isAdmin = computed(() => authStore.user?.role === 'Admin')
-
-const dDay = computed(() => {
-  if (!convention.value?.startDate) return null
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const start = new Date(convention.value.startDate)
-  start.setHours(0, 0, 0, 0)
-  const end = convention.value.endDate ? new Date(convention.value.endDate) : start
-  end.setHours(23, 59, 59, 999)
-  // 행사 종료 후 → null (표시 안 함)
-  if (today > end) return null
-  // 행사 진행 중 → 0 (D-Day)
-  if (today >= start && today <= end) return 0
-  // 행사 전 → D-n
-  return Math.ceil((start - today) / (1000 * 60 * 60 * 24))
-})
 
 const myAttributes = computed(() => myInfo.value?.attributes || [])
 

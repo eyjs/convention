@@ -10,8 +10,6 @@
     ></div>
   </div>
   <div v-else class="min-h-screen min-h-dvh bg-gray-50">
-    <!-- 공통 헤더 사용 -->
-    <MainHeader title="게시판" :show-back="true" />
 
     <!-- 카테고리 탭 -->
     <div class="sticky top-[72px] z-30 bg-white">

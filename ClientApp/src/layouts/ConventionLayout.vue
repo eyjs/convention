@@ -1,5 +1,15 @@
 <template>
   <div class="min-h-screen min-h-dvh bg-gray-50 safe-area-container">
+    <!-- 공통 헤더 (brandColor 기반) -->
+    <ConventionHeader
+      v-if="convention"
+      :convention="convention"
+      :convention-id="conventionId"
+      :d-day="dDay"
+      @menu-click="isSidebarOpen = true"
+    />
+    <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
+
     <main :class="{ 'pb-20': showNav }">
       <router-view />
     </main>
@@ -53,16 +63,33 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
+import ConventionHeader from '@/components/convention/ConventionHeader.vue'
+import SidebarMenu from '@/components/common/SidebarMenu.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
 const showNav = computed(() => route.meta.showNav !== false)
+const isSidebarOpen = ref(false)
+const convention = computed(() => conventionStore.currentConvention)
+
+const dDay = computed(() => {
+  if (!convention.value?.startDate) return null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const start = new Date(convention.value.startDate)
+  start.setHours(0, 0, 0, 0)
+  const end = convention.value.endDate ? new Date(convention.value.endDate) : start
+  end.setHours(23, 59, 59, 999)
+  if (today > end) return null
+  if (today >= start && today <= end) return 0
+  return Math.ceil((start - today) / (1000 * 60 * 60 * 24))
+})
 
 const conventionId = computed(() => {
   const id = route.params.conventionId
