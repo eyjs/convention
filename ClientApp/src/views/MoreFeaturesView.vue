@@ -49,7 +49,7 @@
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-gray-900">코스</div>
               <div class="text-xs text-gray-400 truncate">
-                {{ myInfo.scheduleCourses.join(' · ') }}
+                {{ myInfo.scheduleCourses.map(c => c.courseName || c).join(' · ') }}
               </div>
             </div>
           </div>
