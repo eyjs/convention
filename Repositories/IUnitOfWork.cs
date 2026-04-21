@@ -48,10 +48,6 @@ public interface IUnitOfWork : IDisposable
     IRepository<Notification> Notifications { get; }
     IRepository<UserNotification> UserNotifications { get; }
 
-    // Attributes
-    IRepository<AttributeDefinition> AttributeDefinitions { get; }
-    IRepository<AttributeTemplate> AttributeTemplates { get; }
-
     // Actions
     IRepository<ActionTemplate> ActionTemplates { get; }
     IRepository<ActionSubmission> ActionSubmissions { get; }
@@ -82,6 +78,10 @@ public interface IUnitOfWork : IDisposable
 
     // Home Banners
     IRepository<HomeBanner> HomeBanners { get; }
+
+    // Attribute Categories
+    IRepository<AttributeCategory> AttributeCategories { get; }
+    IRepository<AttributeCategoryItem> AttributeCategoryItems { get; }
 
     // Personal Trip
     IRepository<Entities.PersonalTrip.PersonalTrip> PersonalTrips { get; }

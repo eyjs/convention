@@ -5,14 +5,12 @@ import {
   Users,
   FileText,
   Calendar,
-  Tags,
   Zap,
   ClipboardList,
   FormInput,
   Upload,
   FolderOpen,
   BarChart3,
-  Bus,
   BookOpen,
   MessageSquare,
   LayoutGrid,
@@ -87,13 +85,6 @@ const conventionNavItems = [
     routeName: 'AdminSchedules',
   },
   {
-    key: 'attributes',
-    label: '속성 템플릿',
-    icon: Tags,
-    path: 'attributes',
-    routeName: 'AdminAttributes',
-  },
-  {
     key: 'actions',
     label: '액션 관리',
     icon: Zap,
@@ -122,13 +113,6 @@ const conventionNavItems = [
     routeName: 'AdminFormBuilder',
   },
   {
-    key: 'travel-assignments',
-    label: '여행 배정',
-    icon: Bus,
-    path: 'travel-assignments',
-    routeName: 'AdminTravelAssignments',
-  },
-  {
     key: 'upload',
     label: '엑셀 업로드',
     icon: Upload,
@@ -155,6 +139,13 @@ const conventionNavItems = [
     icon: LayoutGrid,
     path: 'seating',
     routeName: 'AdminSeatingList',
+  },
+  {
+    key: 'attribute-categories',
+    label: '속성 카테고리',
+    icon: FolderOpen,
+    path: 'attribute-categories',
+    routeName: 'AdminAttributeCategories',
   },
 ]
 

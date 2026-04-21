@@ -12,10 +12,14 @@ namespace LocalRAG.Controllers.Convention;
 public class ConventionsController : ControllerBase
 {
     private readonly IConventionCrudService _conventionCrudService;
+    private readonly IAttributeCategoryService _attributeCategoryService;
 
-    public ConventionsController(IConventionCrudService conventionCrudService)
+    public ConventionsController(
+        IConventionCrudService conventionCrudService,
+        IAttributeCategoryService attributeCategoryService)
     {
         _conventionCrudService = conventionCrudService;
+        _attributeCategoryService = attributeCategoryService;
     }
 
     // GET: api/conventions
@@ -116,5 +120,17 @@ public class ConventionsController : ControllerBase
         }
 
         return Ok(new { message = "행사가 복원되었습니다." });
+    }
+
+    // GET: api/conventions/{conventionId}/my-attributes/grouped
+    [HttpGet("{conventionId}/my-attributes/grouped")]
+    public async Task<IActionResult> GetMyGroupedAttributes(int conventionId)
+    {
+        var userId = User.GetUserIdOrNull();
+        if (userId == null)
+            return Unauthorized(new { message = "인증이 필요합니다." });
+
+        var result = await _attributeCategoryService.GetGroupedAttributesAsync(conventionId, userId.Value);
+        return Ok(result);
     }
 }

@@ -128,39 +128,77 @@
       <!-- 섹션 2: 내 배정 정보 -->
       <section class="mx-3">
         <p class="text-xs font-medium text-gray-400 mb-2 px-1">내 배정 정보</p>
-        <div
-          class="bg-white rounded-xl border border-black/[0.07] overflow-hidden shadow-sm"
-        >
-          <template v-if="hasAttributes">
-            <div class="grid grid-cols-2">
+
+        <!-- 카테고리 그룹화 모드 -->
+        <template v-if="hasGroupedAttributes">
+          <div class="space-y-3">
+            <template v-for="category in groupedAttributes.categories" :key="category.name">
+              <!-- 속성이 있는 카테고리만 표시 -->
               <div
-                v-for="(attr, index) in myInfo.attributes"
-                :key="attr.key"
-                class="px-4 py-3 border-b border-black/[0.05]"
-                :class="[
-                  index % 2 === 0 ? 'border-r border-black/[0.05]' : '',
-                ]"
+                v-if="category.attributes && category.attributes.length > 0"
+                class="bg-white rounded-xl border border-black/[0.07] overflow-hidden shadow-sm"
               >
-                <div
-                  class="text-[11px] mb-1"
-                  :style="{ color: palette(index).text }"
-                >
-                  {{ attr.key }}
+                <!-- 카테고리 헤더 -->
+                <div class="flex items-center gap-2 px-4 py-2.5 border-b border-black/[0.05] bg-gray-50/60">
+                  <span class="text-base leading-none" aria-hidden="true">{{ category.icon }}</span>
+                  <span class="text-sm font-medium text-gray-500">{{ category.name }}</span>
                 </div>
-                <div
-                  v-if="attr.value"
-                  class="text-sm font-semibold text-gray-900"
-                >
-                  {{ attr.value }}
+                <!-- 속성 그리드 -->
+                <div class="grid grid-cols-2">
+                  <div
+                    v-for="(attr, index) in category.attributes"
+                    :key="attr.key"
+                    class="px-4 py-3 border-b border-black/[0.05]"
+                    :class="index % 2 === 0 ? 'border-r border-black/[0.05]' : ''"
+                  >
+                    <div
+                      class="text-[11px] mb-1"
+                      :style="{ color: palette(index).text }"
+                    >
+                      {{ attr.key }}
+                    </div>
+                    <div v-if="attr.value" class="text-sm font-semibold text-gray-900">
+                      {{ attr.value }}
+                    </div>
+                    <div v-else class="text-sm text-gray-400">미배정</div>
+                  </div>
                 </div>
-                <div v-else class="text-sm text-gray-400">미배정</div>
               </div>
-            </div>
-          </template>
-          <div v-else class="px-4 py-6 text-center text-sm text-gray-400">
-            등록된 배정 정보가 없습니다
+            </template>
           </div>
-        </div>
+        </template>
+
+        <!-- fallback: flat 모드 (기존 방식 또는 grouped API 응답 없을 때) -->
+        <template v-else>
+          <div
+            class="bg-white rounded-xl border border-black/[0.07] overflow-hidden shadow-sm"
+          >
+            <template v-if="hasAttributes">
+              <div class="grid grid-cols-2">
+                <div
+                  v-for="(attr, index) in myInfo.attributes"
+                  :key="attr.key"
+                  class="px-4 py-3 border-b border-black/[0.05]"
+                  :class="index % 2 === 0 ? 'border-r border-black/[0.05]' : ''"
+                >
+                  <div
+                    class="text-[11px] mb-1"
+                    :style="{ color: palette(index).text }"
+                  >
+                    {{ attr.key }}
+                  </div>
+                  <div v-if="attr.value" class="text-sm font-semibold text-gray-900">
+                    {{ attr.value }}
+                  </div>
+                  <div v-else class="text-sm text-gray-400">미배정</div>
+                </div>
+              </div>
+            </template>
+            <div v-else class="px-4 py-6 text-center text-sm text-gray-400">
+              등록된 배정 정보가 없습니다
+            </div>
+          </div>
+        </template>
       </section>
 
       <!-- 섹션 3: 메뉴 -->
@@ -276,6 +314,7 @@ const { executeAction } = useAction()
 const isLoading = ref(false)
 const isCompanionsOpen = ref(false)
 const myInfo = ref({})
+const groupedAttributes = ref(null)
 const hasSurveys = ref(false)
 const incompleteSurveyCount = ref(0)
 const checklistMeta = ref(null)
@@ -297,6 +336,14 @@ function palette(index) {
 const hasAttributes = computed(
   () => myInfo.value.attributes && myInfo.value.attributes.length > 0,
 )
+
+// grouped API 응답이 있고 categories 배열에 속성이 하나라도 있으면 그룹화 모드
+const hasGroupedAttributes = computed(() => {
+  if (!groupedAttributes.value || !Array.isArray(groupedAttributes.value.categories)) return false
+  return groupedAttributes.value.categories.some(
+    (cat) => cat.attributes && cat.attributes.length > 0,
+  )
+})
 
 const hasMenuItems = computed(
   () => hasSurveys.value || checklistMeta.value || dynamicMenuItems.value.length > 0,
@@ -340,7 +387,7 @@ onMounted(async () => {
   isLoading.value = true
 
   try {
-    const [myInfoRes, actionsRes, statusesRes, surveysRes, checklistRes] =
+    const [myInfoRes, actionsRes, statusesRes, surveysRes, checklistRes, groupedRes] =
       await Promise.all([
         apiClient.get(`/users/my-convention-info/${conventionId}`),
         apiClient.get(`/conventions/${conventionId}/actions/menu`),
@@ -351,9 +398,13 @@ onMounted(async () => {
         apiClient
           .get(`/conventions/${conventionId}/actions/checklist-status`)
           .catch(() => ({ data: null })),
+        apiClient
+          .get(`/conventions/${conventionId}/my-attributes/grouped`)
+          .catch(() => ({ data: null })),
       ])
 
     myInfo.value = myInfoRes.data || {}
+    groupedAttributes.value = groupedRes.data || null
 
     const surveys = Array.isArray(surveysRes.data) ? surveysRes.data : []
     hasSurveys.value = surveys.length > 0

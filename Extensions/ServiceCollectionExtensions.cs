@@ -38,10 +38,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPersonalTripService, LocalRAG.Services.PersonalTrip.PersonalTripService>();
         services.AddScoped<IConventionCrudService, ConventionCrudService>();
         services.AddScoped<IScheduleService, ScheduleService>();
-        services.AddScoped<ITravelAssignmentService, LocalRAG.Services.Convention.TravelAssignmentService>();
         services.AddScoped<ISeatingLayoutService, LocalRAG.Services.Convention.SeatingLayoutService>();
         services.AddScoped<LocalRAG.Services.Convention.NotificationSendService>();
         services.AddScoped<IHomeBannerService, LocalRAG.Services.Convention.HomeBannerService>();
+        services.AddScoped<IAttributeCategoryService, LocalRAG.Services.Convention.AttributeCategoryService>();
 
         return services;
     }

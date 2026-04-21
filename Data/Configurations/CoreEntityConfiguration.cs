@@ -106,24 +106,6 @@ public class GuestAttributeConfiguration : IEntityTypeConfiguration<GuestAttribu
     }
 }
 
-public class AttributeDefinitionConfiguration : IEntityTypeConfiguration<AttributeDefinition>
-{
-    public void Configure(EntityTypeBuilder<AttributeDefinition> entity)
-    {
-        entity.HasKey(e => e.Id);
-        entity.Property(e => e.Id).ValueGeneratedOnAdd();
-        entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_AttributeDefinition_ConventionId");
-        entity.HasIndex(e => new { e.ConventionId, e.AttributeKey })
-              .IsUnique()
-              .HasDatabaseName("UQ_AttributeDefinition_ConventionId_AttributeKey");
-
-        entity.HasOne(ad => ad.Convention)
-              .WithMany()
-              .HasForeignKey(ad => ad.ConventionId)
-              .OnDelete(DeleteBehavior.Cascade);
-    }
-}
-
 public class ScheduleTemplateConfiguration : IEntityTypeConfiguration<ScheduleTemplate>
 {
     public void Configure(EntityTypeBuilder<ScheduleTemplate> entity)
@@ -176,24 +158,6 @@ public class GuestScheduleTemplateConfiguration : IEntityTypeConfiguration<Guest
               .WithMany(st => st.GuestScheduleTemplates)
               .HasForeignKey(gst => gst.ScheduleTemplateId)
               .OnDelete(DeleteBehavior.NoAction);
-    }
-}
-
-public class AttributeTemplateConfiguration : IEntityTypeConfiguration<AttributeTemplate>
-{
-    public void Configure(EntityTypeBuilder<AttributeTemplate> entity)
-    {
-        entity.HasKey(e => e.Id);
-        entity.Property(e => e.Id).ValueGeneratedOnAdd();
-        entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_AttributeTemplate_ConventionId");
-        entity.HasIndex(e => new { e.ConventionId, e.AttributeKey })
-              .IsUnique()
-              .HasDatabaseName("UQ_AttributeTemplate_ConventionId_AttributeKey");
-
-        entity.HasOne(at => at.Convention)
-              .WithMany()
-              .HasForeignKey(at => at.ConventionId)
-              .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

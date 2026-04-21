@@ -45,8 +45,6 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<SeatingLayout>? _seatingLayouts;
     private IRepository<Notification>? _notifications;
     private IRepository<UserNotification>? _userNotifications;
-    private IRepository<AttributeDefinition>? _attributeDefinitions;
-    private IRepository<AttributeTemplate>? _attributeTemplates;
     private IRepository<ActionTemplate>? _actionTemplates;
     private IRepository<ActionSubmission>? _actionSubmissions;
     private IRepository<SurveyQuestion>? _surveyQuestions;
@@ -68,6 +66,8 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<ScheduleImage>? _scheduleImages;
     private IRepository<HomeBanner>? _homeBanners;
     private IRepository<IncheonFlightData>? _incheonFlightDatas;
+    private IRepository<AttributeCategory>? _attributeCategories;
+    private IRepository<AttributeCategoryItem>? _attributeCategoryItems;
 
     public UnitOfWork(ConventionDbContext context)
     {
@@ -157,12 +157,6 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<FileAttachment> FileAttachments =>
         _fileAttachments ??= new Repository<FileAttachment>(_context);
 
-    public IRepository<AttributeDefinition> AttributeDefinitions =>
-        _attributeDefinitions ??= new Repository<AttributeDefinition>(_context);
-
-    public IRepository<AttributeTemplate> AttributeTemplates =>
-        _attributeTemplates ??= new Repository<AttributeTemplate>(_context);
-
     public IRepository<ActionTemplate> ActionTemplates =>
         _actionTemplates ??= new Repository<ActionTemplate>(_context);
 
@@ -211,6 +205,13 @@ public class UnitOfWork : IUnitOfWork
     // Home Banners
     public IRepository<HomeBanner> HomeBanners =>
         _homeBanners ??= new Repository<HomeBanner>(_context);
+
+    // Attribute Categories
+    public IRepository<AttributeCategory> AttributeCategories =>
+        _attributeCategories ??= new Repository<AttributeCategory>(_context);
+
+    public IRepository<AttributeCategoryItem> AttributeCategoryItems =>
+        _attributeCategoryItems ??= new Repository<AttributeCategoryItem>(_context);
 
     // Personal Trip
     public IRepository<Entities.PersonalTrip.PersonalTrip> PersonalTrips =>

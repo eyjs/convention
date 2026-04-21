@@ -18,7 +18,6 @@ public class ConventionDbContext : DbContext
     public DbSet<Convention> Conventions { get; set; }
     public DbSet<UserConvention> UserConventions { get; set; }
     public DbSet<GuestAttribute> GuestAttributes { get; set; }
-    public DbSet<AttributeDefinition> AttributeDefinitions { get; set; }
     public DbSet<Feature> Features { get; set; }
     public DbSet<Menu> Menus { get; set; }
     public DbSet<Section> Sections { get; set; }
@@ -27,7 +26,6 @@ public class ConventionDbContext : DbContext
     public DbSet<ScheduleTemplate> ScheduleTemplates { get; set; }
     public DbSet<ScheduleItem> ScheduleItems { get; set; }
     public DbSet<GuestScheduleTemplate> GuestScheduleTemplates { get; set; }
-    public DbSet<AttributeTemplate> AttributeTemplates { get; set; }
     public DbSet<Notice> Notices { get; set; }
     public DbSet<NoticeCategory> NoticeCategories { get; set; }
     public DbSet<SeatingLayout> SeatingLayouts { get; set; }
@@ -81,6 +79,10 @@ public class ConventionDbContext : DbContext
 
     // Home Banners
     public DbSet<HomeBanner> HomeBanners { get; set; }
+
+    // Attribute Categories
+    public DbSet<AttributeCategory> AttributeCategories { get; set; }
+    public DbSet<AttributeCategoryItem> AttributeCategoryItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

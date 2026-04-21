@@ -403,13 +403,6 @@ const routes = [
             meta: { title: '일정 관리' },
           },
           {
-            path: 'attributes',
-            name: 'AdminAttributes',
-            component: () =>
-              import('@/components/admin/AttributeTemplateManagement.vue'),
-            meta: { title: '속성 템플릿' },
-          },
-          {
             path: 'actions',
             name: 'AdminActions',
             component: () => import('@/components/admin/ActionManagement.vue'),
@@ -442,13 +435,6 @@ const routes = [
             meta: { title: '엑셀 업로드' },
           },
           {
-            path: 'travel-assignments',
-            name: 'AdminTravelAssignments',
-            component: () =>
-              import('@/components/admin/TravelAssignmentManager.vue'),
-            meta: { title: '여행 배정' },
-          },
-          {
             path: 'sns',
             name: 'AdminSns',
             component: () => import('@/components/admin/SnsManagement.vue'),
@@ -471,6 +457,13 @@ const routes = [
             name: 'AdminSeatingEditor',
             component: () => import('@/views/admin/SeatingLayoutEditorView.vue'),
             meta: { title: '좌석 배치도 편집', adminFullScreen: true },
+          },
+          {
+            path: 'attribute-categories',
+            name: 'AdminAttributeCategories',
+            component: () =>
+              import('@/components/admin/AttributeCategoryManager.vue'),
+            meta: { title: '속성 카테고리' },
           },
         ],
       },
