@@ -78,11 +78,10 @@ public class UserUploadService : IUserUploadService
             _logger.LogInformation("Processing {RowCount} rows from Excel, {AttrCount} attribute columns",
                 rowCount, attributeHeaders.Count);
 
+            // SqlServerRetryingExecutionStrategy 호환 트랜잭션
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
             // ===== 교체 모드: 기존 convention 종속 데이터 삭제 =====
-            // User 레코드와 GuestAttribute는 유지 (User 단위 개인 정보)
-            await _unitOfWork.BeginTransactionAsync();
-
-            try
             {
                 var existingUcs = (await _unitOfWork.UserConventions
                     .FindAsync(uc => uc.ConventionId == conventionId)).ToList();
@@ -116,14 +115,6 @@ public class UserUploadService : IUserUploadService
                     "Cleared convention {ConventionId}: {Ucs} UserConventions, {Actions} UserActionStatuses, {GstMaps} GuestScheduleTemplates",
                     conventionId, existingUcs.Count, existingActionStatuses.Count, existingGuestSchedules.Count);
             }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-                _logger.LogError(ex, "Failed to clear existing convention data");
-                result.Errors.Add($"기존 참석자 데이터 삭제 실패: {ex.Message}");
-                result.Success = false;
-                return result;
-            }
 
             // 시트1 처리 후 행별 UserId 매핑 (시트2/3에서 사용)
             var rowUserMap = new Dictionary<int, int>(); // excelRow -> userId
@@ -131,8 +122,6 @@ public class UserUploadService : IUserUploadService
             // 가변 속성 컬럼 임시 저장 (row -> (key, value) 목록)
             var rowAttributesMap = new Dictionary<int, List<(string Key, string Value)>>();
 
-            try
-            {
                 for (int row = 2; row <= rowCount; row++)
                 {
                     // 첫 번째 셀이 '※'로 시작하면 안내 행 스킵
@@ -324,12 +313,6 @@ public class UserUploadService : IUserUploadService
                 result.Success = true;
                 _logger.LogInformation("User upload completed: {Created} created, {Updated} updated, {AttrCreated} attrs created, {AttrUpdated} attrs updated",
                     result.UsersCreated, result.UsersUpdated, result.AttributesCreated, result.AttributesUpdated);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "User upload failed during processing");
-                throw;
-            }
 
             // 시트2: 그룹-일정 매핑 처리
             if (package.Workbook.Worksheets.Count >= 2)
@@ -340,8 +323,7 @@ public class UserUploadService : IUserUploadService
             // 시트3(속성)은 처리하지 않음 — GuestAttribute는 User 단위 메타데이터이며
             // 행사에 종속되지 않으므로 별도 기능으로 분리
 
-            // 모든 시트 처리 성공 → 트랜잭션 커밋
-            await _unitOfWork.CommitTransactionAsync();
+            }); // ExecuteInTransactionAsync — 자동 커밋/롤백
         }
         catch (Exception ex)
         {
@@ -350,15 +332,6 @@ public class UserUploadService : IUserUploadService
             if (ex.InnerException != null)
             {
                 result.Errors.Add($"상세: {ex.InnerException.Message}");
-            }
-            // 트랜잭션 롤백
-            try
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-            }
-            catch (Exception rollbackEx)
-            {
-                _logger.LogError(rollbackEx, "Transaction rollback failed");
             }
             result.Success = false;
         }
