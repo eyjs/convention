@@ -3,18 +3,35 @@
     <!-- 헤더 -->
     <div class="sticky top-0 z-40 bg-white shadow-sm">
       <div class="px-4 py-3 flex items-center gap-3">
-        <button class="p-1 -ml-1 rounded-lg hover:bg-gray-100" @click="router.back()">
-          <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        <button
+          class="p-1 -ml-1 rounded-lg hover:bg-gray-100"
+          @click="router.back()"
+        >
+          <svg
+            class="w-6 h-6 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
-        <h1 class="text-lg font-bold text-gray-900 truncate">{{ banner?.title || '상세 보기' }}</h1>
+        <h1 class="text-lg font-bold text-gray-900 truncate">
+          {{ banner?.title || '상세 보기' }}
+        </h1>
       </div>
     </div>
 
     <!-- 로딩 -->
     <div v-if="loading" class="flex items-center justify-center py-20">
-      <div class="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div
+        class="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"
+      ></div>
     </div>
 
     <!-- 콘텐츠: 이미지 이어붙이기 -->

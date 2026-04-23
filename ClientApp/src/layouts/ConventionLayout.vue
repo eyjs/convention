@@ -3,18 +3,19 @@
     <!-- 상단 안전영역 (노치/카메라 차단) -->
     <div class="safe-top bg-gray-50"></div>
 
+    <!-- 공통 헤더 (스크롤 밖 고정) -->
+    <ConventionHeader
+      v-if="convention"
+      :convention="convention"
+      :convention-id="conventionId"
+      :d-day="dDay"
+      class="flex-shrink-0"
+      @menu-click="isSidebarOpen = true"
+    />
+    <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
+
     <!-- 스크롤 가능한 콘텐츠 영역 -->
     <div class="safe-content bg-gray-50">
-      <!-- 공통 헤더 (brandColor 기반) -->
-      <ConventionHeader
-        v-if="convention"
-        :convention="convention"
-        :convention-id="conventionId"
-        :d-day="dDay"
-        @menu-click="isSidebarOpen = true"
-      />
-      <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
-
       <main :class="{ 'pb-nav': showNav }">
         <router-view />
       </main>
@@ -96,7 +97,9 @@ const dDay = computed(() => {
   today.setHours(0, 0, 0, 0)
   const start = new Date(convention.value.startDate)
   start.setHours(0, 0, 0, 0)
-  const end = convention.value.endDate ? new Date(convention.value.endDate) : start
+  const end = convention.value.endDate
+    ? new Date(convention.value.endDate)
+    : start
   end.setHours(23, 59, 59, 999)
   if (today > end) return null
   if (today >= start && today <= end) return 0

@@ -134,12 +134,6 @@ public class ScheduleItemConfiguration : IEntityTypeConfiguration<ScheduleItem>
               .HasForeignKey(si => si.ScheduleTemplateId)
               .OnDelete(DeleteBehavior.Cascade);
 
-        entity.HasOne(si => si.SeatingLayout)
-              .WithMany()
-              .HasForeignKey(si => si.SeatingLayoutId)
-              .OnDelete(DeleteBehavior.NoAction);
-
-        entity.HasIndex(e => e.SeatingLayoutId).HasDatabaseName("IX_ScheduleItem_SeatingLayoutId");
     }
 }
 
@@ -300,28 +294,6 @@ public class UserNotificationConfiguration : IEntityTypeConfiguration<UserNotifi
         entity.HasIndex(e => e.UserId).HasDatabaseName("IX_UserNotification_UserId");
         entity.HasOne(e => e.Notification).WithMany(n => n.UserNotifications).HasForeignKey(e => e.NotificationId).OnDelete(DeleteBehavior.Cascade);
         entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.NoAction);
-    }
-}
-
-public class SeatingLayoutConfiguration : IEntityTypeConfiguration<SeatingLayout>
-{
-    public void Configure(EntityTypeBuilder<SeatingLayout> entity)
-    {
-        entity.HasKey(e => e.Id);
-        entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
-        entity.Property(e => e.Description).HasMaxLength(1000);
-        entity.Property(e => e.BackgroundImageUrl).HasMaxLength(500);
-        entity.Property(e => e.LayoutJson).IsRequired();
-        entity.Property(e => e.CreatedAt).HasDefaultValueSql("getdate()");
-        entity.Property(e => e.IsDeleted).HasDefaultValue(false);
-
-        entity.HasIndex(e => e.ConventionId).HasDatabaseName("IX_SeatingLayout_ConventionId");
-        entity.HasIndex(e => e.IsDeleted).HasDatabaseName("IX_SeatingLayout_IsDeleted");
-
-        entity.HasOne(e => e.Convention)
-              .WithMany()
-              .HasForeignKey(e => e.ConventionId)
-              .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

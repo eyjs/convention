@@ -95,6 +95,11 @@ namespace LocalRAG.DTOs.ScheduleModels
         public int? SeatingLayoutId { get; set; }
 
         /// <summary>
+        /// 장소 지도/링크 URL
+        /// </summary>
+        public string? MapUrl { get; set; }
+
+        /// <summary>
         /// 타임라인에 표시할 배정 속성 키 목록 (쉼표 구분)
         /// 예: "룸번호,룸메이트" → 해당 일정에 사용자의 룸번호/룸메이트 뱃지 표시
         /// </summary>
@@ -102,7 +107,6 @@ namespace LocalRAG.DTOs.ScheduleModels
 
         // Navigation
         public ScheduleTemplate? ScheduleTemplate { get; set; }
-        public LocalRAG.Entities.SeatingLayout? SeatingLayout { get; set; }
         public ICollection<LocalRAG.Entities.ScheduleImage> Images { get; set; } = new List<LocalRAG.Entities.ScheduleImage>();
     }
     

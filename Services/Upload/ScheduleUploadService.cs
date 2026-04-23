@@ -518,6 +518,7 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                         StartTime = startTimeStr,
                         EndTime = endTimeStr,
                         Location = string.IsNullOrEmpty(locationText) ? null : locationText,
+                        MapUrl = string.IsNullOrEmpty(mapUrl) ? null : mapUrl,
                         Title = titleText,
                         Content = contentText,
                         VisibleAttributes = string.IsNullOrEmpty(visibleAttrs) ? null : visibleAttrs,
@@ -607,6 +608,7 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                 Title = title,
                 Content = item.Content?.Length > 4000 ? item.Content[..4000] : item.Content,
                 Location = item.Location?.Length > 500 ? item.Location[..500] : item.Location,
+                MapUrl = string.IsNullOrEmpty(item.MapUrl) ? null : item.MapUrl,
                 VisibleAttributes = string.IsNullOrEmpty(item.VisibleAttributes) ? null : item.VisibleAttributes,
                 OrderNum = orderNum++,
                 CreatedAt = DateTime.UtcNow

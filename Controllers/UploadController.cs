@@ -2,6 +2,7 @@ using LocalRAG.Constants;
 using LocalRAG.DTOs.UploadModels;
 using LocalRAG.Interfaces;
 using LocalRAG.Repositories;
+using LocalRAG.Services.Upload;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,7 @@ public class UploadController : ControllerBase
     private readonly IAttributeUploadService _attributeUploadService;
     private readonly IGroupScheduleMappingService _groupScheduleMappingService;
     private readonly IOptionTourUploadService _optionTourUploadService;
+    private readonly PassportUploadService _passportUploadService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UploadController> _logger;
 
@@ -35,6 +37,7 @@ public class UploadController : ControllerBase
         IAttributeUploadService attributeUploadService,
         IGroupScheduleMappingService groupScheduleMappingService,
         IOptionTourUploadService optionTourUploadService,
+        PassportUploadService passportUploadService,
         IUnitOfWork unitOfWork,
         ILogger<UploadController> logger)
     {
@@ -43,6 +46,7 @@ public class UploadController : ControllerBase
         _attributeUploadService = attributeUploadService;
         _groupScheduleMappingService = groupScheduleMappingService;
         _optionTourUploadService = optionTourUploadService;
+        _passportUploadService = passportUploadService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -572,5 +576,30 @@ public class UploadController : ControllerBase
         var bytes = package.GetAsByteArray();
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"옵션투어_{DateTime.UtcNow:yyyyMMdd}.xlsx");
+    }
+
+    // === 여권 일괄 업로드 ===
+
+    /// <summary>
+    /// 여권 정보 엑셀 + 이미지 ZIP 일괄 업로드
+    /// 엑셀: A=이름, B=영문성, C=영문이름, D=만료일, E=파일명
+    /// ZIP: E열 파일명과 매칭되는 이미지 파일들
+    /// </summary>
+    [HttpPost("conventions/{conventionId}/passport/bulk")]
+    [RequestSizeLimit(524_288_000)] // 500MB
+    public async Task<IActionResult> BulkUploadPassport(
+        int conventionId,
+        [FromForm] IFormFile excelFile,
+        [FromForm] IFormFile? zipFile)
+    {
+        if (excelFile == null)
+            return BadRequest(new { success = false, errors = new[] { "엑셀 파일은 필수입니다." } });
+
+        var result = await _passportUploadService.ValidateAndUploadAsync(conventionId, excelFile, zipFile);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
     }
 }

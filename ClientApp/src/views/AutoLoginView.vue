@@ -1,7 +1,9 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50">
     <div class="text-center">
-      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+      <div
+        class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"
+      ></div>
       <p class="mt-3 text-sm text-gray-500">{{ message }}</p>
     </div>
   </div>

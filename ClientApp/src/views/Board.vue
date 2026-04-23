@@ -10,7 +10,6 @@
     ></div>
   </div>
   <div v-else class="min-h-screen min-h-dvh bg-gray-50">
-
     <!-- 카테고리 탭 (헤더 아래 고정, z-index를 헤더보다 낮게) -->
     <div class="sticky top-0 z-20 bg-white">
       <div class="relative border-t">
@@ -93,184 +92,64 @@
     </div>
 
     <!-- 게시글 목록 -->
-    <div class="px-4 py-6 space-y-3">
+    <div class="px-4 py-3 space-y-2">
       <!-- 중요 공지 -->
       <div
         v-for="notice in importantNotices"
         :key="notice.id"
-        class="bg-white rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all border-l-4 border-red-500"
+        class="bg-white rounded-xl shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-all border-l-4 border-red-500"
         @click="openNotice(notice)"
       >
-        <div class="flex items-start space-x-3">
-          <div
-            class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0"
+        <div class="flex items-center space-x-2 mb-1.5">
+          <span
+            class="inline-flex items-center px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold"
           >
-            <svg
-              class="w-6 h-6 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center space-x-2 mb-1">
-              <span
-                class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold"
-                >필독</span
-              >
-              <span class="text-xs text-gray-500">{{
-                formatDate(notice.createdAt)
-              }}</span>
-            </div>
-            <h3 class="font-bold text-gray-900 text-base mb-1">
-              {{ notice.title }}
-            </h3>
-            <p class="text-sm text-gray-600 line-clamp-2">
-              {{ notice.content }}
-            </p>
-            <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-              <span class="flex items-center space-x-1">
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-                <span>{{ notice.views }}</span>
-              </span>
-              <span
-                v-if="notice.commentCount"
-                class="flex items-center space-x-1"
-              >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-                <span>{{ notice.commentCount }}</span>
-              </span>
-            </div>
-          </div>
+            <LucideIcon name="Megaphone" class="w-3 h-3 mr-1" />
+            필독
+          </span>
+          <span class="text-xs text-gray-500">{{
+            formatDate(notice.createdAt)
+          }}</span>
         </div>
+        <h3 class="font-bold text-gray-900 text-base mb-1">
+          {{ notice.title }}
+        </h3>
+        <p class="text-sm text-gray-600 line-clamp-2">
+          {{ notice.content }}
+        </p>
       </div>
 
       <!-- 일반 공지 -->
       <div
         v-for="notice in filteredNotices"
         :key="notice.id"
-        class="bg-white rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-all"
+        class="bg-white rounded-xl shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-all"
         @click="openNotice(notice)"
       >
-        <div class="flex items-start space-x-3">
-          <div
-            class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0"
+        <div class="flex items-center space-x-2 mb-1.5">
+          <span
+            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+            :style="getCategoryBadgeStyle(notice.noticeCategoryId)"
           >
-            <svg
-              class="w-6 h-6 text-primary-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-              />
-            </svg>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center space-x-2 mb-1">
-              <span
-                class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium"
-                >{{ notice.category }}</span
-              >
-              <span class="text-xs text-gray-500">{{
-                formatDate(notice.createdAt)
-              }}</span>
-            </div>
-            <h3 class="font-semibold text-gray-900 text-base mb-1">
-              {{ notice.title }}
-            </h3>
-            <p class="text-sm text-gray-600 line-clamp-2">
-              {{ notice.content }}
-            </p>
-            <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-              <span class="flex items-center space-x-1">
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-                <span>{{ notice.views }}</span>
-              </span>
-              <span
-                v-if="notice.commentCount"
-                class="flex items-center space-x-1"
-              >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-                <span>{{ notice.commentCount }}</span>
-              </span>
-            </div>
-          </div>
+            <LucideIcon
+              :name="getCategoryIcon(notice.noticeCategoryId) || 'Tag'"
+              class="w-3 h-3 mr-1"
+            />
+            {{ notice.category }}
+          </span>
+          <span class="text-xs text-gray-500">{{
+            formatDate(notice.createdAt)
+          }}</span>
         </div>
+        <h3 class="font-semibold text-gray-900 text-base mb-1">
+          {{ notice.title }}
+        </h3>
+        <p class="text-sm text-gray-600 line-clamp-2">
+          {{ notice.content }}
+        </p>
       </div>
 
-      <!-- 게시글 없음 -->
+      <!-- 게시�� 없음 -->
       <div
         v-if="filteredNotices.length === 0 && importantNotices.length === 0"
         class="text-center py-16"
@@ -606,6 +485,7 @@ import QuillViewer from '@/components/common/QuillViewer.vue'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 import MainHeader from '@/components/common/MainHeader.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
+import LucideIcon from '@/components/common/LucideIcon.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -652,6 +532,30 @@ const {
 })
 
 const categories = ref([])
+
+function getCategoryBadgeStyle(categoryId) {
+  const cat = categories.value.find((c) => c.id === categoryId)
+  if (cat?.color) {
+    return {
+      backgroundColor: cat.color + '20',
+      color: cat.color,
+    }
+  }
+  return {
+    backgroundColor: '#DBEAFE',
+    color: '#1D4ED8',
+  }
+}
+
+function getCategoryIcon(categoryId) {
+  const cat = categories.value.find((c) => c.id === categoryId)
+  return cat?.icon || ''
+}
+
+function getCategoryColor(categoryId) {
+  const cat = categories.value.find((c) => c.id === categoryId)
+  return cat?.color || ''
+}
 
 async function loadCategories() {
   try {

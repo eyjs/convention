@@ -55,16 +55,6 @@
               >
                 나중에
               </button>
-              <label
-                class="flex items-center justify-center gap-2 text-xs text-gray-400 mt-2 cursor-pointer"
-              >
-                <input
-                  v-model="dontShowAgain"
-                  type="checkbox"
-                  class="rounded border-gray-300"
-                />
-                다시 보지 않기 (1111 계속 사용)
-              </label>
             </div>
           </div>
         </div>
@@ -81,6 +71,7 @@ import { useUIStore } from '@/stores/ui'
 import { useKeyboardAdjust } from '@/composables/useKeyboardAdjust'
 import GlobalPopup from '@/components/common/GlobalPopup.vue'
 import { useBackdropClose } from '@/composables/useBackdropClose'
+import apiClient from '@/services/api'
 
 const authStore = useAuthStore()
 const uiStore = useUIStore()
@@ -112,21 +103,25 @@ function getDismissKey() {
 function checkDefaultPassword() {
   const flagged = sessionStorage.getItem('defaultPasswordLogin') === '1'
   if (!flagged || !authStore.user) return
-  const dismissed = localStorage.getItem(getDismissKey()) === '1'
-  if (dismissed) {
+  // DB에서 dismiss 여부 확인
+  if (authStore.user.defaultPasswordDismissed) {
     sessionStorage.removeItem('defaultPasswordLogin')
     return
   }
   showDefaultPasswordModal.value = true
 }
 
-function dismissDefaultPasswordModal() {
-  // "다시 보지 않기" 체크 시 영구 숨김 (계정별)
-  if (dontShowAgain.value) {
-    localStorage.setItem(getDismissKey(), '1')
+async function dismissDefaultPasswordModal() {
+  // DB에 영구 숨김 저장
+  try {
+    await apiClient.post('/users/dismiss-password-warning')
+    if (authStore.user) {
+      authStore.user = { ...authStore.user, defaultPasswordDismissed: true }
+    }
+  } catch {
+    // 실패해도 모달은 닫기
   }
   showDefaultPasswordModal.value = false
-  dontShowAgain.value = false
   sessionStorage.removeItem('defaultPasswordLogin')
 }
 

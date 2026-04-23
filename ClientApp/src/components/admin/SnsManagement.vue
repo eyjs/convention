@@ -300,7 +300,9 @@
                 새로고침
               </button>
             </div>
-            <div class="p-4 space-y-2 max-h-[200px] sm:max-h-[400px] overflow-y-auto">
+            <div
+              class="p-4 space-y-2 max-h-[200px] sm:max-h-[400px] overflow-y-auto"
+            >
               <div
                 v-if="popbillTemplatesLoading"
                 class="text-center py-8 text-gray-400 text-sm"
@@ -504,19 +506,37 @@
           <div class="flex gap-1">
             <button
               class="px-3 py-1.5 rounded-lg text-xs font-medium"
-              :class="logFilter === '' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'"
+              :class="
+                logFilter === ''
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600'
+              "
               @click="logFilter = ''"
-            >전체</button>
+            >
+              전체
+            </button>
             <button
               class="px-3 py-1.5 rounded-lg text-xs font-medium"
-              :class="logFilter === 'sms' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'"
+              :class="
+                logFilter === 'sms'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600'
+              "
               @click="logFilter = 'sms'"
-            >문자</button>
+            >
+              문자
+            </button>
             <button
               class="px-3 py-1.5 rounded-lg text-xs font-medium"
-              :class="logFilter === 'alimtalk' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'"
+              :class="
+                logFilter === 'alimtalk'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600'
+              "
               @click="logFilter = 'alimtalk'"
-            >알림톡</button>
+            >
+              알림톡
+            </button>
           </div>
         </div>
         <p class="text-xs text-gray-400">{{ filteredHistory.length }}건</p>
@@ -526,7 +546,9 @@
           v-if="filteredHistory.length === 0"
           class="text-center py-12 text-gray-400"
         >
-          {{ logSearch || logFilter ? '검색 결과 없음' : '발송 이력이 없습니다' }}
+          {{
+            logSearch || logFilter ? '검색 결과 없음' : '발송 이력이 없습니다'
+          }}
         </div>
         <div v-else class="space-y-2 max-h-[600px] overflow-y-auto">
           <div
@@ -562,10 +584,7 @@
     </div>
 
     <!-- 발송 전문 상세 모달 -->
-    <SlideUpModal
-      :is-open="!!viewingSms"
-      @close="viewingSms = null"
-    >
+    <SlideUpModal :is-open="!!viewingSms" @close="viewingSms = null">
       <template #header-title>발송 전문</template>
       <template #body>
         <div v-if="viewingSms" class="space-y-4">
@@ -587,7 +606,11 @@
               <p>
                 <span
                   class="px-2 py-0.5 text-xs rounded-full font-medium"
-                  :class="viewingSms.externalId ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                  :class="
+                    viewingSms.externalId
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-500'
+                  "
                 >
                   {{ viewingSms.externalId ? '성공' : '대기' }}
                 </span>
@@ -596,7 +619,9 @@
           </div>
           <div>
             <span class="text-sm text-gray-500">전문 내용</span>
-            <div class="mt-1 p-4 bg-gray-50 rounded-lg text-sm text-gray-800 whitespace-pre-wrap leading-relaxed border">
+            <div
+              class="mt-1 p-4 bg-gray-50 rounded-lg text-sm text-gray-800 whitespace-pre-wrap leading-relaxed border"
+            >
               {{ viewingSms.message }}
             </div>
           </div>
@@ -631,16 +656,24 @@ const logFilter = ref('')
 const filteredHistory = computed(() => {
   let list = smsHistory.value
   if (logFilter.value === 'sms') {
-    list = list.filter((s) => s.snsType === 'SMS' || (!s.snsType && !s.templateCode))
+    list = list.filter(
+      (s) => s.snsType === 'SMS' || (!s.snsType && !s.templateCode),
+    )
   } else if (logFilter.value === 'alimtalk') {
-    list = list.filter((s) => s.snsType === 'ALIMTALK' || s.snsType === 'KakaoAlimTalk' || !!s.templateCode)
+    list = list.filter(
+      (s) =>
+        s.snsType === 'ALIMTALK' ||
+        s.snsType === 'KakaoAlimTalk' ||
+        !!s.templateCode,
+    )
   }
   const q = logSearch.value.trim().toLowerCase()
   if (q) {
-    list = list.filter((s) =>
-      s.receiverName?.toLowerCase().includes(q) ||
-      s.message?.toLowerCase().includes(q) ||
-      s.receiverPhone?.includes(q)
+    list = list.filter(
+      (s) =>
+        s.receiverName?.toLowerCase().includes(q) ||
+        s.message?.toLowerCase().includes(q) ||
+        s.receiverPhone?.includes(q),
     )
   }
   return list
@@ -858,7 +891,9 @@ async function downloadSample() {
     // 행사 참석자 목록 기반으로 샘플 생성
     let guestRows = []
     try {
-      const res = await apiClient.get(`/admin/conventions/${conventionId}/guests`)
+      const res = await apiClient.get(
+        `/admin/conventions/${conventionId}/guests`,
+      )
       const guests = Array.isArray(res.data) ? res.data : []
       guestRows = guests.map((g, i) => [
         i + 1,
@@ -875,10 +910,24 @@ async function downloadSample() {
       ]
     }
 
-    const header = ['번호', '이름', '전화번호', '#{변수1}', '#{변수2}', '#{변수3}']
+    const header = [
+      '번호',
+      '이름',
+      '전화번호',
+      '#{변수1}',
+      '#{변수2}',
+      '#{변수3}',
+    ]
     const rows = [header, ...guestRows]
     const ws = XLSX.utils.aoa_to_sheet(rows)
-    ws['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }]
+    ws['!cols'] = [
+      { wch: 6 },
+      { wch: 10 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 10 },
+    ]
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, '수신자')
     XLSX.writeFile(wb, '문자발송_수신자.xlsx')
@@ -991,7 +1040,9 @@ async function loadPopbillTemplates() {
     const res = await apiClient.get('/admin/alimtalk/templates')
     // [스타투어] 접두어 템플릿만 필터링
     popbillTemplates.value = (res.data || []).filter(
-      (t) => t.templateName?.startsWith('[스타투어]') || t.templateCode?.startsWith('026'),
+      (t) =>
+        t.templateName?.startsWith('[스타투어]') ||
+        t.templateCode?.startsWith('026'),
     )
   } catch (e) {
     popbillError.value = e.response?.data?.message || '팝빌 연동 실패'

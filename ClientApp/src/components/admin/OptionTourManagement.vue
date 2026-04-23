@@ -31,6 +31,9 @@
                   ~ {{ tour.endTime }}
                 </span>
               </span>
+              <span v-if="tour.location" class="ml-2 text-gray-500"
+                >· {{ tour.location }}</span
+              >
             </div>
             <p
               v-if="tour.content"
@@ -40,9 +43,9 @@
             </p>
             <div v-if="tour.images?.length" class="flex gap-1 mt-1">
               <img
-                loading="lazy"
                 v-for="img in tour.images.slice(0, 3)"
                 :key="img.id"
+                loading="lazy"
                 :src="img.imageUrl"
                 class="w-10 h-10 object-cover rounded"
               />
@@ -157,6 +160,26 @@
                 class="w-full px-3 py-2 border rounded-lg"
               />
             </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">장소</label>
+            <input
+              v-model="form.location"
+              type="text"
+              class="w-full px-3 py-2 border rounded-lg"
+              placeholder="예: 바뚜르산, 우붓"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">장소 URL</label>
+            <input
+              v-model="form.mapUrl"
+              type="url"
+              class="w-full px-3 py-2 border rounded-lg"
+              placeholder="지도 링크 (선택)"
+            />
           </div>
 
           <div>
@@ -398,6 +421,8 @@ const form = ref({
   date: '',
   startTime: '',
   endTime: '',
+  location: '',
+  mapUrl: '',
   customOptionId: 0,
   content: '',
 })
@@ -454,6 +479,8 @@ const openCreateModal = () => {
     date: '',
     startTime: '',
     endTime: '',
+    location: '',
+    mapUrl: '',
     customOptionId: 0,
     content: '',
   }
@@ -468,6 +495,8 @@ const openEditModal = (tour) => {
     date: tour.date,
     startTime: tour.startTime,
     endTime: tour.endTime || '',
+    location: tour.location || '',
+    mapUrl: tour.mapUrl || '',
     customOptionId: tour.customOptionId,
     content: tour.content || '',
   }

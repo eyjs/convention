@@ -7,6 +7,8 @@ using LocalRAG.Repositories;
 
 using LocalRAG.DTOs.NoticeModels;
 using LocalRAG.Extensions;
+using LocalRAG.Services.Convention;
+using LocalRAG.Constants;
 
 namespace LocalRAG.Controllers.Convention;
 
@@ -16,12 +18,14 @@ public class NoticesController : ControllerBase
 {
     private readonly INoticeService _noticeService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly NotificationSendService _notificationSendService;
     private readonly ILogger<NoticesController> _logger;
 
-    public NoticesController(INoticeService noticeService, IUnitOfWork unitOfWork, ILogger<NoticesController> logger)
+    public NoticesController(INoticeService noticeService, IUnitOfWork unitOfWork, NotificationSendService notificationSendService, ILogger<NoticesController> logger)
     {
         _noticeService = noticeService;
         _unitOfWork = unitOfWork;
+        _notificationSendService = notificationSendService;
         _logger = logger;
     }
 
@@ -307,6 +311,40 @@ public class NoticesController : ControllerBase
                 Content = comment.Content,
                 CreatedAt = comment.CreatedAt
             };
+
+            // 관리자에게 댓글 알림 발송 (비동기, 실패해도 댓글 저장은 유지)
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var notice = await _unitOfWork.Notices.GetByIdAsync(noticeId);
+                    if (notice == null) return;
+
+                    var conventionId = notice.ConventionId;
+                    var adminIds = await _unitOfWork.UserConventions.Query
+                        .Where(uc => uc.ConventionId == conventionId)
+                        .Include(uc => uc.User)
+                        .Where(uc => uc.User.Role == Roles.Admin && uc.UserId != authorId)
+                        .Select(uc => uc.UserId)
+                        .ToListAsync();
+
+                    if (adminIds.Count == 0) return;
+
+                    await _notificationSendService.SendAsync(conventionId, authorId, new SendNotificationRequest
+                    {
+                        Type = "NOTICE",
+                        Title = $"새 댓글: {notice.Title}",
+                        Body = $"{authorName}: {(request.Content.Length > 50 ? request.Content[..50] + "..." : request.Content)}",
+                        ReferenceId = noticeId,
+                        TargetScope = "INDIVIDUAL",
+                        TargetUserIds = adminIds
+                    });
+                }
+                catch (Exception notifEx)
+                {
+                    _logger.LogWarning(notifEx, "댓글 알림 발송 실패 (댓글은 정상 저장됨)");
+                }
+            });
 
             return CreatedAtAction(nameof(GetComments), new { noticeId }, response);
         }

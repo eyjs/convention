@@ -120,6 +120,22 @@ public class User
     /// </summary>
     public DateTime? PassportVerifiedAt { get; set; }
 
+    /// <summary>
+    /// 여권 거절 사유
+    /// </summary>
+    [MaxLength(500)]
+    public string? PassportRejectionReason { get; set; }
+
+    /// <summary>
+    /// 여권 거절 시각
+    /// </summary>
+    public DateTime? PassportRejectedAt { get; set; }
+
+    /// <summary>
+    /// 기본 비밀번호(1111) 경고 다시 보지 않기
+    /// </summary>
+    public bool DefaultPasswordDismissed { get; set; } = false;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

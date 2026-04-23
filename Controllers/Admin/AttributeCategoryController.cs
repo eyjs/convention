@@ -32,7 +32,7 @@ public class AttributeCategoryController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Name))
             return BadRequest(new { message = "카테고리 이름은 필수입니다." });
 
-        var category = await _attributeCategoryService.CreateCategoryAsync(conventionId, request.Name, request.Icon);
+        var category = await _attributeCategoryService.CreateCategoryAsync(conventionId, request.Name, request.Icon, request.AttributeKeys ?? new List<string>(), request.OrderNum);
         return Ok(category);
     }
 
@@ -49,7 +49,8 @@ public class AttributeCategoryController : ControllerBase
                 categoryId,
                 request.Name,
                 request.Icon,
-                request.AttributeKeys ?? new List<string>()
+                request.AttributeKeys ?? new List<string>(),
+                request.OrderNum
             );
             return Ok(category);
         }
@@ -94,6 +95,8 @@ public class CreateCategoryRequest
 {
     public string Name { get; set; } = string.Empty;
     public string? Icon { get; set; }
+    public List<string>? AttributeKeys { get; set; }
+    public int? OrderNum { get; set; }
 }
 
 public class UpdateCategoryRequest
@@ -101,6 +104,7 @@ public class UpdateCategoryRequest
     public string Name { get; set; } = string.Empty;
     public string? Icon { get; set; }
     public List<string>? AttributeKeys { get; set; }
+    public int? OrderNum { get; set; }
 }
 
 public class ReorderCategoriesRequest

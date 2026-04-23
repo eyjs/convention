@@ -6,6 +6,8 @@ public class OptionTourAdminDto
     public string StartTime { get; set; } = string.Empty;
     public string? EndTime { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? Location { get; set; }
+    public string? MapUrl { get; set; }
     public int CustomOptionId { get; set; }
     public string? Content { get; set; }
 }

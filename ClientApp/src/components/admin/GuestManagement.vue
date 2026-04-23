@@ -52,7 +52,9 @@
     </AdminPageHeader>
 
     <!-- 검색 + 필터 -->
-    <div class="mt-6 mb-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
+    <div
+      class="mt-6 mb-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2"
+    >
       <input
         v-model="searchTerm"
         type="text"
@@ -122,8 +124,14 @@
           />
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">
-              <span class="font-semibold text-gray-900">{{ guest.guestName }}</span>
-              <span v-if="guest.groupName" class="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded">{{ guest.groupName }}</span>
+              <span class="font-semibold text-gray-900">{{
+                guest.guestName
+              }}</span>
+              <span
+                v-if="guest.groupName"
+                class="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded"
+                >{{ guest.groupName }}</span
+              >
             </div>
             <div class="text-xs text-gray-500 mt-0.5 flex flex-wrap gap-x-2">
               <span v-if="guest.phone">{{ guest.phone }}</span>
@@ -131,190 +139,228 @@
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <span v-if="guest.passportVerified" class="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-[10px]">✓</span>
-            <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            <span
+              v-if="guest.passportVerified"
+              class="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-[10px]"
+              >✓</span
+            >
+            <svg
+              class="w-4 h-4 text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </div>
         </div>
       </div>
 
       <!-- PC 테이블 뷰 -->
       <div class="hidden md:block bg-white rounded-lg shadow overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-3 py-2 text-left w-8">
-                <input
-                  type="checkbox"
-                  :checked="
-                    selectedGuests.length === filteredGuests.length &&
-                    filteredGuests.length > 0
-                  "
-                  class="rounded"
-                  @change="toggleSelectAll"
-                />
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                이름
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                연락처
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                부서
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                그룹
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                동반자
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">
-                일정
-              </th>
-              <th
-                class="px-3 py-2 text-center text-xs font-medium text-gray-500"
-              >
-                속성
-              </th>
-              <th
-                class="px-3 py-2 text-center text-xs font-medium text-gray-500"
-              >
-                여권
-              </th>
-              <th
-                class="px-3 py-2 text-right text-xs font-medium text-gray-500"
-              >
-                작업
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr
-              v-for="guest in filteredGuests"
-              :key="guest.id"
-              class="hover:bg-gray-50 cursor-pointer"
-              @click="openDetailModal(guest.id)"
-            >
-              <td class="px-3 py-1.5 whitespace-nowrap" @click.stop>
-                <input
-                  v-model="selectedGuests"
-                  type="checkbox"
-                  :value="guest.id"
-                  class="rounded"
-                />
-              </td>
-              <td
-                class="px-3 py-1.5 whitespace-nowrap font-medium text-gray-900"
-              >
-                {{ guest.guestName }}
-              </td>
-              <td class="px-3 py-1.5 whitespace-nowrap text-gray-500">
-                {{ guest.telephone }}
-              </td>
-              <td class="px-3 py-1.5 whitespace-nowrap text-gray-500">
-                {{ guest.corpPart || '-' }}
-              </td>
-              <td class="px-3 py-1.5 whitespace-nowrap text-gray-500">
-                {{ guest.groupName || '-' }}
-              </td>
-              <td class="px-3 py-1.5 whitespace-nowrap">
-                <span
-                  v-if="!guest.companions?.length && !getCompanionOf(guest.id)"
-                  class="text-gray-400"
-                  >-</span
-                >
-                <div v-else class="flex flex-wrap gap-0.5">
-                  <span
-                    v-for="c in guest.companions"
-                    :key="c.id"
-                    class="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-xs leading-tight"
-                    :title="c.relationType"
-                  >
-                    {{ c.name }} ({{ c.relationType }})
-                  </span>
-                  <span
-                    v-if="getCompanionOf(guest.id)"
-                    class="px-1.5 py-0.5 bg-orange-50 text-orange-700 rounded text-xs leading-tight"
-                    :title="`${getCompanionOf(guest.id).userName}의 동반자`"
-                  >
-                    ← {{ getCompanionOf(guest.id).userName }}
-                  </span>
-                </div>
-              </td>
-              <td class="px-3 py-1.5 whitespace-nowrap">
-                <span
-                  v-if="guest.scheduleTemplates.length === 0"
-                  class="text-gray-400"
-                  >미배정</span
-                >
-                <div v-else class="flex flex-wrap gap-0.5">
-                  <span
-                    v-for="st in guest.scheduleTemplates"
-                    :key="st.scheduleTemplateId"
-                    class="px-1.5 py-0.5 bg-primary-50 text-primary-700 rounded text-xs leading-tight"
-                  >
-                    {{ st.courseName }}
-                  </span>
-                </div>
-              </td>
-              <td
-                class="px-3 py-1.5 whitespace-nowrap text-center text-gray-500"
-              >
-                {{ guest.attributes.length || '-' }}
-              </td>
-              <td class="px-3 py-1.5 whitespace-nowrap text-center" @click.stop>
-                <div
-                  class="inline-flex items-center gap-1"
-                  :title="getPassportTooltip(guest.passport)"
-                >
-                  <span
-                    class="w-2 h-2 rounded-full"
-                    :class="
-                      guest.passport?.hasNumber ? 'bg-green-500' : 'bg-red-400'
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-2 text-left w-8">
+                  <input
+                    type="checkbox"
+                    :checked="
+                      selectedGuests.length === filteredGuests.length &&
+                      filteredGuests.length > 0
                     "
-                    title="여권번호"
+                    class="rounded"
+                    @change="toggleSelectAll"
                   />
-                  <span
-                    class="w-2 h-2 rounded-full"
-                    :class="getExpiryDotClass(guest.passport)"
-                    title="만료일"
+                </th>
+                <th
+                  class="px-3 py-2 text-left text-xs font-medium text-gray-500"
+                >
+                  이름
+                </th>
+                <th
+                  class="px-3 py-2 text-left text-xs font-medium text-gray-500"
+                >
+                  연락처
+                </th>
+                <th
+                  class="px-3 py-2 text-left text-xs font-medium text-gray-500"
+                >
+                  부서
+                </th>
+                <th
+                  class="px-3 py-2 text-left text-xs font-medium text-gray-500"
+                >
+                  그룹
+                </th>
+                <th
+                  class="px-3 py-2 text-left text-xs font-medium text-gray-500"
+                >
+                  동반자
+                </th>
+                <th
+                  class="px-3 py-2 text-left text-xs font-medium text-gray-500"
+                >
+                  일정
+                </th>
+                <th
+                  class="px-3 py-2 text-center text-xs font-medium text-gray-500"
+                >
+                  속성
+                </th>
+                <th
+                  class="px-3 py-2 text-center text-xs font-medium text-gray-500"
+                >
+                  여권
+                </th>
+                <th
+                  class="px-3 py-2 text-right text-xs font-medium text-gray-500"
+                >
+                  작업
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr
+                v-for="guest in filteredGuests"
+                :key="guest.id"
+                class="hover:bg-gray-50 cursor-pointer"
+                @click="openDetailModal(guest.id)"
+              >
+                <td class="px-3 py-1.5 whitespace-nowrap" @click.stop>
+                  <input
+                    v-model="selectedGuests"
+                    type="checkbox"
+                    :value="guest.id"
+                    class="rounded"
                   />
+                </td>
+                <td
+                  class="px-3 py-1.5 whitespace-nowrap font-medium text-gray-900"
+                >
+                  {{ guest.guestName }}
+                </td>
+                <td class="px-3 py-1.5 whitespace-nowrap text-gray-500">
+                  {{ guest.telephone }}
+                </td>
+                <td class="px-3 py-1.5 whitespace-nowrap text-gray-500">
+                  {{ guest.corpPart || '-' }}
+                </td>
+                <td class="px-3 py-1.5 whitespace-nowrap text-gray-500">
+                  {{ guest.groupName || '-' }}
+                </td>
+                <td class="px-3 py-1.5 whitespace-nowrap">
                   <span
-                    class="w-2 h-2 rounded-full"
-                    :class="
-                      guest.passport?.hasImage ? 'bg-green-500' : 'bg-red-400'
+                    v-if="
+                      !guest.companions?.length && !getCompanionOf(guest.id)
                     "
-                    title="사본"
-                  />
-                  <!-- prettier-ignore -->
-                  <button
+                    class="text-gray-400"
+                    >-</span
+                  >
+                  <div v-else class="flex flex-wrap gap-0.5">
+                    <span
+                      v-for="c in guest.companions"
+                      :key="c.id"
+                      class="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-xs leading-tight"
+                      :title="c.relationType"
+                    >
+                      {{ c.name }} ({{ c.relationType }})
+                    </span>
+                    <span
+                      v-if="getCompanionOf(guest.id)"
+                      class="px-1.5 py-0.5 bg-orange-50 text-orange-700 rounded text-xs leading-tight"
+                      :title="`${getCompanionOf(guest.id).userName}의 동반자`"
+                    >
+                      ← {{ getCompanionOf(guest.id).userName }}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-3 py-1.5 whitespace-nowrap">
+                  <span
+                    v-if="guest.scheduleTemplates.length === 0"
+                    class="text-gray-400"
+                    >미배정</span
+                  >
+                  <div v-else class="flex flex-wrap gap-0.5">
+                    <span
+                      v-for="st in guest.scheduleTemplates"
+                      :key="st.scheduleTemplateId"
+                      class="px-1.5 py-0.5 bg-primary-50 text-primary-700 rounded text-xs leading-tight"
+                    >
+                      {{ st.courseName }}
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="px-3 py-1.5 whitespace-nowrap text-center text-gray-500"
+                >
+                  {{ guest.attributes.length || '-' }}
+                </td>
+                <td
+                  class="px-3 py-1.5 whitespace-nowrap text-center"
+                  @click.stop
+                >
+                  <div
+                    class="inline-flex items-center gap-1"
+                    :title="getPassportTooltip(guest.passport)"
+                  >
+                    <span
+                      class="w-2 h-2 rounded-full"
+                      :class="
+                        guest.passport?.hasNumber
+                          ? 'bg-green-500'
+                          : 'bg-red-400'
+                      "
+                      title="여권번호"
+                    />
+                    <span
+                      class="w-2 h-2 rounded-full"
+                      :class="getExpiryDotClass(guest.passport)"
+                      title="만료일"
+                    />
+                    <span
+                      class="w-2 h-2 rounded-full"
+                      :class="
+                        guest.passport?.hasImage ? 'bg-green-500' : 'bg-red-400'
+                      "
+                      title="사본"
+                    />
+                    <!-- prettier-ignore -->
+                    <button
                     class="ml-1 px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
                     :class="guest.passport?.passportVerified ? 'bg-primary-100 text-primary-700 hover:bg-primary-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
                     @click="togglePassportVerification(guest)"
                   >{{ guest.passport?.passportVerified ? '검증' : '미검증' }}</button>
-                </div>
-              </td>
-              <td class="px-3 py-1.5 whitespace-nowrap text-right" @click.stop>
-                <button
-                  class="text-gray-400 hover:text-primary-600 p-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center"
-                  title="수정"
-                  @click="editGuest(guest)"
+                  </div>
+                </td>
+                <td
+                  class="px-3 py-1.5 whitespace-nowrap text-right"
+                  @click.stop
                 >
-                  <Pencil :size="14" />
-                </button>
-                <button
-                  class="text-gray-400 hover:text-red-600 p-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center"
-                  title="삭제"
-                  @click="deleteGuest(guest.id)"
-                >
-                  <Trash2 :size="14" />
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                  <button
+                    class="text-gray-400 hover:text-primary-600 p-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center"
+                    title="수정"
+                    @click="editGuest(guest)"
+                  >
+                    <Pencil :size="14" />
+                  </button>
+                  <button
+                    class="text-gray-400 hover:text-red-600 p-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center"
+                    title="삭제"
+                    @click="deleteGuest(guest.id)"
+                  >
+                    <Trash2 :size="14" />
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -337,6 +383,7 @@
       :convention-id="conventionId"
       :guest-id="detailGuestId"
       @close="closeDetailModal"
+      @edit="onDetailEdit"
     />
 
     <!-- 대량 작업 모달 (일정 배정 + 속성 매핑) -->
@@ -538,9 +585,10 @@ const loadAttributeTemplates = async () => {
     const response = await apiClient.get(
       `/attributetemplate/conventions/${props.conventionId}`,
     )
-    attributeTemplates.value = response.data
+    attributeTemplates.value = Array.isArray(response.data) ? response.data : []
   } catch (error) {
     console.error('Failed to load attribute templates:', error)
+    attributeTemplates.value = []
   }
 }
 
@@ -631,6 +679,16 @@ const deleteGuest = async (id) => {
 // 수정 모달 열기
 const editGuest = (guest) => {
   editingGuest.value = guest
+}
+
+// 상세 모달에서 수정 클릭
+const onDetailEdit = (guestDetail) => {
+  closeDetailModal()
+  // guestDetail은 상세 API 응답이므로 목록의 guest 객체와 매핑
+  const guest = guests.value.find((g) => g.id === guestDetail?.id)
+  if (guest) {
+    editGuest(guest)
+  }
 }
 
 // 참석자 생성/수정 모달 닫기

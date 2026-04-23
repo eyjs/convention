@@ -15,6 +15,7 @@ import {
   MessageSquare,
   LayoutGrid,
   Image,
+  ShieldCheck,
 } from 'lucide-vue-next'
 
 const rootNavItems = [
@@ -134,18 +135,18 @@ const conventionNavItems = [
     routeName: 'AdminNotifications',
   },
   {
-    key: 'seating',
-    label: '좌석 배치도',
-    icon: LayoutGrid,
-    path: 'seating',
-    routeName: 'AdminSeatingList',
-  },
-  {
     key: 'attribute-categories',
     label: '속성 카테고리',
     icon: FolderOpen,
     path: 'attribute-categories',
     routeName: 'AdminAttributeCategories',
+  },
+  {
+    key: 'passport',
+    label: '여권 관리',
+    icon: ShieldCheck,
+    path: 'passport',
+    routeName: 'AdminPassport',
   },
 ]
 

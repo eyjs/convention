@@ -66,6 +66,9 @@ namespace LocalRAG.Migrations
                     b.Property<double?>("Longitude")
                         .HasColumnType("float");
 
+                    b.Property<string>("MapUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("OrderNum")
                         .HasColumnType("int");
 
@@ -93,9 +96,6 @@ namespace LocalRAG.Migrations
 
                     b.HasIndex("ScheduleTemplateId")
                         .HasDatabaseName("IX_ScheduleItem_ScheduleTemplateId");
-
-                    b.HasIndex("SeatingLayoutId")
-                        .HasDatabaseName("IX_ScheduleItem_SeatingLayoutId");
 
                     b.ToTable("ScheduleItems");
                 });
@@ -1098,6 +1098,9 @@ namespace LocalRAG.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Color")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("ConventionId")
                         .HasColumnType("int");
 
@@ -1114,6 +1117,9 @@ namespace LocalRAG.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(0);
+
+                    b.Property<string>("Icon")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -1222,6 +1228,13 @@ namespace LocalRAG.Migrations
                     b.Property<string>("EndTime")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("MapUrl")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1749,64 +1762,6 @@ namespace LocalRAG.Migrations
                     b.ToTable("ScheduleImages");
                 });
 
-            modelBuilder.Entity("LocalRAG.Entities.SeatingLayout", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("BackgroundImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("CanvasHeight")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CanvasWidth")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ConventionId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("getdate()");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("LayoutJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ConventionId")
-                        .HasDatabaseName("IX_SeatingLayout_ConventionId");
-
-                    b.HasIndex("IsDeleted")
-                        .HasDatabaseName("IX_SeatingLayout_IsDeleted");
-
-                    b.ToTable("SeatingLayouts");
-                });
-
             modelBuilder.Entity("LocalRAG.Entities.Section", b =>
                 {
                     b.Property<int>("Id")
@@ -2089,6 +2044,9 @@ namespace LocalRAG.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("getdate()");
 
+                    b.Property<bool>("DefaultPasswordDismissed")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Email")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -2135,6 +2093,13 @@ namespace LocalRAG.Migrations
                     b.Property<string>("PassportNumber")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("PassportRejectedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PassportRejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<bool>("PassportVerified")
                         .HasColumnType("bit");
@@ -2406,14 +2371,7 @@ namespace LocalRAG.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("LocalRAG.Entities.SeatingLayout", "SeatingLayout")
-                        .WithMany()
-                        .HasForeignKey("SeatingLayoutId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.Navigation("ScheduleTemplate");
-
-                    b.Navigation("SeatingLayout");
                 });
 
             modelBuilder.Entity("LocalRAG.DTOs.ScheduleModels.ScheduleTemplate", b =>
@@ -2826,17 +2784,6 @@ namespace LocalRAG.Migrations
                     b.Navigation("OptionTour");
 
                     b.Navigation("ScheduleItem");
-                });
-
-            modelBuilder.Entity("LocalRAG.Entities.SeatingLayout", b =>
-                {
-                    b.HasOne("LocalRAG.Entities.Convention", "Convention")
-                        .WithMany()
-                        .HasForeignKey("ConventionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Convention");
                 });
 
             modelBuilder.Entity("LocalRAG.Entities.Section", b =>

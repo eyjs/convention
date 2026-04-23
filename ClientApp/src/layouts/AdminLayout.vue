@@ -2,7 +2,10 @@
   <div class="app-frame">
     <div class="safe-top bg-gray-50"></div>
 
-    <div class="safe-content bg-gray-50" :class="{ 'flex flex-col': route.meta.adminFullScreen }">
+    <div
+      class="safe-content bg-gray-50"
+      :class="{ 'flex flex-col': route.meta.adminFullScreen }"
+    >
       <AdminHeader
         v-if="!route.meta.hideAdminHeader"
         :title="headerTitle"

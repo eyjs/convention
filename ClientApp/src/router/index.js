@@ -167,12 +167,6 @@ const routes = [
         meta: { title: '여행 가이드', showNav: true },
       },
       {
-        path: 'my-seat',
-        name: 'MySeat',
-        component: () => import('@/views/MySeatView.vue'),
-        meta: { title: '내 자리', showNav: false },
-      },
-      {
         path: 'checklist',
         name: 'Checklist',
         component: () => import('@/views/feature/ChecklistView.vue'),
@@ -357,8 +351,7 @@ const routes = [
       {
         path: 'home-banners',
         name: 'AdminHomeBanners',
-        component: () =>
-          import('@/views/admin/HomeBannerManagementView.vue'),
+        component: () => import('@/views/admin/HomeBannerManagementView.vue'),
         meta: { title: '홈 배너 관리', adminTitle: '관리자' },
       },
       {
@@ -443,20 +436,9 @@ const routes = [
           {
             path: 'notifications',
             name: 'AdminNotifications',
-            component: () => import('@/components/admin/NotificationSender.vue'),
+            component: () =>
+              import('@/components/admin/NotificationSender.vue'),
             meta: { title: '알림 발송' },
-          },
-          {
-            path: 'seating',
-            name: 'AdminSeatingList',
-            component: () => import('@/views/admin/SeatingLayoutListView.vue'),
-            meta: { title: '좌석 배치도' },
-          },
-          {
-            path: 'seating/:layoutId',
-            name: 'AdminSeatingEditor',
-            component: () => import('@/views/admin/SeatingLayoutEditorView.vue'),
-            meta: { title: '좌석 배치도 편집', adminFullScreen: true },
           },
           {
             path: 'attribute-categories',
@@ -464,6 +446,13 @@ const routes = [
             component: () =>
               import('@/components/admin/AttributeCategoryManager.vue'),
             meta: { title: '속성 카테고리' },
+          },
+          {
+            path: 'passport',
+            name: 'AdminPassport',
+            component: () =>
+              import('@/components/admin/PassportDashboard.vue'),
+            meta: { title: '여권 관리' },
           },
         ],
       },

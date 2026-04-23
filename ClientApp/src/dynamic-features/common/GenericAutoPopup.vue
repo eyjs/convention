@@ -131,6 +131,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useBackdropClose } from '@/composables/useBackdropClose'
 import { useRouter } from 'vue-router'
+import apiClient from '@/services/api'
 
 const props = defineProps({
   feature: {
@@ -175,6 +176,9 @@ const getStorageKey = () => {
 
 // Check if popup should be shown
 const shouldShow = () => {
+  // DB에서 이미 완료(dismiss)된 경우
+  if (props.feature.isComplete) return false
+
   if (!config.value.showOnce) return true
 
   const storageKey = getStorageKey()
@@ -218,11 +222,25 @@ const handleClose = () => {
   isVisible.value = false
 }
 
-// "다시 보지 않기" 클릭 시 즉시 localStorage 저장 + 닫기
-const dismissPermanently = () => {
+// "다시 보지 않기" 클릭 시 DB + localStorage 저장 + 닫기
+const dismissPermanently = async () => {
   const storageKey = getStorageKey()
   localStorage.setItem(storageKey, 'true')
   isVisible.value = false
+
+  // DB에도 저장 (서버 재시작/브라우저 변경에도 유지)
+  try {
+    const conventionId =
+      props.feature.conventionId ||
+      router.currentRoute.value.params.conventionId
+    if (conventionId && props.feature.id) {
+      await apiClient.post(
+        `/conventions/${conventionId}/actions/${props.feature.id}/complete`,
+      )
+    }
+  } catch {
+    // DB 저장 실패해도 localStorage로 동작
+  }
 }
 
 // Handle backdrop click (drag-safe)

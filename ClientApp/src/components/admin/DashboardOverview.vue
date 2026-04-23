@@ -51,7 +51,9 @@
         </div>
         <div class="p-4 sm:p-6">
           <!-- 요약 카드 -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4"
+          >
             <div class="text-center p-3 bg-green-50 rounded-lg">
               <p class="text-2xl font-bold text-green-600">
                 {{ passportStats.verifiedCount }}

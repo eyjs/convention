@@ -57,9 +57,11 @@ if (Capacitor.isNativePlatform()) {
     })
   })
 
-  import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-    StatusBar.setOverlaysWebView({ overlay: false })
-    StatusBar.setStyle({ style: Style.Light })
-    StatusBar.setBackgroundColor({ color: '#FFFFFF' })
-  }).catch(() => {})
+  import('@capacitor/status-bar')
+    .then(({ StatusBar, Style }) => {
+      StatusBar.setOverlaysWebView({ overlay: false })
+      StatusBar.setStyle({ style: Style.Light })
+      StatusBar.setBackgroundColor({ color: '#FFFFFF' })
+    })
+    .catch(() => {})
 }

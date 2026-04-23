@@ -6,6 +6,8 @@ namespace LocalRAG.DTOs.NoticeModels
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int DisplayOrder { get; set; }
+        public string? Color { get; set; }
+        public string? Icon { get; set; }
         public int NoticeCount { get; set; }
     }
 
@@ -15,6 +17,8 @@ namespace LocalRAG.DTOs.NoticeModels
         public int ConventionId { get; set; }
         public string? Description { get; set; }
         public int DisplayOrder { get; set; }
+        public string? Color { get; set; }
+        public string? Icon { get; set; }
     }
 
     public class UpdateNoticeCategoryDto
@@ -22,5 +26,7 @@ namespace LocalRAG.DTOs.NoticeModels
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int DisplayOrder { get; set; }
+        public string? Color { get; set; }
+        public string? Icon { get; set; }
     }
 }

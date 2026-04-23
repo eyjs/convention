@@ -683,6 +683,7 @@ async function handleLogin() {
     } else {
       sessionStorage.removeItem('defaultPasswordLogin')
     }
+    sessionStorage.setItem('justLoggedIn', '1')
     router.push('/')
   } else {
     errorMessage.value = result.error
@@ -734,12 +735,8 @@ async function handleRegister() {
 <style>
 /* 영상 로드 전 즉시 렌더링되는 그라디언트 배경 (검은 화면 방지) */
 .login-splash-bg {
-  background: radial-gradient(
-      ellipse at center,
-      #1e3a5f 0%,
-      #0f1f3a 50%,
-      #050d1c 100%
-    ),
+  background:
+    radial-gradient(ellipse at center, #1e3a5f 0%, #0f1f3a 50%, #050d1c 100%),
     linear-gradient(180deg, #1a2540 0%, #050d1c 100%);
 }
 

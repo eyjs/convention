@@ -66,7 +66,6 @@
       :brand-color="brandColor"
       :is-admin="isAdmin"
       @close="closeScheduleDetail"
-      @go-to-seat="goToMySeat"
     />
   </div>
 </template>
@@ -90,7 +89,9 @@ const selectedSchedule = ref(null)
 const timelineRef = ref(null)
 
 // 캘린더 뷰 상태 (헤더 아이콘 연동을 위해 미러링)
-const isCalendarViewActive = computed(() => timelineRef.value?.showCalendarView ?? false)
+const isCalendarViewActive = computed(
+  () => timelineRef.value?.showCalendarView ?? false,
+)
 
 const conventionId = computed(() => conventionStore.currentConvention?.id)
 
@@ -114,13 +115,6 @@ function closeScheduleDetail() {
   selectedSchedule.value = null
 }
 
-function goToMySeat(layoutId) {
-  selectedSchedule.value = null
-  const cid = route.params.conventionId
-  setTimeout(() => {
-    router.push(`/conventions/${cid}/my-seat?layout=${layoutId}`)
-  }, 100)
-}
 
 onMounted(async () => {
   if (!authStore.user) {

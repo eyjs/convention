@@ -340,8 +340,8 @@
                     {{ config.eventName }}
                   </div>
                   <img
-                    loading="lazy"
                     v-if="config.logoUrl"
+                    loading="lazy"
                     :src="config.logoUrl"
                     class="h-6 mb-2 object-contain opacity-80"
                   />
@@ -370,8 +370,8 @@
                     {{ config.eventName }}
                   </div>
                   <img
-                    loading="lazy"
                     v-if="config.logoUrl"
+                    loading="lazy"
                     :src="config.logoUrl"
                     class="h-6 mb-2 object-contain opacity-80"
                   />
@@ -412,8 +412,8 @@
                 }}</span>
               </div>
               <img
-                loading="lazy"
                 v-if="config.logoUrl"
+                loading="lazy"
                 :src="config.logoUrl"
                 class="h-10 mb-2 object-contain"
               />

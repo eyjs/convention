@@ -87,6 +87,7 @@ public class CurrentUserResponse
     public string? Phone { get; set; }
     public string Role { get; set; } = string.Empty;
     public string? ProfileImageUrl { get; set; }
+    public bool DefaultPasswordDismissed { get; set; }
     public List<UserConventionInfo> Conventions { get; set; } = new();
     public object? ChecklistStatus { get; set; }
 }

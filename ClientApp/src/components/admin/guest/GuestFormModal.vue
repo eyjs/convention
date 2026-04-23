@@ -317,16 +317,31 @@
               />
             </div>
           </div>
-          <!-- 여권 이미지 뷰어 (수정 모드에서만) -->
-          <div v-if="editingGuest?.passport?.passportImageUrl" class="pt-2">
+          <!-- 여권 이미지 업로드 (수정 모드에서만) -->
+          <div v-if="editingGuest" class="pt-2">
             <label class="block text-sm font-medium mb-1">여권사본</label>
-            <button
-              type="button"
-              class="text-sm text-blue-600 hover:underline"
-              @click="showPassportImage"
-            >
-              이미지 보기
-            </button>
+            <div class="flex items-center gap-3">
+              <button
+                v-if="passportImageUrl"
+                type="button"
+                class="text-sm text-blue-600 hover:underline"
+                @click="showPassportImage"
+              >
+                이미지 보기
+              </button>
+              <label
+                class="inline-flex items-center gap-1 px-3 py-1.5 text-sm border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+              >
+                {{ passportImageUrl ? '변경' : '업로드' }}
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="uploadPassportImage"
+                />
+              </label>
+              <span v-if="passportUploading" class="text-xs text-gray-400">업로드 중...</span>
+            </div>
           </div>
         </div>
 
@@ -617,11 +632,36 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'saved'])
 
+const passportImageUrl = ref(null)
+const passportUploading = ref(false)
+
 function showPassportImage() {
-  if (props.editingGuest?.passport?.passportImageUrl) {
-    viewerApi({
-      images: [props.editingGuest.passport.passportImageUrl],
-    })
+  const url = passportImageUrl.value || props.editingGuest?.passport?.passportImageUrl
+  if (url) {
+    viewerApi({ images: [url] })
+  }
+}
+
+async function uploadPassportImage(event) {
+  const file = event.target.files[0]
+  if (!file || !props.editingGuest) return
+
+  passportUploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await apiClient.post(
+      `/admin/guests/${props.editingGuest.id}/passport-image`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+    passportImageUrl.value = res.data.url
+  } catch (error) {
+    console.error('여권 이미지 업로드 실패:', error)
+    alert('여권 이미지 업로드에 실패했습니다.')
+  } finally {
+    passportUploading.value = false
+    event.target.value = ''
   }
 }
 
@@ -809,9 +849,10 @@ watch(
   (guest) => {
     if (guest) {
       activeTab.value = 'manual'
+      passportImageUrl.value = guest.passport?.passportImageUrl || null
       const templateAttrs = {}
       const customAttrs = []
-      const templateKeys = props.attributeTemplates.map((t) => t.attributeKey)
+      const templateKeys = (Array.isArray(props.attributeTemplates) ? props.attributeTemplates : []).map((t) => t.attributeKey)
 
       guest.attributes.forEach((attr) => {
         if (templateKeys.includes(attr.attributeKey)) {
@@ -846,11 +887,48 @@ watch(
   },
 )
 
-// 모달이 열릴 때 새 참석자인 경우 폼 초기화
+// 모달이 열릴 때 폼 초기화 (editingGuest 유무에 따라)
 watch(
   () => props.isOpen,
   (isOpen) => {
-    if (isOpen && !props.editingGuest) {
+    if (!isOpen) return
+    if (props.editingGuest) {
+      // 수정 모드: editingGuest watch와 동일 로직으로 폼 채우기
+      const guest = props.editingGuest
+      activeTab.value = 'manual'
+      passportImageUrl.value = guest.passport?.passportImageUrl || null
+      const templateAttrs = {}
+      const customAttrs = []
+      const templateKeys = (Array.isArray(props.attributeTemplates) ? props.attributeTemplates : []).map((t) => t.attributeKey)
+      ;(guest.attributes || []).forEach((attr) => {
+        if (templateKeys.includes(attr.attributeKey)) {
+          templateAttrs[attr.attributeKey] = attr.attributeValue
+        } else {
+          customAttrs.push({
+            key: attr.attributeKey,
+            value: attr.attributeValue,
+          })
+        }
+      })
+      guestForm.value = {
+        guestName: guest.guestName || '',
+        telephone: guest.telephone || '',
+        corpPart: guest.corpPart || '',
+        residentNumber: guest.residentNumber || '',
+        affiliation: guest.affiliation || '',
+        password: '',
+        firstName: guest.passport?.firstName || '',
+        lastName: guest.passport?.lastName || '',
+        passportNumber: guest.passport?.passportNumber || '',
+        passportExpiryDate: guest.passport?.passportExpiryDate || '',
+        scheduleTemplateIds: (guest.scheduleTemplates || []).map(
+          (st) => st.scheduleTemplateId,
+        ),
+        optionTourIds: (guest.optionTours || []).map((ot) => ot.optionTourId),
+        templateAttributes: templateAttrs,
+        customAttributes: customAttrs,
+      }
+    } else {
       resetForm()
       resetExistingUserForm()
       activeTab.value = 'manual'

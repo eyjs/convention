@@ -16,8 +16,8 @@
         <div class="px-4 py-6 flex flex-col items-center">
           <div class="relative">
             <img
-              loading="lazy"
               v-if="profile.profileImageUrl"
+              loading="lazy"
               :src="profile.profileImageUrl"
               alt="프로필 사진"
               class="h-24 w-24 rounded-full object-cover"
@@ -441,8 +441,8 @@ async function handlePasswordSave() {
     // 기본 비밀번호 경고 플래그 정리
     sessionStorage.removeItem('defaultPasswordLogin')
     // 계정별 dismiss 플래그 제거 (향후 다시 1111로 리셋될 경우 대비)
-    const uid =
-      (await apiClient.get('/users/profile').catch(() => null))?.data?.id
+    const uid = (await apiClient.get('/users/profile').catch(() => null))?.data
+      ?.id
     if (uid) localStorage.removeItem(`defaultPasswordDismissed:${uid}`)
     alert('비밀번호가 변경되었습니다.')
     closePasswordModal()

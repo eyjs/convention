@@ -27,7 +27,17 @@ export const useAuthStore = defineStore('auth', () => {
 
   function isTokenExpired(token) {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
+      // JWT는 Base64URL 인코딩 — 브라우저 atob()는 표준 Base64만 지원
+      // Base64URL → Base64 변환 후 UTF-8 안전 디코딩
+      let base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+      while (base64.length % 4) base64 += '='
+      const jsonStr = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join(''),
+      )
+      const payload = JSON.parse(jsonStr)
       return payload.exp * 1000 < Date.now() - 10000
     } catch {
       return true

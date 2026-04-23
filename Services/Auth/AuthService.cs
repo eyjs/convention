@@ -420,6 +420,7 @@ public class AuthService : IAuthService
             Phone = user.Phone,
             Role = user.Role,
             ProfileImageUrl = user.ProfileImageUrl,
+            DefaultPasswordDismissed = user.DefaultPasswordDismissed,
             Conventions = conventionList,
             ChecklistStatus = checklistStatus
         });

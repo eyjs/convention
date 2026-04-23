@@ -46,9 +46,13 @@ public class OptionTourUploadService : IOptionTourUploadService
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                // 1. 옵션투어 일괄 저장
+                // 1. 기존 옵션투어 조회 (UPSERT 위해)
+                var existingOptions = await _unitOfWork.OptionTours.Query
+                    .Where(ot => ot.ConventionId == conventionId)
+                    .ToListAsync();
+                var existingByCustomId = existingOptions.ToDictionary(ot => ot.CustomOptionId);
+
                 var optionTourMap = new Dictionary<int, int>();
-                var optionEntities = new List<OptionTour>();
 
                 foreach (var optionDto in request.Options)
                 {
@@ -58,33 +62,45 @@ public class OptionTourUploadService : IOptionTourUploadService
                         continue;
                     }
 
-                    var optionTour = new OptionTour
+                    if (existingByCustomId.TryGetValue(optionDto.OptionId, out var existing))
                     {
-                        ConventionId = conventionId,
-                        Date = date,
-                        StartTime = optionDto.StartTime,
-                        EndTime = optionDto.EndTime,
-                        Name = optionDto.Name,
-                        CustomOptionId = optionDto.OptionId,
-                        Content = optionDto.Content,
-                        CreatedAt = DateTime.UtcNow
-                    };
-
-                    await _unitOfWork.OptionTours.AddAsync(optionTour);
-                    optionEntities.Add(optionTour);
-                }
-
-                // 중간 SaveChanges로 DB ID 할당 (최종 커밋은 ExecuteInTransactionAsync에서)
-                await _unitOfWork.SaveChangesAsync();
-
-                foreach (var entity in optionEntities)
-                {
-                    optionTourMap[entity.CustomOptionId] = entity.Id;
-                    result.OptionsCreated++;
+                        // UPDATE
+                        existing.Date = date;
+                        existing.StartTime = optionDto.StartTime;
+                        existing.EndTime = optionDto.EndTime;
+                        existing.Name = optionDto.Name;
+                        existing.Location = string.IsNullOrEmpty(optionDto.Location) ? null : optionDto.Location;
+                        existing.MapUrl = string.IsNullOrEmpty(optionDto.MapUrl) ? null : optionDto.MapUrl;
+                        existing.Content = optionDto.Content;
+                        _unitOfWork.OptionTours.Update(existing);
+                        optionTourMap[optionDto.OptionId] = existing.Id;
+                        result.OptionsCreated++;
+                    }
+                    else
+                    {
+                        // INSERT
+                        var optionTour = new OptionTour
+                        {
+                            ConventionId = conventionId,
+                            Date = date,
+                            StartTime = optionDto.StartTime,
+                            EndTime = optionDto.EndTime,
+                            Name = optionDto.Name,
+                            Location = string.IsNullOrEmpty(optionDto.Location) ? null : optionDto.Location,
+                            MapUrl = string.IsNullOrEmpty(optionDto.MapUrl) ? null : optionDto.MapUrl,
+                            CustomOptionId = optionDto.OptionId,
+                            Content = optionDto.Content,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        await _unitOfWork.OptionTours.AddAsync(optionTour);
+                        await _unitOfWork.SaveChangesAsync();
+                        optionTourMap[optionDto.OptionId] = optionTour.Id;
+                        result.OptionsCreated++;
+                    }
 
                     _logger.LogInformation(
-                        "Created option tour: {Name} (CustomId: {CustomId}, Id: {Id})",
-                        entity.Name, entity.CustomOptionId, entity.Id);
+                        "Upserted option tour: {Name} (CustomId: {CustomId})",
+                        optionDto.Name, optionDto.OptionId);
                 }
 
                 // 2. 참석자 매핑 — 메모리에서 매칭

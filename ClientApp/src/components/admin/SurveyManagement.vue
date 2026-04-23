@@ -132,11 +132,26 @@
             @click="showEditView(survey)"
           >
             <div class="flex items-center justify-between mb-1">
-              <span class="font-semibold text-gray-900 truncate">{{ survey.title }}</span>
-              <AdminBadge :variant="getSurveyStatusVariant(survey)" class="flex-shrink-0 ml-2">{{ getSurveyStatusLabel(survey) }}</AdminBadge>
+              <span class="font-semibold text-gray-900 truncate">{{
+                survey.title
+              }}</span>
+              <AdminBadge
+                :variant="getSurveyStatusVariant(survey)"
+                class="flex-shrink-0 ml-2"
+                >{{ getSurveyStatusLabel(survey) }}</AdminBadge
+              >
             </div>
-            <p class="text-xs text-gray-500">응답 {{ survey.responseCount ?? 0 }}명 · {{ survey.questionCount ?? 0 }}문항</p>
-            <p v-if="survey.startDate || survey.endDate" class="text-xs text-gray-400 mt-0.5">{{ survey.startDate?.split('T')[0] || '' }} ~ {{ survey.endDate?.split('T')[0] || '' }}</p>
+            <p class="text-xs text-gray-500">
+              응답 {{ survey.responseCount ?? 0 }}명 ·
+              {{ survey.questionCount ?? 0 }}문항
+            </p>
+            <p
+              v-if="survey.startDate || survey.endDate"
+              class="text-xs text-gray-400 mt-0.5"
+            >
+              {{ survey.startDate?.split('T')[0] || '' }} ~
+              {{ survey.endDate?.split('T')[0] || '' }}
+            </p>
           </div>
         </div>
 

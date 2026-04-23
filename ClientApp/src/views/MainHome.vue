@@ -2,225 +2,233 @@
   <div class="app-frame">
     <div class="safe-top bg-gray-50"></div>
     <div class="safe-content relative bg-gray-50">
-    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-      <div
-        class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-sky-200/15 to-blue-200/15 rounded-full blur-3xl"
-      ></div>
-    </div>
-
-    <div class="relative z-10">
-      <!-- 상단 로고 + 메뉴 -->
-      <div class="sticky top-0 z-40 bg-white shadow-sm">
-        <div class="px-4 py-3 flex items-center justify-between">
-          <img
-            loading="lazy"
-            src="https://www.ifa.co.kr/Images/logo.png"
-            alt="iFA"
-            class="h-8 object-contain"
-          />
-          <button
-            class="p-2 -mr-2 rounded-lg text-gray-500 hover:bg-gray-100"
-            @click="isSidebarOpen = true"
-          >
-            <svg
-              class="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-        </div>
+      <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div
+          class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-sky-200/15 to-blue-200/15 rounded-full blur-3xl"
+        ></div>
       </div>
 
-      <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
-
-      <div class="max-w-2xl mx-auto px-4 py-4">
-        <!-- 캐러셀 배너 -->
-        <HomeCarousel v-if="banners.length > 0" :banners="banners" class="mb-4" />
-
-        <!-- 여권 정보 카드 (해외 행사만, 승인 완료 시 숨김) -->
-        <div
-          v-if="showPassportCard"
-          class="bg-white rounded-xl shadow-sm mb-4 px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
-          :class="passportCardBorder"
-          @click="router.push('/my-profile')"
-        >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold text-gray-800">여권 정보</span>
-              <span
-                class="px-2 py-0.5 text-xs font-medium rounded"
-                :class="passportStatusBadgeClass"
-              >
-                {{ passportStatusLabel }}
-              </span>
-            </div>
-            <span class="text-xs text-gray-400">입력하러 가기 ›</span>
-          </div>
-          <p class="text-xs text-gray-600 mt-1.5">{{ passportStatusMessage }}</p>
-          <ul
-            v-if="missingPassportFields.length > 0"
-            class="mt-2 space-y-0.5"
-          >
-            <li
-              v-for="item in missingPassportFields"
-              :key="item"
-              class="text-xs text-gray-500 flex items-center gap-1"
+      <div class="relative z-10">
+        <!-- 상단 로고 + 메뉴 -->
+        <div class="sticky top-0 z-40 bg-white shadow-sm">
+          <div class="px-4 py-3 flex items-center justify-between">
+            <img
+              loading="lazy"
+              src="https://www.ifa.co.kr/Images/logo.png"
+              alt="iFA"
+              class="h-8 object-contain"
+            />
+            <button
+              class="p-2 -mr-2 rounded-lg text-gray-500 hover:bg-gray-100"
+              @click="isSidebarOpen = true"
             >
-              <span class="text-red-400">•</span>
-              {{ item }}
-            </li>
-          </ul>
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <!-- 진행중인 스타투어 -->
-        <div v-if="!isLoading" class="mb-6">
-          <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">
-            진행중인 스타투어
-          </h3>
+        <SidebarMenu :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
 
+        <div class="max-w-2xl mx-auto px-4 py-4">
+          <!-- 캐러셀 배너 -->
+          <HomeCarousel
+            v-if="banners.length > 0"
+            :banners="banners"
+            class="mb-4"
+          />
+
+          <!-- 여권 정보 카드 (해외 행사만, 승인 완료 시 숨김) -->
           <div
-            v-if="activeConventions.length === 0"
-            class="bg-white rounded-2xl shadow-sm p-8 text-center"
+            v-if="showPassportCard"
+            class="bg-white rounded-xl shadow-sm mb-4 px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
+            :class="passportCardBorder"
+            @click="router.push('/my-profile')"
           >
-            <p class="text-sm text-gray-500">진행중인 스타투어가 없습니다</p>
-          </div>
-
-          <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
-            <div class="flex gap-4 pb-2">
-              <div
-                v-for="convention in activeConventions"
-                :key="convention.id"
-                class="flex-shrink-0 w-[300px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group"
-                @click="goToConvention(convention)"
-              >
-                <div class="relative h-[180px] overflow-hidden">
-                  <div
-                    v-if="convention.conventionImg"
-                    class="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500"
-                    :style="{
-                      backgroundImage: `url(${convention.conventionImg})`,
-                    }"
-                  ></div>
-                  <div
-                    v-else
-                    class="absolute inset-0"
-                    :style="getGradientStyle(convention.brandColor)"
-                  ></div>
-                  <div
-                    v-if="getDDay(convention.startDate) > 0"
-                    class="absolute top-3 right-3 px-3 py-1 bg-black/50 backdrop-blur-sm text-white text-sm font-bold rounded-full"
-                  >
-                    D-{{ getDDay(convention.startDate) }}
-                  </div>
-                  <div
-                    class="absolute top-3 left-3 px-2.5 py-1 text-xs font-semibold rounded-full shadow"
-                    :class="
-                      isConventionOverseas(convention)
-                        ? 'bg-sky-500 text-white'
-                        : 'bg-emerald-500 text-white'
-                    "
-                  >
-                    {{ isConventionOverseas(convention) ? '해외' : '국내' }}
-                  </div>
-                </div>
-                <div class="p-4">
-                  <h4
-                    class="font-bold text-gray-900 text-lg mb-1 line-clamp-1 group-hover:text-rose-600 transition-colors"
-                  >
-                    {{ convention.title }}
-                  </h4>
-                  <div class="flex items-center gap-2 text-sm text-gray-500">
-                    <svg
-                      class="w-4 h-4 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                    <span class="truncate"
-                      >{{ formatDate(convention.startDate) }} ~
-                      {{ formatDate(convention.endDate) }}</span
-                    >
-                  </div>
-                </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-gray-800"
+                  >여권 정보</span
+                >
+                <span
+                  class="px-2 py-0.5 text-xs font-medium rounded"
+                  :class="passportStatusBadgeClass"
+                >
+                  {{ passportStatusLabel }}
+                </span>
               </div>
+              <span class="text-xs text-gray-400">입력하러 가기 ›</span>
             </div>
-          </div>
-        </div>
-
-        <!-- 지난 스타투어 -->
-        <div v-if="completedConventions.length > 0" class="mb-8">
-          <h3 class="text-lg font-bold text-gray-500 mb-3 px-1">
-            지난 스타투어
-          </h3>
-          <div class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
-            <div class="flex gap-3 pb-2">
-              <div
-                v-for="convention in completedConventions"
-                :key="convention.id"
-                class="flex-shrink-0 w-[220px] bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden opacity-80"
-                @click="goToConvention(convention)"
+            <p class="text-xs text-gray-600 mt-1.5">
+              {{ passportStatusMessage }}
+            </p>
+            <ul
+              v-if="missingPassportFields.length > 0"
+              class="mt-2 space-y-0.5"
+            >
+              <li
+                v-for="item in missingPassportFields"
+                :key="item"
+                class="text-xs text-gray-500 flex items-center gap-1"
               >
-                <div class="relative h-[120px] overflow-hidden">
-                  <div
-                    v-if="convention.conventionImg"
-                    class="absolute inset-0 bg-cover bg-center grayscale"
-                    :style="{
-                      backgroundImage: `url(${convention.conventionImg})`,
-                    }"
-                  ></div>
-                  <div
-                    v-else
-                    class="absolute inset-0 bg-gradient-to-br from-gray-400 to-gray-500"
-                  ></div>
-                  <div
-                    class="absolute top-2 left-2 flex items-center gap-1"
-                  >
-                    <span
-                      class="px-1.5 py-0.5 bg-black/50 text-white text-xs rounded backdrop-blur-sm"
+                <span class="text-red-400">•</span>
+                {{ item }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- 진행중인 스타투어 -->
+          <div v-if="!isLoading" class="mb-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">
+              진행중인 스타투어
+            </h3>
+
+            <div
+              v-if="activeConventions.length === 0"
+              class="bg-white rounded-2xl shadow-sm p-8 text-center"
+            >
+              <p class="text-sm text-gray-500">진행중인 스타투어가 없습니다</p>
+            </div>
+
+            <div v-else class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
+              <div class="flex gap-4 pb-2">
+                <div
+                  v-for="convention in activeConventions"
+                  :key="convention.id"
+                  class="flex-shrink-0 w-[300px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group"
+                  @click="goToConvention(convention)"
+                >
+                  <div class="relative h-[180px] overflow-hidden">
+                    <div
+                      v-if="convention.conventionImg"
+                      class="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500"
+                      :style="{
+                        backgroundImage: `url(${convention.conventionImg})`,
+                      }"
+                    ></div>
+                    <div
+                      v-else
+                      class="absolute inset-0"
+                      :style="getGradientStyle(convention.brandColor)"
+                    ></div>
+                    <div
+                      v-if="getDDay(convention.startDate) > 0"
+                      class="absolute top-3 right-3 px-3 py-1 bg-black/50 backdrop-blur-sm text-white text-sm font-bold rounded-full"
                     >
-                      종료
-                    </span>
-                    <span
-                      class="px-1.5 py-0.5 text-xs font-semibold rounded backdrop-blur-sm"
+                      D-{{ getDDay(convention.startDate) }}
+                    </div>
+                    <div
+                      class="absolute top-3 left-3 px-2.5 py-1 text-xs font-semibold rounded-full shadow"
                       :class="
                         isConventionOverseas(convention)
-                          ? 'bg-sky-500/90 text-white'
-                          : 'bg-emerald-500/90 text-white'
+                          ? 'bg-sky-500 text-white'
+                          : 'bg-emerald-500 text-white'
                       "
                     >
                       {{ isConventionOverseas(convention) ? '해외' : '국내' }}
-                    </span>
+                    </div>
+                  </div>
+                  <div class="p-4">
+                    <h4
+                      class="font-bold text-gray-900 text-lg mb-1 line-clamp-1 group-hover:text-rose-600 transition-colors"
+                    >
+                      {{ convention.title }}
+                    </h4>
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                      <svg
+                        class="w-4 h-4 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <span class="truncate"
+                        >{{ formatDate(convention.startDate) }} ~
+                        {{ formatDate(convention.endDate) }}</span
+                      >
+                    </div>
                   </div>
                 </div>
-                <div class="p-3">
-                  <h4 class="font-semibold text-gray-600 text-sm line-clamp-1">
-                    {{ convention.title }}
-                  </h4>
-                  <p class="text-xs text-gray-400 mt-0.5">
-                    {{ formatDate(convention.startDate) }}
-                  </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 지난 스타투어 -->
+          <div v-if="completedConventions.length > 0" class="mb-8">
+            <h3 class="text-lg font-bold text-gray-500 mb-3 px-1">
+              지난 스타투어
+            </h3>
+            <div class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
+              <div class="flex gap-3 pb-2">
+                <div
+                  v-for="convention in completedConventions"
+                  :key="convention.id"
+                  class="flex-shrink-0 w-[220px] bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden opacity-80"
+                  @click="goToConvention(convention)"
+                >
+                  <div class="relative h-[120px] overflow-hidden">
+                    <div
+                      v-if="convention.conventionImg"
+                      class="absolute inset-0 bg-cover bg-center grayscale"
+                      :style="{
+                        backgroundImage: `url(${convention.conventionImg})`,
+                      }"
+                    ></div>
+                    <div
+                      v-else
+                      class="absolute inset-0 bg-gradient-to-br from-gray-400 to-gray-500"
+                    ></div>
+                    <div class="absolute top-2 left-2 flex items-center gap-1">
+                      <span
+                        class="px-1.5 py-0.5 bg-black/50 text-white text-xs rounded backdrop-blur-sm"
+                      >
+                        종료
+                      </span>
+                      <span
+                        class="px-1.5 py-0.5 text-xs font-semibold rounded backdrop-blur-sm"
+                        :class="
+                          isConventionOverseas(convention)
+                            ? 'bg-sky-500/90 text-white'
+                            : 'bg-emerald-500/90 text-white'
+                        "
+                      >
+                        {{ isConventionOverseas(convention) ? '해외' : '국내' }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="p-3">
+                    <h4
+                      class="font-semibold text-gray-600 text-sm line-clamp-1"
+                    >
+                      {{ convention.title }}
+                    </h4>
+                    <p class="text-xs text-gray-400 mt-0.5">
+                      {{ formatDate(convention.startDate) }}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
     <div class="safe-bottom bg-gray-50"></div>
   </div>
@@ -353,7 +361,9 @@ function getGradientStyle(color) {
   const dr = Math.floor(r * 0.7)
   const dg = Math.floor(g * 0.7)
   const db = Math.floor(b * 0.7)
-  return { background: `linear-gradient(135deg, rgb(${r},${g},${b}), rgb(${dr},${dg},${db}))` }
+  return {
+    background: `linear-gradient(135deg, rgb(${r},${g},${b}), rgb(${dr},${dg},${db}))`,
+  }
 }
 
 function getDDay(startDate) {
@@ -381,12 +391,14 @@ async function loadConventions() {
     const res = await apiClient.get('/users/conventions')
     conventions.value = res.data
 
-    // 진행중 행사가 1개뿐이면 바로 이동
+    // 진행중 행사가 1개뿐이면 바로 이동 (최초 로그인 시에만)
     const active = conventions.value.filter((c) => !isConventionEnded(c))
-    if (active.length === 1) {
+    if (active.length === 1 && sessionStorage.getItem('justLoggedIn')) {
+      sessionStorage.removeItem('justLoggedIn')
       router.replace(`/conventions/${active[0].id}`)
       return
     }
+    sessionStorage.removeItem('justLoggedIn')
   } catch {
     conventions.value = []
   } finally {
@@ -440,9 +452,23 @@ onMounted(() => {
   height: 100dvh;
   overflow: hidden;
 }
-.safe-top { flex-shrink: 0; height: env(safe-area-inset-top, 0px); }
-.safe-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.safe-bottom { height: env(safe-area-inset-bottom, 0px); flex-shrink: 0; }
-:global(.capacitor-app) .safe-top { height: max(env(safe-area-inset-top, 0px), 2rem); }
-:global(.capacitor-app) .safe-bottom { height: max(env(safe-area-inset-bottom, 0px), 3rem); }
+.safe-top {
+  flex-shrink: 0;
+  height: env(safe-area-inset-top, 0px);
+}
+.safe-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.safe-bottom {
+  height: env(safe-area-inset-bottom, 0px);
+  flex-shrink: 0;
+}
+:global(.capacitor-app) .safe-top {
+  height: max(env(safe-area-inset-top, 0px), 2rem);
+}
+:global(.capacitor-app) .safe-bottom {
+  height: max(env(safe-area-inset-bottom, 0px), 3rem);
+}
 </style>

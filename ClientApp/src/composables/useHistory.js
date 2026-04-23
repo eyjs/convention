@@ -41,5 +41,14 @@ export function useHistory(maxSize = 50) {
     index.value = -1
   }
 
-  return { push, undo, redo, clear, canUndo, canRedo, index, stackSize: computed(() => stack.value.length) }
+  return {
+    push,
+    undo,
+    redo,
+    clear,
+    canUndo,
+    canRedo,
+    index,
+    stackSize: computed(() => stack.value.length),
+  }
 }

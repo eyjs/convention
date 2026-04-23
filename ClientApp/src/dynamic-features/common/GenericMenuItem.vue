@@ -15,29 +15,19 @@
     @keydown.enter="handleClick"
     @keydown.space.prevent="handleClick"
   >
-    <!-- Icon -->
-    <div class="menu-icon" :style="iconStyle">
-      <span v-if="config.icon" v-html="config.icon"></span>
-      <svg
-        v-else
-        class="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M13 10V3L4 14h7v7l9-11h-7z"
-        />
-      </svg>
-    </div>
-
     <!-- Content -->
     <div class="menu-content">
-      <div class="flex items-center gap-2 mb-1">
+      <div class="flex items-center gap-2 mb-1.5">
+        <!-- 통합된 아이콘 + 타이틀 -->
+        <div 
+          v-if="config.icon" 
+          class="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center"
+          :style="{ backgroundColor: (config.bgColor || '#3B82F6') + '20', color: config.bgColor || '#3B82F6' }"
+        >
+          <span class="w-3.5 h-3.5 flex items-center justify-center" v-html="config.icon"></span>
+        </div>
         <h3 class="menu-title">{{ feature.title }}</h3>
+        
         <!-- 제출 상태 태그 -->
         <span
           v-if="feature.isComplete !== undefined"
@@ -152,26 +142,10 @@ function handleClick() {
 
 <style scoped>
 .menu-item {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 1rem;
-  align-items: center;
-  position: relative;
-}
-
-.menu-icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.menu-icon :deep(svg) {
-  width: 2rem;
-  height: 2rem;
+  gap: 1rem;
+  position: relative;
 }
 
 .menu-content {

@@ -38,7 +38,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPersonalTripService, LocalRAG.Services.PersonalTrip.PersonalTripService>();
         services.AddScoped<IConventionCrudService, ConventionCrudService>();
         services.AddScoped<IScheduleService, ScheduleService>();
-        services.AddScoped<ISeatingLayoutService, LocalRAG.Services.Convention.SeatingLayoutService>();
         services.AddScoped<LocalRAG.Services.Convention.NotificationSendService>();
         services.AddScoped<IHomeBannerService, LocalRAG.Services.Convention.HomeBannerService>();
         services.AddScoped<IAttributeCategoryService, LocalRAG.Services.Convention.AttributeCategoryService>();
@@ -71,6 +70,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAttributeUploadService, AttributeUploadService>();
         services.AddScoped<IGroupScheduleMappingService, GroupScheduleMappingService>();
         services.AddScoped<IOptionTourUploadService, OptionTourUploadService>();
+        services.AddScoped<PassportUploadService>();
 
         return services;
     }

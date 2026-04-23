@@ -51,7 +51,7 @@ public class AttributeCategoryService : IAttributeCategoryService
     /// <summary>
     /// 속성 카테고리를 생성합니다. OrderNum은 마지막+1.
     /// </summary>
-    public async Task<object> CreateCategoryAsync(int conventionId, string name, string? icon)
+    public async Task<object> CreateCategoryAsync(int conventionId, string name, string? icon, List<string> attributeKeys, int? orderNum = null)
     {
         var maxOrder = await _unitOfWork.AttributeCategories.Query
             .Where(c => c.ConventionId == conventionId)
@@ -62,12 +62,31 @@ public class AttributeCategoryService : IAttributeCategoryService
             ConventionId = conventionId,
             Name = name,
             Icon = icon,
-            OrderNum = maxOrder + 1,
+            OrderNum = orderNum ?? maxOrder + 1,
             CreatedAt = DateTime.UtcNow
         };
 
         await _unitOfWork.AttributeCategories.AddAsync(category);
         await _unitOfWork.SaveChangesAsync();
+
+        // 속성 키 연결
+        var newItems = attributeKeys
+            .Select((key, index) => new AttributeCategoryItem
+            {
+                AttributeCategoryId = category.Id,
+                AttributeKey = key,
+                OrderNum = index + 1,
+                CreatedAt = DateTime.UtcNow
+            })
+            .ToList();
+
+        foreach (var item in newItems)
+        {
+            await _unitOfWork.AttributeCategoryItems.AddAsync(item);
+        }
+
+        if (newItems.Count > 0)
+            await _unitOfWork.SaveChangesAsync();
 
         return new
         {
@@ -77,14 +96,20 @@ public class AttributeCategoryService : IAttributeCategoryService
             category.Icon,
             category.OrderNum,
             category.CreatedAt,
-            Items = new List<object>()
+            Items = newItems.Select(i => new
+            {
+                i.Id,
+                i.AttributeCategoryId,
+                i.AttributeKey,
+                i.OrderNum
+            }).ToList()
         };
     }
 
     /// <summary>
     /// 카테고리 이름/아이콘을 수정하고 Items를 교체합니다 (기존 삭제 후 재생성).
     /// </summary>
-    public async Task<object> UpdateCategoryAsync(int categoryId, string name, string? icon, List<string> attributeKeys)
+    public async Task<object> UpdateCategoryAsync(int categoryId, string name, string? icon, List<string> attributeKeys, int? orderNum = null)
     {
         var category = await _unitOfWork.AttributeCategories.Query
             .Include(c => c.Items)
@@ -95,6 +120,8 @@ public class AttributeCategoryService : IAttributeCategoryService
 
         category.Name = name;
         category.Icon = icon;
+        if (orderNum.HasValue)
+            category.OrderNum = orderNum.Value;
 
         // 기존 Items 삭제
         if (category.Items.Count > 0)

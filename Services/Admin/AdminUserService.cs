@@ -110,9 +110,12 @@ public class AdminUserService : IAdminUserService
                     .ThenInclude(st => st!.ScheduleItems.OrderBy(si => si.OrderNum))
             .Include(u => u.UserOptionTours)
                 .ThenInclude(uot => uot.OptionTour)
+            .Include(u => u.UserConventions)
             .FirstOrDefaultAsync(u => u.Id == guestId);
 
         if (user == null) return null;
+
+        var uc = user.UserConventions.FirstOrDefault();
 
         return new
         {
@@ -124,7 +127,9 @@ public class AdminUserService : IAdminUserService
             CorpPart = user.CorpPart,
             ResidentNumber = user.ResidentNumber,
             Affiliation = user.Affiliation,
-            AccessToken = (string?)null,
+            GroupName = uc?.GroupName,
+            Remarks = user.Remarks,
+            AccessToken = uc?.AccessToken,
             IsRegisteredUser = !string.IsNullOrEmpty(user.LoginId) && !user.LoginId.StartsWith("guest_"),
             user = new { user.Id, user.LoginId, user.Role },
             schedules = user.GuestScheduleTemplates.Select(gst => new

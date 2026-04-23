@@ -72,12 +72,8 @@
           <!-- 발송 내용 -->
           <div class="bg-white border rounded-lg p-4">
             <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium text-gray-700"
-                >발송 내용</label
-              >
-              <span class="text-xs text-gray-400"
-                >{{ content.length }}자</span
-              >
+              <label class="text-sm font-medium text-gray-700">발송 내용</label>
+              <span class="text-xs text-gray-400">{{ content.length }}자</span>
             </div>
             <textarea
               v-model="content"
@@ -163,12 +159,8 @@
                   :value="user.userId"
                   class="rounded border-gray-300 text-yellow-500 focus:ring-yellow-500"
                 />
-                <span class="text-sm text-gray-900">{{
-                  user.guestName
-                }}</span>
-                <span class="text-xs text-gray-400">{{
-                  user.telephone
-                }}</span>
+                <span class="text-sm text-gray-900">{{ user.guestName }}</span>
+                <span class="text-xs text-gray-400">{{ user.telephone }}</span>
                 <span v-if="!user.telephone" class="text-xs text-red-400">
                   (번호없음)
                 </span>
@@ -189,9 +181,7 @@
             <p
               class="text-sm font-medium"
               :class="
-                sendResult.failCount === 0
-                  ? 'text-green-800'
-                  : 'text-amber-800'
+                sendResult.failCount === 0 ? 'text-green-800' : 'text-amber-800'
               "
             >
               {{ sendResult.message }}

@@ -1,7 +1,15 @@
 <template>
   <BaseModal :is-open="isOpen" max-width="4xl" @close="emit('close')">
     <template #header>
-      <h2 class="text-2xl font-bold">{{ guestDetail?.guestName }}</h2>
+      <div class="flex items-center justify-between w-full">
+        <h2 class="text-2xl font-bold">{{ guestDetail?.guestName }}</h2>
+        <button
+          class="px-3 py-1.5 text-sm bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100"
+          @click="emit('edit', guestDetail)"
+        >
+          수정
+        </button>
+      </div>
     </template>
     <template #body>
       <div v-if="loading" class="text-center py-8">로딩 중...</div>
@@ -12,13 +20,7 @@
             <dl class="space-y-2 text-sm">
               <div>
                 <dt class="text-gray-500 inline">전화번호:</dt>
-                <dd class="inline ml-2">{{ guestDetail?.telephone }}</dd>
-              </div>
-              <div>
-                <dt class="text-gray-500 inline">부서:</dt>
-                <dd class="inline ml-2">
-                  {{ guestDetail?.corpPart || '-' }}
-                </dd>
+                <dd class="inline ml-2">{{ guestDetail?.telephone || '-' }}</dd>
               </div>
               <div>
                 <dt class="text-gray-500 inline">주민번호:</dt>
@@ -31,6 +33,18 @@
                 <dd class="inline ml-2">
                   {{ guestDetail?.affiliation || '-' }}
                 </dd>
+              </div>
+              <div>
+                <dt class="text-gray-500 inline">부서:</dt>
+                <dd class="inline ml-2">{{ guestDetail?.corpPart || '-' }}</dd>
+              </div>
+              <div>
+                <dt class="text-gray-500 inline">그룹:</dt>
+                <dd class="inline ml-2">{{ guestDetail?.groupName || '-' }}</dd>
+              </div>
+              <div>
+                <dt class="text-gray-500 inline">비고:</dt>
+                <dd class="inline ml-2">{{ guestDetail?.remarks || '-' }}</dd>
               </div>
             </dl>
           </div>
@@ -45,15 +59,50 @@
               >
                 <div class="flex-1 min-w-0">
                   <dt class="text-gray-500 inline">{{ key }}:</dt>
-                  <dd class="inline ml-2 font-medium">{{ value }}</dd>
+                  <template v-if="editingAttrKey === key">
+                    <input
+                      v-model="editingAttrValue"
+                      type="text"
+                      class="inline ml-2 px-2 py-0.5 border rounded text-sm w-32 focus:ring-2 focus:ring-primary-500"
+                      @keyup.enter="handleSaveAttribute(key)"
+                      @keyup.escape="editingAttrKey = null"
+                    />
+                    <button
+                      type="button"
+                      class="text-xs text-primary-600 hover:text-primary-800 ml-1"
+                      @click="handleSaveAttribute(key)"
+                    >
+                      저장
+                    </button>
+                    <button
+                      type="button"
+                      class="text-xs text-gray-400 hover:text-gray-600 ml-1"
+                      @click="editingAttrKey = null"
+                    >
+                      취소
+                    </button>
+                  </template>
+                  <dd v-else class="inline ml-2 font-medium">{{ value }}</dd>
                 </div>
-                <button
-                  type="button"
-                  class="text-xs text-red-500 hover:text-red-700 hover:underline flex-shrink-0"
-                  @click="handleDeleteAttribute(key)"
+                <div
+                  v-if="editingAttrKey !== key"
+                  class="flex items-center gap-2 flex-shrink-0"
                 >
-                  삭제
-                </button>
+                  <button
+                    type="button"
+                    class="text-xs text-blue-500 hover:text-blue-700 hover:underline"
+                    @click="startEditAttribute(key, value)"
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    class="text-xs text-red-500 hover:text-red-700 hover:underline"
+                    @click="handleDeleteAttribute(key)"
+                  >
+                    삭제
+                  </button>
+                </div>
               </div>
             </dl>
           </div>
@@ -211,10 +260,13 @@ const props = defineProps({
   guestId: { type: Number, default: null },
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'edit'])
 
 const guestDetail = ref(null)
 const loading = ref(false)
+
+const editingAttrKey = ref(null)
+const editingAttrValue = ref('')
 
 const HIDDEN_ATTRIBUTES = ['travel_info']
 
@@ -237,6 +289,33 @@ function showPassportImage() {
     viewerApi({
       images: [guestDetail.value.passport.passportImageUrl],
     })
+  }
+}
+
+function startEditAttribute(key, value) {
+  editingAttrKey.value = key
+  editingAttrValue.value = value
+}
+
+async function handleSaveAttribute(key) {
+  if (!props.guestId) return
+  try {
+    await apiClient.put(
+      `/admin/guests/${props.guestId}/attributes/${encodeURIComponent(key)}`,
+      { value: editingAttrValue.value },
+    )
+    if (guestDetail.value?.attributes) {
+      guestDetail.value = {
+        ...guestDetail.value,
+        attributes: {
+          ...guestDetail.value.attributes,
+          [key]: editingAttrValue.value,
+        },
+      }
+    }
+    editingAttrKey.value = null
+  } catch (e) {
+    alert(e.response?.data?.message || '속성 수정에 실패했습니다.')
   }
 }
 

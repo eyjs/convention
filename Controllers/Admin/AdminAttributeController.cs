@@ -37,6 +37,29 @@ public class AdminAttributeController : ControllerBase
         return Ok(keys);
     }
 
+    [HttpPut("guests/{guestId}/attributes/{attributeKey}")]
+    public async Task<IActionResult> UpdateGuestAttribute(int guestId, string attributeKey, [FromBody] UpdateAttributeRequest request)
+    {
+        var decodedKey = Uri.UnescapeDataString(attributeKey);
+
+        var attribute = await _unitOfWork.GuestAttributes
+            .GetAsync(ga => ga.UserId == guestId && ga.AttributeKey == decodedKey);
+
+        if (attribute == null)
+            return NotFound(new { message = $"속성 '{decodedKey}'을 찾을 수 없습니다." });
+
+        attribute.AttributeValue = request.Value ?? string.Empty;
+        _unitOfWork.GuestAttributes.Update(attribute);
+        await _unitOfWork.SaveChangesAsync();
+
+        return Ok(new { message = $"속성 '{decodedKey}'이 수정되었습니다.", key = decodedKey, value = attribute.AttributeValue });
+    }
+
+    public class UpdateAttributeRequest
+    {
+        public string? Value { get; set; }
+    }
+
     [HttpDelete("guests/{guestId}/attributes/{attributeKey}")]
     public async Task<IActionResult> DeleteGuestAttribute(int guestId, string attributeKey)
     {

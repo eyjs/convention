@@ -342,7 +342,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<(bool Success, string? ErrorMessage)> UpdateProfileAsync(int userId, UpdateUserProfileDto dto)
     {
-        var user = await _unitOfWork.Users.GetAsync(u => u.Id == userId);
+        var user = await _unitOfWork.Users.Query.FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.");
@@ -388,7 +388,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<(bool Success, string? ErrorMessage)> UpdateProfileFieldAsync(int userId, UpdateProfileFieldRequest request)
     {
-        var user = await _unitOfWork.Users.GetAsync(u => u.Id == userId);
+        var user = await _unitOfWork.Users.Query.FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.");
@@ -455,7 +455,8 @@ public class UserProfileService : IUserProfileService
 
     public async Task<(bool Success, string? ErrorMessage)> ChangePasswordAsync(int userId, ChangePasswordDto dto)
     {
-        var user = await _unitOfWork.Users.GetAsync(u => u.Id == userId);
+        // GetAsync는 AsNoTracking이므로 비밀번호 검증용으로만 사용
+        var user = await _unitOfWork.Users.Query.FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.");
@@ -463,8 +464,11 @@ public class UserProfileService : IUserProfileService
         if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
             return (false, "현재 비밀번호가 올바르지 않습니다.");
 
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-        user.UpdatedAt = DateTime.UtcNow;
+        // 변경 추적이 필요하므로 tracked 엔티티로 다시 조회
+        var trackedUser = await _unitOfWork.Users.Query
+            .FirstAsync(u => u.Id == userId);
+        trackedUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        trackedUser.UpdatedAt = DateTime.UtcNow;
 
         await _unitOfWork.SaveChangesAsync();
 
@@ -473,7 +477,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<(bool Success, string? ErrorMessage, string? Url)> UploadProfilePhotoAsync(int userId, IFormFile file)
     {
-        var user = await _unitOfWork.Users.GetAsync(u => u.Id == userId);
+        var user = await _unitOfWork.Users.Query.FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.", null);
@@ -493,7 +497,7 @@ public class UserProfileService : IUserProfileService
 
     public async Task<(bool Success, string? ErrorMessage, string? Url)> UploadPassportImageAsync(int userId, IFormFile file)
     {
-        var user = await _unitOfWork.Users.GetAsync(u => u.Id == userId);
+        var user = await _unitOfWork.Users.Query.FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
             return (false, "사용자 정보를 찾을 수 없습니다.", null);

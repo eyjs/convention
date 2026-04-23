@@ -49,7 +49,10 @@ export default defineConfig({
           ) {
             return 'pdf-export'
           }
-          if (id.includes('node_modules/apexcharts') || id.includes('node_modules/vue3-apexcharts')) {
+          if (
+            id.includes('node_modules/apexcharts') ||
+            id.includes('node_modules/vue3-apexcharts')
+          ) {
             return 'apexcharts'
           }
           if (id.includes('node_modules/vue-datepicker-next')) {

@@ -1,5 +1,8 @@
 <template>
-  <div v-if="loading" class="min-h-screen min-h-dvh flex items-center justify-center">
+  <div
+    v-if="loading"
+    class="min-h-screen min-h-dvh flex items-center justify-center"
+  >
     <div
       class="inline-block w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
       :style="{ borderColor: brandColor, borderTopColor: 'transparent' }"
@@ -7,25 +10,11 @@
   </div>
 
   <div v-else-if="convention" class="min-h-screen min-h-dvh bg-gray-50">
-
     <!-- GLOBAL_ROOT_POPUP: 팝업 공지 (화면에 보이지 않고 팝업만 트리거) -->
     <DynamicActionRenderer
       v-if="globalPopupActions.length > 0"
       :features="globalPopupActions"
     />
-
-    <!-- 여행 가이드 링크 -->
-    <div v-if="hasTravelGuide" class="px-4 pt-4">
-      <router-link
-        :to="`/conventions/${conventionId}/travel-guide`"
-        class="flex items-center gap-3 bg-white rounded-xl shadow-sm p-3 hover:shadow-md transition-shadow"
-      >
-        <span class="text-lg">🧳</span>
-        <span class="text-sm font-medium text-gray-700">여행 가이드</span>
-        <span class="text-xs text-gray-400">긴급연락처 · 집결지 · 캘린더</span>
-        <span class="ml-auto text-xs font-medium" :style="{ color: brandColor }">→</span>
-      </router-link>
-    </div>
 
     <!-- HOME_SUB_HEADER 동적 액션 -->
     <div v-if="subHeaderActions.length > 0" class="px-4 pt-4">
@@ -56,7 +45,6 @@
       :attributes="myAttributes"
       @close="selectedSchedule = null"
     />
-
   </div>
 
   <div v-else class="min-h-screen min-h-dvh flex items-center justify-center">

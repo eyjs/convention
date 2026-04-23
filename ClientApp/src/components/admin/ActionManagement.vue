@@ -8,7 +8,9 @@
     </AdminPageHeader>
 
     <!-- BehaviorType 필터 -->
-    <div class="mt-4 mb-5 bg-gray-100 rounded-xl p-1.5 overflow-x-auto scrollbar-hide">
+    <div
+      class="mt-4 mb-5 bg-gray-100 rounded-xl p-1.5 overflow-x-auto scrollbar-hide"
+    >
       <div class="flex gap-1 min-w-max">
         <button
           v-for="filter in behaviorFilters"

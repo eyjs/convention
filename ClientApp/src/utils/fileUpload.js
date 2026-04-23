@@ -16,7 +16,10 @@ import apiClient from '@/services/api'
  * @param {number} options.quality - JPEG 품질 0~1 (기본 0.8)
  * @returns {Promise<File>} 압축된 파일 또는 원본
  */
-export async function compressImage(file, { maxWidth = 1920, maxHeight = 1920, quality = 0.8 } = {}) {
+export async function compressImage(
+  file,
+  { maxWidth = 1920, maxHeight = 1920, quality = 0.8 } = {},
+) {
   if (file.size <= 1024 * 1024) return file // 1MB 이하 스킵
   if (!file.type.startsWith('image/')) return file
 
@@ -150,7 +153,9 @@ export const uploadFile = async (
   }
 
   // 이미지인 경우 업로드 전 압축
-  const uploadTarget = file.type.startsWith('image/') ? await compressImage(file) : file
+  const uploadTarget = file.type.startsWith('image/')
+    ? await compressImage(file)
+    : file
 
   const formData = new FormData()
   formData.append('file', uploadTarget)

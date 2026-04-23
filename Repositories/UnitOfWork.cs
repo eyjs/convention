@@ -42,7 +42,6 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<Gallery>? _galleries;
     private IRepository<GalleryImage>? _galleryImages;
     private IRepository<FileAttachment>? _fileAttachments;
-    private IRepository<SeatingLayout>? _seatingLayouts;
     private IRepository<Notification>? _notifications;
     private IRepository<UserNotification>? _userNotifications;
     private IRepository<ActionTemplate>? _actionTemplates;
@@ -135,9 +134,6 @@ public class UnitOfWork : IUnitOfWork
 
     public IRepository<Notice> Notices =>
         _notices ??= new Repository<Notice>(_context);
-
-    public IRepository<SeatingLayout> SeatingLayouts =>
-        _seatingLayouts ??= new Repository<SeatingLayout>(_context);
 
     public IRepository<Notification> Notifications =>
         _notifications ??= new Repository<Notification>(_context);

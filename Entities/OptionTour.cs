@@ -47,6 +47,17 @@ public class OptionTour
     public int CustomOptionId { get; set; }
 
     /// <summary>
+    /// 장소
+    /// </summary>
+    [MaxLength(500)]
+    public string? Location { get; set; }
+
+    /// <summary>
+    /// 장소 지도/링크 URL
+    /// </summary>
+    public string? MapUrl { get; set; }
+
+    /// <summary>
     /// 옵션투어 상세 내용
     /// </summary>
     public string? Content { get; set; }

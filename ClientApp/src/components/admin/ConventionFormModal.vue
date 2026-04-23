@@ -696,7 +696,9 @@ const handleSubmit = async () => {
       return
     }
     if (form.value.destinationCountryCode === 'KR') {
-      alert('해외 행사에 대한민국을 선택할 수 없습니다. 국내 행사로 변경해주세요.')
+      alert(
+        '해외 행사에 대한민국을 선택할 수 없습니다. 국내 행사로 변경해주세요.',
+      )
       return
     }
     if (!form.value.destinationCity) {

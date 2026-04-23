@@ -223,8 +223,10 @@
             <p><strong>A열:</strong> 날짜 (필수) - 예: 2025-05-18</p>
             <p><strong>B열:</strong> 시작시간 (필수) - 예: 02:00</p>
             <p><strong>C열:</strong> 종료시간 (필수) - 예: 09:00</p>
-            <p><strong>D열:</strong> 옵션명 (필수) - 예: 바뚜르산</p>
-            <p><strong>E열:</strong> 옵션내용 (선택) - 상세 설명</p>
+            <p><strong>D열:</strong> 장소 (선택)</p>
+            <p><strong>E열:</strong> 장소URL (선택)</p>
+            <p><strong>F열:</strong> 옵션명 (필수) - 예: 바뚜르산</p>
+            <p><strong>G열:</strong> 옵션내용 (선택) - 상세 설명</p>
             <p class="text-orange-500 text-xs mt-1">
               ※ 1행은 헤더, 2행부터 데이터 (행 번호 = 옵션 번호)
             </p>
@@ -285,6 +287,110 @@
       </div>
     </div>
 
+    <!-- 여권 업로드 탭 -->
+    <div v-if="activeTab === 'passport'" class="space-y-4">
+      <div class="mb-4 p-4 bg-purple-50 rounded-md">
+        <h3 class="font-medium text-purple-900 mb-2">📋 여권 일괄 업로드</h3>
+        <div class="text-sm text-purple-700 space-y-2">
+          <div class="border-b border-purple-200 pb-2">
+            <p class="font-semibold text-purple-800">Step 1: 엑셀 파일</p>
+            <p><strong>A열:</strong> 이름 (필수) — 참석자 매칭용</p>
+            <p><strong>B열:</strong> 영문 성 (Last Name)</p>
+            <p><strong>C열:</strong> 영문 이름 (First Name)</p>
+            <p><strong>D열:</strong> 여권 만료일 (예: 2030-12-31)</p>
+            <p>
+              <strong>E열:</strong> 파일명 — ZIP 내 이미지 파일명과 일치 (확장자
+              제외)
+            </p>
+          </div>
+          <div class="pt-2">
+            <p class="font-semibold text-purple-800">
+              Step 2: 여권 이미지 ZIP (선택)
+            </p>
+            <p>
+              E열 파일명과 동일한 이름의 이미지 파일들을 ZIP으로 묶어서 업로드
+            </p>
+          </div>
+          <p class="text-purple-500 text-xs mt-1">
+            ※ 에러 발생 시 DB 저장 없이 에러 목록만 반환 → 엑셀 수정 후 재업로드
+          </p>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >엑셀 파일 (필수)</label
+          >
+          <input
+            type="file"
+            accept=".xlsx"
+            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+            @change="handlePassportExcel"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >여권 이미지 ZIP (선택)</label
+          >
+          <input
+            type="file"
+            accept=".zip"
+            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+            @change="handlePassportZip"
+          />
+        </div>
+      </div>
+
+      <button
+        :disabled="!passportExcelFile || passportUploading"
+        class="w-full px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+        @click="uploadPassportBulk"
+      >
+        {{ passportUploading ? '업로드 중...' : '여권 정보 일괄 업로드' }}
+      </button>
+
+      <!-- 결과 -->
+      <div
+        v-if="passportResult"
+        class="mt-4 p-4 rounded-md"
+        :class="passportResult.success ? 'bg-green-50' : 'bg-red-50'"
+      >
+        <h4
+          class="font-semibold"
+          :class="passportResult.success ? 'text-green-800' : 'text-red-800'"
+        >
+          {{
+            passportResult.success
+              ? '업로드 완료'
+              : '검증 실패 — 엑셀을 수정 후 재업로드하세요'
+          }}
+        </h4>
+        <p v-if="passportResult.success" class="text-sm text-green-700 mt-1">
+          {{ passportResult.updatedCount }}명 / {{ passportResult.totalRows }}명
+          업데이트 완료
+        </p>
+        <div v-if="passportResult.errors?.length > 0" class="mt-2 space-y-1">
+          <p
+            v-for="(err, idx) in passportResult.errors"
+            :key="idx"
+            class="text-sm text-red-700"
+          >
+            ❌ {{ err }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex gap-2 mt-4">
+        <button
+          class="px-4 py-2 bg-white border rounded-md hover:bg-gray-50 text-sm"
+          @click="downloadPassportSample"
+        >
+          📥 샘플 다운로드
+        </button>
+      </div>
+    </div>
+
     <!-- 일정 업로드 미리보기 모달 -->
     <ScheduleUploadPreviewModal
       v-if="showScheduleModal"
@@ -314,6 +420,7 @@ const tabs = [
   { id: 'guests', name: '참석자 업로드' },
   { id: 'schedules', name: '일정 업로드' },
   { id: 'option-tours', name: '옵션투어 업로드' },
+  { id: 'passport', name: '여권 업로드' },
 ]
 
 const activeTab = ref('guests')
@@ -361,9 +468,24 @@ const handleScheduleSaved = (saveResult) => {
   schedulePreview.value = null
 }
 
-const handleFileOptionTours = (e) => {
-  fileOptionTours.value = e.target.files[0]
+const optionToursBuffer = ref(null)
+const handleFileOptionTours = async (e) => {
+  const file = e.target.files[0]
+  fileOptionTours.value = file
   resultOptionTours.value = null
+  // 파일 선택 시점에 즉시 읽어서 메모리에 저장 (Excel 잠금 회피)
+  if (file) {
+    try {
+      optionToursBuffer.value = await file.arrayBuffer()
+    } catch {
+      optionToursBuffer.value = null
+      resultOptionTours.value = {
+        success: false,
+        message:
+          '파일을 읽을 수 없습니다. Excel에서 파일을 닫고 다시 시도해주세요.',
+      }
+    }
+  }
 }
 
 // 참석자 업로드
@@ -689,32 +811,99 @@ function downloadScheduleSample() {
 // 옵션투어 업로드 샘플
 function downloadOptionTourSample() {
   const wb = XLSX.utils.book_new()
-  const sheet = [
-    ['투어명', '설명', '가격', '날짜', '시작시간', '종료시간', '정원'],
+  const optionSheet = [
+    ['날짜', '시작시간', '종료시간', '장소', '장소URL', '투어명', '설명'],
     [
-      '바티칸 투어',
-      '성 베드로 대성당 + 박물관',
-      120,
-      '2026-05-03',
+      '2026-05-18',
       '09:00',
-      '13:00',
-      20,
+      '18:30',
+      '우붓',
+      '',
+      '우붓 투어',
+      '계단식 논 + 왕궁 관광',
     ],
     [
-      '나이트 투어',
-      '로마 야경 워킹 투어',
-      50,
-      '2026-05-03',
-      '19:00',
-      '22:00',
-      15,
+      '2026-05-18',
+      '02:00',
+      '09:00',
+      '바뚜르산',
+      '',
+      '바뚜르산 일출 투어',
+      '지프차 투어',
     ],
   ]
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet), '옵션투어')
+  const mappingSheet = [
+    ['이름', '주민등록번호', '전화번호', '옵션번호'],
+    ['홍길동', '900101-1234567', '010-1234-5678', '2, 3'],
+  ]
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(optionSheet),
+    '옵션투어',
+  )
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(mappingSheet),
+    '참석자 매핑',
+  )
   saveWorkbook(wb, '옵션투어_업로드_샘플.xlsx')
 }
 
 // 현재 데이터 다운로드
+// === 여권 일괄 업로드 ===
+const passportExcelFile = ref(null)
+const passportZipFile = ref(null)
+const passportUploading = ref(false)
+const passportResult = ref(null)
+
+const handlePassportExcel = (e) => {
+  passportExcelFile.value = e.target.files[0]
+  passportResult.value = null
+}
+
+const handlePassportZip = (e) => {
+  passportZipFile.value = e.target.files[0]
+}
+
+const uploadPassportBulk = async () => {
+  if (!passportExcelFile.value) return
+  passportUploading.value = true
+  passportResult.value = null
+
+  try {
+    const formData = new FormData()
+    formData.append('excelFile', passportExcelFile.value)
+    if (passportZipFile.value) {
+      formData.append('zipFile', passportZipFile.value)
+    }
+
+    const response = await apiClient.post(
+      `/upload/conventions/${props.conventionId}/passport/bulk`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 300000 },
+    )
+    passportResult.value = response.data
+  } catch (error) {
+    passportResult.value = error.response?.data || {
+      success: false,
+      errors: [error.message || '업로드 실패'],
+    }
+  } finally {
+    passportUploading.value = false
+  }
+}
+
+function downloadPassportSample() {
+  const wb = XLSX.utils.book_new()
+  const sheet = [
+    ['이름', '영문성(Last)', '영문이름(First)', '여권만료일', '파일명'],
+    ['김도현', 'KIM', 'DOHYUN', '2030-12-31', '김도현_여권'],
+    ['강경요', 'KANG', 'KYOUNGYO', '2029-06-15', '001'],
+  ]
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet), '여권정보')
+  saveWorkbook(wb, '여권업로드_샘플.xlsx')
+}
+
 const downloadCurrentData = async (type) => {
   const urlMap = {
     guests: `/upload/conventions/${props.conventionId}/guests/download`,
@@ -772,9 +961,13 @@ const uploadOptionTours = async () => {
   resultOptionTours.value = null
 
   try {
-    // 엑셀 파일 읽기
-    const data = await fileOptionTours.value.arrayBuffer()
-    const workbook = XLSX.read(data, { type: 'array' })
+    // 엑셀 파일 읽기 (파일 선택 시 미리 읽은 버퍼 사용)
+    if (!optionToursBuffer.value) {
+      throw new Error(
+        '파일을 읽을 수 없습니다. Excel에서 파일을 닫고 다시 선택해주세요.',
+      )
+    }
+    const workbook = XLSX.read(optionToursBuffer.value, { type: 'array' })
 
     // 시트 확인
     if (workbook.SheetNames.length < 2) {
@@ -795,7 +988,7 @@ const uploadOptionTours = async () => {
       const row = optionsRaw[i]
       if (!row || row.length === 0) continue
 
-      const [dateVal, startTime, endTime, name, content] = row
+      const [dateVal, startTime, endTime, location, mapUrl, name, content] = row
 
       if (!dateVal || !startTime || !name) {
         console.warn(`옵션 시트 ${i + 1}행 스킵: 필수 값 누락`)
@@ -806,6 +999,8 @@ const uploadOptionTours = async () => {
         date: excelDateToString(dateVal),
         startTime: normalizeTime(startTime),
         endTime: normalizeTime(endTime),
+        location: location ? String(location).trim() : '',
+        mapUrl: mapUrl ? String(mapUrl).trim() : '',
         name: String(name).trim(),
         optionId: i + 1,
         content: content ? String(content).trim() : '',

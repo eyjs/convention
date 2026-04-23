@@ -32,28 +32,52 @@
           <div class="flex items-start justify-between mb-2">
             <div>
               <p class="font-semibold text-gray-900">{{ user.name }}</p>
-              <p class="text-xs text-gray-500">{{ user.loginId || '게스트' }} · {{ user.phone || '-' }}</p>
+              <p class="text-xs text-gray-500">
+                {{ user.loginId || '게스트' }} · {{ user.phone || '-' }}
+              </p>
             </div>
             <div class="flex items-center gap-1.5">
               <span
                 class="px-2 py-0.5 text-xs rounded-full font-medium"
-                :class="user.role === 'Admin' ? 'bg-blue-100 text-blue-700' : user.role === 'Guest' ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700'"
+                :class="
+                  user.role === 'Admin'
+                    ? 'bg-blue-100 text-blue-700'
+                    : user.role === 'Guest'
+                      ? 'bg-gray-100 text-gray-600'
+                      : 'bg-green-100 text-green-700'
+                "
               >
                 {{ user.role }}
               </span>
               <span
                 class="px-2 py-0.5 text-xs rounded-full font-medium"
-                :class="user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                :class="
+                  user.isActive
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                "
               >
                 {{ user.isActive ? '활성' : '비활성' }}
               </span>
             </div>
           </div>
           <div class="flex items-center justify-between">
-            <p class="text-xs text-gray-400">{{ formatDate(user.createdAt) }}</p>
+            <p class="text-xs text-gray-400">
+              {{ formatDate(user.createdAt) }}
+            </p>
             <div class="flex gap-3">
-              <button class="text-sm text-primary-600 font-medium" @click="openRoleModal(user)">권한</button>
-              <button class="text-sm text-red-600 font-medium" @click="openStatusModal(user)">상태</button>
+              <button
+                class="text-sm text-primary-600 font-medium"
+                @click="openRoleModal(user)"
+              >
+                권한
+              </button>
+              <button
+                class="text-sm text-red-600 font-medium"
+                @click="openStatusModal(user)"
+              >
+                상태
+              </button>
             </div>
           </div>
         </div>
@@ -61,18 +85,28 @@
 
       <!-- PC: 테이블 -->
       <div class="hidden md:block">
-        <AdminTable
-          :columns="tableColumns"
-          :loading="false"
-          :empty="false"
-        >
+        <AdminTable :columns="tableColumns" :loading="false" :empty="false">
           <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50">
             <td class="px-6 py-4 text-sm text-gray-500">{{ user.id }}</td>
-            <td class="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{{ user.name }}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">{{ user.loginId || '-' }}</td>
+            <td
+              class="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap"
+            >
+              {{ user.name }}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              {{ user.loginId || '-' }}
+            </td>
             <td class="px-6 py-4 text-sm text-gray-500">{{ user.phone }}</td>
             <td class="px-6 py-4">
-              <AdminBadge :variant="user.role === 'Admin' ? 'info' : user.role === 'Guest' ? 'neutral' : 'success'">
+              <AdminBadge
+                :variant="
+                  user.role === 'Admin'
+                    ? 'info'
+                    : user.role === 'Guest'
+                      ? 'neutral'
+                      : 'success'
+                "
+              >
                 {{ user.role }}
               </AdminBadge>
             </td>
@@ -81,12 +115,26 @@
                 {{ user.isActive ? '활성' : '비활성' }}
               </AdminBadge>
             </td>
-            <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(user.createdAt) }}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(user.updatedAt) }}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              {{ formatDate(user.createdAt) }}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              {{ formatDate(user.updatedAt) }}
+            </td>
             <td class="px-6 py-4 text-right">
               <div class="flex justify-end space-x-2">
-                <button class="text-sm text-primary-600 hover:underline" @click="openRoleModal(user)">권한</button>
-                <button class="text-sm text-red-600 hover:underline" @click="openStatusModal(user)">상태</button>
+                <button
+                  class="text-sm text-primary-600 hover:underline"
+                  @click="openRoleModal(user)"
+                >
+                  권한
+                </button>
+                <button
+                  class="text-sm text-red-600 hover:underline"
+                  @click="openStatusModal(user)"
+                >
+                  상태
+                </button>
               </div>
             </td>
           </tr>
@@ -95,10 +143,17 @@
     </template>
 
     <!-- Pagination -->
-    <nav v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+    <nav
+      v-if="totalPages > 1"
+      class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2"
+    >
       <span class="text-sm text-gray-500">
-        총 <span class="font-semibold text-gray-900">{{ totalCount }}</span>명 중
-        <span class="font-semibold text-gray-900">{{ (page - 1) * pageSize + 1 }} - {{ Math.min(page * pageSize, totalCount) }}</span>
+        총 <span class="font-semibold text-gray-900">{{ totalCount }}</span
+        >명 중
+        <span class="font-semibold text-gray-900"
+          >{{ (page - 1) * pageSize + 1 }} -
+          {{ Math.min(page * pageSize, totalCount) }}</span
+        >
       </span>
       <div class="flex -space-x-px text-sm">
         <button
@@ -112,7 +167,11 @@
           v-for="p in paginationRange"
           :key="p"
           class="px-3 h-9 border border-gray-300"
-          :class="p === page ? 'bg-primary-50 text-primary-600 border-primary-300 z-10' : 'bg-white text-gray-500 hover:bg-gray-100'"
+          :class="
+            p === page
+              ? 'bg-primary-50 text-primary-600 border-primary-300 z-10'
+              : 'bg-white text-gray-500 hover:bg-gray-100'
+          "
           @click="changePage(p)"
         >
           {{ p }}
@@ -130,34 +189,65 @@
     <!-- Role Modal -->
     <BaseModal :is-open="showRoleModal" max-width="md" @close="closeModal">
       <template #header>
-        <h3 class="text-lg font-semibold">역할 변경: {{ selectedUser?.name }}</h3>
+        <h3 class="text-lg font-semibold">
+          역할 변경: {{ selectedUser?.name }}
+        </h3>
       </template>
       <template #body>
-        <p class="mb-4 text-sm text-gray-600">현재 역할: {{ selectedUser?.role }}</p>
-        <select v-model="newRole" class="w-full px-3 py-2.5 border rounded-lg text-sm">
+        <p class="mb-4 text-sm text-gray-600">
+          현재 역할: {{ selectedUser?.role }}
+        </p>
+        <select
+          v-model="newRole"
+          class="w-full px-3 py-2.5 border rounded-lg text-sm"
+        >
           <option value="Admin">Admin</option>
           <option value="User">User</option>
         </select>
       </template>
       <template #footer>
-        <button class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50" @click="closeModal">취소</button>
-        <button class="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700" @click="updateRole">변경</button>
+        <button
+          class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50"
+          @click="closeModal"
+        >
+          취소
+        </button>
+        <button
+          class="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+          @click="updateRole"
+        >
+          변경
+        </button>
       </template>
     </BaseModal>
 
     <!-- Status Modal -->
     <BaseModal :is-open="showStatusModal" max-width="md" @close="closeModal">
       <template #header>
-        <h3 class="text-lg font-semibold">상태 변경: {{ selectedUser?.name }}</h3>
+        <h3 class="text-lg font-semibold">
+          상태 변경: {{ selectedUser?.name }}
+        </h3>
       </template>
       <template #body>
         <p class="text-sm text-gray-600">
-          정말로 이 사용자를 <span class="font-bold">{{ selectedUser?.isActive ? '비활성' : '활성' }}</span> 상태로 변경하시겠습니까?
+          정말로 이 사용자를
+          <span class="font-bold">{{
+            selectedUser?.isActive ? '비활성' : '활성'
+          }}</span>
+          상태로 변경하시겠습니까?
         </p>
       </template>
       <template #footer>
-        <button class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50" @click="closeModal">취소</button>
-        <button class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700" @click="updateStatus">
+        <button
+          class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50"
+          @click="closeModal"
+        >
+          취소
+        </button>
+        <button
+          class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+          @click="updateStatus"
+        >
           {{ selectedUser?.isActive ? '비활성화' : '활성화' }}
         </button>
       </template>
@@ -204,7 +294,11 @@ const fetchUsers = async () => {
   loading.value = true
   try {
     const response = await apiClient.get('/admin/users', {
-      params: { searchTerm: searchTerm.value, page: page.value, pageSize: pageSize.value },
+      params: {
+        searchTerm: searchTerm.value,
+        page: page.value,
+        pageSize: pageSize.value,
+      },
     })
     users.value = response.data.items
     totalCount.value = response.data.totalCount
@@ -216,10 +310,16 @@ const fetchUsers = async () => {
   }
 }
 
-watch(searchTerm, () => { page.value = 1; fetchUsers() })
+watch(searchTerm, () => {
+  page.value = 1
+  fetchUsers()
+})
 
 const changePage = (newPage) => {
-  if (newPage > 0 && newPage <= totalPages.value) { page.value = newPage; fetchUsers() }
+  if (newPage > 0 && newPage <= totalPages.value) {
+    page.value = newPage
+    fetchUsers()
+  }
 }
 
 const formatDate = (dateString) => {
@@ -233,7 +333,12 @@ const paginationRange = computed(() => {
   const current = page.value
   const delta = 2
   for (let i = 1; i <= total; i++) {
-    if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) range.push(i)
+    if (
+      i === 1 ||
+      i === total ||
+      (i >= current - delta && i <= current + delta)
+    )
+      range.push(i)
   }
   const result = []
   let last
@@ -245,26 +350,47 @@ const paginationRange = computed(() => {
   return result.filter((p) => p > 0)
 })
 
-const closeModal = () => { showRoleModal.value = false; showStatusModal.value = false; selectedUser.value = null }
-const openRoleModal = (user) => { selectedUser.value = { ...user }; newRole.value = user.role; showRoleModal.value = true }
-const openStatusModal = (user) => { selectedUser.value = { ...user }; showStatusModal.value = true }
+const closeModal = () => {
+  showRoleModal.value = false
+  showStatusModal.value = false
+  selectedUser.value = null
+}
+const openRoleModal = (user) => {
+  selectedUser.value = { ...user }
+  newRole.value = user.role
+  showRoleModal.value = true
+}
+const openStatusModal = (user) => {
+  selectedUser.value = { ...user }
+  showStatusModal.value = true
+}
 
 const updateRole = async () => {
   if (!selectedUser.value) return
   try {
-    await apiClient.put(`/admin/users/${selectedUser.value.id}/role`, { role: newRole.value })
+    await apiClient.put(`/admin/users/${selectedUser.value.id}/role`, {
+      role: newRole.value,
+    })
     alert('역할이 변경되었습니다.')
-    closeModal(); fetchUsers()
-  } catch { alert('역할 변경 실패') }
+    closeModal()
+    fetchUsers()
+  } catch {
+    alert('역할 변경 실패')
+  }
 }
 
 const updateStatus = async () => {
   if (!selectedUser.value) return
   try {
-    await apiClient.put(`/admin/users/${selectedUser.value.id}/status`, { isActive: !selectedUser.value.isActive })
+    await apiClient.put(`/admin/users/${selectedUser.value.id}/status`, {
+      isActive: !selectedUser.value.isActive,
+    })
     alert('상태가 변경되었습니다.')
-    closeModal(); fetchUsers()
-  } catch { alert('상태 변경 실패') }
+    closeModal()
+    fetchUsers()
+  } catch {
+    alert('상태 변경 실패')
+  }
 }
 
 onMounted(fetchUsers)

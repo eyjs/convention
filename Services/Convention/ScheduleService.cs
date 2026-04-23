@@ -44,7 +44,6 @@ public class ScheduleService : IScheduleService
                     {
                         si.Id, si.ScheduleDate, si.StartTime, si.EndTime,
                         si.Title, si.Location, si.Content, si.OrderNum,
-                        si.SeatingLayoutId,
                         Images = si.Images.OrderBy(img => img.OrderNum).Select(img => new
                         {
                             img.Id, img.ImageUrl, img.OrderNum
@@ -126,8 +125,7 @@ public class ScheduleService : IScheduleService
             Title = dto.Title,
             Location = dto.Location,
             Content = dto.Content,
-            OrderNum = dto.OrderNum,
-            SeatingLayoutId = dto.SeatingLayoutId
+            OrderNum = dto.OrderNum
         };
 
         await _unitOfWork.ScheduleItems.AddAsync(item);
@@ -148,7 +146,6 @@ public class ScheduleService : IScheduleService
         item.Location = dto.Location;
         item.Content = dto.Content;
         item.OrderNum = dto.OrderNum;
-        item.SeatingLayoutId = dto.SeatingLayoutId;
 
         await _unitOfWork.SaveChangesAsync();
         return item;
@@ -362,7 +359,8 @@ public class ScheduleService : IScheduleService
                 OrderNum = s.ScheduleItem.OrderNum,
                 CourseName = s.CourseName,
                 ParticipantCount = participantCounts.GetValueOrDefault(s.TemplateId, 0),
-                SeatingLayoutId = s.ScheduleItem.SeatingLayoutId,
+                VisibleAttributes = s.ScheduleItem.VisibleAttributes,
+                MapUrl = s.ScheduleItem.MapUrl,
                 Images = s.ScheduleItem.Images.OrderBy(img => img.OrderNum).Select(img => new ScheduleImageDto
                 {
                     Id = img.Id,
@@ -465,6 +463,8 @@ public class ScheduleService : IScheduleService
                 startTime = uot.OptionTour.StartTime,
                 endTime = uot.OptionTour.EndTime,
                 name = uot.OptionTour.Name,
+                location = uot.OptionTour.Location,
+                mapUrl = uot.OptionTour.MapUrl,
                 content = uot.OptionTour.Content,
                 customOptionId = uot.OptionTour.CustomOptionId,
                 images = uot.OptionTour.Images.OrderBy(img => img.OrderNum).Select(img => new
@@ -543,6 +543,7 @@ public class ScheduleService : IScheduleService
                 ot.Id, ot.ConventionId,
                 Date = ot.Date.ToString("yyyy-MM-dd"),
                 ot.StartTime, ot.EndTime, ot.Name,
+                ot.Location, ot.MapUrl,
                 ot.CustomOptionId, ot.Content, ot.CreatedAt,
                 ParticipantCount = ot.UserOptionTours.Count,
                 Images = ot.Images.OrderBy(img => img.OrderNum).Select(img => new
@@ -564,6 +565,8 @@ public class ScheduleService : IScheduleService
             StartTime = dto.StartTime,
             EndTime = dto.EndTime,
             Name = dto.Name,
+            Location = dto.Location,
+            MapUrl = dto.MapUrl,
             CustomOptionId = dto.CustomOptionId,
             Content = dto.Content
         };
@@ -576,6 +579,7 @@ public class ScheduleService : IScheduleService
             optionTour.Id, optionTour.ConventionId,
             Date = optionTour.Date.ToString("yyyy-MM-dd"),
             optionTour.StartTime, optionTour.EndTime, optionTour.Name,
+            optionTour.Location, optionTour.MapUrl,
             optionTour.CustomOptionId, optionTour.Content, optionTour.CreatedAt,
             ParticipantCount = 0
         };
@@ -590,6 +594,8 @@ public class ScheduleService : IScheduleService
         optionTour.StartTime = dto.StartTime;
         optionTour.EndTime = dto.EndTime;
         optionTour.Name = dto.Name;
+        optionTour.Location = dto.Location;
+        optionTour.MapUrl = dto.MapUrl;
         optionTour.CustomOptionId = dto.CustomOptionId;
         optionTour.Content = dto.Content;
 
@@ -603,6 +609,7 @@ public class ScheduleService : IScheduleService
             optionTour.Id, optionTour.ConventionId,
             Date = optionTour.Date.ToString("yyyy-MM-dd"),
             optionTour.StartTime, optionTour.EndTime, optionTour.Name,
+            optionTour.Location, optionTour.MapUrl,
             optionTour.CustomOptionId, optionTour.Content, optionTour.CreatedAt,
             ParticipantCount = participantCount
         };

@@ -78,13 +78,38 @@
           >
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-1.5 mb-0.5">
-                <span v-if="notice.isPinned" class="px-1.5 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded">필독</span>
-                <span v-if="notice.categoryName" class="text-xs text-gray-500">{{ notice.categoryName }}</span>
+                <span
+                  v-if="notice.isPinned"
+                  class="px-1.5 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded"
+                  >필독</span
+                >
+                <span
+                  v-if="notice.categoryName"
+                  class="text-xs text-gray-500"
+                  >{{ notice.categoryName }}</span
+                >
               </div>
-              <p class="font-medium text-gray-900 truncate">{{ notice.title }}</p>
-              <p class="text-xs text-gray-400 mt-0.5">{{ notice.authorName }} · {{ formatDate(notice.createdAt) }} · 조회 {{ notice.viewCount }}</p>
+              <p class="font-medium text-gray-900 truncate">
+                {{ notice.title }}
+              </p>
+              <p class="text-xs text-gray-400 mt-0.5">
+                {{ notice.authorName }} · {{ formatDate(notice.createdAt) }} ·
+                조회 {{ notice.viewCount }}
+              </p>
             </div>
-            <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            <svg
+              class="w-4 h-4 text-gray-300 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </div>
         </div>
 
@@ -179,10 +204,14 @@
                       {{ notice.title }}
                     </button>
                   </td>
-                  <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td
+                    class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                  >
                     {{ notice.authorName }}
                   </td>
-                  <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td
+                    class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                  >
                     {{ formatDate(notice.createdAt) }}
                   </td>
                   <td
@@ -244,10 +273,27 @@
             :key="'cm-' + category.id"
             class="p-3 flex items-center gap-3"
           >
+            <div
+              class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              :style="{ backgroundColor: (category.color || '#3B82F6') + '20' }"
+            >
+              <LucideIcon
+                v-if="category.icon"
+                :name="category.icon"
+                class="w-4 h-4"
+                :style="{ color: category.color || '#3B82F6' }"
+              />
+              <TagIcon
+                v-else
+                class="w-4 h-4"
+                :style="{ color: category.color || '#3B82F6' }"
+              />
+            </div>
             <div class="flex-1 min-w-0">
               <p class="font-medium text-gray-900">{{ category.name }}</p>
               <p class="text-xs text-gray-400 mt-0.5">
-                {{ category.description || '설명 없음' }} · 게시글 {{ category.noticeCount }}개 · 순서 {{ category.displayOrder }}
+                {{ category.description || '설명 없음' }} · 게시글
+                {{ category.noticeCount }}개 · 순서 {{ category.displayOrder }}
               </p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
@@ -268,7 +314,10 @@
         </div>
 
         <!-- PC 테이블 -->
-        <div v-if="categories.length > 0" class="hidden md:block overflow-x-auto">
+        <div
+          v-if="categories.length > 0"
+          class="hidden md:block overflow-x-auto"
+        >
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
@@ -308,7 +357,27 @@
                 <td
                   class="px-3 md:px-6 py-4 whitespace-nowrap font-medium text-gray-900"
                 >
-                  {{ category.name }}
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="w-6 h-6 rounded flex items-center justify-center flex-shrink-0"
+                      :style="{
+                        backgroundColor: (category.color || '#3B82F6') + '20',
+                      }"
+                    >
+                      <LucideIcon
+                        v-if="category.icon"
+                        :name="category.icon"
+                        class="w-3.5 h-3.5"
+                        :style="{ color: category.color || '#3B82F6' }"
+                      />
+                      <TagIcon
+                        v-else
+                        class="w-3.5 h-3.5"
+                        :style="{ color: category.color || '#3B82F6' }"
+                      />
+                    </div>
+                    {{ category.name }}
+                  </div>
                 </td>
                 <td class="px-3 md:px-6 py-4 text-sm text-gray-500">
                   {{ category.description || '-' }}
@@ -479,6 +548,52 @@
               class="w-full px-3 py-2 border rounded-lg"
             />
           </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >뱃지 색상</label
+            >
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="color in categoryColors"
+                :key="color"
+                type="button"
+                class="w-8 h-8 rounded-lg border-2 transition-all"
+                :class="
+                  categoryForm.color === color
+                    ? 'border-gray-800 scale-110'
+                    : 'border-transparent'
+                "
+                :style="{ backgroundColor: color }"
+                @click="
+                  categoryForm.color = categoryForm.color === color ? '' : color
+                "
+              ></button>
+            </div>
+            <div v-if="categoryForm.color" class="mt-2 flex items-center gap-2">
+              <div
+                class="w-4 h-4 rounded"
+                :style="{ backgroundColor: categoryForm.color }"
+              ></div>
+              <span class="text-xs text-gray-500">{{
+                categoryForm.color
+              }}</span>
+              <button
+                type="button"
+                class="text-xs text-red-500 hover:underline"
+                @click="categoryForm.color = ''"
+              >
+                초기화
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >아이콘</label
+            >
+            <IconPicker v-model="categoryForm.icon" />
+          </div>
         </div>
       </template>
       <template #footer>
@@ -565,8 +680,17 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { Plus, FileText, Bookmark, Eye, GripHorizontal } from 'lucide-vue-next'
+import {
+  Plus,
+  FileText,
+  Bookmark,
+  Eye,
+  GripHorizontal,
+  Tag as TagIcon,
+} from 'lucide-vue-next'
 import apiClient from '@/services/api'
+import LucideIcon from '@/components/common/LucideIcon.vue'
+import IconPicker from '@/components/common/IconPicker.vue'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import AdminButton from '@/components/admin/ui/AdminButton.vue'
 import AdminStatsCard from '@/components/admin/ui/AdminStatsCard.vue'
@@ -599,10 +723,27 @@ const noticeForm = ref({
   attachments: [],
 })
 
+const categoryColors = [
+  '#3B82F6',
+  '#6366F1',
+  '#8B5CF6',
+  '#EC4899',
+  '#EF4444',
+  '#F97316',
+  '#EAB308',
+  '#22C55E',
+  '#14B8A6',
+  '#06B6D4',
+  '#64748B',
+  '#78716C',
+]
+
 const categoryForm = ref({
   name: '',
   description: '',
   displayOrder: 0,
+  color: '',
+  icon: '',
 })
 
 const totalCount = computed(() => notices.value.length)
@@ -768,6 +909,8 @@ function editCategory(category) {
     name: category.name,
     description: category.description || '',
     displayOrder: category.displayOrder,
+    color: category.color || '',
+    icon: category.icon || '',
   }
   showCategoryModal.value = true
 }
@@ -779,6 +922,8 @@ function closeCategoryModal() {
     name: '',
     description: '',
     displayOrder: 0,
+    color: '',
+    icon: '',
   }
 }
 

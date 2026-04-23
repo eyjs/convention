@@ -29,6 +29,8 @@ namespace LocalRAG.Services.Convention
                     Name = c.Name,
                     Description = c.Description,
                     DisplayOrder = c.DisplayOrder,
+                    Color = c.Color,
+                    Icon = c.Icon,
                     NoticeCount = c.Notices.Count(n => !n.IsDeleted)
                 })
                 .ToListAsync();
@@ -44,6 +46,8 @@ namespace LocalRAG.Services.Convention
                     Name = c.Name,
                     Description = c.Description,
                     DisplayOrder = c.DisplayOrder,
+                    Color = c.Color,
+                    Icon = c.Icon,
                     NoticeCount = c.Notices.Count(n => !n.IsDeleted)
                 })
                 .FirstOrDefaultAsync();
@@ -63,6 +67,8 @@ namespace LocalRAG.Services.Convention
                 Name = dto.Name,
                 Description = dto.Description,
                 DisplayOrder = dto.DisplayOrder,
+                Color = dto.Color,
+                Icon = dto.Icon,
                 ConventionId = dto.ConventionId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -76,6 +82,8 @@ namespace LocalRAG.Services.Convention
                 Name = category.Name,
                 Description = category.Description,
                 DisplayOrder = category.DisplayOrder,
+                Color = category.Color,
+                Icon = category.Icon,
                 NoticeCount = 0
             };
         }
@@ -94,6 +102,8 @@ namespace LocalRAG.Services.Convention
             category.Name = dto.Name;
             category.Description = dto.Description;
             category.DisplayOrder = dto.DisplayOrder;
+            category.Color = dto.Color;
+            category.Icon = dto.Icon;
             await _unitOfWork.SaveChangesAsync();
 
             return new NoticeCategoryDto
@@ -102,6 +112,8 @@ namespace LocalRAG.Services.Convention
                 Name = category.Name,
                 Description = category.Description,
                 DisplayOrder = category.DisplayOrder,
+                Color = category.Color,
+                Icon = category.Icon,
                 NoticeCount = category.Notices.Count(n => !n.IsDeleted)
             };
         }

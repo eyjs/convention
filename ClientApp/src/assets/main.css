@@ -3,8 +3,13 @@
 @import 'tailwindcss/utilities';
 
 /* 스크롤바 숨김 유틸리티 */
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 @layer components {
   .btn-primary {

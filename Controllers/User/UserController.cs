@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 using LocalRAG.Constants;
 using LocalRAG.Extensions;
 using LocalRAG.DTOs.UserModels;
 using LocalRAG.DTOs.ActionModels;
 using LocalRAG.Interfaces;
+using LocalRAG.Repositories;
 
 namespace LocalRAG.Controllers.User;
 
@@ -15,11 +17,13 @@ namespace LocalRAG.Controllers.User;
 public class UserController : ControllerBase
 {
     private readonly IUserProfileService _userProfileService;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UserController> _logger;
 
-    public UserController(IUserProfileService userProfileService, ILogger<UserController> logger)
+    public UserController(IUserProfileService userProfileService, IUnitOfWork unitOfWork, ILogger<UserController> logger)
     {
         _userProfileService = userProfileService;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -266,6 +270,20 @@ public class UserController : ControllerBase
         }
 
         return Ok(new { message = "비밀번호가 변경되었습니다." });
+    }
+
+    /// <summary>
+    /// 기본 비밀번호 경고 다시 보지 않기
+    /// </summary>
+    [HttpPost("dismiss-password-warning")]
+    public async Task<IActionResult> DismissPasswordWarning()
+    {
+        var userId = User.GetUserId();
+        var user = await _unitOfWork.Users.Query.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null) return NotFound();
+        user.DefaultPasswordDismissed = true;
+        await _unitOfWork.SaveChangesAsync();
+        return Ok(new { message = "경고가 숨겨졌습니다." });
     }
 
     /// <summary>

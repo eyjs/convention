@@ -20,8 +20,8 @@ public class ScheduleItemDto
     public string? CourseName { get; set; }
     public int ParticipantCount { get; set; }
     public List<ScheduleImageDto>? Images { get; set; }
-    public int? SeatingLayoutId { get; set; }
     public string? VisibleAttributes { get; set; }
+    public string? MapUrl { get; set; }
 }
 
 public class ScheduleImageDto

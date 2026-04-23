@@ -192,7 +192,7 @@ public class FileController : ControllerBase
     private IActionResult GetImageInternal(string? dateFolder, string year, string dayOfYear, string fileName, string? resize)
     {
         var basePath = _fileUploadService.GetUploadBasePath();
-        
+
         var pathSegments = new List<string> { basePath };
         if (!string.IsNullOrEmpty(dateFolder))
         {
@@ -209,20 +209,36 @@ public class FileController : ControllerBase
             return NotFound();
         }
 
+        // 브라우저 캐시 (7일) + ETag로 불필요한 재처리 방지
+        var lastModified = global::System.IO.File.GetLastWriteTimeUtc(filePath);
+        var fileSize = new global::System.IO.FileInfo(filePath).Length;
+        var etag = $"\"{lastModified.Ticks:x}-{fileSize:x}\"";
+
+        // If-None-Match 헤더로 캐시 유효성 확인
+        if (Request.Headers.IfNoneMatch.ToString() == etag)
+        {
+            return StatusCode(304); // Not Modified
+        }
+
+        Response.Headers.CacheControl = "public, max-age=604800"; // 7일
+        Response.Headers.ETag = etag;
+
         try
         {
             string extension = Path.GetExtension(filePath);
             string lowerExtension = extension.Replace(".", "").ToLower();
 
-            using global::System.Drawing.Image origin = ExifRotate(global::System.Drawing.Image.FromFile(filePath));
-            // 너무 큰 이미지는 자동 리사이즈 (브라우저 한계 ~4000px)
-            var autoResize = resize;
-            if (string.IsNullOrEmpty(autoResize) && (origin.Width > 4000 || origin.Height > 4000))
+            // 리사이즈 불필요하고 EXIF 회전 없는 경우 원본 직접 반환 (가장 빠름)
+            if (string.IsNullOrEmpty(resize))
             {
-                autoResize = "4000";
+                var ext = lowerExtension;
+                var mime = ext == "png" ? "image/png" : ext == "gif" ? "image/gif" : ext == "webp" ? "image/webp" : "image/jpeg";
+                return PhysicalFile(filePath, mime, enableRangeProcessing: true);
             }
-            using global::System.Drawing.Image image = ResizeImageCommon(origin, autoResize);
-            
+
+            using global::System.Drawing.Image origin = ExifRotate(global::System.Drawing.Image.FromFile(filePath));
+            using global::System.Drawing.Image image = ResizeImageCommon(origin, resize);
+
             var stream = new MemoryStream();
             image.Save(stream, GetImageFormat(lowerExtension));
             stream.Position = 0;
@@ -232,7 +248,6 @@ public class FileController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Image processing failed, returning raw file: {FilePath}", filePath);
-            // 이미지 처리 실패 시 원본 파일 그대로 반환
             try
             {
                 var ext = Path.GetExtension(filePath).TrimStart('.').ToLower();

@@ -242,7 +242,7 @@
               </div>
             </div>
 
-            <!-- 수신자 -->
+            <!-- 수��자 -->
             <div class="bg-white border rounded-lg p-4">
               <div class="flex items-center justify-between mb-3">
                 <label class="text-sm font-medium text-gray-700"
@@ -259,7 +259,40 @@
                     class="text-xs text-gray-500 hover:underline"
                     @click="deselectAllUsers"
                   >
-                    전체 해제
+                    전체 해���
+                  </button>
+                </div>
+              </div>
+
+              <!-- 그룹 필터 -->
+              <div v-if="groupNames.length > 0" class="mb-3">
+                <label class="block text-xs font-medium text-gray-500 mb-1.5"
+                  >그룹 필터</label
+                >
+                <div class="flex flex-wrap gap-1.5">
+                  <button
+                    class="px-2.5 py-1 text-xs rounded-lg border transition-colors"
+                    :class="
+                      selectedGroupFilter === ''
+                        ? 'bg-primary-500 text-white border-primary-500'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    "
+                    @click="filterByGroup('')"
+                  >
+                    전체
+                  </button>
+                  <button
+                    v-for="group in groupNames"
+                    :key="group"
+                    class="px-2.5 py-1 text-xs rounded-lg border transition-colors"
+                    :class="
+                      selectedGroupFilter === group
+                        ? 'bg-primary-500 text-white border-primary-500'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    "
+                    @click="filterByGroup(group)"
+                  >
+                    {{ group }}
                   </button>
                 </div>
               </div>
@@ -273,7 +306,7 @@
                 class="max-h-[50vh] overflow-y-auto space-y-1 border rounded-lg p-2"
               >
                 <label
-                  v-for="user in guests"
+                  v-for="user in filteredGuests"
                   :key="user.userId"
                   class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer"
                 >
@@ -446,6 +479,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
+
 import apiClient from '@/services/api'
 
 const props = defineProps({
@@ -569,6 +603,26 @@ const messageContent = ref('')
 const selectedUserIds = ref([])
 const usersLoading = ref(false)
 const messageTextarea = ref(null)
+const selectedGroupFilter = ref('')
+
+const groupNames = computed(() => {
+  const groups = new Set(guests.value.map((g) => g.groupName).filter(Boolean))
+  return [...groups].sort()
+})
+
+const filteredGuests = computed(() => {
+  if (!selectedGroupFilter.value) return guests.value
+  return guests.value.filter((g) => g.groupName === selectedGroupFilter.value)
+})
+
+function filterByGroup(group) {
+  selectedGroupFilter.value = group
+  if (group) {
+    selectedUserIds.value = filteredGuests.value
+      .filter((g) => g.telephone)
+      .map((g) => g.userId)
+  }
+}
 
 async function loadGuests() {
   usersLoading.value = true

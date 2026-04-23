@@ -16,13 +16,25 @@
             class="w-full h-44 object-cover"
           />
           <button
-            v-if="(banner.linkUrl || banner.detailImagesJson) && banner.linkLabel"
+            v-if="
+              (banner.linkUrl || banner.detailImagesJson) && banner.linkLabel
+            "
             class="absolute bottom-4 right-4 px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-900 text-sm font-semibold rounded-full shadow hover:bg-white transition-colors"
             @click.stop="onBannerClick(banner)"
           >
             {{ banner.linkLabel }}
-            <svg class="w-3.5 h-3.5 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            <svg
+              class="w-3.5 h-3.5 inline-block ml-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>

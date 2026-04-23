@@ -104,50 +104,16 @@ public class AdminAlimtalkController : ControllerBase
 
         var senderNum = _configuration["Popbill:SenderNumber"] ?? "";
 
-        // 해당 행사의 좌석 배치도 조회 (딥링크용)
-        var seatLayout = await _unitOfWork.SeatingLayouts.Query
-            .Where(sl => sl.ConventionId == conventionId && !sl.IsDeleted)
-            .OrderByDescending(sl => sl.UpdatedAt ?? sl.CreatedAt)
-            .FirstOrDefaultAsync();
-
         // 수신자별 메시지 치환
         var receivers = new List<AlimtalkReceiver>();
         foreach (var user in users)
         {
             if (string.IsNullOrWhiteSpace(user.Phone)) continue;
 
-            // 해당 사용자의 AccessToken + 테이블번호 조회
             var userConvention = await _unitOfWork.UserConventions
                 .GetByUserAndConventionAsync(user.Id, conventionId);
-            var context = _contextFactory.Create(user, convention, seatLayout?.Id, userConvention?.AccessToken);
+            var context = _contextFactory.Create(user, convention, null, userConvention?.AccessToken);
 
-            // 테이블번호 조회 (좌석 배치도 JSON에서)
-            if (seatLayout != null)
-            {
-                try
-                {
-                    using var layoutDoc = global::System.Text.Json.JsonDocument.Parse(seatLayout.LayoutJson ?? "{}");
-                    if (layoutDoc.RootElement.TryGetProperty("tables", out var tables))
-                    {
-                        foreach (var t in tables.EnumerateArray())
-                        {
-                            if (t.TryGetProperty("members", out var members))
-                            {
-                                foreach (var m in members.EnumerateArray())
-                                {
-                                    if (m.TryGetProperty("userId", out var uid) && uid.ValueKind == global::System.Text.Json.JsonValueKind.Number && uid.GetInt32() == user.Id)
-                                    {
-                                        context.TableNumber = t.TryGetProperty("number", out var num) ? num.GetString() ?? "" : "";
-                                        break;
-                                    }
-                                }
-                            }
-                            if (!string.IsNullOrEmpty(context.TableNumber)) break;
-                        }
-                    }
-                }
-                catch { }
-            }
             string message = _templateService.ReplaceVariables(dto.Content, context);
             string? altMessage = dto.AltContent != null
                 ? _templateService.ReplaceVariables(dto.AltContent, context)
@@ -208,12 +174,7 @@ public class AdminAlimtalkController : ControllerBase
 
         if (user == null) return NotFound(new { message = "사용자를 찾을 수 없습니다." });
 
-        var seatLayout2 = await _unitOfWork.SeatingLayouts.Query
-            .Where(sl => sl.ConventionId == conventionId && !sl.IsDeleted)
-            .OrderByDescending(sl => sl.UpdatedAt ?? sl.CreatedAt)
-            .FirstOrDefaultAsync();
-
-        var context = _contextFactory.Create(user, convention, seatLayout2?.Id);
+        var context = _contextFactory.Create(user, convention, null);
         string previewMessage = _templateService.ReplaceVariables(dto.Content, context);
 
         return Ok(new { previewMessage, seatLink = context.SeatLink });

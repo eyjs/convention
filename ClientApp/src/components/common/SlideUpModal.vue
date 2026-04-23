@@ -10,7 +10,8 @@
       @touchend="onBackdropTouchEnd"
     >
       <div
-        class="bg-white rounded-t-2xl shadow-2xl w-full max-h-[90vh] flex flex-col pb-safe md:pb-0"
+        class="bg-white rounded-t-2xl shadow-2xl w-full max-h-[85dvh] max-h-[85vh] flex flex-col pb-safe md:pb-0"
+        @touchmove.stop
       >
         <!-- Header -->
         <header
@@ -108,8 +109,14 @@ watch(
   () => props.isOpen,
   (newValue, oldValue) => {
     if (newValue && !oldValue) {
+      // body + .safe-content 모두 스크롤 차단
       document.body.style.overflow = 'hidden'
       document.body.style.touchAction = 'none'
+      const scrollContainer = document.querySelector('.safe-content')
+      if (scrollContainer) {
+        scrollContainer.dataset.prevOverflow = scrollContainer.style.overflow
+        scrollContainer.style.overflow = 'hidden'
+      }
 
       uiStore.registerModal(modalId, () => {
         emit('close')
@@ -117,6 +124,11 @@ watch(
     } else if (!newValue && oldValue) {
       document.body.style.overflow = ''
       document.body.style.touchAction = ''
+      const scrollContainer = document.querySelector('.safe-content')
+      if (scrollContainer) {
+        scrollContainer.style.overflow =
+          scrollContainer.dataset.prevOverflow || ''
+      }
 
       uiStore.unregisterModal(modalId)
     }
@@ -130,8 +142,11 @@ onUnmounted(() => {
   }
   document.body.style.overflow = ''
   document.body.style.touchAction = ''
+  const scrollContainer = document.querySelector('.safe-content')
+  if (scrollContainer) {
+    scrollContainer.style.overflow = scrollContainer.dataset.prevOverflow || ''
+  }
 })
-
 </script>
 
 <style scoped>

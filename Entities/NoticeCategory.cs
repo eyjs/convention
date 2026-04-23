@@ -9,6 +9,8 @@ namespace LocalRAG.Entities
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int DisplayOrder { get; set; }
+        public string? Color { get; set; }
+        public string? Icon { get; set; }
         public int ConventionId { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsDeleted { get; set; }

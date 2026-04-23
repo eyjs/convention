@@ -1,14 +1,22 @@
 <template>
-  <div class="sticky top-0 z-30 px-4 py-3 flex items-center justify-between" :style="headerStyle">
+  <div class="px-4 py-3 flex items-center justify-between" :style="headerStyle">
     <!-- 좌측: 행사명 + 날짜장소 + D-Day -->
     <div class="flex-1 min-w-0 pr-3">
-      <h1 class="text-lg font-bold text-white leading-tight truncate">{{ convention.title }}</h1>
-      <p class="text-xs mt-0.5 truncate" style="color: rgba(255,255,255,0.7)">
+      <h1 class="text-lg font-bold text-white leading-tight truncate">
+        {{ convention.title }}
+      </h1>
+      <p
+        class="text-xs mt-0.5 truncate"
+        style="color: rgba(255, 255, 255, 0.7)"
+      >
         {{ formattedPeriod }}
         <span v-if="convention.location"> · {{ convention.location }}</span>
       </p>
       <!-- D-Day 뱃지 -->
-      <div v-if="dDayLabel" class="mt-1.5 inline-flex items-center px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white font-bold">
+      <div
+        v-if="dDayLabel"
+        class="mt-1.5 inline-flex items-center px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white font-bold"
+      >
         {{ dDayLabel }}
       </div>
     </div>
@@ -21,8 +29,19 @@
         aria-label="메뉴 열기"
         @click="emit('menu-click')"
       >
-        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        <svg
+          class="w-6 h-6 text-white"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h16"
+          />
         </svg>
       </button>
     </div>

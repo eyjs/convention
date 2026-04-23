@@ -17,6 +17,8 @@ public class OptionTourDto
     public string Date { get; set; } = string.Empty; // YYYY-MM-DD
     public string StartTime { get; set; } = string.Empty;
     public string EndTime { get; set; } = string.Empty;
+    public string Location { get; set; } = string.Empty;
+    public string MapUrl { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public int OptionId { get; set; } // 행 순서 기반 자동 시퀀스
     public string Content { get; set; } = string.Empty;
