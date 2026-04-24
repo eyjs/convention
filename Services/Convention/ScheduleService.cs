@@ -264,6 +264,7 @@ public class ScheduleService : IScheduleService
             {
                 UserId = guestId,
                 ScheduleTemplateId = templateId,
+                ConventionId = conventionId,
                 AssignedAt = DateTime.UtcNow
             });
         }
@@ -398,7 +399,8 @@ public class ScheduleService : IScheduleService
         var userSchedule = new GuestScheduleTemplate
         {
             UserId = dto.UserId,
-            ScheduleTemplateId = dto.ScheduleTemplateId
+            ScheduleTemplateId = dto.ScheduleTemplateId,
+            ConventionId = scheduleTemplate.ConventionId
         };
 
         await _unitOfWork.GuestScheduleTemplates.AddAsync(userSchedule);

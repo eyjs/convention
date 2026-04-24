@@ -462,6 +462,7 @@ public class UserUploadService : IUserUploadService
                         {
                             UserId = userId,
                             ScheduleTemplateId = templateId,
+                            ConventionId = conventionId,
                             AssignedAt = DateTime.UtcNow
                         });
 

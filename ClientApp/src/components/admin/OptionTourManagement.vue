@@ -7,7 +7,7 @@
     </AdminPageHeader>
 
     <!-- 옵션투어 목록 -->
-    <div class="space-y-4">
+    <div class="space-y-4 mt-4">
       <div
         v-for="tour in optionTours"
         :key="tour.id"

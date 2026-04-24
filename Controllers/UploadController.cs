@@ -343,12 +343,20 @@ public class UploadController : ControllerBase
     /// 시트2: 그룹-일정매핑
     /// </summary>
     [HttpGet("conventions/{conventionId}/guests/download")]
-    public async Task<IActionResult> DownloadGuests(int conventionId)
+    public async Task<IActionResult> DownloadGuests(int conventionId, [FromQuery] string? groupName = null, [FromQuery] string? affiliation = null)
     {
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-        var guests = await _unitOfWork.UserConventions.Query
-            .Where(uc => uc.ConventionId == conventionId)
+        var query = _unitOfWork.UserConventions.Query
+            .Where(uc => uc.ConventionId == conventionId);
+
+        if (!string.IsNullOrEmpty(groupName))
+            query = query.Where(uc => uc.GroupName == groupName);
+
+        if (!string.IsNullOrEmpty(affiliation))
+            query = query.Where(uc => uc.User.Affiliation == affiliation || uc.User.CorpPart == affiliation);
+
+        var guests = await query
             .Include(uc => uc.User)
                 .ThenInclude(u => u.GuestAttributes)
             .OrderBy(uc => uc.GroupName).ThenBy(uc => uc.User.Name)

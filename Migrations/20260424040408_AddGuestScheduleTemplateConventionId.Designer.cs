@@ -4,6 +4,7 @@ using LocalRAG.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalRAG.Migrations
 {
     [DbContext(typeof(ConventionDbContext))]
-    partial class ConventionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260424040408_AddGuestScheduleTemplateConventionId")]
+    partial class AddGuestScheduleTemplateConventionId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

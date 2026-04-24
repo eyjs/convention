@@ -123,6 +123,11 @@ namespace LocalRAG.DTOs.ScheduleModels
         public int ScheduleTemplateId { get; set; }
 
         /// <summary>
+        /// 행사 ID (FK) — 행사별 일정 매핑 구분
+        /// </summary>
+        public int ConventionId { get; set; }
+
+        /// <summary>
         /// 배정일
         /// </summary>
         public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
@@ -130,6 +135,7 @@ namespace LocalRAG.DTOs.ScheduleModels
         // Navigation
         public User? User { get; set; }
         public ScheduleTemplate? ScheduleTemplate { get; set; }
+        public LocalRAG.Entities.Convention? Convention { get; set; }
     }
 
     public class UserScheduleDto

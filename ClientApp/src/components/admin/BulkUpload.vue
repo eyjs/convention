@@ -127,21 +127,50 @@
 
       <div class="mt-6 pt-6 border-t">
         <h3 class="font-semibold mb-3">파일 다운로드</h3>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+          <select
+            v-model="downloadFilter"
+            class="px-3 py-2 border rounded-lg text-sm min-w-[140px]"
+          >
+            <option value="">전체</option>
+            <optgroup v-if="downloadGroups.length > 0" label="그룹별">
+              <option
+                v-for="g in downloadGroups"
+                :key="'g-' + g"
+                :value="'group:' + g"
+              >
+                {{ g }}
+              </option>
+            </optgroup>
+            <optgroup v-if="downloadAffiliations.length > 0" label="소속별">
+              <option
+                v-for="a in downloadAffiliations"
+                :key="'a-' + a"
+                :value="'affiliation:' + a"
+              >
+                {{ a }}
+              </option>
+            </optgroup>
+          </select>
+          <span class="text-xs text-gray-500"
+            >필터링 후 다운로드하면 해당 대상만 포함됩니다</span
+          >
+        </div>
         <div class="flex flex-wrap gap-2">
           <button
-            class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
+            class="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
             @click="downloadGuestSample"
           >
             📄 샘플
           </button>
           <button
-            class="inline-block px-4 py-2 bg-primary-50 text-primary-700 rounded-md hover:bg-primary-100 text-sm"
+            class="px-4 py-2.5 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 text-sm"
             @click="downloadCurrentData('guests')"
           >
             📥 현재 참석자
           </button>
           <button
-            class="inline-block px-4 py-2 bg-green-50 text-green-700 rounded-md hover:bg-green-100 text-sm"
+            class="px-4 py-2.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 text-sm"
             @click="downloadGuests"
           >
             📥 참석자 속성
@@ -453,7 +482,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import apiClient from '@/services/api'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import UploadResult from './UploadResult.vue'
@@ -538,6 +567,28 @@ const handleFileOptionTours = async (e) => {
 }
 
 const replaceAllGuests = ref(false)
+const downloadFilter = ref('')
+const downloadGroups = ref([])
+const downloadAffiliations = ref([])
+
+async function loadDownloadFilters() {
+  try {
+    const res = await apiClient.get(
+      `/admin/conventions/${props.conventionId}/guests`,
+    )
+    const guests = Array.isArray(res.data) ? res.data : []
+    downloadGroups.value = [
+      ...new Set(guests.map((g) => g.groupName).filter(Boolean)),
+    ].sort()
+    downloadAffiliations.value = [
+      ...new Set(
+        guests.map((g) => g.affiliation || g.corpPart).filter(Boolean),
+      ),
+    ].sort()
+  } catch {
+    /* ignore */
+  }
+}
 
 // 참석자 업로드
 const uploadGuests = async () => {
@@ -1030,7 +1081,16 @@ const downloadCurrentData = async (type) => {
   }
 
   try {
-    const response = await apiClient.get(urlMap[type], { responseType: 'blob' })
+    const params = {}
+    if (type === 'guests' && downloadFilter.value) {
+      const [filterType, filterValue] = downloadFilter.value.split(':')
+      if (filterType === 'group') params.groupName = filterValue
+      else if (filterType === 'affiliation') params.affiliation = filterValue
+    }
+    const response = await apiClient.get(urlMap[type], {
+      responseType: 'blob',
+      params,
+    })
     const blob = new Blob([response.data], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     })
@@ -1197,4 +1257,8 @@ const uploadOptionTours = async () => {
     uploadingOptionTours.value = false
   }
 }
+
+onMounted(() => {
+  loadDownloadFilters()
+})
 </script>

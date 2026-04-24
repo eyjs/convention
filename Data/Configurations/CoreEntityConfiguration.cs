@@ -141,7 +141,7 @@ public class GuestScheduleTemplateConfiguration : IEntityTypeConfiguration<Guest
 {
     public void Configure(EntityTypeBuilder<GuestScheduleTemplate> entity)
     {
-        entity.HasKey(gst => new { gst.UserId, gst.ScheduleTemplateId });
+        entity.HasKey(gst => new { gst.UserId, gst.ScheduleTemplateId, gst.ConventionId });
 
         entity.HasOne(gst => gst.User)
               .WithMany(u => u.GuestScheduleTemplates)
@@ -152,6 +152,13 @@ public class GuestScheduleTemplateConfiguration : IEntityTypeConfiguration<Guest
               .WithMany(st => st.GuestScheduleTemplates)
               .HasForeignKey(gst => gst.ScheduleTemplateId)
               .OnDelete(DeleteBehavior.NoAction);
+
+        entity.HasOne(gst => gst.Convention)
+              .WithMany()
+              .HasForeignKey(gst => gst.ConventionId)
+              .OnDelete(DeleteBehavior.NoAction);
+
+        entity.HasIndex(gst => gst.ConventionId).HasDatabaseName("IX_GuestScheduleTemplate_ConventionId");
     }
 }
 
