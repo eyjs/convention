@@ -408,13 +408,6 @@ const routes = [
             meta: { title: '설문 관리' },
           },
           {
-            path: 'option-tour-surveys',
-            name: 'AdminOptionTourSurveys',
-            component: () =>
-              import('@/components/admin/OptionTourSurveyManagement.vue'),
-            meta: { title: '옵션투어 설문' },
-          },
-          {
             path: 'formbuilder',
             name: 'AdminFormBuilder',
             component: () =>
@@ -450,8 +443,7 @@ const routes = [
           {
             path: 'passport',
             name: 'AdminPassport',
-            component: () =>
-              import('@/components/admin/PassportDashboard.vue'),
+            component: () => import('@/components/admin/PassportDashboard.vue'),
             meta: { title: '여권 관리' },
           },
         ],

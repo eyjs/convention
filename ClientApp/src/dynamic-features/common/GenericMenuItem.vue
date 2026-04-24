@@ -19,15 +19,21 @@
     <div class="menu-content">
       <div class="flex items-center gap-2 mb-1.5">
         <!-- 통합된 아이콘 + 타이틀 -->
-        <div 
-          v-if="config.icon" 
+        <div
+          v-if="config.icon"
           class="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center"
-          :style="{ backgroundColor: (config.bgColor || '#3B82F6') + '20', color: config.bgColor || '#3B82F6' }"
+          :style="{
+            backgroundColor: (config.bgColor || '#3B82F6') + '20',
+            color: config.bgColor || '#3B82F6',
+          }"
         >
-          <span class="w-3.5 h-3.5 flex items-center justify-center" v-html="config.icon"></span>
+          <span
+            class="w-3.5 h-3.5 flex items-center justify-center"
+            v-html="config.icon"
+          ></span>
         </div>
         <h3 class="menu-title">{{ feature.title }}</h3>
-        
+
         <!-- 제출 상태 태그 -->
         <span
           v-if="feature.isComplete !== undefined"

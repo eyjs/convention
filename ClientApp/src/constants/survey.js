@@ -14,12 +14,10 @@ export const QUESTION_TYPE_LABELS = {
 
 export const SURVEY_TYPES = {
   GENERAL: 'GENERAL',
-  OPTION_TOUR: 'OPTION_TOUR',
 }
 
 export const SURVEY_TYPE_LABELS = {
   GENERAL: '일반 설문',
-  OPTION_TOUR: '옵션투어 설문',
 }
 
 export function getQuestionTypeLabel(type) {

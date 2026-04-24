@@ -340,7 +340,9 @@
                   @change="uploadPassportImage"
                 />
               </label>
-              <span v-if="passportUploading" class="text-xs text-gray-400">업로드 중...</span>
+              <span v-if="passportUploading" class="text-xs text-gray-400"
+                >업로드 중...</span
+              >
             </div>
           </div>
         </div>
@@ -636,7 +638,8 @@ const passportImageUrl = ref(null)
 const passportUploading = ref(false)
 
 function showPassportImage() {
-  const url = passportImageUrl.value || props.editingGuest?.passport?.passportImageUrl
+  const url =
+    passportImageUrl.value || props.editingGuest?.passport?.passportImageUrl
   if (url) {
     viewerApi({ images: [url] })
   }
@@ -852,9 +855,18 @@ watch(
       passportImageUrl.value = guest.passport?.passportImageUrl || null
       const templateAttrs = {}
       const customAttrs = []
-      const templateKeys = (Array.isArray(props.attributeTemplates) ? props.attributeTemplates : []).map((t) => t.attributeKey)
+      const templateKeys = (
+        Array.isArray(props.attributeTemplates) ? props.attributeTemplates : []
+      ).map((t) => t.attributeKey)
 
-      guest.attributes.forEach((attr) => {
+      const attrs = guest.attributes || []
+      const attrList = Array.isArray(attrs)
+        ? attrs
+        : Object.entries(attrs).map(([k, v]) => ({
+            attributeKey: k,
+            attributeValue: v,
+          }))
+      attrList.forEach((attr) => {
         if (templateKeys.includes(attr.attributeKey)) {
           templateAttrs[attr.attributeKey] = attr.attributeValue
         } else {
@@ -866,8 +878,8 @@ watch(
       })
 
       guestForm.value = {
-        guestName: guest.guestName,
-        telephone: guest.telephone,
+        guestName: guest.guestName || guest.name || '',
+        telephone: guest.telephone || guest.phone || '',
         corpPart: guest.corpPart || '',
         residentNumber: guest.residentNumber || '',
         affiliation: guest.affiliation || '',
@@ -899,8 +911,18 @@ watch(
       passportImageUrl.value = guest.passport?.passportImageUrl || null
       const templateAttrs = {}
       const customAttrs = []
-      const templateKeys = (Array.isArray(props.attributeTemplates) ? props.attributeTemplates : []).map((t) => t.attributeKey)
-      ;(guest.attributes || []).forEach((attr) => {
+      const templateKeys = (
+        Array.isArray(props.attributeTemplates) ? props.attributeTemplates : []
+      ).map((t) => t.attributeKey)
+      // attributes가 배열 또는 객체(dict) 형태일 수 있음
+      const attrs = guest.attributes || []
+      const attrList = Array.isArray(attrs)
+        ? attrs
+        : Object.entries(attrs).map(([k, v]) => ({
+            attributeKey: k,
+            attributeValue: v,
+          }))
+      attrList.forEach((attr) => {
         if (templateKeys.includes(attr.attributeKey)) {
           templateAttrs[attr.attributeKey] = attr.attributeValue
         } else {
@@ -911,16 +933,18 @@ watch(
         }
       })
       guestForm.value = {
-        guestName: guest.guestName || '',
-        telephone: guest.telephone || '',
+        guestName: guest.guestName || guest.name || '',
+        telephone: guest.telephone || guest.phone || '',
         corpPart: guest.corpPart || '',
         residentNumber: guest.residentNumber || '',
         affiliation: guest.affiliation || '',
         password: '',
-        firstName: guest.passport?.firstName || '',
-        lastName: guest.passport?.lastName || '',
-        passportNumber: guest.passport?.passportNumber || '',
-        passportExpiryDate: guest.passport?.passportExpiryDate || '',
+        firstName: guest.passport?.firstName || guest.firstName || '',
+        lastName: guest.passport?.lastName || guest.lastName || '',
+        passportNumber:
+          guest.passport?.passportNumber || guest.passportNumber || '',
+        passportExpiryDate:
+          guest.passport?.passportExpiryDate || guest.passportExpiryDate || '',
         scheduleTemplateIds: (guest.scheduleTemplates || []).map(
           (st) => st.scheduleTemplateId,
         ),

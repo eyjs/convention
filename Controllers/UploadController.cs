@@ -57,7 +57,7 @@ public class UploadController : ControllerBase
     /// </summary>
     [HttpPost("conventions/{conventionId}/guests")]
     [ProducesResponseType(typeof(UserUploadResult), 200)]
-    public async Task<IActionResult> UploadGuests(int conventionId, IFormFile file)
+    public async Task<IActionResult> UploadGuests(int conventionId, IFormFile file, [FromQuery] bool replaceAll = false)
     {
         if (file == null || file.Length == 0)
         {
@@ -69,13 +69,13 @@ public class UploadController : ControllerBase
             return BadRequest(new { error = "Excel 파일(.xlsx)만 업로드 가능합니다." });
         }
 
-        _logger.LogInformation("Uploading guests for convention {ConventionId}, file: {FileName}",
-            conventionId, file.FileName);
+        _logger.LogInformation("Uploading guests for convention {ConventionId}, file: {FileName}, replaceAll: {ReplaceAll}",
+            conventionId, file.FileName, replaceAll);
 
         try
         {
             using var stream = file.OpenReadStream();
-            var result = await _userUploadService.UploadUsersAsync(conventionId, stream);
+            var result = await _userUploadService.UploadUsersAsync(conventionId, stream, replaceAll);
 
             if (!result.Success)
             {

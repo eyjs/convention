@@ -85,12 +85,42 @@
         </div>
       </div>
 
+      <label
+        class="flex items-center gap-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer"
+      >
+        <input
+          v-model="replaceAllGuests"
+          type="checkbox"
+          class="rounded border-amber-300 text-amber-600"
+        />
+        <div>
+          <span class="text-sm font-medium text-amber-800"
+            >전체 교체 모드 (Delete + Insert)</span
+          >
+          <p class="text-xs text-amber-600 mt-0.5">
+            체크 시 기존 참석자를 모두 삭제하고 엑셀 데이터로 교체합니다. 미체크
+            시 기존 데이터를 유지하며 업데이트합니다.
+          </p>
+        </div>
+      </label>
+
       <button
         :disabled="!fileGuests || uploadingGuests"
-        class="w-full px-6 py-3 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
+        class="w-full px-6 py-3 text-white rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
+        :class="
+          replaceAllGuests
+            ? 'bg-amber-600 hover:bg-amber-700'
+            : 'bg-primary-600 hover:bg-primary-700'
+        "
         @click="uploadGuests"
       >
-        {{ uploadingGuests ? '업로드 중...' : '참석자 업로드' }}
+        {{
+          uploadingGuests
+            ? '업로드 중...'
+            : replaceAllGuests
+              ? '참석자 전체 교체'
+              : '참석자 업데이트'
+        }}
       </button>
 
       <UploadResult v-if="resultGuests" :result="resultGuests" />
@@ -310,6 +340,9 @@
             <p>
               E열 파일명과 동일한 이름의 이미지 파일들을 ZIP으로 묶어서 업로드
             </p>
+            <p class="text-purple-500 text-xs">
+              지원 확장자: .jpg, .jpeg, .png, .gif, .webp, .pdf
+            </p>
           </div>
           <p class="text-purple-500 text-xs mt-1">
             ※ 에러 발생 시 DB 저장 없이 에러 목록만 반환 → 엑셀 수정 후 재업로드
@@ -370,9 +403,25 @@
           {{ passportResult.updatedCount }}명 / {{ passportResult.totalRows }}명
           업데이트 완료
         </p>
-        <div v-if="passportResult.errors?.length > 0" class="mt-2 space-y-1">
+        <div
+          v-if="passportDuplicateErrors.length > 0"
+          class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg"
+        >
+          <p class="text-sm font-semibold text-amber-800 mb-1">
+            동명이인 ({{ passportDuplicateErrors.length }}건) — 웹에서 수기 등록
+            필요
+          </p>
           <p
-            v-for="(err, idx) in passportResult.errors"
+            v-for="(err, idx) in passportDuplicateErrors"
+            :key="'dup-' + idx"
+            class="text-sm text-amber-700"
+          >
+            {{ err }}
+          </p>
+        </div>
+        <div v-if="passportOtherErrors.length > 0" class="mt-2 space-y-1">
+          <p
+            v-for="(err, idx) in passportOtherErrors"
             :key="idx"
             class="text-sm text-red-700"
           >
@@ -404,7 +453,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import apiClient from '@/services/api'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import UploadResult from './UploadResult.vue'
@@ -488,6 +537,8 @@ const handleFileOptionTours = async (e) => {
   }
 }
 
+const replaceAllGuests = ref(false)
+
 // 참석자 업로드
 const uploadGuests = async () => {
   if (!fileGuests.value) return
@@ -503,12 +554,14 @@ const uploadGuests = async () => {
     // 조회 실패 시 0으로 진행
   }
 
-  const confirmMsg =
-    `이 작업은 현재 행사의 참석자 목록을 엑셀 기준으로 완전히 교체합니다.\n\n` +
-    `• 기존 참석자 ${currentCount}명이 이 행사에서 제외됩니다.\n` +
-    `• 엑셀 파일의 참석자로 재등록됩니다.\n` +
-    `• User 계정과 개인 메타데이터(속성)는 유지됩니다.\n\n` +
-    `계속하시겠습니까?`
+  const confirmMsg = replaceAllGuests.value
+    ? `[전체 교체 모드] 현재 행사의 참석자 목록을 엑셀 기준으로 완전히 교체합니다.\n\n` +
+      `• 기존 참석자 ${currentCount}명이 이 행사에서 제외됩니다.\n` +
+      `• 엑셀 파일의 참석자로 재등록됩니다.\n` +
+      `• User 계정은 유지됩니다.\n\n계속하시겠습니까?`
+    : `[업데이트 모드] 기존 참석자를 유지하면서 엑셀 데이터로 업데이트합니다.\n\n` +
+      `• 기존 참석자 ${currentCount}명은 유지됩니다.\n` +
+      `• 신규 참석자는 추가, 기존 참석자는 정보 갱신됩니다.\n\n계속하시겠습니까?`
 
   if (!confirm(confirmMsg)) return
 
@@ -524,11 +577,14 @@ const uploadGuests = async () => {
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' },
+        params: replaceAllGuests.value ? { replaceAll: true } : {},
       },
     )
 
     const d = response.data
-    let message = `기존 ${d.removedUserConventions || 0}명 삭제, ${d.usersCreated + d.usersUpdated}명 재등록 완료 (신규 User: ${d.usersCreated}명, 기존 User 재사용: ${d.usersUpdated}명)`
+    let message = replaceAllGuests.value
+      ? `기존 ${d.removedUserConventions || 0}명 삭제, ${d.usersCreated + d.usersUpdated}명 재등록 완료 (신규: ${d.usersCreated}명, 재사용: ${d.usersUpdated}명)`
+      : `${d.usersUpdated}명 업데이트, ${d.usersCreated}명 신규 추가 완료`
     if (d.attributesCreated > 0 || d.attributesUpdated > 0) {
       message += `\n속성: 신규 ${d.attributesCreated}건, 수정 ${d.attributesUpdated}건`
     }
@@ -895,14 +951,76 @@ const uploadPassportBulk = async () => {
 
 function downloadPassportSample() {
   const wb = XLSX.utils.book_new()
-  const sheet = [
-    ['이름', '영문성(Last)', '영문이름(First)', '여권만료일', '파일명'],
-    ['김도현', 'KIM', 'DOHYUN', '2030-12-31', '김도현_여권'],
-    ['강경요', 'KANG', 'KYOUNGYO', '2029-06-15', '001'],
+  const dataSheet = [
+    [
+      '이름 (Name)',
+      '영문 성 (Last Name)',
+      '영문 이름 (First Name)',
+      '만료일 (Expiry Date)',
+      '파일명 (Filename)',
+    ],
+    ['홍길동', 'HONG', 'GILDONG', '2028-05-15', 'hong_gildong_passport'],
+    ['김민준', 'KIM', 'MINJUN', '2027-11-30', 'kim_minjun_passport'],
+    ['이서연', 'LEE', 'SEOYEON', '2029-03-20', 'lee_seoyeon_passport'],
+    ['박지훈', 'PARK', 'JIHOON', '2026-08-10', 'park_jihoon_passport'],
+    ['최수아', 'CHOI', 'SUA', '2030-01-05', 'choi_sua_passport'],
   ]
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet), '여권정보')
+  const guideSheet = [
+    ['여권 정보 업로드 - 작성 안내'],
+    [],
+    ['■ 컬럼 설명'],
+    [
+      'A열 | 이름: 한글 이름을 정확히 입력하세요. 참석자 DB와 매칭에 사용됩니다.',
+    ],
+    ['B열 | 영문 성: 여권에 기재된 영문 성 (Last Name)'],
+    ['C열 | 영문 이름: 여권에 기재된 영문 이름 (First Name)'],
+    ['D열 | 만료일: 여권 만료일을 YYYY-MM-DD 형식으로 입력 (예: 2028-05-15)'],
+    ['E열 | 파일명: ZIP 파일 내 여권 이미지/PDF 파일명 (확장자 미포함)'],
+    [],
+    ['■ 검증 규칙'],
+    ['① E열 파일명은 ZIP 내 파일명과 정확히 일치해야 합니다 (확장자 제외)'],
+    ['② E열 파일명은 엑셀 내에서 중복될 수 없습니다'],
+    ['③ A열 이름은 참석자 DB에 등록된 이름과 일치해야 합니다'],
+    ['④ 만료일은 YYYY-MM-DD 형식이어야 합니다'],
+    ['⑤ 동명이인이 있는 경우 자동 매칭이 불가하여 에러로 처리됩니다'],
+    [
+      '   → 동명이인은 엑셀에서 제외하고, 웹 관리자 화면에서 수기로 등록해주세요',
+    ],
+    [],
+    ['■ ZIP 파일 구성 예시'],
+    ['passports.zip'],
+    ['  ├── hong_gildong_passport.jpg'],
+    ['  ├── kim_minjun_passport.pdf'],
+    ['  └── lee_seoyeon_passport.png'],
+    [],
+    ['■ 지원 파일 형식'],
+    ['이미지: .jpg, .jpeg, .png, .gif, .webp'],
+    ['문서: .pdf'],
+    [],
+    ['■ 업로드 절차'],
+    ['Step 1: 엑셀 파일과 ZIP 파일을 함께 업로드 → 검증 실행'],
+    ['Step 2: 검증 통과 시 자동 DB 업데이트 완료'],
+    ['※ 오류 발생 시 DB 저장 없이 에러 목록만 반환 → 엑셀 수정 후 재업로드'],
+  ]
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(dataSheet),
+    '여권정보',
+  )
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(guideSheet),
+    '작성 안내',
+  )
   saveWorkbook(wb, '여권업로드_샘플.xlsx')
 }
+
+const passportDuplicateErrors = computed(() =>
+  (passportResult.value?.errors || []).filter((e) => e.includes('동명이인')),
+)
+const passportOtherErrors = computed(() =>
+  (passportResult.value?.errors || []).filter((e) => !e.includes('동명이인')),
+)
 
 const downloadCurrentData = async (type) => {
   const urlMap = {

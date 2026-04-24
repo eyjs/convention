@@ -391,7 +391,7 @@ const QuestionCard = {
                   type: 'button',
                   title: '꼬리질문 추가',
                   class:
-                    'flex-shrink-0 p-1.5 rounded-md text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors',
+                    'flex-shrink-0 p-2 rounded-md text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors',
                   onClick: () =>
                     emit('add-follow-up', {
                       optionId: option.id > 0 ? option.id : option._tempKey,
@@ -407,7 +407,7 @@ const QuestionCard = {
                   type: 'button',
                   title: '선택지 삭제',
                   class:
-                    'flex-shrink-0 p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors',
+                    'flex-shrink-0 p-2 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors',
                   onClick: () =>
                     emit('remove-option', {
                       questionIndex: qIdx,
@@ -551,7 +551,7 @@ const QuestionCard = {
                     {
                       type: 'button',
                       class:
-                        'p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors',
+                        'p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors',
                       disabled: props.topLevelIndex === 0,
                       title: '위로 이동',
                       onClick: () => emit('move', -1),
@@ -565,7 +565,7 @@ const QuestionCard = {
                     {
                       type: 'button',
                       class:
-                        'p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors',
+                        'p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors',
                       disabled:
                         props.topLevelIndex ===
                         props.survey.questions.filter(
@@ -586,7 +586,7 @@ const QuestionCard = {
                 {
                   type: 'button',
                   class:
-                    'p-1.5 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors',
+                    'p-2 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors',
                   title: '삭제',
                   onClick: () => emit('remove'),
                 },
@@ -681,7 +681,7 @@ const QuestionCard = {
         {
           class: [
             'rounded-xl border transition-all duration-200',
-            props.isFollowUp ? 'ml-6 mt-2' : '',
+            props.isFollowUp ? 'ml-3 sm:ml-6 mt-2' : '',
             errs[`question_${qIdx}`]
               ? 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-900/10 shadow-red-100 dark:shadow-none shadow-sm'
               : props.isFollowUp

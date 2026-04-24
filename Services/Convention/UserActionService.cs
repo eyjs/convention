@@ -59,9 +59,21 @@ public class UserActionService : IUserActionService
 
     public async Task<object> GetAllActionsAsync(int conventionId, string? targetLocation, string? actionCategory, bool? isActive = null)
     {
+        // OPTION_TOUR 설문에 연결된 비활성 설문의 액션 ID 조회
+        var inactiveSurveyActionIds = await _unitOfWork.ConventionActions.Query
+            .Where(a => a.ConventionId == conventionId
+                && a.BehaviorType == Entities.Action.BehaviorType.ModuleLink
+                && a.TargetModuleId != null
+                && _unitOfWork.Surveys.Query.Any(s =>
+                    s.Id == a.TargetModuleId.Value
+                    && ((int)s.SurveyType == 1 || !s.IsActive)))
+            .Select(a => a.Id)
+            .ToListAsync();
+
         var query = _unitOfWork.ConventionActions.Query
             .Include(a => a.Template)
-            .Where(a => a.ConventionId == conventionId);
+            .Where(a => a.ConventionId == conventionId)
+            .Where(a => !inactiveSurveyActionIds.Contains(a.Id));
 
         if (isActive.HasValue)
         {

@@ -18,21 +18,55 @@
       </button>
     </div>
 
+    <!-- 검색/필터 영역 -->
+    <div class="mt-6 bg-white rounded-lg shadow p-4 space-y-3">
+      <div class="flex flex-col sm:flex-row gap-3">
+        <select
+          v-model="selectedStatus"
+          class="px-3 py-2 border rounded-lg text-sm min-w-[120px]"
+        >
+          <option value="all">전체 상태</option>
+          <option value="approved">승인완료</option>
+          <option value="pending">승인대기</option>
+          <option value="rejected">거절</option>
+          <option value="unregistered">미등록</option>
+        </select>
+        <select
+          v-if="groupNames.length > 0"
+          v-model="selectedGroup"
+          class="px-3 py-2 border rounded-lg text-sm min-w-[120px]"
+        >
+          <option value="">전체 그룹</option>
+          <option v-for="g in groupNames" :key="g" :value="g">{{ g }}</option>
+        </select>
+        <input
+          v-model="search"
+          type="text"
+          placeholder="이름, 전화번호, 소속 검색..."
+          class="flex-1 px-3 py-2 border rounded-lg text-sm"
+        />
+      </div>
+      <div class="flex items-center justify-between text-sm text-gray-500">
+        <span>검색 결과: {{ filteredList.length }}명</span>
+        <button
+          v-if="search || selectedStatus !== 'all' || selectedGroup"
+          class="text-primary-600 hover:underline text-xs"
+          @click="resetFilters"
+        >
+          필터 초기화
+        </button>
+      </div>
+    </div>
+
     <!-- 참석자 리스트 -->
-    <div class="mt-6 bg-white rounded-lg shadow overflow-hidden">
-      <div class="p-4 border-b flex items-center justify-between">
-        <h3 class="font-semibold">
-          {{ statCards.find((c) => c.key === selectedStatus)?.label || '전체' }}
+    <div class="mt-3 bg-white rounded-lg shadow overflow-hidden">
+      <div class="p-3 border-b">
+        <h3 class="font-semibold text-sm">
+          {{ currentStatusLabel }}
           <span class="text-gray-400 font-normal ml-1"
             >({{ filteredList.length }}명)</span
           >
         </h3>
-        <input
-          v-model="search"
-          type="text"
-          placeholder="이름, 전화번호 검색..."
-          class="px-3 py-1.5 border rounded-lg text-sm w-48"
-        />
       </div>
 
       <div v-if="loading" class="p-8 text-center text-gray-400">로딩 중...</div>
@@ -67,13 +101,33 @@
                   >{{ getStatusLabel(guest) }}</span
                 >
               </div>
-              <div class="text-xs text-gray-500 mt-0.5">
-                {{ guest.phone || '-' }}
-                <span v-if="guest.passportNumber" class="ml-2"
-                  >여권: {{ guest.passportNumber }}</span
+              <div class="text-xs text-gray-500 mt-0.5 flex flex-wrap gap-x-3">
+                <span>{{ guest.phone || '-' }}</span>
+                <span
+                  v-if="guest.lastName || guest.firstName"
+                  class="font-medium text-gray-700"
                 >
-                <span v-if="guest.firstName || guest.lastName" class="ml-2">
                   {{ guest.lastName }} {{ guest.firstName }}
+                </span>
+                <span v-if="guest.passportNumber"
+                  >No. {{ guest.passportNumber }}</span
+                >
+                <span v-if="guest.passportExpiryDate"
+                  >만료 {{ guest.passportExpiryDate }}</span
+                >
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span
+                  v-if="guest.passportImageUrl"
+                  class="text-xs text-blue-600 cursor-pointer hover:underline"
+                  @click.stop="viewPassportImage(guest.passportImageUrl)"
+                  >여권사본 보기</span
+                >
+                <span
+                  v-if="guest.passportVerifiedAt"
+                  class="text-xs text-gray-400"
+                >
+                  승인: {{ formatDateTime(guest.passportVerifiedAt) }}
                 </span>
               </div>
               <div
@@ -126,6 +180,19 @@
       :convention-id="conventionId"
       :guest-id="detailGuestId"
       @close="showDetailModal = false"
+      @edit="onDetailEdit"
+    />
+
+    <!-- 참석자 수정 모달 -->
+    <GuestFormModal
+      :is-open="!!editingGuest"
+      :convention-id="conventionId"
+      :editing-guest="editingGuest"
+      :available-templates="[]"
+      :available-option-tours="[]"
+      :attribute-templates="[]"
+      @close="editingGuest = null"
+      @saved="onGuestSaved"
     />
 
     <!-- 거절 사유 모달 -->
@@ -171,9 +238,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { api as viewerApi } from 'v-viewer'
 import apiClient from '@/services/api'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import GuestDetailModal from '@/components/admin/guest/GuestDetailModal.vue'
+import GuestFormModal from '@/components/admin/guest/GuestFormModal.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 
 const props = defineProps({
@@ -183,10 +252,12 @@ const props = defineProps({
 const stats = ref({})
 const allGuests = ref([])
 const selectedStatus = ref('all')
+const selectedGroup = ref('')
 const search = ref('')
 const loading = ref(false)
 const showDetailModal = ref(false)
 const detailGuestId = ref(null)
+const editingGuest = ref(null)
 const showRejectModal = ref(false)
 const rejectTarget = ref(null)
 const rejectReason = ref('')
@@ -198,19 +269,43 @@ const statCards = [
   { key: 'unregistered', label: '미등록', color: 'text-gray-400' },
 ]
 
+const groupNames = computed(() => {
+  const groups = new Set(
+    allGuests.value.map((g) => g.groupName).filter(Boolean),
+  )
+  return [...groups].sort()
+})
+
+const currentStatusLabel = computed(() => {
+  if (selectedStatus.value === 'all') return '전체'
+  return statCards.find((c) => c.key === selectedStatus.value)?.label || '전체'
+})
+
 const filteredList = computed(() => {
   let list = allGuests.value
   if (selectedStatus.value !== 'all') {
     list = list.filter((g) => getGuestStatus(g) === selectedStatus.value)
   }
+  if (selectedGroup.value) {
+    list = list.filter((g) => g.groupName === selectedGroup.value)
+  }
   if (search.value.trim()) {
     const q = search.value.toLowerCase()
     list = list.filter(
-      (g) => g.name?.toLowerCase().includes(q) || g.phone?.includes(q),
+      (g) =>
+        g.name?.toLowerCase().includes(q) ||
+        g.phone?.includes(q) ||
+        g.groupName?.toLowerCase().includes(q),
     )
   }
   return list
 })
+
+function resetFilters() {
+  search.value = ''
+  selectedStatus.value = 'all'
+  selectedGroup.value = ''
+}
 
 function getGuestStatus(guest) {
   if (guest.passportVerified) return 'approved'
@@ -241,6 +336,36 @@ function getStatusBadgeClass(guest) {
 
 function selectStatus(status) {
   selectedStatus.value = selectedStatus.value === status ? 'all' : status
+  selectedGroup.value = ''
+}
+
+function viewPassportImage(url) {
+  if (!url) return
+  if (url.toLowerCase().endsWith('.pdf')) {
+    window.open(url, '_blank')
+  } else {
+    viewerApi({ images: [url] })
+  }
+}
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
+}
+
+function onDetailEdit(guestDetail) {
+  showDetailModal.value = false
+  if (guestDetail) {
+    // 리스트에서 해당 참석자 찾아서 editingGuest로 전달
+    const guest = allGuests.value.find((g) => g.id === guestDetail.id)
+    if (guest) editingGuest.value = guest
+  }
+}
+
+async function onGuestSaved() {
+  editingGuest.value = null
+  await loadData()
 }
 
 function openDetail(guest) {

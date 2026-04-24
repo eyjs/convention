@@ -28,6 +28,9 @@ namespace LocalRAG.Services.Convention
         {
             var query = _unitOfWork.Surveys.Query.AsNoTracking();
 
+            // OPTION_TOUR 설문은 제외 (기능 삭제됨)
+            query = query.Where(s => s.SurveyType != SurveyType.OPTION_TOUR);
+
             if (!string.IsNullOrEmpty(surveyType) && Enum.TryParse<SurveyType>(surveyType, true, out var typeFilter))
             {
                 query = query.Where(s => s.SurveyType == typeFilter);
@@ -67,7 +70,7 @@ namespace LocalRAG.Services.Convention
             // 진행중 설문은 홈 화면(MyConventionInfo)에서 별도 필터링됨
             var surveys = await _unitOfWork.Surveys.Query
                 .AsNoTracking()
-                .Where(s => s.ConventionId == conventionId && s.IsActive)
+                .Where(s => s.ConventionId == conventionId && s.IsActive && s.SurveyType != SurveyType.OPTION_TOUR)
                 .OrderByDescending(s => s.Id)
                 .Select(s => new SurveyDto
                 {
@@ -262,10 +265,6 @@ namespace LocalRAG.Services.Convention
 
                 await UpdateSurveyActionStatusAsync(survey, submissionDto, userId);
 
-                if (survey.SurveyType == SurveyType.OPTION_TOUR)
-                {
-                    await SyncUserOptionToursAsync(survey, submissionDto, userId);
-                }
             });
 
             _logger.LogInformation("Survey {SurveyId} submitted by user {UserId}", surveyId, userId);
@@ -473,15 +472,6 @@ namespace LocalRAG.Services.Convention
                 throw new ArgumentException("시작일이 종료일보다 늦을 수 없습니다.");
             }
 
-            // OPTION_TOUR일 때 StartDate/EndDate 필수
-            if (ParseSurveyType(dto.SurveyType) == SurveyType.OPTION_TOUR)
-            {
-                if (!dto.StartDate.HasValue || !dto.EndDate.HasValue)
-                {
-                    throw new ArgumentException("옵션투어 설문은 시작일과 종료일이 필수입니다.");
-                }
-            }
-
             if (dto.Questions == null || dto.Questions.Count == 0)
             {
                 throw new ArgumentException("질문이 1개 이상 필요합니다.");
@@ -631,50 +621,6 @@ namespace LocalRAG.Services.Convention
             }
         }
 
-        private async Task SyncUserOptionToursAsync(Survey survey, SurveySubmissionDto submissionDto, int userId)
-        {
-            if (!survey.ConventionId.HasValue) return;
-
-            // 이 설문의 모든 옵션에 연결된 OptionTourId 목록
-            var surveyOptionTourIds = await _unitOfWork.SurveyQuestions.Query
-                .Where(q => q.SurveyId == survey.Id)
-                .SelectMany(q => q.Options)
-                .Where(o => o.OptionTourId != null)
-                .Select(o => o.OptionTourId!.Value)
-                .Distinct().ToListAsync();
-
-            if (surveyOptionTourIds.Count == 0) return;
-
-            // 기존 선택 삭제 (ExecuteDeleteAsync = 즉시 SQL 실행, 같은 트랜잭션 내에서 동작)
-            await _unitOfWork.UserOptionTours.Query
-                .Where(uot => uot.UserId == userId
-                    && uot.ConventionId == survey.ConventionId.Value
-                    && surveyOptionTourIds.Contains(uot.OptionTourId))
-                .ExecuteDeleteAsync();
-
-            // 선택된 옵션의 OptionTourId로 새 UserOptionTour 생성
-            var allSelectedOptionIds = submissionDto.Answers
-                .Where(a => a.SelectedOptionIds != null)
-                .SelectMany(a => a.SelectedOptionIds).ToHashSet();
-
-            var selectedTourIds = await _unitOfWork.QuestionOptions.Query
-                .Where(o => allSelectedOptionIds.Contains(o.Id) && o.OptionTourId != null)
-                .Select(o => o.OptionTourId!.Value)
-                .Distinct().ToListAsync();
-
-            foreach (var tourId in selectedTourIds)
-            {
-                await _unitOfWork.UserOptionTours.AddAsync(new UserOptionTour
-                {
-                    UserId = userId,
-                    OptionTourId = tourId,
-                    ConventionId = survey.ConventionId.Value
-                });
-            }
-
-            _logger.LogInformation("Synced {Count} option tours for user {UserId} from survey {SurveyId}",
-                selectedTourIds.Count, userId, survey.Id);
-        }
 
         private async Task DeleteSurveyActionsAsync(int surveyId)
         {

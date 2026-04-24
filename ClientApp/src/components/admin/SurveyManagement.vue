@@ -85,7 +85,7 @@
             v-model="searchQuery"
             type="text"
             placeholder="설문 제목 검색..."
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm focus:ring-primary-500 focus:border-primary-500"
+            class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
         <select
@@ -128,30 +128,51 @@
           <div
             v-for="survey in filteredSurveys"
             :key="'m-' + survey.id"
-            class="bg-white rounded-lg shadow-sm p-3 active:bg-gray-50"
-            @click="showEditView(survey)"
+            class="bg-white rounded-lg shadow-sm overflow-hidden"
           >
-            <div class="flex items-center justify-between mb-1">
-              <span class="font-semibold text-gray-900 truncate">{{
-                survey.title
-              }}</span>
-              <AdminBadge
-                :variant="getSurveyStatusVariant(survey)"
-                class="flex-shrink-0 ml-2"
-                >{{ getSurveyStatusLabel(survey) }}</AdminBadge
+            <div class="p-3 active:bg-gray-50" @click="showEditView(survey)">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-semibold text-gray-900 truncate">{{
+                  survey.title
+                }}</span>
+                <AdminBadge
+                  :variant="getSurveyStatusVariant(survey)"
+                  class="flex-shrink-0 ml-2"
+                  >{{ getSurveyStatusLabel(survey) }}</AdminBadge
+                >
+              </div>
+              <p class="text-xs text-gray-500">
+                응답 {{ survey.responseCount ?? 0 }}명 ·
+                {{ survey.questionCount ?? 0 }}문항
+              </p>
+              <p
+                v-if="survey.startDate || survey.endDate"
+                class="text-xs text-gray-400 mt-0.5"
               >
+                {{ survey.startDate?.split('T')[0] || '' }} ~
+                {{ survey.endDate?.split('T')[0] || '' }}
+              </p>
             </div>
-            <p class="text-xs text-gray-500">
-              응답 {{ survey.responseCount ?? 0 }}명 ·
-              {{ survey.questionCount ?? 0 }}문항
-            </p>
-            <p
-              v-if="survey.startDate || survey.endDate"
-              class="text-xs text-gray-400 mt-0.5"
-            >
-              {{ survey.startDate?.split('T')[0] || '' }} ~
-              {{ survey.endDate?.split('T')[0] || '' }}
-            </p>
+            <div class="flex border-t divide-x">
+              <button
+                class="flex-1 py-2.5 text-xs font-medium text-primary-600 active:bg-primary-50"
+                @click="showStatsView(survey)"
+              >
+                통계
+              </button>
+              <button
+                class="flex-1 py-2.5 text-xs font-medium text-gray-600 active:bg-gray-50"
+                @click="showEditView(survey)"
+              >
+                수정
+              </button>
+              <button
+                class="flex-1 py-2.5 text-xs font-medium text-red-600 active:bg-red-50"
+                @click="deleteSurvey(survey.id)"
+              >
+                삭제
+              </button>
+            </div>
           </div>
         </div>
 

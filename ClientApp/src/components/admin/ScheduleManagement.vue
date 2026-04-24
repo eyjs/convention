@@ -337,7 +337,6 @@
               />
             </div>
 
-
             <div>
               <label class="block text-sm font-medium mb-1">상세 내용</label>
               <RichTextEditor
@@ -638,7 +637,6 @@ const itemForm = ref({
   location: '',
   content: '',
 })
-
 
 const formatDate = (dateStr) => {
   const date = new Date(dateStr)

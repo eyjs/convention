@@ -14,5 +14,5 @@ public interface IUserUploadService
     /// <param name="conventionId">행사 ID</param>
     /// <param name="excelStream">Excel 파일 스트림</param>
     /// <returns>업로드 결과</returns>
-    Task<UserUploadResult> UploadUsersAsync(int conventionId, Stream excelStream);
+    Task<UserUploadResult> UploadUsersAsync(int conventionId, Stream excelStream, bool replaceAll = false);
 }

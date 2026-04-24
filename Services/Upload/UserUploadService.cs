@@ -32,7 +32,7 @@ public class UserUploadService : IUserUploadService
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
     }
 
-    public async Task<UserUploadResult> UploadUsersAsync(int conventionId, Stream excelStream)
+    public async Task<UserUploadResult> UploadUsersAsync(int conventionId, Stream excelStream, bool replaceAll = false)
     {
         var result = new UserUploadResult();
 
@@ -81,7 +81,8 @@ public class UserUploadService : IUserUploadService
             // SqlServerRetryingExecutionStrategy 호환 트랜잭션
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-            // ===== 교체 모드: 기존 convention 종속 데이터 삭제 =====
+            // ===== 교체 모드(replaceAll=true): 기존 convention 종속 데이터 삭제 =====
+            if (replaceAll)
             {
                 var existingUcs = (await _unitOfWork.UserConventions
                     .FindAsync(uc => uc.ConventionId == conventionId)).ToList();
@@ -218,15 +219,28 @@ public class UserUploadService : IUserUploadService
 
                         _unitOfWork.Users.Update(existingUser);
 
-                        // 교체 모드: 기존 UserConvention은 이미 삭제됨 → 항상 신규 생성
-                        await _unitOfWork.UserConventions.AddAsync(new UserConvention
+                        // UserConvention 처리: Upsert 모드면 기존 확인, 교체 모드면 항상 신규
+                        var existingUc = replaceAll ? null : await _unitOfWork.UserConventions.Query
+                            .FirstOrDefaultAsync(uc => uc.UserId == existingUser.Id && uc.ConventionId == conventionId);
+
+                        if (existingUc != null)
                         {
-                            UserId = existingUser.Id,
-                            ConventionId = conventionId,
-                            GroupName = groupName,
-                            AccessToken = Guid.NewGuid().ToString("N"),
-                            CreatedAt = DateTime.UtcNow
-                        });
+                            // Upsert: 기존 UserConvention 갱신
+                            existingUc.GroupName = groupName;
+                            _unitOfWork.UserConventions.Update(existingUc);
+                        }
+                        else
+                        {
+                            // 신규 UserConvention 생성
+                            await _unitOfWork.UserConventions.AddAsync(new UserConvention
+                            {
+                                UserId = existingUser.Id,
+                                ConventionId = conventionId,
+                                GroupName = groupName,
+                                AccessToken = Guid.NewGuid().ToString("N"),
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
                         result.UsersUpdated++; // 기존 User 재사용
 
                         rowUserMap[row] = existingUser.Id;

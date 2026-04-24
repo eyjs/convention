@@ -115,7 +115,6 @@ function closeScheduleDetail() {
   selectedSchedule.value = null
 }
 
-
 onMounted(async () => {
   if (!authStore.user) {
     await authStore.fetchCurrentUser()

@@ -56,7 +56,7 @@
     <div v-else-if="stats">
       <!-- Pill Tabs -->
       <div
-        class="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mb-6 w-fit"
+        class="flex flex-wrap items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mb-6 w-fit"
       >
         <button
           class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all"
@@ -361,12 +361,12 @@
         <!-- Table View -->
         <div
           v-else-if="responseViewMode === 'table'"
-          class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
+          class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-x-auto"
         >
           <table
             class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
           >
-            <thead class="bg-gray-50 dark:bg-gray-800/80">
+            <thead class="bg-gray-50 dark:bg-gray-800/80 sticky top-0 z-10">
               <tr>
                 <th
                   class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
