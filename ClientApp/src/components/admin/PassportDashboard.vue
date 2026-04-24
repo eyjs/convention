@@ -19,44 +19,27 @@
     </div>
 
     <!-- 검색/필터 영역 -->
-    <div class="mt-6 bg-white rounded-lg shadow p-4 space-y-3">
-      <div class="flex flex-col sm:flex-row gap-3">
-        <select
-          v-model="selectedStatus"
-          class="px-3 py-2 border rounded-lg text-sm min-w-[120px]"
-        >
+    <AdminSearchFilter
+      v-model="search"
+      placeholder="이름, 전화번호, 소속 검색..."
+      :result-count="filteredList.length"
+      :show-reset="!!(search || selectedStatus !== 'all' || selectedGroup)"
+      @reset="resetFilters"
+    >
+      <template #filters>
+        <AdminSelect v-model="selectedStatus">
           <option value="all">전체 상태</option>
           <option value="approved">승인완료</option>
           <option value="pending">승인대기</option>
           <option value="rejected">거절</option>
           <option value="unregistered">미등록</option>
-        </select>
-        <select
-          v-if="groupNames.length > 0"
-          v-model="selectedGroup"
-          class="px-3 py-2 border rounded-lg text-sm min-w-[120px]"
-        >
+        </AdminSelect>
+        <AdminSelect v-if="groupNames.length > 0" v-model="selectedGroup">
           <option value="">전체 그룹</option>
           <option v-for="g in groupNames" :key="g" :value="g">{{ g }}</option>
-        </select>
-        <input
-          v-model="search"
-          type="text"
-          placeholder="이름, 전화번호, 소속 검색..."
-          class="flex-1 px-3 py-2 border rounded-lg text-sm"
-        />
-      </div>
-      <div class="flex items-center justify-between text-sm text-gray-500">
-        <span>검색 결과: {{ filteredList.length }}명</span>
-        <button
-          v-if="search || selectedStatus !== 'all' || selectedGroup"
-          class="text-primary-600 hover:underline text-xs"
-          @click="resetFilters"
-        >
-          필터 초기화
-        </button>
-      </div>
-    </div>
+        </AdminSelect>
+      </template>
+    </AdminSearchFilter>
 
     <!-- 참석자 리스트 -->
     <div class="mt-3 bg-white rounded-lg shadow overflow-hidden">
@@ -241,6 +224,8 @@ import { ref, computed, onMounted } from 'vue'
 import { api as viewerApi } from 'v-viewer'
 import apiClient from '@/services/api'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
+import AdminSearchFilter from '@/components/admin/ui/AdminSearchFilter.vue'
+import AdminSelect from '@/components/admin/ui/AdminSelect.vue'
 import GuestDetailModal from '@/components/admin/guest/GuestDetailModal.vue'
 import GuestFormModal from '@/components/admin/guest/GuestFormModal.vue'
 import BaseModal from '@/components/common/BaseModal.vue'

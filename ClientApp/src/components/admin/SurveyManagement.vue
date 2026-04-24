@@ -79,25 +79,23 @@
       </div>
 
       <!-- 검색/필터 -->
-      <div class="mt-4 flex flex-col sm:flex-row gap-3">
-        <div class="flex-1">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="설문 제목 검색..."
-            class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm focus:ring-primary-500 focus:border-primary-500"
-          />
-        </div>
-        <select
-          v-model="statusFilter"
-          class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm"
-        >
-          <option value="all">전체 상태</option>
-          <option value="active">활성</option>
-          <option value="inactive">비활성</option>
-          <option value="expired">기간만료</option>
-        </select>
-      </div>
+      <AdminSearchFilter
+        v-model="searchQuery"
+        placeholder="설문 제목 검색..."
+        :result-count="filteredSurveys.length"
+        :show-reset="!!(searchQuery || statusFilter !== 'all')"
+        <!-- prettier-ignore -->
+        @reset="searchQuery = ''; statusFilter = 'all'"
+      >
+        <template #filters>
+          <AdminSelect v-model="statusFilter">
+            <option value="all">전체 상태</option>
+            <option value="active">활성</option>
+            <option value="inactive">비활성</option>
+            <option value="expired">기간만료</option>
+          </AdminSelect>
+        </template>
+      </AdminSearchFilter>
 
       <div class="mt-6">
         <div v-if="loading" class="text-center py-10">
@@ -346,6 +344,8 @@ import {
 } from 'lucide-vue-next'
 import { formatDate } from '@/utils/date'
 import { useSurveyManagement } from '@/composables/useSurveyManagement'
+import AdminSearchFilter from '@/components/admin/ui/AdminSearchFilter.vue'
+import AdminSelect from '@/components/admin/ui/AdminSelect.vue'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import AdminButton from '@/components/admin/ui/AdminButton.vue'
 import AdminTable from '@/components/admin/ui/AdminTable.vue'
