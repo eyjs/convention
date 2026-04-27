@@ -63,6 +63,7 @@ public class AdminUserService : IAdminUserService
                         gst.ScheduleTemplate!.CourseName
                     }).ToList(),
                 attributes = uc.User.GuestAttributes
+                    .Where(ga => ga.ConventionId == conventionId)
                     .Select(ga => new { ga.AttributeKey, ga.AttributeValue }).ToList(),
                 optionTours = uc.User.UserOptionTours
                     .Where(uot => uot.ConventionId == conventionId)
@@ -101,7 +102,7 @@ public class AdminUserService : IAdminUserService
         return guests;
     }
 
-    public async Task<object?> GetGuestDetailAsync(int guestId)
+    public async Task<object?> GetGuestDetailAsync(int guestId, int? conventionId = null)
     {
         var user = await _unitOfWork.Users.Query
             .Include(u => u.GuestAttributes)
@@ -115,7 +116,9 @@ public class AdminUserService : IAdminUserService
 
         if (user == null) return null;
 
-        var uc = user.UserConventions.FirstOrDefault();
+        var uc = conventionId.HasValue
+            ? user.UserConventions.FirstOrDefault(c => c.ConventionId == conventionId.Value)
+            : user.UserConventions.FirstOrDefault();
 
         return new
         {
@@ -163,6 +166,7 @@ public class AdminUserService : IAdminUserService
                 user.PassportVerifiedAt
             },
             attributes = user.GuestAttributes
+                .Where(ga => !conventionId.HasValue || ga.ConventionId == conventionId.Value)
                 .ToDictionary(ga => ga.AttributeKey, ga => ga.AttributeValue)
         };
     }
@@ -236,6 +240,7 @@ public class AdminUserService : IAdminUserService
                 await _unitOfWork.GuestAttributes.AddAsync(new GuestAttribute
                 {
                     UserId = user.Id,
+                    ConventionId = conventionId,
                     AttributeKey = attr.Key,
                     AttributeValue = attr.Value
                 });
@@ -287,7 +292,10 @@ public class AdminUserService : IAdminUserService
 
         if (dto.Attributes != null)
         {
-            var existingAttrs = user.GuestAttributes.ToList();
+            // ConventionId가 지정된 경우 해당 행사 속성만 교체, 없으면 전체 교체 (하위 호환)
+            var existingAttrs = dto.ConventionId.HasValue
+                ? user.GuestAttributes.Where(ga => ga.ConventionId == dto.ConventionId).ToList()
+                : user.GuestAttributes.ToList();
             _unitOfWork.GuestAttributes.RemoveRange(existingAttrs);
 
             foreach (var attr in dto.Attributes)
@@ -295,6 +303,7 @@ public class AdminUserService : IAdminUserService
                 await _unitOfWork.GuestAttributes.AddAsync(new GuestAttribute
                 {
                     UserId = user.Id,
+                    ConventionId = dto.ConventionId,
                     AttributeKey = attr.Key,
                     AttributeValue = attr.Value
                 });

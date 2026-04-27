@@ -13,4 +13,8 @@ public class UserDto
     public string? PassportNumber { get; set; }
     public string? PassportExpiryDate { get; set; }
     public Dictionary<string, string>? Attributes { get; set; }
+    /// <summary>
+    /// 속성 저장 시 행사 격리를 위한 ConventionId (선택)
+    /// </summary>
+    public int? ConventionId { get; set; }
 }

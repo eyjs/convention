@@ -15,10 +15,18 @@ namespace LocalRAG.Entities
         /// </summary>
         public int UserId { get; set; }
 
+        /// <summary>
+        /// 행사 ID (FK, nullable — 기존 데이터 하위 호환)
+        /// </summary>
+        public int? ConventionId { get; set; }
+
         public string AttributeKey { get; set; } = string.Empty;
         public string AttributeValue { get; set; } = string.Empty;
 
         [ForeignKey("UserId")]
         public User? User { get; set; }
+
+        [ForeignKey("ConventionId")]
+        public Convention? Convention { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     프론트엔드(wwwroot)만 배포 — 앱풀 중지 불필요 (무중단)

@@ -81,12 +81,10 @@ export function useSurveyManagement(getConventionId, surveyType) {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get('/surveys', {
+      const response = await api.get(`/surveys/admin/${getConventionId()}`, {
         params: { type: surveyType },
       })
-      surveys.value = response.data.filter(
-        (s) => s.conventionId === getConventionId(),
-      )
+      surveys.value = response.data
     } catch {
       error.value = '설문 목록을 불러오는데 실패했습니다.'
     } finally {

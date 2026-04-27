@@ -93,11 +93,11 @@ public class UserController : ControllerBase
     /// 참가자 상세 조회
     /// </summary>
     [HttpGet("participants/{id}")]
-    public async Task<IActionResult> GetParticipant(int id)
+    public async Task<IActionResult> GetParticipant(int id, [FromQuery] int? conventionId = null)
     {
         try
         {
-            var result = await _userProfileService.GetParticipantDetailAsync(id);
+            var result = await _userProfileService.GetParticipantDetailAsync(id, conventionId);
             if (result == null)
                 return NotFound(new { message = "참가자를 찾을 수 없습니다." });
 

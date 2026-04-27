@@ -16,59 +16,97 @@
       >
 
       <div
-        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full"
+        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all w-full sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full"
       >
         <!-- Header -->
-        <div class="px-6 py-4 border-b flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <h3 class="text-lg font-semibold text-gray-900">문자 발송</h3>
-            <!-- 단계 표시 -->
-            <div class="flex items-center gap-1 text-sm">
-              <span v-for="s in 3" :key="s" class="flex items-center gap-1">
-                <span
-                  class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                  :class="
-                    step === s
-                      ? 'bg-primary-500 text-white'
-                      : step > s
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 text-gray-500'
-                  "
-                >
-                  {{ step > s ? '✓' : s }}
-                </span>
-                <span
-                  v-if="s < 3"
-                  class="w-4 h-px"
-                  :class="step > s ? 'bg-green-400' : 'bg-gray-300'"
-                ></span>
-              </span>
-            </div>
-          </div>
-          <button
-            class="text-gray-400 hover:text-gray-600"
-            @click="emit('close')"
-          >
-            <svg
-              class="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div class="px-4 sm:px-6 py-3 sm:py-4 border-b">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+              문자 발송
+            </h3>
+            <button
+              class="text-gray-400 hover:text-gray-600"
+              @click="emit('close')"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <!-- 탭 -->
+          <div class="flex border-b -mb-px">
+            <button
+              v-for="tab in tabs"
+              :key="tab.key"
+              class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+              :class="
+                activeTab === tab.key
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              "
+              @click="activeTab = tab.key"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+
+          <!-- 기존 발송 단계 표시 (기존 탭일 때만) -->
+          <div
+            v-if="activeTab === 'default'"
+            class="flex items-center gap-1 text-sm mt-3"
+          >
+            <span v-for="s in 3" :key="s" class="flex items-center gap-1">
+              <span
+                class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                :class="
+                  step === s
+                    ? 'bg-primary-500 text-white'
+                    : step > s
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-500'
+                "
+              >
+                {{ step > s ? '&#10003;' : s }}
+              </span>
+              <span
+                v-if="s < 3"
+                class="w-4 h-px"
+                :class="step > s ? 'bg-green-400' : 'bg-gray-300'"
+              ></span>
+            </span>
+          </div>
         </div>
 
         <!-- Body -->
-        <div class="p-6 bg-gray-50 min-h-[480px] max-h-[70vh] overflow-y-auto">
+        <div
+          class="p-4 sm:p-6 bg-gray-50 min-h-[300px] sm:min-h-[480px] max-h-[60vh] sm:max-h-[70vh] overflow-y-auto"
+        >
+          <!-- 그룹 단체 발송 탭 -->
+          <SmsGroupSendTab
+            v-if="activeTab === 'group'"
+            :convention-id="props.conventionId"
+          />
+
+          <!-- 엑셀 변수 발송 탭 -->
+          <SmsExcelSendTab
+            v-if="activeTab === 'excel'"
+            :convention-id="props.conventionId"
+          />
+
+          <!-- 기존 발송 (default 탭) -->
           <!-- Step 1: 템플릿 선택/편집 -->
-          <div v-if="step === 1">
+          <div v-if="activeTab === 'default' && step === 1">
             <div class="flex items-center justify-between mb-4">
               <h4 class="font-semibold text-gray-800">문자 템플릿</h4>
               <button
@@ -208,7 +246,7 @@
           </div>
 
           <!-- Step 2: 내용 확인 + 수신자 선택 -->
-          <div v-if="step === 2">
+          <div v-if="activeTab === 'default' && step === 2">
             <h4 class="font-semibold text-gray-800 mb-4">
               발송 내용 및 수신자
             </h4>
@@ -303,7 +341,7 @@
 
               <div
                 v-else
-                class="max-h-[50vh] overflow-y-auto space-y-1 border rounded-lg p-2"
+                class="max-h-[30vh] sm:max-h-[50vh] overflow-y-auto space-y-1 border rounded-lg p-2"
               >
                 <label
                   v-for="user in filteredGuests"
@@ -331,7 +369,7 @@
           </div>
 
           <!-- Step 3: 미리보기 + 발송 -->
-          <div v-if="step === 3">
+          <div v-if="activeTab === 'default' && step === 3">
             <h4 class="font-semibold text-gray-800 mb-4">발송 확인</h4>
 
             <!-- 요약 -->
@@ -420,20 +458,23 @@
           </div>
         </div>
 
-        <!-- Footer -->
-        <div class="px-6 py-4 border-t bg-white flex justify-between">
+        <!-- Footer (기존 발송 탭만) -->
+        <div
+          v-if="activeTab === 'default'"
+          class="px-4 sm:px-6 py-3 sm:py-4 border-t bg-white flex flex-col sm:flex-row sm:justify-between gap-2"
+        >
           <button
             v-if="step > 1"
-            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors order-2 sm:order-1"
             @click="step--"
           >
             이전
           </button>
-          <div v-else></div>
+          <div v-else class="hidden sm:block"></div>
 
-          <div class="flex gap-2">
+          <div class="flex gap-2 order-1 sm:order-2">
             <button
-              class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+              class="flex-1 sm:flex-none px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
               @click="emit('close')"
             >
               닫기
@@ -442,7 +483,7 @@
             <!-- Step 1: 다음 -->
             <button
               v-if="step === 1"
-              class="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors disabled:opacity-50"
+              class="flex-1 sm:flex-none px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors disabled:opacity-50"
               :disabled="!canProceedStep1"
               @click="goToStep2"
             >
@@ -452,7 +493,7 @@
             <!-- Step 2: 다음 -->
             <button
               v-if="step === 2"
-              class="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors disabled:opacity-50"
+              class="flex-1 sm:flex-none px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors disabled:opacity-50"
               :disabled="!canProceedStep2"
               @click="goToStep3"
             >
@@ -462,7 +503,7 @@
             <!-- Step 3: 발송 -->
             <button
               v-if="step === 3"
-              class="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
+              class="flex-1 sm:flex-none px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
               :disabled="sending"
               @click="confirmAndSend"
             >
@@ -481,11 +522,21 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 
 import apiClient from '@/services/api'
+import SmsGroupSendTab from '@/components/admin/sms/SmsGroupSendTab.vue'
+import SmsExcelSendTab from '@/components/admin/sms/SmsExcelSendTab.vue'
 
 const props = defineProps({
   conventionId: { type: Number, required: true },
 })
 const emit = defineEmits(['close'])
+
+// 탭 관리
+const tabs = [
+  { key: 'default', label: '기존 발송' },
+  { key: 'group', label: '그룹 단체 발송' },
+  { key: 'excel', label: '엑셀 변수 발송' },
+]
+const activeTab = ref('default')
 
 const guests = ref([])
 

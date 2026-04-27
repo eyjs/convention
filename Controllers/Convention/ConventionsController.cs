@@ -133,4 +133,22 @@ public class ConventionsController : ControllerBase
         var result = await _attributeCategoryService.GetGroupedAttributesAsync(conventionId, userId.Value);
         return Ok(result);
     }
+
+    /// <summary>
+    /// 내 탑승권 조회
+    /// </summary>
+    [HttpGet("{conventionId}/my-boarding-pass")]
+    public async Task<IActionResult> GetMyBoardingPass(int conventionId)
+    {
+        var userId = User.GetUserIdOrNull();
+        if (userId == null)
+            return Unauthorized(new { message = "인증이 필요합니다." });
+
+        var url = await _conventionCrudService.GetBoardingPassUrlAsync(conventionId, userId.Value);
+
+        if (string.IsNullOrEmpty(url))
+            return NotFound(new { message = "탑승권이 등록되지 않았습니다." });
+
+        return Ok(new { url });
+    }
 }

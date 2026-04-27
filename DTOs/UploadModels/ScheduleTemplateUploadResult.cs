@@ -8,6 +8,10 @@ public class ScheduleTemplateUploadResult
     public bool Success { get; set; }
     public int TemplatesCreated { get; set; }
     public int ItemsCreated { get; set; }
+    public int TemplatesUpdated { get; set; }
+    public int ItemsUpdated { get; set; }
+    public int TemplatesDeleted { get; set; }
+    public int ItemsDeleted { get; set; }
     public List<string> Errors { get; set; } = new();
     public List<string> Warnings { get; set; } = new();
     public List<ConventionActionInfo> CreatedActions { get; set; } = new();

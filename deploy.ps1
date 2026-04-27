@@ -5,10 +5,11 @@
 
 .DESCRIPTION
     1) dotnet publish
-    2) DB 마이그레이션 (선택)
-    3) 앱풀 중지 → 백엔드 dll 복사 → 앱풀 시작
-    4) 프론트엔드(wwwroot) 복사 (무중단)
-    5) 헬스체크
+    2) DB 마이그레이션 (선택, -SkipMigration으로 건너뛰기)
+    3) 백엔드 dll 복사 (앱풀 중지 상태에서 실행)
+    4) 앱풀 시작 안내
+    5) 프론트엔드(wwwroot) 복사 (무중단)
+    6) 헬스체크
 
 .EXAMPLE
     .\deploy.ps1                          # 전체 배포
@@ -42,8 +43,9 @@ $LogFile      = 'C:\deploy\deploy.log'
 $HistoryDir   = 'C:\deploy\history'
 $ProdConnStr  = 'Server=172.25.1.21;Database=STARTOUR;User Id=startour;Password=ifaelql!@#$;TrustServerCertificate=true;Encrypt=false;'
 
-$ExcludeDirs  = @('wwwroot', 'logs', 'App_Data')
-$ExcludeFiles = @('appsettings.Production.json', 'web.config')
+# 서버에서 절대 건드리면 안 되는 폴더 (CRITICAL)
+$SafeDirs     = @('uploads', 'logs', 'App_Data')
+$SafeFiles    = @('appsettings.Production.json', 'web.config')
 # =============================
 
 function Write-Step($msg) { Write-Host ""; Write-Host "▶ $msg" -ForegroundColor Cyan }
@@ -104,20 +106,13 @@ if (-not $SkipMigration) {
         Write-Warn "DryRun — 마이그레이션 건너뜀"
         Add-Report "[2] Migration: DryRun SKIPPED"
     } else {
-        Write-Host "  마이그레이션을 적용하시겠습니까? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $confirm = Read-Host
-        if ($confirm -eq 'Y' -or $confirm -eq 'y') {
-            Push-Location $ProjectRoot
-            try {
-                & dotnet ef database update --connection $ProdConnStr
-                if ($LASTEXITCODE -ne 0) { throw "DB 마이그레이션 실패 (exit $LASTEXITCODE)" }
-                Write-Ok "마이그레이션 완료"
-                Add-Report "[2] Migration: OK"
-            } finally { Pop-Location }
-        } else {
-            Write-Warn "마이그레이션 건너뜀"
-            Add-Report "[2] Migration: USER SKIPPED"
-        }
+        Push-Location $ProjectRoot
+        try {
+            & dotnet ef database update --connection $ProdConnStr
+            if ($LASTEXITCODE -ne 0) { throw "DB 마이그레이션 실패 (exit $LASTEXITCODE)" }
+            Write-Ok "마이그레이션 완료"
+            Add-Report "[2] Migration: OK"
+        } finally { Pop-Location }
     }
 } else {
     Write-Step "2/7 마이그레이션 건너뜀"
@@ -139,32 +134,37 @@ Write-Step "4/7 백엔드 변경 감지"
 $checkArgs = @(
     $PublishDir, "$RemoteDrive\",
     '/E', '/XO', '/L', '/NP', '/NFL', '/NDL', '/NJH',
-    '/XD', 'wwwroot', 'logs', 'App_Data',
-    '/XF', 'appsettings.Production.json', 'web.config'
+    '/XD', ($SafeDirs + @('wwwroot')),
+    '/XF', $SafeFiles
 )
 $null = & robocopy @checkArgs 2>&1
 $backendChanged = $LASTEXITCODE -gt 0 -and $LASTEXITCODE -lt 8
 
 if ($backendChanged) {
-    Write-Warn "백엔드 변경 감지 — 앱풀 중지 필요"
+    Write-Warn "백엔드 변경 감지"
     Add-Report "[4] Backend: CHANGED"
 
-    # ─── 4a. 앱풀 중지 ─────────────────────────────────
     if (-not $DryRun) {
-        Write-Warn "서버 IIS에서 앱풀을 중지하세요."
-        Write-Host "  앱풀 중지 후 Enter, 취소 Ctrl+C" -ForegroundColor Yellow
-        Read-Host
+        Write-Host ""
+        Write-Host "  백엔드 배포를 시작합니다." -ForegroundColor Yellow
+        Write-Host "  앱풀 내렸나요? (Y/N): " -ForegroundColor Yellow -NoNewline
+        $confirm = Read-Host
+        if ($confirm -ne 'Y' -and $confirm -ne 'y') {
+            Write-Err "앱풀을 먼저 중지하고 다시 실행하세요."
+            throw "앱풀 미중지 — 배포 취소"
+        }
+        Write-Ok "앱풀 중지 확인됨"
     }
 
-    # ─── 4b. 백엔드 복사 ──────────────────────────────
-    Write-Step "4b/7 백엔드 dll 복사"
+    # ─── 4a. 백엔드 복사 ──────────────────────────────
+    Write-Step "4a/7 백엔드 dll 복사"
     $p1Start = Get-Date
     $p1Args = @(
         $PublishDir, "$RemoteDrive\",
         '/E', '/XO', '/R:1', '/W:1', '/NP',
         "/LOG:$LogFile", '/TEE',
-        '/XD', 'wwwroot', 'logs', 'App_Data',
-        '/XF', 'appsettings.Production.json', 'web.config'
+        '/XD', ($SafeDirs + @('wwwroot')),
+        '/XF', $SafeFiles
     )
     if ($DryRun) { $p1Args += '/L' }
 
@@ -174,19 +174,21 @@ if ($backendChanged) {
 
     if ($p1Exit -ge 8) {
         Write-Err "백엔드 복사 실패 (exit $p1Exit)"
-        Add-Report "[4b] Backend copy: FAILED"
+        Add-Report "[4a] Backend copy: FAILED"
         throw "배포 중단"
     }
     Write-Ok "백엔드 복사 완료 ($([math]::Round($p1Elapsed,1))초)"
-    Add-Report "[4b] Backend copy: OK ($([math]::Round($p1Elapsed,1))s)"
+    Add-Report "[4a] Backend copy: OK ($([math]::Round($p1Elapsed,1))s)"
 
-    # ─── 5. 앱풀 시작 ─────────────────────────────────
+    # ─── 5. 앱풀 시작 안내 ────────────────────────────
     Write-Step "5/7 앱풀 시작"
-    if (-not $DryRun) {
-        Write-Warn "서버 IIS에서 앱풀을 시작하세요."
-        Write-Host "  앱풀 시작 후 Enter" -ForegroundColor Yellow
-        Read-Host
-    }
+    Write-Host ""
+    Write-Host "  ┌────────────────────────────────────┐" -ForegroundColor Yellow
+    Write-Host "  │  백엔드 배포 완료!                  │" -ForegroundColor Yellow
+    Write-Host "  │  서버 IIS에서 앱풀을 시작하세요.    │" -ForegroundColor Yellow
+    Write-Host "  └────────────────────────────────────┘" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  프론트엔드 배포는 무중단으로 계속 진행됩니다..." -ForegroundColor Gray
 } else {
     Write-Ok "백엔드 변경 없음 — 앱풀 중지 불필요"
     Add-Report "[4] Backend: NO CHANGES"
@@ -199,7 +201,7 @@ $p2Args = @(
     "$PublishDir\wwwroot", "$RemoteDrive\wwwroot",
     '/E', '/XO', '/R:2', '/W:3', '/NP',
     "/LOG+:$LogFile", '/TEE',
-    '/XD', 'uploads'
+    '/XD', $SafeDirs
 )
 if ($DryRun) { $p2Args += '/L' }
 

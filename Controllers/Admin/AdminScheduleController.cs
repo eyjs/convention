@@ -80,10 +80,10 @@ public class AdminScheduleController : ControllerBase
         return Ok(new { message, count });
     }
 
-    [HttpGet("schedule-templates/{templateId}/guests")]
-    public async Task<IActionResult> GetTemplateGuests(int templateId)
+    [HttpGet("conventions/{conventionId}/schedule-templates/{templateId}/guests")]
+    public async Task<IActionResult> GetTemplateGuests(int conventionId, int templateId)
     {
-        var guests = await _scheduleService.GetTemplateGuestsAsync(templateId);
+        var guests = await _scheduleService.GetTemplateGuestsAsync(conventionId, templateId);
         return Ok(guests);
     }
 

@@ -197,6 +197,7 @@ public class AttributeCategoryService : IAttributeCategoryService
         var keys = await _unitOfWork.UserConventions.Query
             .Where(uc => uc.ConventionId == conventionId)
             .SelectMany(uc => uc.User.GuestAttributes)
+            .Where(ga => ga.ConventionId == conventionId)
             .Select(ga => ga.AttributeKey)
             .Distinct()
             .OrderBy(k => k)
@@ -219,9 +220,8 @@ public class AttributeCategoryService : IAttributeCategoryService
             .ThenBy(c => c.Id)
             .ToListAsync();
 
-        // 사용자 속성 로드
         var userAttributes = await _unitOfWork.GuestAttributes.Query
-            .Where(ga => ga.UserId == userId)
+            .Where(ga => ga.UserId == userId && ga.ConventionId == conventionId)
             .ToListAsync();
 
         var mappedKeys = categories

@@ -163,7 +163,7 @@ public class AttributeUploadService : IAttributeUploadService
 
                         // 기존 속성 찾기
                         var existingAttribute = await _unitOfWork.GuestAttributes
-                            .GetAttributeByKeyAsync(userConvention.UserId, attributeKey);
+                            .GetAttributeByKeyAsync(userConvention.UserId, conventionId, attributeKey);
 
                         if (existingAttribute != null)
                         {
@@ -178,6 +178,7 @@ public class AttributeUploadService : IAttributeUploadService
                             var newAttribute = new GuestAttribute
                             {
                                 UserId = userConvention.UserId,
+                                ConventionId = conventionId,
                                 AttributeKey = attributeKey,
                                 AttributeValue = attributeValue
                             };

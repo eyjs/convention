@@ -103,8 +103,13 @@ cd C:\Users\USER\dev\startour\convention
 net use W: \\172.25.0.21\webapp /user:172.25.0.21\wnstn1342 "vmffpdl2@" /persistent:yes
 ```
 
+#### 배포 금지 규칙 (CRITICAL)
+- **서버 배포는 반드시 `deploy-backend.ps1`, `deploy-frontend.ps1`, `deploy.ps1` 스크립트로만 수행**
+- **robocopy 수동 실행 절대 금지** — `/MIR` 플래그로 서버 uploads 전체 삭제 사고 발생 이력 있음 (2026-04-24)
+- 스크립트 없이 직접 파일 복사/동기화 시도 금지
+
 #### 제외 항목 (robocopy)
-- `wwwroot/uploads/` — 사용자 업로드 파일
+- `uploads/` — 사용자 업로드 파일 (서버 루트의 uploads, wwwroot 안이 아님)
 - `logs/`, `App_Data/` — 서버 로그
 - `appsettings.Production.json` — 운영 설정
 - `web.config` — IIS 설정

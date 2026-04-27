@@ -141,6 +141,7 @@ public class ConventionService
             // 3. 참석자 속성 추가
             await _unitOfWork.GuestAttributes.UpsertAttributeAsync(
                 user.Id,
+                conventionId,
                 "registration_date",
                 DateTime.Now.ToString("yyyy-MM-dd"));
         });

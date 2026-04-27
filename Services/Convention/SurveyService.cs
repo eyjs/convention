@@ -24,11 +24,11 @@ namespace LocalRAG.Services.Convention
             _logger = logger;
         }
 
-        public async Task<IEnumerable<SurveyDto>> GetAllSurveysAsync(string? surveyType = null)
+        public async Task<IEnumerable<SurveyDto>> GetAllSurveysAsync(int conventionId, string? surveyType = null)
         {
-            var query = _unitOfWork.Surveys.Query.AsNoTracking();
+            var query = _unitOfWork.Surveys.Query.AsNoTracking()
+                .Where(s => s.ConventionId == conventionId);
 
-            // OPTION_TOUR 설문은 제외 (기능 삭제됨)
             query = query.Where(s => s.SurveyType != SurveyType.OPTION_TOUR);
 
             if (!string.IsNullOrEmpty(surveyType) && Enum.TryParse<SurveyType>(surveyType, true, out var typeFilter))

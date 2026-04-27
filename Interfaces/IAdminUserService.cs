@@ -5,7 +5,7 @@ namespace LocalRAG.Interfaces;
 public interface IAdminUserService
 {
     Task<object> GetGuestsAsync(int conventionId);
-    Task<object?> GetGuestDetailAsync(int guestId);
+    Task<object?> GetGuestDetailAsync(int guestId, int? conventionId = null);
     Task<(bool Success, object Result, int StatusCode)> CreateGuestAsync(int conventionId, UserDto dto);
     Task<(bool Success, object Result, int StatusCode)> UpdateGuestAsync(int id, UserDto dto);
     Task<(bool Found, int StatusCode)> DeleteGuestAsync(int id);

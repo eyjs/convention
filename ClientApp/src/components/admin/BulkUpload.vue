@@ -225,12 +225,42 @@
         </div>
       </div>
 
+      <label
+        class="flex items-center gap-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer"
+      >
+        <input
+          v-model="replaceAllSchedules"
+          type="checkbox"
+          class="rounded border-amber-300 text-amber-600"
+        />
+        <div>
+          <span class="text-sm font-medium text-amber-800"
+            >전체 교체 모드 (Delete + Insert)</span
+          >
+          <p class="text-xs text-amber-600 mt-0.5">
+            체크 시 기존 일정을 모두 삭제하고 엑셀 데이터로 교체합니다. 미체크
+            시 동일 코스명의 기존 일정을 업데이트합니다.
+          </p>
+        </div>
+      </label>
+
       <button
         :disabled="!fileSchedules || uploadingSchedules"
-        class="w-full px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
+        class="w-full px-6 py-3 text-white rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
+        :class="
+          replaceAllSchedules
+            ? 'bg-amber-600 hover:bg-amber-700'
+            : 'bg-purple-600 hover:bg-purple-700'
+        "
         @click="uploadSchedules"
       >
-        {{ uploadingSchedules ? '업로드 중...' : '일정 업로드' }}
+        {{
+          uploadingSchedules
+            ? '업로드 중...'
+            : replaceAllSchedules
+              ? '일정 전체 교체'
+              : '일정 업로드'
+        }}
       </button>
 
       <UploadResult
@@ -469,12 +499,98 @@
       </div>
     </div>
 
+    <!-- 탑승권 업로드 탭 -->
+    <div v-if="activeTab === 'boarding'" class="space-y-4">
+      <div class="mb-4 p-4 bg-blue-50 rounded-md">
+        <h3 class="font-medium text-blue-900 mb-2">
+          📋 탑승권 PDF 일괄 업로드
+        </h3>
+        <div class="text-sm text-blue-700 space-y-2">
+          <p>
+            <strong>ZIP 파일</strong> 안에 참석자별 PDF를 넣어 업로드합니다.
+          </p>
+          <p>
+            <strong>매칭 규칙:</strong> PDF 파일명 = 참석자 이름 (확장자 제외)
+          </p>
+          <p class="text-blue-500 text-xs">
+            예: 김도현.pdf, 강경요.pdf → 이름으로 자동 매칭
+          </p>
+          <p class="text-blue-500 text-xs">
+            ※ 동명이인은 매칭 실패로 보고됩니다. 매칭 성공한 건만 저장됩니다.
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >탑승권 PDF ZIP 파일</label
+        >
+        <input
+          type="file"
+          accept=".zip"
+          class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          @change="handleBoardingZip"
+        />
+      </div>
+
+      <button
+        :disabled="!boardingZipFile || boardingUploading"
+        class="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+        @click="uploadBoardingPass"
+      >
+        {{ boardingUploading ? '업로드 중...' : '탑승권 일괄 업로드' }}
+      </button>
+
+      <!-- 결과 -->
+      <div
+        v-if="boardingResult"
+        class="mt-4 p-4 rounded-md"
+        :class="boardingResult.success ? 'bg-green-50' : 'bg-red-50'"
+      >
+        <h4
+          class="font-semibold"
+          :class="boardingResult.success ? 'text-green-800' : 'text-red-800'"
+        >
+          {{ boardingResult.success ? '업로드 완료' : '업로드 실패' }}
+        </h4>
+        <p v-if="boardingResult.success" class="text-sm text-green-700 mt-1">
+          {{ boardingResult.matchedCount }}명 /
+          {{ boardingResult.totalFiles }}개 파일 매칭 완료
+        </p>
+        <div
+          v-if="boardingResult.failedList?.length > 0"
+          class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg"
+        >
+          <p class="text-sm font-semibold text-amber-800 mb-1">
+            매칭 실패 ({{ boardingResult.failedList.length }}건)
+          </p>
+          <p
+            v-for="(item, idx) in boardingResult.failedList"
+            :key="idx"
+            class="text-sm text-amber-700"
+          >
+            {{ item.fileName }}: {{ item.error }}
+          </p>
+        </div>
+        <div v-if="boardingResult.errors?.length > 0" class="mt-2 space-y-1">
+          <p
+            v-for="(err, idx) in boardingResult.errors"
+            :key="idx"
+            class="text-sm text-red-700"
+          >
+            {{ err }}
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- 일정 업로드 미리보기 모달 -->
     <ScheduleUploadPreviewModal
       v-if="showScheduleModal"
       :is-open="showScheduleModal"
       :convention-id="conventionId"
       :preview="schedulePreview"
+      :replace-all="replaceAllSchedules"
       @close="showScheduleModal = false"
       @saved="handleScheduleSaved"
     />
@@ -499,6 +615,7 @@ const tabs = [
   { id: 'schedules', name: '일정 업로드' },
   { id: 'option-tours', name: '옵션투어 업로드' },
   { id: 'passport', name: '여권 업로드' },
+  { id: 'boarding', name: '탑승권 업로드' },
 ]
 
 const activeTab = ref('guests')
@@ -532,9 +649,20 @@ const handleFileSchedules = (e) => {
 }
 
 const handleScheduleSaved = (saveResult) => {
+  const parts = []
+  if (saveResult.templatesDeleted > 0)
+    parts.push(`기존 ${saveResult.templatesDeleted}개 코스 삭제`)
+  if (saveResult.templatesCreated > 0)
+    parts.push(`${saveResult.templatesCreated}개 코스 신규 생성`)
+  if (saveResult.templatesUpdated > 0)
+    parts.push(`${saveResult.templatesUpdated}개 코스 업데이트`)
+  const itemTotal =
+    (saveResult.itemsCreated || 0) + (saveResult.itemsUpdated || 0)
+  if (itemTotal > 0) parts.push(`${itemTotal}개 일정 저장`)
+
   resultSchedules.value = {
     success: saveResult.success,
-    message: `${saveResult.itemsCreated}개 일정 저장 완료`,
+    message: parts.join(', ') || '저장 완료',
     data: {
       templates: saveResult.templatesCreated,
       actions: saveResult.createdActions || [],
@@ -567,6 +695,7 @@ const handleFileOptionTours = async (e) => {
 }
 
 const replaceAllGuests = ref(false)
+const replaceAllSchedules = ref(false)
 const downloadFilter = ref('')
 const downloadGroups = ref([])
 const downloadAffiliations = ref([])
@@ -1072,6 +1201,38 @@ const passportDuplicateErrors = computed(() =>
 const passportOtherErrors = computed(() =>
   (passportResult.value?.errors || []).filter((e) => !e.includes('동명이인')),
 )
+
+// === 탑승권 업로드 ===
+const boardingZipFile = ref(null)
+const boardingUploading = ref(false)
+const boardingResult = ref(null)
+
+function handleBoardingZip(e) {
+  boardingZipFile.value = e.target.files[0]
+}
+
+async function uploadBoardingPass() {
+  if (!boardingZipFile.value) return
+  boardingUploading.value = true
+  boardingResult.value = null
+  try {
+    const formData = new FormData()
+    formData.append('zipFile', boardingZipFile.value)
+    const res = await apiClient.post(
+      `/upload/conventions/${props.conventionId}/boarding-pass/bulk`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+    boardingResult.value = res.data
+  } catch (error) {
+    boardingResult.value = error.response?.data || {
+      success: false,
+      errors: [error.message || '업로드 실패'],
+    }
+  } finally {
+    boardingUploading.value = false
+  }
+}
 
 const downloadCurrentData = async (type) => {
   const urlMap = {

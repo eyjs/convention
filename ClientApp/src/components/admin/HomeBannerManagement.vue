@@ -365,7 +365,7 @@
               type="button"
               role="switch"
               :aria-checked="form.isActive"
-              class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
+              class="relative inline-flex items-center h-6 w-11 !min-h-0 !min-w-0 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
               :class="form.isActive ? 'bg-blue-600' : 'bg-gray-200'"
               @click="form.isActive = !form.isActive"
             >

@@ -6,7 +6,7 @@ namespace LocalRAG.Interfaces
 {
     public interface ISurveyService
     {
-        Task<IEnumerable<SurveyDto>> GetAllSurveysAsync(string? surveyType = null);
+        Task<IEnumerable<SurveyDto>> GetAllSurveysAsync(int conventionId, string? surveyType = null);
         Task<IEnumerable<SurveyDto>> GetSurveysForUserAsync(int conventionId, int userId);
         Task<SurveyDto> GetSurveyAsync(int id);
         Task<SurveyDto> CreateSurveyAsync(SurveyCreateDto createDto);

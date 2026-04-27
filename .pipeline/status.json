@@ -1,0 +1,21 @@
+{
+  "pipeline_id": "schedule-upsert-guestattr-conventionid-20260427",
+  "started_at": "2026-04-27T00:00:00Z",
+  "status": "completed",
+  "current_phase": "done",
+  "requirement": ".pipeline/requirement.md",
+  "phases": {
+    "planning": { "status": "completed" },
+    "implementation": {
+      "status": "completed",
+      "tasks": [
+        "guestattribute-conventionid-entity-migration",
+        "guestattribute-repository-conventionid-filter",
+        "service-layer-conventionid-propagation",
+        "schedule-upload-upsert-backend",
+        "schedule-upload-upsert-frontend"
+      ]
+    },
+    "integration": { "status": "completed", "build": "pass", "lint": "pass", "frontend_build": "pass" }
+  }
+}

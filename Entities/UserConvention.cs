@@ -48,6 +48,11 @@ namespace LocalRAG.Entities
         public int? VisaDocumentAttachmentId { get; set; }
 
         /// <summary>
+        /// 탑승권 PDF 파일 경로
+        /// </summary>
+        public string? BoardingPassUrl { get; set; }
+
+        /// <summary>
         /// 이 매핑이 생성된 날짜
         /// </summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

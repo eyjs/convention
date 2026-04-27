@@ -46,4 +46,9 @@ public interface IConventionCrudService
     /// 삭제된 행사를 복원합니다.
     /// </summary>
     Task<bool> RestoreConventionAsync(int id);
+
+    /// <summary>
+    /// 사용자의 탑승권 URL을 조회합니다.
+    /// </summary>
+    Task<string?> GetBoardingPassUrlAsync(int conventionId, int userId);
 }

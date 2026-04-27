@@ -27,11 +27,11 @@ namespace LocalRAG.Controllers.Convention
         }
     
         [HttpGet("{id}")]
-        public async Task<ActionResult<NoticeCategoryDto>> GetCategory(int id)
+        public async Task<ActionResult<NoticeCategoryDto>> GetCategory(int conventionId, int id)
         {
             try
             {
-                var category = await _categoryService.GetCategoryAsync(id);
+                var category = await _categoryService.GetCategoryAsync(conventionId, id);
                 return Ok(category);
             }
             catch (KeyNotFoundException)

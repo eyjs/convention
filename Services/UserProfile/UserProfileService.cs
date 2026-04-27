@@ -86,17 +86,19 @@ public class UserProfileService : IUserProfileService
                 u.CorpPart,
                 Phone = u.Phone,
                 ProfileImageUrl = u.ProfileImageUrl,
-                Attributes = u.GuestAttributes.ToDictionary(
-                    ga => ga.AttributeKey,
-                    ga => ga.AttributeValue
-                )
+                Attributes = u.GuestAttributes
+                    .Where(ga => ga.ConventionId == conventionId)
+                    .ToDictionary(
+                        ga => ga.AttributeKey,
+                        ga => ga.AttributeValue
+                    )
             })
             .ToListAsync();
 
         return participants;
     }
 
-    public async Task<object?> GetParticipantDetailAsync(int id)
+    public async Task<object?> GetParticipantDetailAsync(int id, int? conventionId = null)
     {
         var participant = await _unitOfWork.Users.Query
             .Include(u => u.GuestAttributes)
@@ -115,10 +117,12 @@ public class UserProfileService : IUserProfileService
             participant.CorpPart,
             Phone = participant.Phone,
             participant.Email,
-            Attributes = participant.GuestAttributes.ToDictionary(
-                ga => ga.AttributeKey,
-                ga => ga.AttributeValue
-            ),
+            Attributes = participant.GuestAttributes
+                .Where(ga => !conventionId.HasValue || ga.ConventionId == conventionId.Value)
+                .ToDictionary(
+                    ga => ga.AttributeKey,
+                    ga => ga.AttributeValue
+                ),
             ScheduleTemplates = participant.GuestScheduleTemplates
                 .Where(gst => gst.ScheduleTemplate != null)
                 .Select(gst => new
@@ -158,7 +162,7 @@ public class UserProfileService : IUserProfileService
                 var validUserIds = userIds.Except(invalidUserIds).ToList();
 
                 var existingAttributes = await _unitOfWork.GuestAttributes.Query
-                    .Where(ga => validUserIds.Contains(ga.UserId))
+                    .Where(ga => validUserIds.Contains(ga.UserId) && ga.ConventionId == dto.ConventionId)
                     .ToListAsync();
 
                 var newAttributeKeys = dto.UserMappings
@@ -190,6 +194,7 @@ public class UserProfileService : IUserProfileService
                         newAttributes.Add(new GuestAttribute
                         {
                             UserId = mapping.UserId,
+                            ConventionId = dto.ConventionId,
                             AttributeKey = attr.Key,
                             AttributeValue = attr.Value
                         });
@@ -239,10 +244,12 @@ public class UserProfileService : IUserProfileService
             CorpPart = u.CorpPart,
             Phone = u.Phone,
             Email = u.Email,
-            CurrentAttributes = u.GuestAttributes.ToDictionary(
-                ga => ga.AttributeKey,
-                ga => ga.AttributeValue
-            )
+            CurrentAttributes = u.GuestAttributes
+                .Where(ga => ga.ConventionId == conventionId)
+                .ToDictionary(
+                    ga => ga.AttributeKey,
+                    ga => ga.AttributeValue
+                )
         }).ToList();
     }
 
@@ -595,8 +602,8 @@ public class UserProfileService : IUserProfileService
             })
             .ToList();
 
-        // 게스트 속성 — 사용자 배정 정보 표시용 (더보기 화면 + 타임라인 뱃지)
         var attributes = user.GuestAttributes
+            .Where(ga => ga.ConventionId == conventionId)
             .Select(ga => new
             {
                 key = ga.AttributeKey,

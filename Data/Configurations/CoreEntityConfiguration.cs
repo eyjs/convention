@@ -95,14 +95,19 @@ public class GuestAttributeConfiguration : IEntityTypeConfiguration<GuestAttribu
         entity.HasKey(e => e.Id);
         entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-        entity.HasIndex(e => new { e.UserId, e.AttributeKey })
+        entity.HasIndex(e => new { e.ConventionId, e.UserId, e.AttributeKey })
               .IsUnique()
-              .HasDatabaseName("UQ_GuestAttributes_UserId_AttributeKey");
+              .HasDatabaseName("UQ_GuestAttributes_ConventionId_UserId_AttributeKey");
 
         entity.HasOne(ga => ga.User)
               .WithMany(u => u.GuestAttributes)
               .HasForeignKey(ga => ga.UserId)
               .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasOne(ga => ga.Convention)
+              .WithMany()
+              .HasForeignKey(ga => ga.ConventionId)
+              .OnDelete(DeleteBehavior.NoAction);
     }
 }
 

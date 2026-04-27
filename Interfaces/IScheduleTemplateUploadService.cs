@@ -24,10 +24,10 @@ public interface IScheduleTemplateUploadService
     /// <summary>
     /// 미리보기 확인 후 단일 시트 최종 저장 (기존 호환)
     /// </summary>
-    Task<ScheduleTemplateUploadResult> ConfirmScheduleTemplatesAsync(int conventionId, ScheduleTemplateConfirmRequest request);
+    Task<ScheduleTemplateUploadResult> ConfirmScheduleTemplatesAsync(int conventionId, ScheduleTemplateConfirmRequest request, bool replaceAll = false);
 
     /// <summary>
     /// 멀티시트 미리보기 확인 후 전체 시트 일괄 저장
     /// </summary>
-    Task<ScheduleTemplateUploadResult> ConfirmMultiSheetAsync(int conventionId, MultiSheetConfirmRequest request);
+    Task<ScheduleTemplateUploadResult> ConfirmMultiSheetAsync(int conventionId, MultiSheetConfirmRequest request, bool replaceAll = false);
 }

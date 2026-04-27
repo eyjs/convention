@@ -286,6 +286,7 @@ const props = defineProps({
   isOpen: { type: Boolean, required: true },
   conventionId: { type: Number, required: true },
   preview: { type: Object, default: null },
+  replaceAll: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['close', 'saved'])
@@ -362,12 +363,15 @@ async function confirmSave() {
         description: '일정 엑셀 업로드',
         items: s.items,
       }))
+      const params = props.replaceAll ? { replaceAll: true } : {}
       res = await apiClient.post(
         `/upload/conventions/${props.conventionId}/schedule-templates/confirm-multi`,
         { sheets },
+        { params },
       )
     } else {
       // 단일 시트 저장 (기존 호환)
+      const params = props.replaceAll ? { replaceAll: true } : {}
       res = await apiClient.post(
         `/upload/conventions/${props.conventionId}/schedule-templates/confirm`,
         {
@@ -375,6 +379,7 @@ async function confirmSave() {
           description: '일정 엑셀 업로드',
           items: props.preview.items,
         },
+        { params },
       )
     }
     saveResult.value = res.data

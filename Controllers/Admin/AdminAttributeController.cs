@@ -29,6 +29,7 @@ public class AdminAttributeController : ControllerBase
         var keys = await _unitOfWork.UserConventions.Query
             .Where(uc => uc.ConventionId == conventionId)
             .SelectMany(uc => uc.User.GuestAttributes)
+            .Where(ga => ga.ConventionId == conventionId)
             .Select(ga => ga.AttributeKey)
             .Distinct()
             .OrderBy(k => k)
@@ -38,12 +39,15 @@ public class AdminAttributeController : ControllerBase
     }
 
     [HttpPut("guests/{guestId}/attributes/{attributeKey}")]
-    public async Task<IActionResult> UpdateGuestAttribute(int guestId, string attributeKey, [FromBody] UpdateAttributeRequest request)
+    public async Task<IActionResult> UpdateGuestAttribute(int guestId, string attributeKey, [FromBody] UpdateAttributeRequest request, [FromQuery] int? conventionId = null)
     {
         var decodedKey = Uri.UnescapeDataString(attributeKey);
 
-        var attribute = await _unitOfWork.GuestAttributes
-            .GetAsync(ga => ga.UserId == guestId && ga.AttributeKey == decodedKey);
+        var attribute = conventionId.HasValue
+            ? await _unitOfWork.GuestAttributes
+                .GetAsync(ga => ga.UserId == guestId && ga.ConventionId == conventionId && ga.AttributeKey == decodedKey)
+            : await _unitOfWork.GuestAttributes
+                .GetAsync(ga => ga.UserId == guestId && ga.AttributeKey == decodedKey);
 
         if (attribute == null)
             return NotFound(new { message = $"속성 '{decodedKey}'을 찾을 수 없습니다." });
@@ -61,12 +65,15 @@ public class AdminAttributeController : ControllerBase
     }
 
     [HttpDelete("guests/{guestId}/attributes/{attributeKey}")]
-    public async Task<IActionResult> DeleteGuestAttribute(int guestId, string attributeKey)
+    public async Task<IActionResult> DeleteGuestAttribute(int guestId, string attributeKey, [FromQuery] int? conventionId = null)
     {
         var decodedKey = Uri.UnescapeDataString(attributeKey);
 
-        var attribute = await _unitOfWork.GuestAttributes
-            .GetAsync(ga => ga.UserId == guestId && ga.AttributeKey == decodedKey);
+        var attribute = conventionId.HasValue
+            ? await _unitOfWork.GuestAttributes
+                .GetAsync(ga => ga.UserId == guestId && ga.ConventionId == conventionId && ga.AttributeKey == decodedKey)
+            : await _unitOfWork.GuestAttributes
+                .GetAsync(ga => ga.UserId == guestId && ga.AttributeKey == decodedKey);
 
         if (attribute == null)
             return NotFound(new { message = $"속성 '{decodedKey}'을 찾을 수 없습니다." });
@@ -93,7 +100,9 @@ public class AdminAttributeController : ControllerBase
             return NotFound(new { message = "참석자가 없습니다." });
 
         var allAttributeKeys = guests
-            .SelectMany(uc => uc.User.GuestAttributes.Select(ga => ga.AttributeKey))
+            .SelectMany(uc => uc.User.GuestAttributes
+                .Where(ga => ga.ConventionId == conventionId)
+                .Select(ga => ga.AttributeKey))
             .Distinct()
             .OrderBy(k => k)
             .ToList();
@@ -102,7 +111,7 @@ public class AdminAttributeController : ControllerBase
         var sheet = package.Workbook.Worksheets.Add("참석자속성");
 
         WriteExcelHeader(sheet, allAttributeKeys);
-        WriteExcelData(sheet, guests, allAttributeKeys);
+        WriteExcelData(sheet, guests, allAttributeKeys, conventionId);
 
         sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
 
@@ -153,7 +162,8 @@ public class AdminAttributeController : ControllerBase
     private static void WriteExcelData(
         ExcelWorksheet sheet,
         List<UserConvention> guests,
-        List<string> attributeKeys)
+        List<string> attributeKeys,
+        int conventionId)
     {
         int row = 2;
         foreach (var uc in guests)
@@ -165,6 +175,7 @@ public class AdminAttributeController : ControllerBase
             for (int i = 0; i < attributeKeys.Count; i++)
             {
                 var attribute = uc.User.GuestAttributes
+                    .Where(ga => ga.ConventionId == conventionId)
                     .FirstOrDefault(ga => ga.AttributeKey == attributeKeys[i]);
                 if (attribute != null)
                     sheet.Cells[row, 4 + i].Value = attribute.AttributeValue;

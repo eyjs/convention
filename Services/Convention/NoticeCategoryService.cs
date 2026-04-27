@@ -36,10 +36,10 @@ namespace LocalRAG.Services.Convention
                 .ToListAsync();
         }
 
-        public async Task<NoticeCategoryDto> GetCategoryAsync(int id)
+        public async Task<NoticeCategoryDto> GetCategoryAsync(int conventionId, int id)
         {
             var category = await _unitOfWork.NoticeCategories.Query
-                .Where(c => c.Id == id && !c.IsDeleted)
+                .Where(c => c.Id == id && c.ConventionId == conventionId && !c.IsDeleted)
                 .Select(c => new NoticeCategoryDto
                 {
                     Id = c.Id,

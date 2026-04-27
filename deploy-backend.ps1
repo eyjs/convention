@@ -6,9 +6,9 @@
 .DESCRIPTION
     1) dotnet publish
     2) DB 마이그레이션 (운영 DB에 EF Core 적용)
-    3) 앱풀 중지 (수동)
+    3) 앱풀 중지 확인 (Y/N)
     4) robocopy 백엔드 dll (wwwroot 제외)
-    5) 앱풀 시작 (수동)
+    5) 앱풀 시작 안내
     6) 헬스체크
 
 .EXAMPLE
@@ -37,6 +37,10 @@ $HealthUrl    = 'https://event.ifa.co.kr/health'
 $LogFile      = 'C:\deploy\deploy.log'
 $HistoryDir   = 'C:\deploy\history'
 $ProdConnStr  = 'Server=172.25.1.21;Database=STARTOUR;User Id=startour;Password=ifaelql!@#$;TrustServerCertificate=true;Encrypt=false;'
+
+# 서버에서 절대 건드리면 안 되는 폴더/파일 (CRITICAL)
+$SafeDirs     = @('uploads', 'logs', 'App_Data', 'wwwroot')
+$SafeFiles    = @('appsettings.Production.json', 'web.config')
 
 function Write-Step($msg) { Write-Host ""; Write-Host "▶ $msg" -ForegroundColor Cyan }
 function Write-Ok($msg)   { Write-Host "  OK $msg" -ForegroundColor Green }
@@ -80,20 +84,13 @@ if (-not $SkipMigration) {
         Write-Warn "DryRun — 마이그레이션 건너뜀"
         Add-Report "[2] Migration: DryRun SKIPPED"
     } else {
-        Write-Host "  마이그레이션을 적용하시겠습니까? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $confirm = Read-Host
-        if ($confirm -eq 'Y' -or $confirm -eq 'y') {
-            Push-Location $ProjectRoot
-            try {
-                & dotnet ef database update --connection $ProdConnStr
-                if ($LASTEXITCODE -ne 0) { throw "DB 마이그레이션 실패 (exit $LASTEXITCODE)" }
-                Write-Ok "마이그레이션 완료"
-                Add-Report "[2] Migration: OK"
-            } finally { Pop-Location }
-        } else {
-            Write-Warn "마이그레이션 건너뜀 (사용자 취소)"
-            Add-Report "[2] Migration: USER SKIPPED"
-        }
+        Push-Location $ProjectRoot
+        try {
+            & dotnet ef database update --connection $ProdConnStr
+            if ($LASTEXITCODE -ne 0) { throw "DB 마이그레이션 실패 (exit $LASTEXITCODE)" }
+            Write-Ok "마이그레이션 완료"
+            Add-Report "[2] Migration: OK"
+        } finally { Pop-Location }
     }
 } else {
     Write-Step "2/6 마이그레이션 건너뜀 (-SkipMigration)"
@@ -110,23 +107,30 @@ if (-not (Get-PSDrive -Name $driveLetter -ErrorAction SilentlyContinue)) {
 } else { Write-Ok "$RemoteDrive 이미 매핑됨" }
 if (-not (Test-Path "$RemoteDrive\")) { throw "$RemoteDrive 접근 불가" }
 
-# ─── 4. 앱풀 중지 (수동) ──────────────────────────────────
-Write-Step "4/6 앱풀 중지"
+# ─── 4. 앱풀 확인 (Y/N) ──────────────────────────────────
+Write-Step "4/6 앱풀 확인"
 if (-not $DryRun) {
-    Write-Warn "서버 IIS에서 앱풀을 중지하세요."
-    Write-Host "  앱풀 중지 후 Enter, 취소 Ctrl+C" -ForegroundColor Yellow
-    Read-Host
+    Write-Host ""
+    Write-Host "  백엔드 배포를 시작합니다." -ForegroundColor Yellow
+    Write-Host "  앱풀 내렸나요? (Y/N): " -ForegroundColor Yellow -NoNewline
+    $confirm = Read-Host
+    if ($confirm -ne 'Y' -and $confirm -ne 'y') {
+        Write-Err "앱풀을 먼저 중지하고 다시 실행하세요."
+        Add-Report "[4] AppPool: NOT READY — 배포 취소"
+        throw "앱풀 미중지 — 배포 취소"
+    }
+    Write-Ok "앱풀 중지 확인됨"
 }
 
-# ─── 5. 백엔드 복사 (wwwroot 제외) ────────────────────────
+# ─── 5. 백엔드 복사 (wwwroot/uploads/logs 제외) ──────────
 Write-Step "5/6 robocopy 백엔드 dll → 서버"
 $copyStart = Get-Date
 $copyArgs = @(
     $PublishDir, "$RemoteDrive\",
     '/E', '/XO', '/R:1', '/W:1', '/NP',
     "/LOG:$LogFile", '/TEE',
-    '/XD', 'wwwroot', 'logs', 'App_Data',
-    '/XF', 'appsettings.Production.json', 'web.config'
+    '/XD', $SafeDirs,
+    '/XF', $SafeFiles
 )
 if ($DryRun) { $copyArgs += '/L' }
 
@@ -142,13 +146,14 @@ if ($copyExit -ge 8) {
 Write-Ok "백엔드 복사 완료 ($([math]::Round($copyElapsed,1))초)"
 Add-Report "[5] Robocopy: OK (exit=$copyExit, $([math]::Round($copyElapsed,1))s)"
 
-# ─── 5b. 앱풀 시작 (수동) ─────────────────────────────────
+# ─── 5b. 앱풀 시작 안내 ──────────────────────────────────
 Write-Step "5b/6 앱풀 시작"
-if (-not $DryRun) {
-    Write-Warn "서버 IIS에서 앱풀을 시작하세요."
-    Write-Host "  앱풀 시작 후 Enter" -ForegroundColor Yellow
-    Read-Host
-}
+Write-Host ""
+Write-Host "  ┌────────────────────────────────────┐" -ForegroundColor Green
+Write-Host "  │  백엔드 배포 완료!                  │" -ForegroundColor Green
+Write-Host "  │  서버 IIS에서 앱풀을 시작하세요.    │" -ForegroundColor Green
+Write-Host "  └────────────────────────────────────┘" -ForegroundColor Green
+Write-Host ""
 
 # ─── 6. 헬스체크 ──────────────────────────────────────────
 Write-Step "6/6 헬스체크"
@@ -167,7 +172,7 @@ if ($DryRun) {
     }
     Write-Host ""
     if ($healthy) { Write-Ok "헬스체크 통과" }
-    else { Write-Warn "헬스체크 실패 — 서버 로그 확인" }
+    else { Write-Warn "헬스체크 실패 — 앱풀 시작 후 다시 확인" }
 }
 
 $elapsed = (Get-Date) - $startTime

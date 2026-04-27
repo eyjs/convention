@@ -119,6 +119,12 @@ const routes = [
         meta: { title: '추가 기능', showNav: true },
       },
       {
+        path: 'boarding-pass',
+        name: 'BoardingPass',
+        component: () => import('@/views/BoardingPassView.vue'),
+        meta: { title: '내 탑승권', showNav: false },
+      },
+      {
         path: 'participants',
         name: 'Participants',
         component: () => import('@/views/Participants.vue'),

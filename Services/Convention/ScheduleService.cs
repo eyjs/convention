@@ -193,10 +193,11 @@ public class ScheduleService : IScheduleService
     // Admin 게스트-일정 배정
     // ============================================================
 
-    public async Task<object> GetTemplateGuestsAsync(int templateId)
+    public async Task<object> GetTemplateGuestsAsync(int conventionId, int templateId)
     {
         var guests = await _unitOfWork.GuestScheduleTemplates.Query
-            .Where(gst => gst.ScheduleTemplateId == templateId)
+            .Where(gst => gst.ScheduleTemplateId == templateId
+                && gst.User!.UserConventions.Any(uc => uc.ConventionId == conventionId))
             .Include(gst => gst.User)
             .Select(gst => new
             {

@@ -17,8 +17,8 @@ public class TemplateVariableService : ITemplateVariableService
     {
         if (string.IsNullOrEmpty(templateContent)) return string.Empty;
 
-        // #{key} 패턴을 찾아서 치환
-        return Regex.Replace(templateContent, @"\#\{([a-zA-Z0-9_]+)\}", match =>
+        // #{key} 패턴을 찾아서 치환 (영문, 숫자, 한글, 언더스코어 허용)
+        return Regex.Replace(templateContent, @"\#\{([a-zA-Z0-9_\uAC00-\uD7A3]+)\}", match =>
         {
             string key = match.Groups[1].Value;
             return GetValueByKey(key, context);

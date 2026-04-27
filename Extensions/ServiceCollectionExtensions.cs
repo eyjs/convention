@@ -55,6 +55,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITemplateVariableService, TemplateVariableService>();
         services.AddScoped<SmsTemplateContextFactory>();
         services.AddScoped<IKakaoAlimtalkService, KakaoAlimtalkService>();
+        services.AddScoped<ISmsGroupService, SmsGroupService>();
 
         return services;
     }
@@ -71,6 +72,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGroupScheduleMappingService, GroupScheduleMappingService>();
         services.AddScoped<IOptionTourUploadService, OptionTourUploadService>();
         services.AddScoped<PassportUploadService>();
+        services.AddScoped<BoardingPassUploadService>();
 
         return services;
     }

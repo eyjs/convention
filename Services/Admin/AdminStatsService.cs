@@ -56,7 +56,7 @@ public class AdminStatsService : IAdminStatsService
         var attributeStats = await _unitOfWork.Users.Query
             .Where(u => u.UserConventions.Any(uc => uc.ConventionId == conventionId))
             .SelectMany(u => u.GuestAttributes)
-            .Where(ga => !reservedKeys.Contains(ga.AttributeKey))
+            .Where(ga => ga.ConventionId == conventionId && !reservedKeys.Contains(ga.AttributeKey))
             .GroupBy(ga => ga.AttributeKey)
             .Select(group => new
             {

@@ -28,6 +28,7 @@ public class UploadController : ControllerBase
     private readonly IGroupScheduleMappingService _groupScheduleMappingService;
     private readonly IOptionTourUploadService _optionTourUploadService;
     private readonly PassportUploadService _passportUploadService;
+    private readonly BoardingPassUploadService _boardingPassUploadService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UploadController> _logger;
 
@@ -38,6 +39,7 @@ public class UploadController : ControllerBase
         IGroupScheduleMappingService groupScheduleMappingService,
         IOptionTourUploadService optionTourUploadService,
         PassportUploadService passportUploadService,
+        BoardingPassUploadService boardingPassUploadService,
         IUnitOfWork unitOfWork,
         ILogger<UploadController> logger)
     {
@@ -47,6 +49,7 @@ public class UploadController : ControllerBase
         _groupScheduleMappingService = groupScheduleMappingService;
         _optionTourUploadService = optionTourUploadService;
         _passportUploadService = passportUploadService;
+        _boardingPassUploadService = boardingPassUploadService;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -164,11 +167,11 @@ public class UploadController : ControllerBase
     /// </summary>
     [HttpPost("conventions/{conventionId}/schedule-templates/confirm")]
     [ProducesResponseType(typeof(ScheduleTemplateUploadResult), 200)]
-    public async Task<IActionResult> ConfirmScheduleTemplates(int conventionId, [FromBody] DTOs.UploadModels.ScheduleTemplateConfirmRequest request)
+    public async Task<IActionResult> ConfirmScheduleTemplates(int conventionId, [FromBody] DTOs.UploadModels.ScheduleTemplateConfirmRequest request, [FromQuery] bool replaceAll = false)
     {
         try
         {
-            var result = await _scheduleTemplateUploadService.ConfirmScheduleTemplatesAsync(conventionId, request);
+            var result = await _scheduleTemplateUploadService.ConfirmScheduleTemplatesAsync(conventionId, request, replaceAll);
             if (!result.Success) return BadRequest(result);
             return Ok(result);
         }
@@ -184,11 +187,11 @@ public class UploadController : ControllerBase
     /// </summary>
     [HttpPost("conventions/{conventionId}/schedule-templates/confirm-multi")]
     [ProducesResponseType(typeof(ScheduleTemplateUploadResult), 200)]
-    public async Task<IActionResult> ConfirmMultiSheetSchedules(int conventionId, [FromBody] DTOs.UploadModels.MultiSheetConfirmRequest request)
+    public async Task<IActionResult> ConfirmMultiSheetSchedules(int conventionId, [FromBody] DTOs.UploadModels.MultiSheetConfirmRequest request, [FromQuery] bool replaceAll = false)
     {
         try
         {
-            var result = await _scheduleTemplateUploadService.ConfirmMultiSheetAsync(conventionId, request);
+            var result = await _scheduleTemplateUploadService.ConfirmMultiSheetAsync(conventionId, request, replaceAll);
             if (!result.Success) return BadRequest(result);
             return Ok(result);
         }
@@ -362,9 +365,10 @@ public class UploadController : ControllerBase
             .OrderBy(uc => uc.GroupName).ThenBy(uc => uc.User.Name)
             .ToListAsync();
 
-        // 이 행사 참석자들의 모든 속성 키 수집 (정렬)
         var allAttributeKeys = guests
-            .SelectMany(uc => uc.User.GuestAttributes.Select(a => a.AttributeKey))
+            .SelectMany(uc => uc.User.GuestAttributes
+                .Where(a => a.ConventionId == conventionId)
+                .Select(a => a.AttributeKey))
             .Distinct()
             .OrderBy(k => k)
             .ToList();
@@ -400,8 +404,9 @@ public class UploadController : ControllerBase
             sheet1.Cells[row, 6].Value = uc.GroupName;
             sheet1.Cells[row, 7].Value = u.Remarks;
 
-            // 가변 속성 값
-            var attrDict = u.GuestAttributes.ToDictionary(a => a.AttributeKey, a => a.AttributeValue);
+            var attrDict = u.GuestAttributes
+                .Where(a => a.ConventionId == conventionId)
+                .ToDictionary(a => a.AttributeKey, a => a.AttributeValue);
             for (int i = 0; i < allAttributeKeys.Count; i++)
             {
                 attrDict.TryGetValue(allAttributeKeys[i], out var attrVal);
@@ -606,6 +611,29 @@ public class UploadController : ControllerBase
         var result = await _passportUploadService.ValidateAndUploadAsync(conventionId, excelFile, zipFile);
 
         if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    // === 탑승권 PDF 일괄 업로드 ===
+
+    /// <summary>
+    /// 탑승권 PDF ZIP 일괄 업로드
+    /// ZIP 내 PDF 파일명 = 참석자 이름으로 매칭
+    /// </summary>
+    [HttpPost("conventions/{conventionId}/boarding-pass/bulk")]
+    [RequestSizeLimit(524_288_000)] // 500MB
+    public async Task<IActionResult> BulkUploadBoardingPass(
+        int conventionId,
+        [FromForm] IFormFile zipFile)
+    {
+        if (zipFile == null)
+            return BadRequest(new { success = false, errors = new[] { "ZIP 파일은 필수입니다." } });
+
+        var result = await _boardingPassUploadService.UploadAsync(conventionId, zipFile);
+
+        if (!result.Success && result.Errors.Count > 0 && result.MatchedCount == 0)
             return BadRequest(result);
 
         return Ok(result);

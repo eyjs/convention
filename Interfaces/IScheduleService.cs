@@ -24,7 +24,7 @@ public interface IScheduleService
 
     // === Admin 게스트-일정 배정 ===
 
-    Task<object> GetTemplateGuestsAsync(int templateId);
+    Task<object> GetTemplateGuestsAsync(int conventionId, int templateId);
     Task<(bool Success, string? Error)> AssignSchedulesToGuestAsync(int conventionId, int guestId, AssignSchedulesDto dto);
     Task<(bool Success, string? Error)> AssignOptionToursToGuestAsync(int conventionId, int guestId, List<int> optionTourIds);
     Task<bool> RemoveGuestFromScheduleAsync(int userId, int templateId);

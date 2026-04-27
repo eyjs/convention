@@ -828,7 +828,7 @@ const viewAssignedGuests = async (template) => {
   selectedTemplate.value = template
   try {
     const response = await apiClient.get(
-      `/admin/schedule-templates/${template.id}/guests`,
+      `/admin/conventions/${props.conventionId}/schedule-templates/${template.id}/guests`,
     )
     assignedGuests.value = response.data
     showGuestsModal.value = true

@@ -253,79 +253,29 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
     // Confirm — 단일 시트 (기존 호환)
     // ============================================================
 
-    public async Task<ScheduleTemplateUploadResult> ConfirmScheduleTemplatesAsync(int conventionId, ScheduleTemplateConfirmRequest request)
+    public async Task<ScheduleTemplateUploadResult> ConfirmScheduleTemplatesAsync(int conventionId, ScheduleTemplateConfirmRequest request, bool replaceAll = false)
     {
-        var result = new ScheduleTemplateUploadResult();
-
-        try
+        // 단일 시트를 멀티시트 형태로 래핑하여 공통 로직 재사용
+        var multiRequest = new MultiSheetConfirmRequest
         {
-            var convention = await _unitOfWork.Conventions.GetByIdAsync(conventionId);
-            if (convention == null)
+            Sheets = new List<SheetConfirmItem>
             {
-                result.Errors.Add($"Convention {conventionId}를 찾을 수 없습니다.");
-                return result;
+                new SheetConfirmItem
+                {
+                    CourseName = request.CourseName,
+                    Description = request.Description,
+                    Items = request.Items
+                }
             }
-
-            if (string.IsNullOrWhiteSpace(request.CourseName))
-            {
-                result.Errors.Add("코스명을 입력해주세요.");
-                return result;
-            }
-
-            var itemsToSave = request.Items.Where(i => i.Status != "skipped").ToList();
-            if (itemsToSave.Count == 0)
-            {
-                result.Errors.Add("저장할 일정이 없습니다.");
-                return result;
-            }
-
-            var maxOrderNum = await _unitOfWork.ScheduleTemplates.Query
-                .Where(st => st.ConventionId == conventionId)
-                .MaxAsync(st => (int?)st.OrderNum) ?? 0;
-
-            var scheduleTemplate = new ScheduleTemplate
-            {
-                ConventionId = conventionId,
-                CourseName = request.CourseName.Trim(),
-                Description = request.Description ?? "Excel 일정 업로드",
-                OrderNum = maxOrderNum + 1,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _unitOfWork.ScheduleTemplates.AddAsync(scheduleTemplate);
-
-            var scheduleItems = BuildScheduleItems(scheduleTemplate, itemsToSave, convention);
-
-            if (scheduleItems.Count == 0)
-            {
-                result.Errors.Add("저장 가능한 일정이 없습니다. (행사 기간 외 또는 데이터 오류)");
-                return result;
-            }
-
-            scheduleTemplate.ScheduleItems = scheduleItems;
-            await _unitOfWork.SaveChangesAsync();
-
-            result.Success = true;
-            result.TemplatesCreated = 1;
-            result.ItemsCreated = scheduleItems.Count;
-            AppendCreatedActions(result, scheduleItems);
-
-            _logger.LogInformation("Schedule confirmed: course={Course}, items={Count}", request.CourseName, scheduleItems.Count);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Schedule confirm failed");
-            result.Errors.Add($"저장 실패: {ex.Message}");
-        }
-
-        return result;
+        };
+        return await ConfirmMultiSheetAsync(conventionId, multiRequest, replaceAll);
     }
 
     // ============================================================
     // Confirm — 멀티시트 일괄 저장
     // ============================================================
 
-    public async Task<ScheduleTemplateUploadResult> ConfirmMultiSheetAsync(int conventionId, MultiSheetConfirmRequest request)
+    public async Task<ScheduleTemplateUploadResult> ConfirmMultiSheetAsync(int conventionId, MultiSheetConfirmRequest request, bool replaceAll = false)
     {
         var result = new ScheduleTemplateUploadResult();
 
@@ -344,6 +294,35 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                 return result;
             }
 
+            // replaceAll: 해당 행사 일정 전체 삭제 후 새로 삽입
+            if (replaceAll)
+            {
+                var existingTemplates = await _unitOfWork.ScheduleTemplates.Query
+                    .Where(st => st.ConventionId == conventionId)
+                    .Include(st => st.ScheduleItems)
+                    .ToListAsync();
+
+                var templateIds = existingTemplates.Select(st => st.Id).ToList();
+                if (templateIds.Count > 0)
+                {
+                    var guestSchedules = await _unitOfWork.GuestScheduleTemplates.FindAsync(
+                        gst => templateIds.Contains(gst.ScheduleTemplateId));
+                    _unitOfWork.GuestScheduleTemplates.RemoveRange(guestSchedules.ToList());
+                }
+
+                foreach (var t in existingTemplates)
+                {
+                    result.ItemsDeleted += t.ScheduleItems.Count;
+                    _unitOfWork.ScheduleItems.RemoveRange(t.ScheduleItems.ToList());
+                    result.TemplatesDeleted++;
+                }
+                _unitOfWork.ScheduleTemplates.RemoveRange(existingTemplates);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("ReplaceAll: deleted {Templates} templates, {Items} items for convention {Id}",
+                    result.TemplatesDeleted, result.ItemsDeleted, conventionId);
+            }
+
             var maxOrderNum = await _unitOfWork.ScheduleTemplates.Query
                 .Where(st => st.ConventionId == conventionId)
                 .MaxAsync(st => (int?)st.OrderNum) ?? 0;
@@ -353,7 +332,7 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                 var courseName = sheetReq.CourseName?.Trim();
                 if (string.IsNullOrEmpty(courseName))
                 {
-                    result.Warnings.Add($"코스명이 비어있어 스킵됩니다.");
+                    result.Warnings.Add("코스명이 비어있어 스킵됩니다.");
                     continue;
                 }
 
@@ -364,35 +343,71 @@ public class ScheduleUploadService : IScheduleTemplateUploadService
                     continue;
                 }
 
-                var scheduleTemplate = new ScheduleTemplate
-                {
-                    ConventionId = conventionId,
-                    CourseName = courseName,
-                    Description = sheetReq.Description ?? "Excel 일정 업로드",
-                    OrderNum = ++maxOrderNum,
-                    CreatedAt = DateTime.UtcNow
-                };
+                // Upsert: replaceAll이 아닌 경우 동일 CourseName 기존 템플릿 검색
+                var existingTemplate = replaceAll ? null : await _unitOfWork.ScheduleTemplates.Query
+                    .Where(st => st.ConventionId == conventionId && st.CourseName == courseName)
+                    .Include(st => st.ScheduleItems)
+                    .FirstOrDefaultAsync();
 
-                await _unitOfWork.ScheduleTemplates.AddAsync(scheduleTemplate);
-
-                var scheduleItems = BuildScheduleItems(scheduleTemplate, itemsToSave, convention);
-                if (scheduleItems.Count == 0)
+                if (existingTemplate != null)
                 {
-                    result.Warnings.Add($"[{courseName}] 저장 가능한 일정이 없습니다. (행사 기간 외 또는 데이터 오류)");
-                    continue;
+                    // 기존 템플릿의 아이템 교체
+                    var oldItemCount = existingTemplate.ScheduleItems.Count;
+                    _unitOfWork.ScheduleItems.RemoveRange(existingTemplate.ScheduleItems.ToList());
+
+                    var newItems = BuildScheduleItems(existingTemplate, itemsToSave, convention);
+                    if (newItems.Count == 0)
+                    {
+                        result.Warnings.Add($"[{courseName}] 저장 가능한 일정이 없습니다.");
+                        continue;
+                    }
+                    existingTemplate.ScheduleItems = newItems;
+                    existingTemplate.Description = sheetReq.Description ?? existingTemplate.Description;
+                    _unitOfWork.ScheduleTemplates.Update(existingTemplate);
+
+                    result.TemplatesUpdated++;
+                    result.ItemsUpdated += newItems.Count;
+                    AppendCreatedActions(result, newItems);
+                    _logger.LogInformation("Upsert: updated course={Course}, old={Old} -> new={New} items", courseName, oldItemCount, newItems.Count);
                 }
+                else
+                {
+                    // 신규 생성
+                    var scheduleTemplate = new ScheduleTemplate
+                    {
+                        ConventionId = conventionId,
+                        CourseName = courseName,
+                        Description = sheetReq.Description ?? "Excel 일정 업로드",
+                        OrderNum = ++maxOrderNum,
+                        CreatedAt = DateTime.UtcNow
+                    };
 
-                scheduleTemplate.ScheduleItems = scheduleItems;
-                result.TemplatesCreated++;
-                result.ItemsCreated += scheduleItems.Count;
-                AppendCreatedActions(result, scheduleItems);
+                    await _unitOfWork.ScheduleTemplates.AddAsync(scheduleTemplate);
 
-                _logger.LogInformation("MultiSheet: course={Course}, items={Count}", courseName, scheduleItems.Count);
+                    var scheduleItems = BuildScheduleItems(scheduleTemplate, itemsToSave, convention);
+                    if (scheduleItems.Count == 0)
+                    {
+                        result.Warnings.Add($"[{courseName}] 저장 가능한 일정이 없습니다. (행사 기간 외 또는 데이터 오류)");
+                        continue;
+                    }
+
+                    scheduleTemplate.ScheduleItems = scheduleItems;
+                    result.TemplatesCreated++;
+                    result.ItemsCreated += scheduleItems.Count;
+                    AppendCreatedActions(result, scheduleItems);
+                    _logger.LogInformation("MultiSheet: course={Course}, items={Count}", courseName, scheduleItems.Count);
+                }
             }
 
-            if (result.TemplatesCreated > 0)
+            var totalChanges = result.TemplatesCreated + result.TemplatesUpdated;
+            if (totalChanges > 0)
             {
                 await _unitOfWork.SaveChangesAsync();
+                result.Success = true;
+            }
+            else if (result.TemplatesDeleted > 0)
+            {
+                // replaceAll로 삭제만 발생한 경우도 성공 처리
                 result.Success = true;
             }
             else

@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using LocalRAG.Configuration;
 using LocalRAG.Constants;
@@ -325,8 +326,9 @@ public class AuthService : IAuthService
 
     public async Task<AuthResult<RefreshTokenResponse>> RefreshTokenAsync(RefreshTokenRequest request)
     {
-        // RefreshToken으로 조회 (AsNoTracking)
-        var user = await _unitOfWork.Users.GetAsync(u => u.RefreshToken == request.RefreshToken);
+        // RefreshToken으로 tracked 엔티티 직접 조회
+        var user = await _unitOfWork.Users.Query
+            .FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken);
 
         if (user == null || user.RefreshTokenExpiresAt < DateTime.UtcNow)
         {
@@ -335,20 +337,11 @@ public class AuthService : IAuthService
                 AuthErrorType.Unauthorized);
         }
 
-        // tracked 엔티티로 다시 조회하여 업데이트
-        var trackedUser = await _unitOfWork.Users.GetByIdAsync(user.Id);
-        if (trackedUser == null)
-        {
-            return AuthResult<RefreshTokenResponse>.Fail(
-                "유효하지 않은 리프레시 토큰입니다.",
-                AuthErrorType.Unauthorized);
-        }
-
-        var accessToken = GenerateAccessToken(trackedUser);
+        var accessToken = GenerateAccessToken(user);
         var refreshToken = GenerateRefreshToken();
 
-        trackedUser.RefreshToken = refreshToken;
-        trackedUser.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
         await _unitOfWork.SaveChangesAsync();
 
         return AuthResult<RefreshTokenResponse>.Success(new RefreshTokenResponse

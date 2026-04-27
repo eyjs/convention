@@ -19,11 +19,11 @@ namespace LocalRAG.Controllers.Convention
             _surveyService = surveyService;
         }
 
-        [HttpGet]
+        [HttpGet("admin/{conventionId}")]
         [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> GetAllSurveys([FromQuery] string? type = null)
+        public async Task<IActionResult> GetAllSurveys(int conventionId, [FromQuery] string? type = null)
         {
-            var surveys = await _surveyService.GetAllSurveysAsync(type);
+            var surveys = await _surveyService.GetAllSurveysAsync(conventionId, type);
             return Ok(surveys);
         }
 

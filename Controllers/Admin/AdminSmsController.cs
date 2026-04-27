@@ -16,15 +16,18 @@ public class AdminSmsController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ISmsService _smsService;
+    private readonly ISmsGroupService _smsGroupService;
     private readonly ILogger<AdminSmsController> _logger;
 
     public AdminSmsController(
         IUnitOfWork unitOfWork,
         ISmsService smsService,
+        ISmsGroupService smsGroupService,
         ILogger<AdminSmsController> logger)
     {
         _unitOfWork = unitOfWork;
         _smsService = smsService;
+        _smsGroupService = smsGroupService;
         _logger = logger;
     }
 
@@ -176,6 +179,97 @@ public class AdminSmsController : ControllerBase
             conventionId, result.TotalCount, result.SuccessCount, result.FailCount);
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// 행사별 그룹 목록 + 수신자 수 조회
+    /// </summary>
+    [HttpGet("conventions/{conventionId}/sms/groups")]
+    public async Task<IActionResult> GetSmsGroups(int conventionId)
+    {
+        try
+        {
+            var groups = await _smsGroupService.GetGroupsAsync(conventionId);
+            return Ok(groups);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SMS 그룹 목록 조회 오류 - Convention: {ConvId}", conventionId);
+            return StatusCode(500, new { message = "그룹 목록 조회 중 오류가 발생했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 엑셀 템플릿 다운로드 (수신자 이름/전화번호 채워진 상태)
+    /// </summary>
+    [HttpGet("conventions/{conventionId}/sms/excel-template")]
+    public async Task<IActionResult> DownloadExcelTemplate(int conventionId, [FromQuery] string? group)
+    {
+        try
+        {
+            var excelBytes = await _smsGroupService.GenerateExcelTemplateAsync(conventionId, group);
+            var fileName = $"SMS_발송_{group ?? "전체"}_{DateTime.Now:yyyyMMdd}.xlsx";
+            return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "엑셀 템플릿 생성 오류 - Convention: {ConvId}", conventionId);
+            return StatusCode(500, new { message = "엑셀 템플릿 생성 중 오류가 발생했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 엑셀 파싱 (multipart/form-data)
+    /// </summary>
+    [HttpPost("conventions/{conventionId}/sms/parse-excel")]
+    public async Task<IActionResult> ParseExcel(int conventionId, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "파일이 없습니다." });
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var result = await _smsGroupService.ParseExcelAsync(conventionId, stream);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "엑셀 파싱 오류 - Convention: {ConvId}", conventionId);
+            return StatusCode(500, new { message = "엑셀 파싱 중 오류가 발생했습니다." });
+        }
+    }
+
+    /// <summary>
+    /// 엑셀 변수 치환 발송
+    /// </summary>
+    [HttpPost("conventions/{conventionId}/sms/send-excel")]
+    public async Task<IActionResult> SendWithExcel(int conventionId, [FromBody] SmsExcelSendRequestDto request)
+    {
+        if (request.Recipients == null || request.Recipients.Count == 0)
+            return BadRequest(new { message = "수신자가 없습니다." });
+
+        if (string.IsNullOrWhiteSpace(request.Template))
+            return BadRequest(new { message = "메시지 템플릿이 없습니다." });
+
+        try
+        {
+            var result = await _smsGroupService.SendWithExcelVariablesAsync(conventionId, request);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "엑셀 변수 발송 오류 - Convention: {ConvId}", conventionId);
+            return StatusCode(500, new { message = "발송 중 오류가 발생했습니다." });
+        }
     }
 
     private static void AddFail(SendSmsDirectResult result, SmsDirectRecipient recipient, string reason)

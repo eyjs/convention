@@ -124,9 +124,9 @@ public interface IUserConventionRepository : IRepository<UserConvention>
 /// </summary>
 public interface IGuestAttributeRepository : IRepository<GuestAttribute>
 {
-    Task<IEnumerable<GuestAttribute>> GetAttributesByUserIdAsync(int userId, CancellationToken cancellationToken = default);
-    Task<GuestAttribute?> GetAttributeByKeyAsync(int userId, string attributeKey, CancellationToken cancellationToken = default);
-    Task UpsertAttributeAsync(int userId, string attributeKey, string attributeValue, CancellationToken cancellationToken = default);
+    Task<IEnumerable<GuestAttribute>> GetAttributesByUserIdAsync(int userId, int conventionId, CancellationToken cancellationToken = default);
+    Task<GuestAttribute?> GetAttributeByKeyAsync(int userId, int conventionId, string attributeKey, CancellationToken cancellationToken = default);
+    Task UpsertAttributeAsync(int userId, int conventionId, string attributeKey, string attributeValue, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

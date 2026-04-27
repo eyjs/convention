@@ -4,6 +4,7 @@ using LocalRAG.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalRAG.Migrations
 {
     [DbContext(typeof(ConventionDbContext))]
-    partial class ConventionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260424065535_AddBoardingPassUrlToUserConvention")]
+    partial class AddBoardingPassUrlToUserConvention
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -942,20 +945,14 @@ namespace LocalRAG.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ConventionId")
-                        .HasColumnType("int");
-
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("ConventionId", "UserId", "AttributeKey")
+                    b.HasIndex("UserId", "AttributeKey")
                         .IsUnique()
-                        .HasDatabaseName("UQ_GuestAttributes_ConventionId_UserId_AttributeKey")
-                        .HasFilter("[ConventionId] IS NOT NULL");
+                        .HasDatabaseName("UQ_GuestAttributes_UserId_AttributeKey");
 
                     b.ToTable("GuestAttributes");
                 });
@@ -2606,18 +2603,11 @@ namespace LocalRAG.Migrations
 
             modelBuilder.Entity("LocalRAG.Entities.GuestAttribute", b =>
                 {
-                    b.HasOne("LocalRAG.Entities.Convention", "Convention")
-                        .WithMany()
-                        .HasForeignKey("ConventionId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("LocalRAG.Entities.User", "User")
                         .WithMany("GuestAttributes")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Convention");
 
                     b.Navigation("User");
                 });

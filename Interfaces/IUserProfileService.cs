@@ -11,7 +11,7 @@ public interface IUserProfileService
 {
     Task<object> GetMySchedulesAsync(int userId, int conventionId);
     Task<object> GetParticipantsAsync(int conventionId, string? search);
-    Task<object?> GetParticipantDetailAsync(int id);
+    Task<object?> GetParticipantDetailAsync(int id, int? conventionId = null);
     Task<BulkAssignResult> BulkAssignAttributesAsync(BulkAssignAttributesDto dto);
     Task<List<UserWithAttributesDto>> GetParticipantsWithAttributesAsync(int conventionId);
     Task<(bool Success, string Message)> SubmitTravelInfoAsync(int userId, int conventionId, TravelInfoDto dto);

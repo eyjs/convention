@@ -32,9 +32,9 @@ public class AdminUserController : ControllerBase
     }
 
     [HttpGet("guests/{guestId}/detail")]
-    public async Task<IActionResult> GetGuestDetail(int guestId)
+    public async Task<IActionResult> GetGuestDetail(int guestId, [FromQuery] int? conventionId = null)
     {
-        var result = await _adminUserService.GetGuestDetailAsync(guestId);
+        var result = await _adminUserService.GetGuestDetailAsync(guestId, conventionId);
         if (result == null) return NotFound();
         return Ok(result);
     }

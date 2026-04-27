@@ -320,7 +320,7 @@ public class UserUploadService : IUserUploadService
                 // 가변 속성 컬럼 저장 (userId 확정 후)
                 if (rowAttributesMap.Count > 0)
                 {
-                    await ProcessInlineAttributesAsync(rowAttributesMap, rowUserMap, result);
+                    await ProcessInlineAttributesAsync(conventionId, rowAttributesMap, rowUserMap, result);
                     await _unitOfWork.SaveChangesAsync();
                 }
 
@@ -489,7 +489,7 @@ public class UserUploadService : IUserUploadService
     /// 시트3: 속성 처리 (시트1과 같은 행 = 같은 사람)
     /// 형식: 1행=속성명 헤더, 2행~=속성값
     /// </summary>
-    private async Task ProcessAttributeSheet(ExcelWorksheet sheet, Dictionary<int, int> rowUserMap, UserUploadResult result)
+    private async Task ProcessAttributeSheet(int conventionId, ExcelWorksheet sheet, Dictionary<int, int> rowUserMap, UserUploadResult result)
     {
         if (sheet.Dimension == null) return;
 
@@ -542,7 +542,7 @@ public class UserUploadService : IUserUploadService
                     hasValue = true;
 
                     var existingAttribute = await _unitOfWork.GuestAttributes
-                        .GetAttributeByKeyAsync(userId, attributeKey);
+                        .GetAttributeByKeyAsync(userId, conventionId, attributeKey);
 
                     if (existingAttribute != null)
                     {
@@ -555,6 +555,7 @@ public class UserUploadService : IUserUploadService
                         await _unitOfWork.GuestAttributes.AddAsync(new GuestAttribute
                         {
                             UserId = userId,
+                            ConventionId = conventionId,
                             AttributeKey = attributeKey,
                             AttributeValue = attributeValue
                         });
@@ -583,6 +584,7 @@ public class UserUploadService : IUserUploadService
     /// SaveChanges 전 호출 — 호출 측에서 SaveChangesAsync 수행
     /// </summary>
     private async Task ProcessInlineAttributesAsync(
+        int conventionId,
         Dictionary<int, List<(string Key, string Value)>> rowAttributesMap,
         Dictionary<int, int> rowUserMap,
         UserUploadResult result)
@@ -597,7 +599,7 @@ public class UserUploadService : IUserUploadService
                 foreach (var (key, value) in attrs)
                 {
                     var existing = await _unitOfWork.GuestAttributes
-                        .GetAttributeByKeyAsync(userId, key);
+                        .GetAttributeByKeyAsync(userId, conventionId, key);
 
                     if (existing != null)
                     {
@@ -610,6 +612,7 @@ public class UserUploadService : IUserUploadService
                         await _unitOfWork.GuestAttributes.AddAsync(new GuestAttribute
                         {
                             UserId = userId,
+                            ConventionId = conventionId,
                             AttributeKey = key,
                             AttributeValue = value
                         });

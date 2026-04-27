@@ -16,13 +16,15 @@
       >
 
       <div
-        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full"
+        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all w-full sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full"
       >
         <!-- Header -->
-        <div class="px-6 py-4 border-b flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <h3 class="text-lg font-semibold text-gray-900">
-              카카오 알림톡 발송
+        <div
+          class="px-4 sm:px-6 py-3 sm:py-4 border-b flex items-center justify-between"
+        >
+          <div class="flex items-center gap-2 sm:gap-3">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+              알림톡 발송
             </h3>
             <span
               class="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium"
@@ -51,7 +53,7 @@
 
         <!-- Body -->
         <div
-          class="p-6 bg-gray-50 min-h-[480px] max-h-[70vh] overflow-y-auto space-y-4"
+          class="p-4 sm:p-6 bg-gray-50 min-h-[300px] sm:min-h-[480px] max-h-[60vh] sm:max-h-[70vh] overflow-y-auto space-y-4"
         >
           <!-- 팝빌 템플릿 코드 -->
           <div class="bg-white border rounded-lg p-4">
@@ -146,7 +148,7 @@
 
             <div
               v-else
-              class="max-h-48 overflow-y-auto space-y-1 border rounded-lg p-2"
+              class="max-h-[30vh] sm:max-h-48 overflow-y-auto space-y-1 border rounded-lg p-2"
             >
               <label
                 v-for="user in guests"
@@ -190,15 +192,15 @@
         </div>
 
         <!-- Footer -->
-        <div class="px-6 py-4 border-t bg-white flex justify-end gap-2">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 border-t bg-white flex gap-2">
           <button
-            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+            class="flex-1 sm:flex-none px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
             @click="emit('close')"
           >
             닫기
           </button>
           <button
-            class="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 transition-colors disabled:opacity-50"
+            class="flex-1 sm:flex-none px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 transition-colors disabled:opacity-50"
             :disabled="!canSend || sending"
             @click="confirmAndSend"
           >

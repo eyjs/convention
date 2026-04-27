@@ -3,6 +3,7 @@ using LocalRAG.DTOs.ConventionModels;
 using LocalRAG.Entities;
 using LocalRAG.Interfaces;
 using LocalRAG.Repositories;
+using Microsoft.EntityFrameworkCore;
 using ConventionModel = LocalRAG.Entities.Convention;
 
 namespace LocalRAG.Services.Convention;
@@ -281,5 +282,13 @@ public class ConventionCrudService : IConventionCrudService
         await _unitOfWork.SaveChangesAsync();
 
         return true;
+    }
+
+    public async Task<string?> GetBoardingPassUrlAsync(int conventionId, int userId)
+    {
+        var uc = await _unitOfWork.UserConventions.Query
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.ConventionId == conventionId);
+
+        return uc?.BoardingPassUrl;
     }
 }

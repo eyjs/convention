@@ -176,6 +176,40 @@ public class FileController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 여권/탑승권 파일 서빙 (passport/{conventionId}/{fileName} 또는 boarding/{conventionId}/{fileName})
+    /// </summary>
+    [HttpGet("docs/{folder}/{conventionId:int}/{fileName}")]
+    [Authorize]
+    public IActionResult GetUploadedFile(string folder, int conventionId, string fileName)
+    {
+        if (folder != "passport" && folder != "boarding")
+            return NotFound();
+
+        // Path traversal 방지: 디렉토리 탐색 문자 제거
+        fileName = Path.GetFileName(fileName);
+
+        var basePath = _fileUploadService.GetUploadBasePath();
+        var filePath = Path.Combine(basePath, folder, conventionId.ToString(), fileName);
+
+        if (!global::System.IO.File.Exists(filePath))
+            return NotFound();
+
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        var contentType = ext switch
+        {
+            ".pdf" => "application/pdf",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream"
+        };
+
+        Response.Headers.CacheControl = "public, max-age=604800";
+        return PhysicalFile(filePath, contentType, enableRangeProcessing: true);
+    }
+
     [HttpGet("viewer/{year}/{dayOfYear}/{fileName}")]
 #pragma warning disable CA1416 // Validate platform compatibility
     public IActionResult GetImage(string year, string dayOfYear, string fileName, [FromQuery] string? resize = null)
