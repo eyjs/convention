@@ -176,82 +176,18 @@
     </template>
   </SlideUpModal>
 
-  <!-- 이미지 캐러셀 뷰어 -->
-  <div
-    v-if="viewerOpen"
-    class="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center"
-    @click="viewerOpen = false"
-    @touchstart="onTouchStart"
-    @touchend="onTouchEnd"
-  >
-    <img
-      loading="lazy"
-      :src="viewerImages[viewerIndex]"
-      class="max-w-full max-h-full object-contain select-none"
-      @click.stop
-    />
-    <!-- 닫기 -->
-    <button
-      class="absolute top-4 right-4 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center text-xl hover:bg-white/30"
-      @click="viewerOpen = false"
-    >
-      &times;
-    </button>
-    <!-- 이전 -->
-    <button
-      v-if="viewerIndex > 0"
-      class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/30"
-      @click.stop="viewerIndex--"
-    >
-      <svg
-        class="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M15 19l-7-7 7-7"
-        />
-      </svg>
-    </button>
-    <!-- 다음 -->
-    <button
-      v-if="viewerIndex < viewerImages.length - 1"
-      class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/30"
-      @click.stop="viewerIndex++"
-    >
-      <svg
-        class="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9 5l7 7-7 7"
-        />
-      </svg>
-    </button>
-    <!-- 인디케이터 -->
-    <div
-      v-if="viewerImages.length > 1"
-      class="absolute bottom-6 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/50 text-white text-sm rounded-full"
-    >
-      {{ viewerIndex + 1 }} / {{ viewerImages.length }}
-    </div>
-  </div>
+  <ImageViewer
+    v-model="viewerOpen"
+    :images="viewerImages"
+    :start-index="viewerIndex"
+  />
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useUIStore } from '@/stores/ui'
+import { ref, computed } from 'vue'
 import apiClient from '@/services/api'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
+import ImageViewer from '@/components/common/ImageViewer.vue'
 import QuillViewer from '@/components/common/QuillViewer.vue'
 import ParticipantList from '@/components/ParticipantList.vue'
 
@@ -274,14 +210,9 @@ const scheduleBadges = computed(() => {
   return props.attributes.filter((a) => keys.includes(a.key))
 })
 
-const uiStore = useUIStore()
-const viewerModalId = Symbol('imageViewer')
-
-// 내부 상태
 const viewerOpen = ref(false)
 const viewerImages = ref([])
 const viewerIndex = ref(0)
-let touchStartX = 0
 const showParticipantsModal = ref(false)
 const participants = ref([])
 const selectedGroupName = ref('')
@@ -302,36 +233,12 @@ function formatDate(dateStr) {
   return `${year}년 ${month}월 ${day}일 ${days[date.getDay()]}`
 }
 
-// 이미지 뷰어 열림/닫힘 시 모달 스택 등록 (뒤로가기 대응)
-watch(viewerOpen, (open) => {
-  if (open) {
-    uiStore.registerModal(viewerModalId, () => {
-      viewerOpen.value = false
-    })
-  } else {
-    uiStore.unregisterModal(viewerModalId)
-  }
-})
-
 function openFullImage(url) {
   const images = (props.schedule?.images || []).map((img) => img.imageUrl)
   if (images.length === 0) return
   viewerImages.value = images
   viewerIndex.value = Math.max(0, images.indexOf(url))
   viewerOpen.value = true
-}
-
-function onTouchStart(e) {
-  touchStartX = e.touches[0].clientX
-}
-
-function onTouchEnd(e) {
-  const diff = touchStartX - e.changedTouches[0].clientX
-  if (Math.abs(diff) > 50) {
-    if (diff > 0 && viewerIndex.value < viewerImages.value.length - 1)
-      viewerIndex.value++
-    else if (diff < 0 && viewerIndex.value > 0) viewerIndex.value--
-  }
 }
 
 async function loadParticipants(scheduleTemplateId, groupName) {

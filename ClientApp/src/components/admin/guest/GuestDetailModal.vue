@@ -245,14 +245,18 @@
       </template>
     </template>
   </BaseModal>
+
+  <ImageViewer
+    v-model="passportViewerOpen"
+    :images="passportViewerImages"
+  />
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
-import 'viewerjs/dist/viewer.css'
-import { api as viewerApi } from 'v-viewer'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
+import ImageViewer from '@/components/common/ImageViewer.vue'
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
@@ -267,6 +271,9 @@ const loading = ref(false)
 
 const editingAttrKey = ref(null)
 const editingAttrValue = ref('')
+
+const passportViewerOpen = ref(false)
+const passportViewerImages = ref([])
 
 const HIDDEN_ATTRIBUTES = ['travel_info']
 
@@ -286,9 +293,10 @@ const formatDate = (dateStr) => {
 
 function showPassportImage() {
   if (guestDetail.value?.passport?.passportImageUrl) {
-    viewerApi({
-      images: [guestDetail.value.passport.passportImageUrl],
-    })
+    passportViewerImages.value = [
+      guestDetail.value.passport.passportImageUrl,
+    ]
+    passportViewerOpen.value = true
   }
 }
 

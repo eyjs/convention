@@ -30,72 +30,177 @@
       </AdminEmptyState>
     </div>
 
-    <!-- 행사 목록 -->
-    <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
-      <div
-        v-for="convention in conventions"
-        :key="convention.id"
-        class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden cursor-pointer"
-        @click="goToConvention(convention.id)"
-      >
-        <div
-          class="h-32 relative"
-          :style="{
-            background: `linear-gradient(135deg, ${convention.brandColor || '#6366f1'} 0%, ${adjustColor(convention.brandColor || '#6366f1', -20)} 100%)`,
-          }"
-        >
-          <div class="absolute top-3 right-3">
-            <span
-              v-if="convention.completeYn === 'Y'"
-              class="px-2 py-1 bg-gray-800/50 text-white text-xs rounded-full"
+    <template v-else>
+      <!-- 진행중인 행사 -->
+      <div v-if="activeConventions.length > 0" class="mt-6 mb-8">
+        <h3 class="text-lg font-bold text-gray-900 mb-3 px-1">
+          진행중인 스타투어
+        </h3>
+        
+        <!-- Mobile: Horizontal Scroll, Desktop: Grid -->
+        <div class="md:grid md:gap-4 md:grid-cols-2 lg:grid-cols-3 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+          <div class="flex md:contents gap-4 pb-2">
+            <div
+              v-for="convention in activeConventions"
+              :key="convention.id"
+              class="flex-shrink-0 w-[260px] md:w-auto bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden group border border-gray-100"
+              @click="goToConvention(convention.id)"
             >
-              종료
-            </span>
-            <span
-              v-else
-              class="px-2 py-1 bg-green-500/80 text-white text-xs rounded-full"
-            >
-              진행중
-            </span>
-          </div>
-          <div class="absolute bottom-4 left-4 right-4">
-            <h3 class="text-white font-bold text-lg truncate">
-              {{ convention.title }}
-            </h3>
-          </div>
-        </div>
-        <div class="p-4">
-          <div class="space-y-2 text-sm text-gray-600">
-            <div class="flex items-center">
-              <Calendar :size="16" class="mr-2" />
-              {{ formatDate(convention.startDate) }} ~
-              {{ formatDate(convention.endDate) }}
+              <div class="relative h-[140px] overflow-hidden">
+                <div
+                  v-if="convention.conventionImg"
+                  class="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500"
+                  :style="{
+                    backgroundImage: `url(${convention.conventionImg})`,
+                  }"
+                ></div>
+                <div
+                  v-else
+                  class="absolute inset-0"
+                  :style="getGradientStyle(convention.brandColor)"
+                ></div>
+                
+                <div class="absolute top-2 right-2 flex items-center gap-1.5">
+                  <div
+                    v-if="getDDay(convention.startDate) > 0"
+                    class="px-2 py-0.5 bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold rounded-full"
+                  >
+                    D-{{ getDDay(convention.startDate) }}
+                  </div>
+                  <div
+                    class="px-2 py-0.5 bg-green-500/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-full"
+                  >
+                    진행중
+                  </div>
+                </div>
+
+                <div
+                  class="absolute top-2 left-2 px-1.5 py-0.5 text-[10px] font-bold rounded-full shadow-sm"
+                  :class="
+                    convention.conventionType === 'OVERSEAS'
+                      ? 'bg-sky-500 text-white'
+                      : 'bg-emerald-500 text-white'
+                  "
+                >
+                  {{ convention.conventionType === 'OVERSEAS' ? '해외' : '국내' }}
+                </div>
+
+                <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
+                  <h4 class="text-white font-bold text-sm truncate">
+                    {{ convention.title }}
+                  </h4>
+                </div>
+              </div>
+              
+              <div class="p-3">
+                <div class="flex flex-col gap-1 text-[11px] text-gray-500 mb-3">
+                  <div class="flex items-center">
+                    <Calendar :size="12" class="mr-1.5 text-gray-400" />
+                    {{ formatDate(convention.startDate) }} ~ {{ formatDate(convention.endDate) }}
+                  </div>
+                  <div class="flex items-center">
+                    <Users :size="12" class="mr-1.5 text-gray-400" />
+                    참석자 {{ convention.guestCount?.toLocaleString() }}명
+                  </div>
+                </div>
+                
+                <div class="flex gap-2">
+                  <button
+                    class="flex-1 py-1.5 bg-gray-50 text-gray-600 rounded-lg font-medium hover:bg-gray-100 transition-colors text-xs border border-gray-200"
+                    @click.stop="editConvention(convention)"
+                  >
+                    수정
+                  </button>
+                  <button
+                    class="flex-1 py-1.5 bg-rose-50 text-rose-600 rounded-lg font-medium hover:bg-rose-100 transition-colors text-xs border border-rose-100"
+                    @click.stop="completeConvention(convention.id)"
+                  >
+                    종료
+                  </button>
+                </div>
+              </div>
             </div>
-            <div class="flex items-center">
-              <Users :size="16" class="mr-2" />
-              참석자 {{ convention.guestCount }}명
-            </div>
-          </div>
-          <div class="mt-4 pt-4 border-t flex justify-end space-x-2">
-            <AdminButton
-              variant="secondary"
-              size="sm"
-              @click.stop="editConvention(convention)"
-            >
-              수정
-            </AdminButton>
-            <!-- prettier-ignore -->
-            <AdminButton
-              :variant="convention.completeYn === 'Y' ? 'primary' : 'danger'"
-              size="sm"
-              @click.stop="completeConvention(convention.id)"
-            >
-              {{ convention.completeYn === 'Y' ? '재개' : '종료' }}
-            </AdminButton>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- 지난 행사 -->
+      <div v-if="completedConventions.length > 0" class="mt-4 mb-8">
+        <h3 class="text-lg font-bold text-gray-400 mb-3 px-1">
+          지난 스타투어
+        </h3>
+        
+        <div class="md:grid md:gap-4 md:grid-cols-2 lg:grid-cols-3 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+          <div class="flex md:contents gap-3 pb-2">
+            <div
+              v-for="convention in completedConventions"
+              :key="convention.id"
+              class="flex-shrink-0 w-[240px] md:w-auto bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden opacity-80 border border-gray-100"
+              @click="goToConvention(convention.id)"
+            >
+              <div class="relative h-[120px] overflow-hidden">
+                <div
+                  v-if="convention.conventionImg"
+                  class="absolute inset-0 bg-cover bg-center grayscale"
+                  :style="{
+                    backgroundImage: `url(${convention.conventionImg})`,
+                  }"
+                ></div>
+                <div
+                  v-else
+                  class="absolute inset-0 bg-gradient-to-br from-gray-400 to-gray-500"
+                ></div>
+                
+                <div class="absolute top-2 left-2 flex items-center gap-1">
+                  <span
+                    class="px-1.5 py-0.5 bg-black/50 text-white text-[10px] rounded backdrop-blur-sm"
+                  >
+                    종료
+                  </span>
+                  <span
+                    class="px-1.5 py-0.5 text-[10px] font-bold rounded backdrop-blur-sm"
+                    :class="
+                      convention.conventionType === 'OVERSEAS'
+                        ? 'bg-sky-500/90 text-white'
+                        : 'bg-emerald-500/90 text-white'
+                    "
+                  >
+                    {{ convention.conventionType === 'OVERSEAS' ? '해외' : '국내' }}
+                  </span>
+                </div>
+                
+                <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/40 to-transparent">
+                  <h4 class="text-white font-bold text-sm truncate">
+                    {{ convention.title }}
+                  </h4>
+                </div>
+              </div>
+              
+              <div class="p-3">
+                <p class="text-[11px] text-gray-400 mb-3">
+                  {{ formatDate(convention.startDate) }} 종료
+                </p>
+                
+                <div class="flex gap-2">
+                  <button
+                    class="flex-1 py-1.5 bg-gray-50 text-gray-600 rounded-lg font-medium hover:bg-gray-100 transition-colors text-xs border border-gray-200"
+                    @click.stop="editConvention(convention)"
+                  >
+                    수정
+                  </button>
+                  <button
+                    class="flex-1 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 transition-colors text-xs border border-blue-100"
+                    @click.stop="completeConvention(convention.id)"
+                  >
+                    재개
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
 
     <ConventionFormModal
       v-if="showCreateModal"
@@ -107,7 +212,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/services/api'
 import { Plus, Calendar, Users } from 'lucide-vue-next'
@@ -122,6 +227,38 @@ const conventions = ref([])
 const loading = ref(false)
 const showCreateModal = ref(false)
 const editingConvention = ref(null)
+
+function isConventionEnded(c) {
+  if (c.completeYn === 'Y') return true
+  if (!c.endDate) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const end = new Date(c.endDate)
+  end.setHours(0, 0, 0, 0)
+  return end < today
+}
+
+const activeConventions = computed(() =>
+  conventions.value
+    .filter((c) => !isConventionEnded(c))
+    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate)),
+)
+
+const completedConventions = computed(() =>
+  conventions.value
+    .filter((c) => isConventionEnded(c))
+    .sort((a, b) => new Date(b.startDate) - new Date(a.startDate)),
+)
+
+function getDDay(startDate) {
+  if (!startDate) return 0
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const start = new Date(startDate)
+  start.setHours(0, 0, 0, 0)
+  const diff = Math.ceil((start - today) / (1000 * 60 * 60 * 24))
+  return diff > 0 ? diff : 0
+}
 
 async function handleSaveConvention(conventionData) {
   try {
@@ -149,14 +286,13 @@ async function editConvention(convention) {
     showCreateModal.value = true
   } catch (e) {
     console.error('행사 상세 로드 실패:', e)
-    // fallback: 목록 데이터 사용
     editingConvention.value = { ...convention }
     showCreateModal.value = true
   }
 }
 
 async function completeConvention(conventionId) {
-  if (!confirm('행사를 종료 처리하시겠습니까?')) return
+  if (!confirm('행사를 종료/재개 처리하시겠습니까?')) return
 
   try {
     await apiClient.post(`/conventions/${conventionId}/complete`)
@@ -193,6 +329,19 @@ function formatDate(dateString) {
   })
 }
 
+function getGradientStyle(color) {
+  const c = color || '#6366f1'
+  const r = parseInt(c.slice(1, 3), 16)
+  const g = parseInt(c.slice(3, 5), 16)
+  const b = parseInt(c.slice(5, 7), 16)
+  const dr = Math.floor(r * 0.7)
+  const dg = Math.floor(g * 0.7)
+  const db = Math.floor(b * 0.7)
+  return {
+    background: `linear-gradient(135deg, rgb(${r},${g},${b}), rgb(${dr},${dg},${db}))`,
+  }
+}
+
 function adjustColor(color, amount) {
   if (!color) return '#555'
   const num = parseInt(color.replace('#', ''), 16)
@@ -206,3 +355,13 @@ onMounted(() => {
   loadConventions()
 })
 </script>
+
+<style scoped>
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+</style>

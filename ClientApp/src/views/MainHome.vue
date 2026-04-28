@@ -106,10 +106,10 @@
                 <div
                   v-for="convention in activeConventions"
                   :key="convention.id"
-                  class="flex-shrink-0 w-[300px] bg-white rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group"
+                  class="flex-shrink-0 w-[240px] bg-white rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden group"
                   @click="goToConvention(convention)"
                 >
-                  <div class="relative h-[180px] overflow-hidden">
+                  <div class="relative h-[130px] overflow-hidden">
                     <div
                       v-if="convention.conventionImg"
                       class="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500"
@@ -124,12 +124,12 @@
                     ></div>
                     <div
                       v-if="getDDay(convention.startDate) > 0"
-                      class="absolute top-3 right-3 px-3 py-1 bg-black/50 backdrop-blur-sm text-white text-sm font-bold rounded-full"
+                      class="absolute top-2 right-2 px-2 py-0.5 bg-black/50 backdrop-blur-sm text-white text-xs font-bold rounded-full"
                     >
                       D-{{ getDDay(convention.startDate) }}
                     </div>
                     <div
-                      class="absolute top-3 left-3 px-2.5 py-1 text-xs font-semibold rounded-full shadow"
+                      class="absolute top-2 left-2 px-1.5 py-0.5 text-xs font-semibold rounded-full shadow"
                       :class="
                         isConventionOverseas(convention)
                           ? 'bg-sky-500 text-white'
@@ -139,15 +139,17 @@
                       {{ isConventionOverseas(convention) ? '해외' : '국내' }}
                     </div>
                   </div>
-                  <div class="p-4">
+                  <div class="p-3">
                     <h4
-                      class="font-bold text-gray-900 text-lg mb-1 line-clamp-1 group-hover:text-rose-600 transition-colors"
+                      class="font-semibold text-gray-900 text-sm mb-0.5 line-clamp-1 group-hover:text-rose-600 transition-colors"
                     >
                       {{ convention.title }}
                     </h4>
-                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <div
+                      class="flex items-center gap-1.5 text-xs text-gray-500"
+                    >
                       <svg
-                        class="w-4 h-4 flex-shrink-0"
+                        class="w-3.5 h-3.5 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -270,7 +272,9 @@ function isConventionEnded(c) {
 }
 
 const activeConventions = computed(() =>
-  conventions.value.filter((c) => !isConventionEnded(c)),
+  conventions.value
+    .filter((c) => !isConventionEnded(c))
+    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate)),
 )
 const completedConventions = computed(() =>
   conventions.value.filter((c) => isConventionEnded(c)),

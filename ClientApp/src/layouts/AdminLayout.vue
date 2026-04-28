@@ -1,18 +1,18 @@
 <template>
   <div class="app-frame">
-    <div class="safe-top bg-gray-50"></div>
+    <div class="safe-top bg-white border-b border-gray-100"></div>
+
+    <AdminHeader
+      v-if="!route.meta.hideAdminHeader"
+      :title="headerTitle"
+      :subtitle="headerSubtitle"
+      @toggle-sidebar="sidebarOpen = !sidebarOpen"
+    />
 
     <div
-      class="safe-content bg-gray-50"
-      :class="{ 'flex flex-col': route.meta.adminFullScreen }"
+      class="safe-content bg-gray-50 flex flex-col"
+      :class="{ 'flex-1': !route.meta.adminFullScreen }"
     >
-      <AdminHeader
-        v-if="!route.meta.hideAdminHeader"
-        :title="headerTitle"
-        :subtitle="headerSubtitle"
-        @toggle-sidebar="sidebarOpen = !sidebarOpen"
-      />
-
       <!-- Full-screen layout (e.g. FormBuilder editor) -->
       <template v-if="route.meta.adminFullScreen || route.meta.hideAdminHeader">
         <router-view />

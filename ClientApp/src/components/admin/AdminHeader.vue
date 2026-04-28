@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-white shadow-sm sticky top-0 z-50">
+  <header class="bg-white shadow-sm sticky top-0 z-50 w-full">
     <div class="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
       <div class="flex items-center gap-3 min-w-0">
         <!-- Mobile sidebar toggle -->
@@ -56,6 +56,14 @@
             class="absolute top-12 right-0 w-56 bg-white rounded-lg shadow-lg border z-50 py-1"
           >
             <router-link
+              to="/"
+              class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+              @click="showUserMenu = false"
+            >
+              <Home :size="16" class="text-gray-400" />
+              행사 목록
+            </router-link>
+            <router-link
               to="/my-profile"
               class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
               @click="showUserMenu = false"
@@ -96,6 +104,7 @@ import {
   ChevronDown,
   User as UserIcon,
   ArrowLeftRight,
+  Home,
   LogOut,
 } from 'lucide-vue-next'
 

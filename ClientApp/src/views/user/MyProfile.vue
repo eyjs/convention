@@ -249,15 +249,19 @@
         </div>
       </template>
     </SlideUpModal>
+
+    <ImageViewer
+      v-model="passportViewerOpen"
+      :images="passportViewerImages"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { Camera, ChevronRight, Lock } from 'lucide-vue-next'
-import 'viewerjs/dist/viewer.css'
-import { api as viewerApi } from 'v-viewer'
 import MainHeader from '@/components/common/MainHeader.vue'
+import ImageViewer from '@/components/common/ImageViewer.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import EditFieldPopup from '@/components/common/EditFieldPopup.vue'
 import apiClient, { userAPI } from '@/services/api'
@@ -265,6 +269,8 @@ import { compressImage } from '@/utils/fileUpload'
 
 const loading = ref(true)
 const profile = ref({})
+const passportViewerOpen = ref(false)
+const passportViewerImages = ref([])
 
 const isPasswordModalOpen = ref(false)
 const tempPasswordData = ref({})
@@ -490,9 +496,8 @@ async function handlePassportImageUpload(event) {
 
 function showPassportImage() {
   if (profile.value.passportImageUrl) {
-    viewerApi({
-      images: [profile.value.passportImageUrl],
-    })
+    passportViewerImages.value = [profile.value.passportImageUrl]
+    passportViewerOpen.value = true
   }
 }
 

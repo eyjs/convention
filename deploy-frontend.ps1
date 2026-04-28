@@ -41,7 +41,7 @@ if (-not $SkipBuild) {
     Write-Step "1/3 npm run build"
     Push-Location $ClientApp
     try {
-        & npm run build
+        & npm.cmd run build
         if ($LASTEXITCODE -ne 0) { throw "npm run build failed (exit $LASTEXITCODE)" }
         Write-Ok "프론트엔드 빌드 완료"
     } finally { Pop-Location }

@@ -612,15 +612,19 @@
       </button>
     </template>
   </BaseModal>
+
+  <ImageViewer
+    v-model="passportViewerOpen"
+    :images="passportViewerImages"
+  />
 </template>
 
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { X, Copy } from 'lucide-vue-next'
-import 'viewerjs/dist/viewer.css'
-import { api as viewerApi } from 'v-viewer'
 import apiClient from '@/services/api'
 import BaseModal from '@/components/common/BaseModal.vue'
+import ImageViewer from '@/components/common/ImageViewer.vue'
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
@@ -636,12 +640,15 @@ const emit = defineEmits(['close', 'saved'])
 
 const passportImageUrl = ref(null)
 const passportUploading = ref(false)
+const passportViewerOpen = ref(false)
+const passportViewerImages = ref([])
 
 function showPassportImage() {
   const url =
     passportImageUrl.value || props.editingGuest?.passport?.passportImageUrl
   if (url) {
-    viewerApi({ images: [url] })
+    passportViewerImages.value = [url]
+    passportViewerOpen.value = true
   }
 }
 

@@ -103,7 +103,15 @@ public class UserUploadService : IUserUploadService
                     _unitOfWork.GuestScheduleTemplates.RemoveRange(existingGuestSchedules);
                 }
 
-                // 3) UserConvention 삭제 (해당 convention)
+                // 3) GuestAttributes 삭제 (해당 convention)
+                var existingAttributes = (await _unitOfWork.GuestAttributes
+                    .FindAsync(ga => ga.ConventionId == conventionId)).ToList();
+                if (existingAttributes.Count > 0)
+                {
+                    _unitOfWork.GuestAttributes.RemoveRange(existingAttributes);
+                }
+
+                // 4) UserConvention 삭제 (해당 convention)
                 if (existingUcs.Count > 0)
                 {
                     _unitOfWork.UserConventions.RemoveRange(existingUcs);
@@ -113,8 +121,8 @@ public class UserUploadService : IUserUploadService
 
                 result.RemovedUserConventions = existingUcs.Count;
                 _logger.LogInformation(
-                    "Cleared convention {ConventionId}: {Ucs} UserConventions, {Actions} UserActionStatuses, {GstMaps} GuestScheduleTemplates",
-                    conventionId, existingUcs.Count, existingActionStatuses.Count, existingGuestSchedules.Count);
+                    "Cleared convention {ConventionId}: {Ucs} UserConventions, {Actions} UserActionStatuses, {GstMaps} GuestScheduleTemplates, {Attrs} GuestAttributes",
+                    conventionId, existingUcs.Count, existingActionStatuses.Count, existingGuestSchedules.Count, existingAttributes.Count);
             }
 
             // 시트1 처리 후 행별 UserId 매핑 (시트2/3에서 사용)

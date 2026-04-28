@@ -236,12 +236,18 @@
           </div>
 
           <!-- 본문 -->
-          <div ref="viewer" v-viewer class="mb-6">
+          <div class="mb-6">
             <QuillViewer
               :content="selectedNotice.content"
               @image-clicked="openImageViewer"
             />
           </div>
+
+          <ImageViewer
+            v-model="boardImageViewerOpen"
+            :images="boardImageViewerImages"
+            :start-index="boardImageViewerIndex"
+          />
 
           <!-- 첨부파일 -->
           <div
@@ -486,10 +492,13 @@ import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
 import MainHeader from '@/components/common/MainHeader.vue'
 import SlideUpModal from '@/components/common/SlideUpModal.vue'
 import LucideIcon from '@/components/common/LucideIcon.vue'
+import ImageViewer from '@/components/common/ImageViewer.vue'
 
 const router = useRouter()
 const route = useRoute()
-const viewer = ref(null)
+const boardImageViewerOpen = ref(false)
+const boardImageViewerImages = ref([])
+const boardImageViewerIndex = ref(0)
 const authStore = useAuthStore()
 const conventionStore = useConventionStore()
 const pageReady = ref(false)
@@ -783,16 +792,9 @@ watch(categories, () => {
 })
 
 const openImageViewer = (src) => {
-  const viewerInstance = viewer.value?.$viewer
-  if (!viewerInstance) return
-
-  const images = viewer.value.querySelectorAll('img')
-  const urls = Array.from(images).map((img) => img.src)
-  const index = urls.findIndex((url) => url === src)
-
-  if (index !== -1) {
-    viewerInstance.view(index)
-  }
+  boardImageViewerImages.value = [src]
+  boardImageViewerIndex.value = 0
+  boardImageViewerOpen.value = true
 }
 
 async function loadDynamicActions() {

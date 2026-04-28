@@ -281,55 +281,33 @@
         </div>
       </div>
 
-      <!-- 이미지 뷰어 모달 -->
-      <div
-        v-if="imageViewerUrl"
-        class="fixed inset-0 z-50 bg-black bg-opacity-90"
+      <ImageViewer
+        v-model="imageViewerOpen"
+        :images="imageViewerImages"
       >
-        <!-- 닫기 버튼 (고정 위치 - 우상단) -->
-        <button
-          class="fixed top-6 right-6 w-12 h-12 flex items-center justify-center bg-white rounded-full text-gray-800 hover:bg-gray-200 transition-colors shadow-2xl z-[60] font-bold text-xl"
-          @click="closeImageViewer"
-        >
-          ✕
-        </button>
-
-        <!-- 다운로드 버튼 (고정 위치 - 우하단) -->
-        <button
-          type="button"
-          class="fixed bottom-6 right-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-2xl z-[60] font-medium flex items-center gap-2"
-          @click="downloadFile(imageViewerUrl)"
-        >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <template #actions>
+          <button
+            type="button"
+            class="fixed bottom-6 right-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-2xl z-[60] font-medium flex items-center gap-2"
+            @click.stop="downloadFile(imageViewerDownloadUrl)"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-            />
-          </svg>
-          다운로드
-        </button>
-
-        <!-- 이미지 (중앙 정렬) -->
-        <div
-          class="w-full h-full flex items-center justify-center p-20"
-          @click="closeImageViewer"
-        >
-          <img
-            loading="lazy"
-            :src="`${API_BASE}${imageViewerUrl}`"
-            alt="Image Viewer"
-            class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-            @click.stop
-          />
-        </div>
-      </div>
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
+            </svg>
+            다운로드
+          </button>
+        </template>
+      </ImageViewer>
 
       <!-- PDF 뷰어 모달 -->
       <div
@@ -403,6 +381,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useConventionStore } from '@/stores/convention'
 import apiClient from '@/services/api'
 import formBuilderService from '@/services/formBuilderService'
+import ImageViewer from '@/components/common/ImageViewer.vue'
 
 const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/api$/, '')
 
@@ -426,7 +405,9 @@ const existingFileUrls = ref({}) // 기존 업로드된 파일 URL
 const isEditing = ref(false)
 const submitting = ref(false)
 const successMessage = ref('')
-const imageViewerUrl = ref(null) // 이미지 뷰어용
+const imageViewerOpen = ref(false)
+const imageViewerImages = ref([])
+const imageViewerDownloadUrl = ref(null)
 const pdfViewerUrl = ref(null) // PDF 뷰어용
 
 // 필드를 OrderIndex로 정렬
@@ -489,14 +470,10 @@ function getFileName(url) {
   return parts[parts.length - 1]
 }
 
-// 이미지 뷰어 열기
 function openImageViewer(url) {
-  imageViewerUrl.value = url
-}
-
-// 이미지 뷰어 닫기
-function closeImageViewer() {
-  imageViewerUrl.value = null
+  imageViewerDownloadUrl.value = url
+  imageViewerImages.value = [`${API_BASE}${url}`]
+  imageViewerOpen.value = true
 }
 
 // PDF 뷰어 열기

@@ -217,12 +217,17 @@
       </template>
     </BaseModal>
   </div>
+
+  <ImageViewer
+    v-model="passportViewerOpen"
+    :images="passportViewerImages"
+  />
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { api as viewerApi } from 'v-viewer'
 import apiClient from '@/services/api'
+import ImageViewer from '@/components/common/ImageViewer.vue'
 import AdminPageHeader from '@/components/admin/ui/AdminPageHeader.vue'
 import AdminSearchFilter from '@/components/admin/ui/AdminSearchFilter.vue'
 import AdminSelect from '@/components/admin/ui/AdminSelect.vue'
@@ -233,6 +238,9 @@ import BaseModal from '@/components/common/BaseModal.vue'
 const props = defineProps({
   conventionId: { type: Number, required: true },
 })
+
+const passportViewerOpen = ref(false)
+const passportViewerImages = ref([])
 
 const stats = ref({})
 const allGuests = ref([])
@@ -329,7 +337,8 @@ function viewPassportImage(url) {
   if (url.toLowerCase().endsWith('.pdf')) {
     window.open(url, '_blank')
   } else {
-    viewerApi({ images: [url] })
+    passportViewerImages.value = [url]
+    passportViewerOpen.value = true
   }
 }
 

@@ -296,7 +296,7 @@
                       loading="lazy"
                       :src="img.imageUrl"
                       class="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                      @click="openFullImage(img.imageUrl)"
+                      @click="openFullImage(schedule.images, img.imageUrl)"
                     />
                   </div>
                 </div>
@@ -429,25 +429,11 @@
       </div>
     </div>
 
-    <!-- 전체 이미지 보기 -->
-    <div
-      v-if="fullImageUrl"
-      class="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center"
-      @click="fullImageUrl = null"
-    >
-      <img
-        loading="lazy"
-        :src="fullImageUrl"
-        class="max-w-full max-h-full object-contain"
-        @click.stop
-      />
-      <button
-        class="absolute top-4 right-4 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center text-xl hover:bg-white/30"
-        @click="fullImageUrl = null"
-      >
-        &times;
-      </button>
-    </div>
+    <ImageViewer
+      v-model="imageViewerOpen"
+      :images="imageViewerImages"
+      :start-index="imageViewerStartIndex"
+    />
   </div>
 </template>
 
@@ -456,6 +442,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
 import apiClient from '@/services/api'
 import DynamicActionRenderer from '@/dynamic-features/DynamicActionRenderer.vue'
+import ImageViewer from '@/components/common/ImageViewer.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
@@ -477,7 +464,9 @@ const dateScrollContainer = ref(null)
 const showLeftScroll = ref(false)
 const showRightScroll = ref(false)
 const showCalendarView = ref(false)
-const fullImageUrl = ref(null)
+const imageViewerOpen = ref(false)
+const imageViewerImages = ref([])
+const imageViewerStartIndex = ref(0)
 const currentScheduleRef = ref(null)
 const allSchedules = ref([])
 const allOptionTours = ref([])
@@ -655,8 +644,12 @@ function stripHtml(html) {
     .trim()
 }
 
-function openFullImage(url) {
-  fullImageUrl.value = url
+function openFullImage(images, url) {
+  const urls = (images || []).map((img) => img.imageUrl)
+  if (urls.length === 0) return
+  imageViewerImages.value = urls
+  imageViewerStartIndex.value = Math.max(0, urls.indexOf(url))
+  imageViewerOpen.value = true
 }
 
 const BADGE_PALETTE = [
